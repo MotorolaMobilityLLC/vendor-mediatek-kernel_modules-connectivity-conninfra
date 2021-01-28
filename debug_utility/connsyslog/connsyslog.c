@@ -17,7 +17,7 @@
 #include "connsyslog.h"
 #include "connsyslog_emi.h"
 #include "connsyslog_hw_config.h"
-#include "log_ring.h"
+#include "ring.h"
 #include "ring_emi.h"
 
 /*******************************************************************************
@@ -138,10 +138,23 @@ void *connlog_cache_allocate(size_t size)
 {
 	void *pBuffer = NULL;
 
+	if (size > (PAGE_SIZE << 1))
+		pBuffer = vmalloc(size);
+	else
 	pBuffer = kmalloc(size, GFP_KERNEL);
-	if (!pBuffer)
-		return NULL;
+
+	/* If there is fragment, kmalloc may not get memory when size > one page.
+	 * For this case, use vmalloc instead.
+	 */
+	if (pBuffer == NULL && size > PAGE_SIZE)
+		pBuffer = vmalloc(size);
+
 	return pBuffer;
+}
+
+void connlog_cache_free(const void *dst)
+{
+	kvfree(dst);
 }
 
 /*****************************************************************************
@@ -181,8 +194,6 @@ static void connlog_set_ring_ready(struct connlog_dev* handler)
 
 static unsigned int connlog_cal_log_size(unsigned int emi_size)
 {
-	return emi_size;
-#if 0
 	int position;
 	int i;
 
@@ -194,14 +205,13 @@ static unsigned int connlog_cal_log_size(unsigned int emi_size)
 	}
 
 	return (1UL << position);
-#endif
 }
 
 static int connlog_emi_init(struct connlog_dev* handler, phys_addr_t emiaddr, unsigned int emi_size)
 {
 	int conn_type = handler->conn_type;
 	unsigned int cal_log_size = connlog_cal_log_size(
-		emi_size - CONNLOG_EMI_BUF - CONNLOG_EMI_END_PATTERN_SIZE);
+		emi_size - CONNLOG_EMI_BASE_OFFSET - CONNLOG_EMI_END_PATTERN_SIZE);
 
 	if (emiaddr == 0 || cal_log_size == 0) {
 		pr_err("[%s] consys emi memory address invalid emi_addr=%p emi_size=%d\n",
@@ -262,6 +272,8 @@ static void connlog_emi_deinit(struct connlog_dev* handler)
 
 static int connlog_buffer_init(struct connlog_dev* handler)
 {
+	void *pBuffer = NULL;
+
 	/* Init ring emi */
 	ring_emi_init(
 		handler->virAddrEmiLogBase + handler->log_offset.emi_buf,
@@ -272,9 +284,15 @@ static int connlog_buffer_init(struct connlog_dev* handler)
 
 	/* init ring cache */
 	/* TODO: use emi size. Need confirm */
-	handler->log_buffer.cache_base = connlog_cache_allocate(handler->emi_size);
+	pBuffer = connlog_cache_allocate(handler->emi_size);
+	if (pBuffer == NULL) {
+		pr_info("[%s] allocate cache fail.", __func__);
+		return -ENOMEM;
+	}
+
+	handler->log_buffer.cache_base = pBuffer;
 	memset(handler->log_buffer.cache_base, 0, handler->emi_size);
-	log_ring_init(
+	ring_init(
 		handler->log_buffer.cache_base,
 		handler->log_offset.emi_size,
 		0,
@@ -286,6 +304,7 @@ static int connlog_buffer_init(struct connlog_dev* handler)
 
 static int connlog_ring_buffer_init(struct connlog_dev* handler)
 {
+	void *pBuffer = NULL;
 	if (!handler->virAddrEmiLogBase) {
 		pr_err("[%s] consys emi memory address phyAddrEmiBase invalid\n",
 			type_to_title[handler->conn_type]);
@@ -293,7 +312,12 @@ static int connlog_ring_buffer_init(struct connlog_dev* handler)
 	}
 	connlog_buffer_init(handler);
 	/* TODO: use emi size. Need confirm */
-	handler->log_data = connlog_cache_allocate(handler->emi_size);
+	pBuffer = connlog_cache_allocate(handler->emi_size);
+	if (pBuffer == NULL) {
+		pr_info("[%s] allocate ring buffer fail.", __func__);
+		return -ENOMEM;
+	}
+	handler->log_data = pBuffer;
 	connlog_set_ring_ready(handler);
 	return 0;
 }
@@ -310,11 +334,15 @@ static int connlog_ring_buffer_init(struct connlog_dev* handler)
 *****************************************************************************/
 static void connlog_ring_buffer_deinit(struct connlog_dev* handler)
 {
-	kfree(handler->log_buffer.cache_base);
-	handler->log_buffer.cache_base = NULL;
+	if (handler->log_buffer.cache_base) {
+		connlog_cache_free(handler->log_buffer.cache_base);
+		handler->log_buffer.cache_base = NULL;
+	}
 
-	kfree(handler->log_data);
-	handler->log_data = NULL;
+	if (handler->log_data) {
+		connlog_cache_free(handler->log_data);
+		handler->log_data = NULL;
+	}
 }
 
 /*****************************************************************************
@@ -460,7 +488,7 @@ static void connlog_ring_emi_to_cache(struct connlog_dev* handler)
 	static DEFINE_RATELIMIT_STATE(_rs2, HZ, 1);
 #endif
 
-	if (LOG_RING_FULL(ring_cache)) {
+	if (RING_FULL(ring_cache)) {
 	#ifndef DEBUG_LOG_ON
 		if (__ratelimit(&_rs))
 	#endif
@@ -468,7 +496,7 @@ static void connlog_ring_emi_to_cache(struct connlog_dev* handler)
 		return;
 	}
 
-	cache_max_size = LOG_RING_WRITE_REMAIN_SIZE(ring_cache);
+	cache_max_size = RING_WRITE_REMAIN_SIZE(ring_cache);
 	if (RING_EMI_EMPTY(ring_emi) || !ring_emi_read_prepare(cache_max_size, &ring_emi_seg, ring_emi)) {
 	#ifndef DEBUG_LOG_ON
 		if(__ratelimit(&_rs))
@@ -493,10 +521,10 @@ static void connlog_ring_emi_to_cache(struct connlog_dev* handler)
 		ring_emi_dump(__func__, ring_emi);
 		ring_emi_dump_segment(__func__, &ring_emi_seg);
 #endif
-		LOG_RING_WRITE_FOR_EACH(ring_emi_seg.sz, ring_cache_seg, &handler->log_buffer.ring_cache) {
+		RING_WRITE_FOR_EACH(ring_emi_seg.sz, ring_cache_seg, &handler->log_buffer.ring_cache) {
 #ifdef DEBUG_RING
-			log_ring_dump(__func__, &handler->log_buffer.ring_cache);
-			log_ring_dump_segment(__func__, &ring_cache_seg);
+			ring_dump(__func__, &handler->log_buffer.ring_cache);
+			ring_dump_segment(__func__, &ring_cache_seg);
 #endif
 		#ifndef DEBUG_LOG_ON
 			if (__ratelimit(&_rs2))
@@ -690,7 +718,7 @@ unsigned int connsys_log_get_buf_size(int conn_type)
 		return 0;
 	}
 
-	return LOG_RING_SIZE(&handler->log_buffer.ring_cache);
+	return RING_SIZE(&handler->log_buffer.ring_cache);
 }
 EXPORT_SYMBOL(connsys_log_get_buf_size);
 
@@ -717,14 +745,14 @@ static ssize_t connlog_read_internal(
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 	static DEFINE_RATELIMIT_STATE(_rs2, 1 * HZ, 1);
 
-	size = count < LOG_RING_SIZE(ring) ? count : LOG_RING_SIZE(ring);
-	if (LOG_RING_EMPTY(ring) || !log_ring_read_prepare(size, &ring_seg, ring)) {
+	size = count < RING_SIZE(ring) ? count : RING_SIZE(ring);
+	if (RING_EMPTY(ring) || !ring_read_prepare(size, &ring_seg, ring)) {
 		pr_err("type(%d) no data, possibly taken by concurrent reader.\n", conn_type);
 		goto done;
 	}
 	cache_buf_size = ring_seg.remain;
 
-	LOG_RING_READ_FOR_EACH(size, ring_seg, ring) {
+	RING_READ_FOR_EACH(size, ring_seg, ring) {
 		if (to_user) {
 			retval = copy_to_user(userbuf + written, ring_seg.ring_pt, ring_seg.sz);
 			if (retval) {
@@ -914,7 +942,7 @@ static struct connlog_dev* connlog_subsys_init(
 	if (conn_type < CONN_DEBUG_TYPE_WIFI || conn_type >= CONN_DEBUG_TYPE_END)
 		return 0;
 
-	handler = (struct connlog_dev*)kmalloc(sizeof(struct connlog_dev), GFP_KERNEL);
+	handler = (struct connlog_dev*)kzalloc(sizeof(struct connlog_dev), GFP_KERNEL);
 	if (!handler)
 		return 0;
 
