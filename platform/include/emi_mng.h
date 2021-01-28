@@ -20,6 +20,8 @@
 #define _PLATFORM_EMI_MNG_H_
 
 #include <linux/types.h>
+#include <linux/platform_device.h>
+
 #include "osal.h"
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -81,7 +83,7 @@ struct consys_platform_emi_ops {
 ********************************************************************************
 */
 
-int emi_mng_init(void);
+int emi_mng_init(struct platform_device *pdev);
 int emi_mng_deinit(void);
 
 int emi_mng_set_region_protection(void);

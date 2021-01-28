@@ -393,7 +393,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		return 0;
 	}
 
-	do_gettimeofday(&pre_begin);
+	osal_gettimeofday(&pre_begin);
 
 	atomic_set(&g_conninfra_ctx.rst_state, 0);
 	sema_init(&g_conninfra_ctx.rst_sema, 1);
@@ -428,7 +428,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 
 	_conninfra_core_update_rst_status(CHIP_RST_RESET);
 
-	do_gettimeofday(&pre_end);
+	osal_gettimeofday(&pre_end);
 
 	pr_info("[chip_rst] reset ++++++++++++");
 	/*******************************************************/
@@ -453,7 +453,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 
 	_conninfra_core_update_rst_status(CHIP_RST_POST_CB);
 
-	do_gettimeofday(&reset_end);
+	osal_gettimeofday(&reset_end);
 
 	/* post */
 	atomic_set(&g_conninfra_ctx.rst_state, 0);
@@ -482,7 +482,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	reset_chip_rst_trg_data();
 	//_conninfra_core_update_rst_status(CHIP_RST_DONE);
 	_conninfra_core_update_rst_status(CHIP_RST_NONE);
-	do_gettimeofday(&done_end);
+	osal_gettimeofday(&done_end);
 
 	pr_info("[chip_rst] summary pre=[%lu] reset=[%lu] post=[%lu]",
 				timeval_to_ms(&pre_begin, &pre_end),
@@ -530,7 +530,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 		return -2;
 	}
 
-	do_gettimeofday(&begin);
+	osal_gettimeofday(&begin);
 
 	/* power on subsys */
 	atomic_set(&g_conninfra_ctx.pre_cal_state, 0);
@@ -563,7 +563,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	}
 	pr_info("[pre_cal] >>>>>>> power on DONE!!");
 
-	do_gettimeofday(&bt_cal_begin);
+	osal_gettimeofday(&bt_cal_begin);
 
 	/* Do Calibration */
 	drv_inst = &g_conninfra_ctx.drv_inst[CONNDRV_TYPE_BT];
@@ -581,7 +581,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 
 	pr_info("[pre_cal] >>>>>>>> BT do cal done");
 
-	do_gettimeofday(&wf_cal_begin);
+	osal_gettimeofday(&wf_cal_begin);
 
 	drv_inst = &g_conninfra_ctx.drv_inst[CONNDRV_TYPE_WIFI];
 	wf_cal_ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
@@ -598,7 +598,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 
 	pr_info(">>>>>>>> WF do cal done");
 
-	do_gettimeofday(&end);
+	osal_gettimeofday(&end);
 
 	pr_info("[pre_cal] summary pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
 			timeval_to_ms(&begin, &bt_cal_begin),
@@ -616,7 +616,7 @@ static int opfunc_therm_ctrl(struct msg_op_data *op)
 
 	if (g_conninfra_ctx.infra_drv_status != DRV_STS_POWER_ON) {
 		*data_ptr = 0;
-		return 0;
+		return CONNINFRA_ERR_POWER_OFF;
 	}
 
 	if (data_ptr)
@@ -1350,7 +1350,7 @@ int conninfra_core_thermal_query(int *temp_val)
 		CONNINFRA_OPID_THERM_CTRL, 0,
 		(size_t) temp_val);
 	if (ret) {
-		pr_err("send msg fail ret=%d\n", ret);
+		pr_info("thermal query fail ret=%d\n", ret);
 		return ret;
 	}
 	pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
@@ -1563,7 +1563,7 @@ void conninfra_core_pre_cal_blocking(void)
 	unsigned long diff;
 	static bool ever_pre_cal = false;
 
-	do_gettimeofday(&start);
+	osal_gettimeofday(&start);
 
 	/* non-zero means lock got, zero means not */
 	while (true) {
@@ -1596,7 +1596,7 @@ void conninfra_core_pre_cal_blocking(void)
 			osal_sleep_ms(100);
 		}
 	}
-	do_gettimeofday(&end);
+	osal_gettimeofday(&end);
 
 	diff = timeval_to_ms(&start, &end);
 	if (diff > BLOCKING_CHECK_MONITOR_THREAD)
