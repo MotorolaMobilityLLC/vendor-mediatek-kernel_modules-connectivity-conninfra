@@ -744,7 +744,7 @@ int consys_polling_chipid(void)
 
 	if (retry == 0) {
 		pr_err("Read CONSYS version id fail. Expect 0x%x but get 0x%x\n",
-			consys_hw_ver, CONN_HW_VER, consys_hw_ver);
+			CONN_HW_VER, consys_hw_ver);
 		return -1;
 	}
 
