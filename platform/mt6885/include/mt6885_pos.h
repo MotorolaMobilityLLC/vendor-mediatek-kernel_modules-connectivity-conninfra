@@ -35,8 +35,8 @@ int connsys_afe_wbg_cal(void);
 int connsys_subsys_pll_initial(void);
 int connsys_low_power_setting(unsigned int, unsigned int);
 
-int consys_sema_acquire_timeout(enum conn_semaphore_type index, unsigned int usec);
-void consys_sema_release(enum conn_semaphore_type index);
+int consys_sema_acquire_timeout(unsigned int index, unsigned int usec);
+void consys_sema_release(unsigned int index);
 
 int consys_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int consys_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);

@@ -30,6 +30,7 @@
 #include "consys_hw.h"
 #include "consys_reg_util.h"
 #include "osal.h"
+#include "mt6885.h"
 #include "mt6885_pmic.h"
 #include "mt6885_pos.h"
 #include "mt6885_consys_reg.h"

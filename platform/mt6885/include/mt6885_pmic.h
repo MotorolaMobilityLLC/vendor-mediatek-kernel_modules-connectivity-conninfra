@@ -16,8 +16,8 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_MT6885_H_
-#define _PLATFORM_MT6885_H_
+#ifndef _PLATFORM_MT6885_PMIC_H_
+#define _PLATFORM_MT6885_PMIC_H_
 
 #include "osal.h"
 #include "pmic_mng.h"
@@ -69,4 +69,4 @@ P_CONSYS_PLATFORM_PMIC_OPS get_consys_platform_pmic_ops(void);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_MT6885_H_ */
+#endif				/* _PLATFORM_MT6885_PMIC_H_ */

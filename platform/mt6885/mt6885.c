@@ -116,8 +116,6 @@ struct consys_hw_ops_struct g_consys_hw_ops = {
 	.consys_plt_clock_fail_dump = consys_clock_fail_dump,
 	.consys_plt_get_hw_ver = consys_get_hw_ver,
 
-	.consys_plt_sema_acquire_timeout = consys_sema_acquire_timeout,
-	.consys_plt_sema_release = consys_sema_release,
 	.consys_plt_spi_read = consys_spi_read,
 	.consys_plt_spi_write = consys_spi_write,
 	.consys_plt_adie_top_ck_en_on = consys_adie_top_ck_en_on,

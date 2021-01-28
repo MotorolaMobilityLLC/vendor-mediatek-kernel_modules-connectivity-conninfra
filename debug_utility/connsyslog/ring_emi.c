@@ -11,8 +11,7 @@ void ring_emi_init(void *base, unsigned int max_size, void *read, void *write, s
 {
 	WARN_ON(!base || !read || !write);
 
-	/* making sure max_size is power of 2 */
-	WARN_ON(!max_size || (max_size & (max_size - 1)));
+	RING_EMI_VALIDATE_SIZE(max_size);
 
 	/* making sure read & write pointers are 4 bytes aligned */
 	WARN_ON(((long)read & 0x3) != 0 || ((long)write & 0x3) != 0);
@@ -99,7 +98,10 @@ unsigned int ring_emi_write_prepare(unsigned int sz, struct ring_emi_segment *se
 void _ring_emi_segment_prepare(unsigned int from, struct ring_emi_segment *seg, struct ring_emi *ring_emi)
 {
 #ifndef ROUND_REPEAT
-	unsigned int ring_emi_pos = from & (ring_emi->max_size - 1);
+	unsigned int ring_emi_pos = from;
+
+	if (ring_pos >= ring->max_size)
+		ring_pos -= ring->max_size;
 
 	seg->ring_emi_pt = ring_emi->base + ring_emi_pos;
 #else
@@ -117,34 +119,34 @@ void _ring_emi_segment_prepare(unsigned int from, struct ring_emi_segment *seg, 
 
 void _ring_emi_read_commit(struct ring_emi_segment *seg, struct ring_emi *ring_emi)
 {
+	unsigned int next_read = EMI_READ32(ring_emi->read) + seg->sz;
+
 #ifdef ROUND_REPEAT
+	if (next_read >= ring_emi->max_size)
+		next_read -= ring_emi->max_size;
+#endif
+
 #ifdef DEBUG_LOG_ON
-	pr_info("[%s] write %p as %d\n", __func__, ring_emi->read, (EMI_READ32(ring_emi->read) + seg->sz) & (ring_emi->max_size - 1));
+	pr_info("[%s] write %p as %d\n", __func__, ring_emi->read, next_read);
 #endif
-	EMI_WRITE32(ring_emi->read, (EMI_READ32(ring_emi->read) + seg->sz) & (ring_emi->max_size - 1));
-#else
-#ifdef DEBUG_LOG_ON
-	pr_info("[%s] write %p as %d\n", __func__, ring_emi->read, EMI_READ32(ring_emi->read) + seg->sz);
-#endif
-	EMI_WRITE32(ring_emi->read, EMI_READ32(ring_emi->read) + seg->sz);
-#endif
+	EMI_WRITE32(ring_emi->read, next_read);
 	/* *(ring_emi->read) += seg->sz; */
 	/* ring_emi_dump(__func__, ring_emi); */
 	/* ring_emi_dump_segment(__func__, seg); */
 }
 void _ring_emi_write_commit(struct ring_emi_segment *seg, struct ring_emi *ring_emi)
 {
+	unsigned int next_write = EMI_READ32(ring_emi->write) + seg->sz;
+
 #ifdef ROUND_REPEAT
+	if (next_write >= ring_emi->max_size)
+		next_write -= ring_emi->max_size;
+#endif
+
 #ifdef DEBUG_LOG_ON
-	pr_info("[%s] write %p as %d\n", __func__, (EMI_READ32(ring_emi->write) + seg->sz) & (ring_emi->max_size - 1));
+	pr_info("[%s] write %p as %d\n", __func__, ring_emi->write, next_write);
 #endif
-	EMI_WRITE32(ring_emi->write, (EMI_READ32(ring_emi->write) + seg->sz) & (ring_emi->max_size - 1));
-#else
-#ifdef DEBUG_LOG_ON
-	pr_info("[%s] write %p as %d\n", __func__, ring_emi->write, EMI_READ32(ring_emi->write) + seg->sz);
-#endif
-	EMI_WRITE32(ring_emi->write, EMI_READ32(ring_emi->write) + seg->sz);
-#endif
+	EMI_WRITE32(ring_emi->write, next_write);
 	/* ring_emi_dump(__func__, ring_emi); */
 	/* ring_emi_dump_segment(__func__, seg); */
 }
