@@ -217,7 +217,7 @@ static void consys_bus_hang_dump_a(void)
 	 *    5: mainpll_d6_d2 => 182M
 	 *    6: osc_d4 => 65M
 	 */
-	addr = ioremap_nocache(0x10000000, 0x20);
+	addr = ioremap(0x10000000, 0x20);
 	if (addr != NULL) {
 		r7 = CONSYS_REG_READ(addr);
 		r8 = CONSYS_REG_READ(addr + 0x10);
@@ -227,7 +227,7 @@ static void consys_bus_hang_dump_a(void)
 	/*
 	 *  r15 : 0x1000_0200 sc_md2_32k_off_en
 	 */
-	addr = ioremap_nocache(0x10000200, 0x20);
+	addr = ioremap(0x10000200, 0x20);
 	if (addr != NULL) {
 		r9 = CONSYS_REG_READ(addr);
 		iounmap(addr);

@@ -12,7 +12,6 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
-#include <mtk_clkbuf_ctl.h>
 
 #include <connectivity_build_in_adapter.h>
 
@@ -28,6 +27,14 @@
 #include "mt6893_consys_reg.h"
 #include "mt6893_consys_reg_offset.h"
 #include "mt6893_pos.h"
+#include "clock_mng.h"
+
+#if COMMON_KERNEL_CLK_SUPPORT
+#include <linux/pm_runtime.h>
+#include <linux/pm_wakeup.h>
+#else
+#include <mtk_clkbuf_ctl.h>
+#endif
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -62,6 +69,7 @@
 */
 
 static int consys_clk_get_from_dts(struct platform_device *pdev);
+static int consys_clk_detach(void);
 static int consys_clock_buffer_ctrl(unsigned int enable);
 static unsigned int consys_soc_chipid_get(void);
 static unsigned int consys_get_hw_ver(void);
@@ -78,6 +86,7 @@ struct consys_hw_ops_struct g_consys_hw_ops = {
 	/* load from dts */
 	/* TODO: mtcmos should move to a independent module */
 	.consys_plt_clk_get_from_dts = consys_clk_get_from_dts,
+	.consys_plt_clk_detach = consys_clk_detach,
 
 	/* clock */
 	.consys_plt_clock_buffer_ctrl = consys_clock_buffer_ctrl,
@@ -137,29 +146,83 @@ struct consys_hw_ops_struct* get_consys_platform_ops(void)
 /* mtcmos contorl */
 int consys_clk_get_from_dts(struct platform_device *pdev)
 {
+#if COMMON_KERNEL_CLK_SUPPORT
+	pm_runtime_enable(&pdev->dev);
+	dev_pm_syscore_device(&pdev->dev, true);
+#else
 	clk_scp_conn_main = devm_clk_get(&pdev->dev, "conn");
 	if (IS_ERR(clk_scp_conn_main)) {
 		pr_err("[CCF]cannot get clk_scp_conn_main clock.\n");
 		return PTR_ERR(clk_scp_conn_main);
 	}
 	pr_debug("[CCF]clk_scp_conn_main=%p\n", clk_scp_conn_main);
-
+#endif
 	return 0;
 }
+
+
+int consys_clk_detach(void)
+{
+#if COMMON_KERNEL_CLK_SUPPORT
+	struct platform_device *pdev = get_consys_device();
+
+	if (pdev == NULL)
+		return 0;
+	pm_runtime_disable(&pdev->dev);
+#endif
+	return 0;
+}
+
 
 int consys_platform_spm_conn_ctrl(unsigned int enable)
 {
 	int ret = 0;
+#if COMMON_KERNEL_CLK_SUPPORT
+	struct platform_device *pdev = get_consys_device();
+
+	if (!pdev) {
+		pr_info("get_consys_device fail.\n");
+		return -1;
+	}
+#endif
 
 	if (enable) {
+#if COMMON_KERNEL_CLK_SUPPORT
+		ret = pm_runtime_get_sync(&(pdev->dev));
+		if (ret)
+			pr_info("pm_runtime_get_sync() fail(%d)\n", ret);
+		else
+			pr_info("pm_runtime_get_sync() CONSYS ok\n");
+
+		ret = device_init_wakeup(&(pdev->dev), true);
+		if (ret)
+			pr_info("device_init_wakeup(true) fail.\n");
+		else
+			pr_info("device_init_wakeup(true) CONSYS ok\n");
+#else
 		ret = clk_prepare_enable(clk_scp_conn_main);
+#endif
 		if (ret) {
-			pr_err("Turn on oonn_infra power fail. Ret=%d\n", ret);
+			pr_info("Turn on conn_infra power fail. Ret=%d\n", ret);
 			return -1;
 		}
 	} else {
+#if COMMON_KERNEL_CLK_SUPPORT
+		ret = device_init_wakeup(&(pdev->dev), false);
+		if (ret)
+			pr_info("device_init_wakeup(false) fail.\n");
+		else
+			pr_info("device_init_wakeup(false) CONSYS ok\n");
+
+		ret = pm_runtime_put_sync(&(pdev->dev));
+		if (ret)
+			pr_info("pm_runtime_put_sync() fail.\n");
+		else
+			pr_info("pm_runtime_put_sync() CONSYS ok\n");
+#else
 		clk_disable_unprepare(clk_scp_conn_main);
 
+#endif
 	}
 
 	return ret;
@@ -171,10 +234,12 @@ int consys_clock_buffer_ctrl(unsigned int enable)
 	 * clock buffer is HW controlled, not SW controlled.
 	 * Keep this function call to update status.
 	 */
+#if (!COMMON_KERNEL_CLK_SUPPORT)
 	if (enable)
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, true);	/*open XO_WCN*/
 	else
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, false);	/*close XO_WCN*/
+#endif
 	return 0;
 }
 
@@ -267,7 +332,7 @@ int consys_thermal_query(void)
 	unsigned int i;
 	unsigned int efuse0, efuse1, efuse2, efuse3;
 
-	addr = ioremap_nocache(CONN_GPT2_CTRL_BASE, 0x100);
+	addr = ioremap(CONN_GPT2_CTRL_BASE, 0x100);
 	if (addr == NULL) {
 		pr_err("GPT2_CTRL_BASE remap fail");
 		return -1;
