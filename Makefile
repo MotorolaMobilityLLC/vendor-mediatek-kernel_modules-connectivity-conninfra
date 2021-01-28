@@ -78,8 +78,7 @@ ccflags-y += -I$(src)/conf/include
 ccflags-y += -I$(src)/platform/include
 
 # By Plaftfrom
-ccflags-y += -I$(src)/platform/mt6789/include
-#ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)/include
+ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)/include
 
 
 ifneq ($(TARGET_BUILD_VARIANT), user)
@@ -123,12 +122,9 @@ $(MODULE_NAME)-objs += platform/pmic_mng.o
 $(MODULE_NAME)-objs += platform/emi_mng.o
 
 # By Plaftfrom
-$(MODULE_NAME)-objs += platform/mt6789/mt6789.o
-$(MODULE_NAME)-objs += platform/mt6789/mt6789_emi.o
-$(MODULE_NAME)-objs += platform/mt6789/mt6789_pmic.o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_clock.o
+$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
+$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
+$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_emi.o
 
 
 ###############################################################################
