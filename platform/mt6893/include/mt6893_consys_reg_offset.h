@@ -121,7 +121,7 @@
 #define CONN_INFRA_CFG_DBG_MUX_SEL	0x0b00
 #define CONN_INFRA_CFG_EMI_CTL_0	0x0c00
 
-#define CONN_HW_VER	0x20010000
+#define CONN_HW_VER	0x20010101
 #define CONN_CFG_ID	0x3
 
 /**********************************************************************/
