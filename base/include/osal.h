@@ -45,7 +45,6 @@
 #define _osal_inline_ inline
 
 #define MAX_THREAD_NAME_LEN 16
-#define MAX_WAKE_LOCK_NAME_LEN 16
 #define MAX_HISTORY_NAME_LEN 16
 #define OSAL_OP_BUF_SIZE    64
 
@@ -232,12 +231,6 @@ typedef struct _OSAL_LXOP_Q {
 	P_OSAL_OP queue[OSAL_OP_BUF_SIZE];
 } OSAL_OP_Q, *P_OSAL_OP_Q;
 
-typedef struct _OSAL_WAKE_LOCK_ {
-	struct wakeup_source *wake_lock;
-	unsigned char name[MAX_WAKE_LOCK_NAME_LEN];
-	int init_flag;
-} OSAL_WAKE_LOCK, *P_OSAL_WAKE_LOCK;
-
 typedef struct _OSAL_BIT_OP_VAR_ {
 	unsigned long data;
 	OSAL_UNSLEEPABLE_LOCK opLock;
@@ -333,12 +326,6 @@ unsigned int osal_fifo_sz(P_OSAL_FIFO pFifo);
 unsigned int osal_fifo_avail(P_OSAL_FIFO pFifo);
 unsigned int osal_fifo_is_empty(P_OSAL_FIFO pFifo);
 unsigned int osal_fifo_is_full(P_OSAL_FIFO pFifo);
-
-int osal_wake_lock_init(P_OSAL_WAKE_LOCK plock);
-int osal_wake_lock(P_OSAL_WAKE_LOCK plock);
-int osal_wake_unlock(P_OSAL_WAKE_LOCK plock);
-int osal_wake_lock_count(P_OSAL_WAKE_LOCK plock);
-int osal_wake_lock_deinit(P_OSAL_WAKE_LOCK plock);
 
 #if defined(CONFIG_PROVE_LOCKING)
 #define osal_unsleepable_lock_init(l) { spin_lock_init(&((l)->lock)); }
