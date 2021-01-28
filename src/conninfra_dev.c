@@ -85,6 +85,11 @@ static wait_queue_head_t g_conninfra_init_wq;
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+struct conninfra_pmic_work {
+	unsigned int id;
+	unsigned int event;
+	struct work_struct pmic_work;
+};
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -170,7 +175,8 @@ static struct devapc_vio_callbacks conninfra_devapc_handle = {
 	.id = INFRA_SUBSYS_CONN,
 	.debug_dump = conninfra_devapc_violation_cb,
 };
-
+/* For PMIC callback */
+static struct conninfra_pmic_work g_conninfra_pmic_work;
 
 static struct conninfra_dev_cb g_conninfra_dev_cb = {
 	.conninfra_suspend_cb = conninfra_dev_suspend_cb,
@@ -430,7 +436,6 @@ static void conninfra_register_devapc_callback(void)
 	register_devapc_vio_callback(&conninfra_devapc_handle);
 }
 
-
 static int conninfra_dev_suspend_cb(void)
 {
 	return 0;
@@ -444,10 +449,33 @@ static int conninfra_dev_resume_cb(void)
 
 static int conninfra_dev_pmic_event_cb(unsigned int id, unsigned int event)
 {
-	conninfra_core_pmic_event_cb(id, event);
+	g_conninfra_pmic_work.id = id;
+	g_conninfra_pmic_work.event = event;
+	schedule_work(&g_conninfra_pmic_work.pmic_work);
 
 	return 0;
 }
+
+static void conninfra_dev_pmic_event_handler(struct work_struct *work)
+{
+	unsigned int id, event;
+	struct conninfra_pmic_work *pmic_work =
+		container_of(work, struct conninfra_pmic_work, pmic_work);
+
+	if (pmic_work) {
+		id = pmic_work->id;
+		event = pmic_work->event;
+		conninfra_core_pmic_event_cb(id, event);
+	} else
+		pr_err("[%s] pmic_work is null (id, event)=(%d, %d)", __func__, id, event);
+
+}
+
+static void conninfra_register_pmic_callback(void)
+{
+	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);
+}
+
 
 /************************************************************************/
 static int conninfra_dev_do_drv_init()
@@ -500,6 +528,7 @@ static int conninfra_dev_do_drv_init()
 	wmt_export_platform_bridge_register(&g_plat_bridge);
 
 	conninfra_register_devapc_callback();
+	conninfra_register_pmic_callback();
 
 	pr_info("ConnInfra Dev: init (%d)\n", iret);
 	g_conninfra_init_status = CONNINFRA_INIT_DONE;
