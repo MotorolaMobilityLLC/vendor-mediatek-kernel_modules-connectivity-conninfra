@@ -16,6 +16,7 @@
 /* For function declaration */
 #include "mt6885_pos.h"
 #include "mt6885.h"
+#include "mt6885_pmic.h"
 
 #include <linux/ratelimit.h>
 
@@ -322,6 +323,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		 */
 		mdelay(6);
 	} else {
+		consys_plt_pmic_ctrl_dump("CONN OFF");
 
 		/* Enable AXI bus sleep protect */
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE

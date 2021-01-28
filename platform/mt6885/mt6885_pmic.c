@@ -135,9 +135,19 @@ static int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event
 
 static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 {
+	static int oc_counter = 0;
+
+	oc_counter++;
+	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	consys_plt_pmic_ctrl_dump("VCN13 OC");
+	return NOTIFY_OK;
+}
+
+int consys_plt_pmic_ctrl_dump(const char* tag)
+{
 #define ATOP_DUMP_NUM 10
 #define LOG_TMP_BUF_SZ 256
-	static int oc_counter = 0;
 	int ret;
 	unsigned int adie_value = 0;
 	unsigned int value1 = 0, value2 = 0, value3 = 0;
@@ -150,14 +160,11 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
 
-	oc_counter++;
-	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
-
 	consys_hw_is_bus_hang();
 	ret = consys_hw_force_conninfra_wakeup();
 	if (ret) {
-		pr_err("[%s] force conninfra wakeup fail\n", __func__);
-		return NOTIFY_OK;
+		pr_info("[%s] force conninfra wakeup fail\n", __func__);
+		return 0;
 	}
 
 	value1 = CONSYS_REG_READ(CON_REG_INFRA_CFG_ADDR + CONN_INFRA_CFG_ADIE_CTL);
@@ -165,9 +172,11 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 	if (consys_sema_acquire_timeout(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_SUCCESS) {
 		value3 = CONSYS_REG_READ(CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_TOP_CK_EN_CTRL);
 		consys_sema_release(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
-		pr_info("[VCN13 OC] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x 0x1805_2830:0x%08x\n", value1, value2, value3);
+		pr_info("[%s] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x 0x1805_2830:0x%08x\n",
+			(tag == NULL?__func__:tag), value1, value2, value3);
 	} else {
-		pr_info("[VCN13 OC] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x\n", value1, value2);
+		pr_info("[%s] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x\n",
+			(tag == NULL?__func__:tag), value1, value2);
 	}
 
 	for (index = 0; index < ATOP_DUMP_NUM; index++) {
@@ -175,10 +184,10 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 		snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[index], adie_value);
 		strncat(tmp_buf, tmp, strlen(tmp));
 	}
-	pr_info("[VCN13 OC] ATOP:%s\n", tmp_buf);
+	pr_info("[%s] ATOP:%s\n", (tag == NULL?__func__:tag), tmp_buf);
 	consys_hw_force_conninfra_sleep();
 
-	return NOTIFY_OK;
+	return 0;
 }
 
 int consys_plt_pmic_get_from_dts(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)

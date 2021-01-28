@@ -63,6 +63,7 @@
 */
 
 P_CONSYS_PLATFORM_PMIC_OPS get_consys_platform_pmic_ops(void);
+int consys_plt_pmic_ctrl_dump(const char* tag);
 
 /*******************************************************************************
 *                              F U N C T I O N S
