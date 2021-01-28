@@ -21,6 +21,8 @@
 
 #include <linux/semaphore.h>
 #include <linux/platform_device.h>
+#include <linux/workqueue.h>
+#include <linux/time.h>
 
 #include "osal.h"
 #include "msg_thread.h"
@@ -35,6 +37,9 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+
+#define ENABLE_PRE_CAL_BLOCKING_CHECK	1
+#define CHIP_RST_REASON_MAX_LEN			128
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -57,11 +62,34 @@ typedef enum _ENUM_DRV_STS_ {
 	DRV_STS_MAX
 } ENUM_DRV_STS, *P_ENUM_DRV_STS;
 
+enum pre_cal_status {
+	PRE_CAL_NOT_INIT = 0,
+	PRE_CAL_NEED_RESCHEDULE = 1,
+	PRE_CAL_SCHEDULED = 2,
+	PRE_CAL_EXECUTING = 3,
+	PRE_CAL_DONE = 4
+};
+
+enum chip_rst_status {
+	CHIP_RST_NONE = 0,
+	CHIP_RST_START = 1,
+	CHIP_RST_PRE_CB = 2,
+	CHIP_RST_RESET = 3,
+	CHIP_RST_POST_CB = 4,
+	CHIP_RST_DONE = 5
+};
+
 struct subsys_drv_inst {
 	ENUM_DRV_STS drv_status;	/* Controlled driver status */
 	unsigned int rst_state;
 	struct sub_drv_ops_cb ops_cb;
 	struct msg_thread_ctx msg_ctx;
+};
+
+struct pre_cal_info {
+	enum pre_cal_status status;
+	struct work_struct pre_cal_work;
+	OSAL_SLEEPABLE_LOCK pre_cal_lock;
 };
 
 
@@ -76,10 +104,18 @@ struct conninfra_ctx {
 	/*struct spinlock infra_lock;*/
 	spinlock_t infra_lock;
 
-	OSAL_SLEEPABLE_LOCK rst_lock;
+	OSAL_SLEEPABLE_LOCK core_lock;
+
+	/* chip reset */
+	enum chip_rst_status rst_status;
+	spinlock_t rst_lock;
+
 	struct semaphore rst_sema;
 	atomic_t rst_state;
+	enum consys_drv_type trg_drv;
+	char trg_reason[CHIP_RST_REASON_MAX_LEN];
 
+	/* pre_cal */
 	struct semaphore pre_cal_sema;
 	atomic_t pre_cal_state;
 
@@ -92,13 +128,26 @@ struct conninfra_ctx {
 
 	struct osal_op_history cored_op_history;
 
+	struct pre_cal_info cal_info;
+
 };
 
 //typedef enum _ENUM_CONNINFRA_CORE_OPID_T {
 typedef enum {
-	CONNINFRA_OPID_PWR_ON 		= 0,
-	CONNINFRA_OPID_PWR_OFF		= 1,
-	CONNINFRA_OPID_THERM_CTRL	= 2,
+	CONNINFRA_OPID_PWR_ON 			= 0,
+	CONNINFRA_OPID_PWR_OFF			= 1,
+	CONNINFRA_OPID_THERM_CTRL		= 2,
+	CONNINFRA_OPID_RFSPI_READ		= 5,
+	CONNINFRA_OPID_RFSPI_WRITE		= 6,
+	CONNINFRA_OPID_ADIE_TOP_CK_EN_ON	= 7,
+	CONNINFRA_OPID_ADIE_TOP_CK_EN_OFF	= 8,
+	CONNINFRA_OPID_SPI_CLOCK_SWITCH		= 9,
+	CONNINFRA_OPID_CLOCK_FAIL_DUMP		= 10,
+	CONNINFRA_OPID_PRE_CAL_PREPARE		= 11,
+	CONNINFRA_OPID_PRE_CAL_CHECK		= 12,
+	CONNINFRA_OPID_FORCE_CONNINFRA_WAKUP	= 13,
+	CONNINFRA_OPID_FORCE_CONNINFRA_SLEEP	= 14,
+	CONNINFRA_OPID_DUMP_POWER_STATE			= 15,
 	CONNINFRA_OPID_MAX
 } conninfra_core_opid;
 
@@ -138,14 +187,51 @@ int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
 						struct sub_drv_ops_cb *cb);
 int conninfra_core_subsys_ops_unreg(enum consys_drv_type type);
 
-int conninfra_core_pre_cal_start(void);
 
+int conninfra_core_screen_on(void);
+int conninfra_core_screen_off(void);
+
+/* pre_cal */
+int conninfra_core_pre_cal_start(void);
+#if ENABLE_PRE_CAL_BLOCKING_CHECK
+void conninfra_core_pre_cal_blocking(void);
+#endif
+
+/*       reg control      */
 /* NOTE: NOT thread-safe
  * return value
  * 1 : Yes, 0: NO
  */
 int conninfra_core_reg_readable(void);
+int conninfra_core_reg_readable_no_lock(void);
+int conninfra_core_is_bus_hang(void);
+
 int conninfra_core_is_consys_reg(phys_addr_t addr);
+int conninfra_core_reg_read(unsigned long address, unsigned int *value, unsigned int mask);
+int conninfra_core_reg_write(unsigned long address, unsigned int value, unsigned int mask);
+
+int conninfra_core_is_rst_locking(void);
+
+int conninfra_core_thermal_query(int *temp_val);
+void conninfra_core_clock_fail_dump_cb(void);
+
+int conninfra_core_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
+int conninfra_core_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+
+int conninfra_core_adie_top_ck_en_on(enum consys_adie_ctl_type type);
+int conninfra_core_adie_top_ck_en_off(enum consys_adie_ctl_type type);
+
+int conninfra_core_force_conninfra_wakeup(void);
+int conninfra_core_force_conninfra_sleep(void);
+
+int conninfra_core_spi_clock_switch(enum connsys_spi_speed_type type);
+
+int conninfra_core_dump_power_state(void);
+int conninfra_core_pmic_event_cb(unsigned int, unsigned int);
+
+void conninfra_core_config_setup(void);
+
+int conninfra_core_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock, int status);
 
 /*******************************************************************************
 *                              F U N C T I O N S

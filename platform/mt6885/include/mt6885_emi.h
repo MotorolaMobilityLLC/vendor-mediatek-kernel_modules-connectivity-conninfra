@@ -31,16 +31,6 @@
 ********************************************************************************
 */
 
-#define CONSYS_EMI_COREDUMP_OFFSET	(0x68000)
-#define CONSYS_EMI_AP_PHY_OFFSET	(0x00000)
-#define CONSYS_EMI_AP_PHY_BASE		(0x80068000)
-#define CONSYS_EMI_FW_PHY_BASE		(0xf0068000)
-#define CONSYS_EMI_PAGED_TRACE_OFFSET	(0x400)
-#define CONSYS_EMI_PAGED_DUMP_OFFSET	(0x8400)
-#define CONSYS_EMI_FULL_DUMP_OFFSET	(0x10400)
-#define CONSYS_EMI_MET_DATA_OFFSET	(0x0)
-
-
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -76,13 +66,12 @@ struct consys_platform_emi_ops* get_consys_platform_emi_ops(void);
 
 struct consys_emi_addr_info* consys_emi_get_phy_addr(void);
 int consys_emi_mpu_set_region_protection(void);
-int consys_emi_coredump_remapping(unsigned char __iomem **addr, unsigned int enable);
-int consys_reset_emi_coredump(unsigned char __iomem *addr);
-
+void consys_emi_get_md_shared_emi(phys_addr_t*, unsigned int*);
+unsigned int consys_emi_get_fw_emi_size(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_MT6789_EMI_H_ */
+#endif				/* _PLATFORM_MT6885_EMI_H_ */

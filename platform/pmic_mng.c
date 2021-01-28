@@ -74,13 +74,13 @@ P_CONSYS_PLATFORM_PMIC_OPS __weak get_consys_platform_pmic_ops(void)
 }
 
 
-int pmic_mng_init(struct platform_device *pdev)
+int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
 {
 	if (consys_platform_pmic_ops == NULL)
 		consys_platform_pmic_ops = get_consys_platform_pmic_ops();
 
 	if (consys_platform_pmic_ops && consys_platform_pmic_ops->consys_pmic_get_from_dts)
-		consys_platform_pmic_ops->consys_pmic_get_from_dts(pdev);
+		consys_platform_pmic_ops->consys_pmic_get_from_dts(pdev, dev_cb);
 
 	return 0;
 }
@@ -137,4 +137,10 @@ int pmic_mng_fm_power_ctrl(unsigned int enable)
 }
 
 
-
+int pmic_mng_event_cb(unsigned int id, unsigned int event)
+{
+	if (consys_platform_pmic_ops &&
+		consys_platform_pmic_ops->consys_pmic_event_notifier)
+		consys_platform_pmic_ops->consys_pmic_event_notifier(id, event);
+	return 0;
+}

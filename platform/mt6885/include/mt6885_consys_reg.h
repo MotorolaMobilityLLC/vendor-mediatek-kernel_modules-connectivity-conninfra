@@ -55,6 +55,14 @@ enum consys_base_addr_index {
 	SPM_BASE_INDEX = 5,
 	INFRACFG_BASE_INDEX = 6,
 	CONN_WT_SLP_CTL_REG_INDEX = 7,
+	CONN_AFE_CTL_INDEX = 8,
+	CONN_INFRA_SYSRAM_INDEX = 9,
+	GPIO_INDEX = 10,
+	CONN_RF_SPI_MST_REG_INDEX = 11,
+	CONN_SEMAPHORE_INDEX = 12,
+	CONN_TOP_THERM_CTL_INDEX = 13,
+	IOCFG_RT_INDEX = 14, /* Base: 0x11EA_0000 */
+	CONN_DEBUG_CTRL = 15, /* Base: 0x1800_f000 */
 
 	CONSYS_BASE_ADDR_MAX
 };
@@ -76,7 +84,15 @@ extern struct consys_base_addr conn_reg;
 #define CON_REG_INFRACFG_BASE_ADDR 	conn_reg.reg_base_addr[INFRACFG_BASE_INDEX].vir_addr
 #define CON_REG_WT_SPL_CTL_ADDR 	conn_reg.reg_base_addr[CONN_WT_SLP_CTL_REG_INDEX].vir_addr
 
+#define CONN_AFE_CTL_BASE_ADDR		conn_reg.reg_base_addr[CONN_AFE_CTL_INDEX].vir_addr
+#define CONN_INFRA_SYSRAM_BASE_ADDR	conn_reg.reg_base_addr[CONN_INFRA_SYSRAM_INDEX].vir_addr
+#define GPIO_BASE_ADDR			conn_reg.reg_base_addr[GPIO_INDEX].vir_addr
+#define CONN_REG_RFSPI_ADDR		conn_reg.reg_base_addr[CONN_RF_SPI_MST_REG_INDEX].vir_addr
 
+#define CONN_REG_SEMAPHORE_ADDR		conn_reg.reg_base_addr[CONN_SEMAPHORE_INDEX].vir_addr
+#define CONN_TOP_THERM_CTL_ADDR		conn_reg.reg_base_addr[CONN_TOP_THERM_CTL_INDEX].vir_addr
+#define IOCFG_RT_ADDR			conn_reg.reg_base_addr[IOCFG_RT_INDEX].vir_addr
+#define CONN_DEBUG_CTRL_ADDR		conn_reg.reg_base_addr[CONN_DEBUG_CTRL].vir_addr
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -101,4 +117,4 @@ extern struct consys_base_addr conn_reg;
 
 struct consys_base_addr* get_conn_reg_base_addr(void);
 
-#endif				/* _PLATFORM_MT6789_CONSYS_REG_H_ */
+#endif				/* _PLATFORM_MT6885_CONSYS_REG_H_ */
