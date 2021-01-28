@@ -115,8 +115,6 @@ struct consys_hw_ops_struct g_consys_hw_ops = {
 	/* debug */
 	.consys_plt_clock_fail_dump = consys_clock_fail_dump,
 	.consys_plt_get_hw_ver = consys_get_hw_ver,
-	/* debug, used by STEP */
-	//.consys_plt_is_connsys_reg;
 
 	.consys_plt_sema_acquire_timeout = consys_sema_acquire_timeout,
 	.consys_plt_sema_release = consys_sema_release,

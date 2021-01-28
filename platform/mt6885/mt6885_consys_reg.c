@@ -45,15 +45,6 @@ static int consys_dump_conninfra_status(void);
 static int consys_dump_cpupcr(enum conn_dump_cpupcr_type, int times, unsigned long interval_us);
 static int consys_is_host_csr(unsigned long addr);
 
-static unsigned long consys_reg_validate_idx_n_offset(unsigned int idx, unsigned long offset);
-static int consys_find_can_write_reg(unsigned int *idx, unsigned long *offset);
-
-static unsigned long consys_reg_get_phy_addr_by_idx(unsigned int idx);
-static unsigned long consys_reg_get_virt_addr_by_idx(unsigned int idx);
-
-static int consys_reg_get_chip_id_idx_offset(unsigned int *idx, unsigned long *offset);
-static int consys_reg_get_reg_symbol_num(void);
-
 struct consys_reg_mng_ops g_dev_consys_reg_ops = {
 	.consys_reg_mng_init = consys_reg_init,
 	.consys_reg_mng_deinit = consys_reg_deinit,
@@ -64,16 +55,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops = {
 	.consys_reg_mng_dump_bus_status = consys_dump_bus_status,
 	.consys_reg_mng_dump_conninfra_status = consys_dump_conninfra_status,
 	.consys_reg_mng_dump_cpupcr = consys_dump_cpupcr,
-	.consys_reg_mng_is_host_csr = consys_is_host_csr,
-
-	/* step */
-	.consys_reg_mng_validate_idx_n_offset = consys_reg_validate_idx_n_offset,
-	.consys_reg_mng_find_can_write_reg = consys_find_can_write_reg,
-
-	.consys_reg_mng_get_phy_addr_by_idx = consys_reg_get_phy_addr_by_idx,
-	.consys_reg_mng_get_virt_addr_by_idx = consys_reg_get_virt_addr_by_idx,
-	.consys_reg_mng_get_chip_id_idx_offset = consys_reg_get_chip_id_idx_offset,
-	.consys_reg_mng_get_reg_symbol_num = consys_reg_get_reg_symbol_num
+	.consys_reg_mng_is_host_csr = consys_is_host_csr
 };
 
 

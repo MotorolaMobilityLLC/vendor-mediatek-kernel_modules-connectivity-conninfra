@@ -26,7 +26,6 @@
 #include "conninfra_core.h"
 #include "conninfra_dbg.h"
 #include "consys_hw.h"
-#include "conninfra_step.h"
 #include "connsys_debug_utility.h"
 #include "wmt_build_in_adapter.h"
 #include "emi_mng.h"
@@ -493,8 +492,6 @@ static int conninfra_dev_init(void)
 
 	conninfra_dev_dbg_init();
 
-	CONNINFRA_STEP_INIT_FUNC();
-
 	wmt_export_platform_bridge_register(&g_plat_bridge);
 
 	conninfra_register_devapc_callback();
@@ -538,8 +535,6 @@ static void conninfra_dev_deinit(void)
 #ifdef CFG_CONNINFRA_UT_SUPPORT
 	iret = conninfra_test_remove();
 #endif
-
-	CONNINFRA_STEP_DEINIT_FUNC();
 
 	iret = conninfra_core_deinit();
 
