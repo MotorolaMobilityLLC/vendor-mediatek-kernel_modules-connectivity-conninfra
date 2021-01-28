@@ -41,6 +41,7 @@
 	(*(volatile unsigned int *)(REG)) = val;\
 }
 #define CONSYS_REG_READ(addr) (*((volatile unsigned int *)(addr)))
+#define CONSYS_REG_READ_BIT(addr, BITVAL) (*((volatile unsigned int *)(addr)) & ((unsigned int)(BITVAL)))
 #define CONSYS_REG_WRITE(addr, data)  mt_reg_sync_writel(data, addr)
 #define CONSYS_REG_WRITE_RANGE(reg, data, end, begin) {\
 	unsigned int val = CONSYS_REG_READ(reg); \
@@ -71,6 +72,21 @@
 
 #define CONSYS_REG_WRITE_BIT(reg, offset, val) CONSYS_REG_WRITE_OFFSET_RANGE(reg, ((val) & 1), offset, 0, 1)
 
+#define CONSYS_REG_BIT_POLLING(addr, bit_index, exp_val, loop, delay, success) {\
+	unsigned int polling_count = 0; \
+	unsigned int reg_value = 0; \
+	success = 0; \
+	reg_value = (CONSYS_REG_READ_BIT(addr, (0x1 << bit_index)) >> bit_index); \
+	while (reg_value != exp_val) { \
+		if (polling_count > loop) { \
+			success = -1; \
+			break; \
+		} \
+		reg_value = (CONSYS_REG_READ_BIT(addr, (0x1 << bit_index)) >> bit_index); \
+		udelay(delay); \
+		polling_count++; \
+	} \
+}
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S

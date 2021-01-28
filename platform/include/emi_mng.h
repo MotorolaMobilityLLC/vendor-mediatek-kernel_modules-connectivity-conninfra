@@ -87,6 +87,9 @@ typedef struct _EMI_CTRL_STATE_OFFSET_ {
 
 
 typedef struct _CONSYS_EMI_ADDR_INFO_ {
+	unsigned int emi_ap_phy_addr;
+	unsigned int emi_size;
+#if 0
 	unsigned int emi_phy_addr;
 	unsigned int emi_ap_phy_addr;
 	unsigned int paged_trace_off;
@@ -99,6 +102,7 @@ typedef struct _CONSYS_EMI_ADDR_INFO_ {
 	unsigned int emi_met_size;
 	unsigned int emi_met_data_offset;
 	unsigned int emi_core_dump_offset;
+#endif
 } CONSYS_EMI_ADDR_INFO, *P_CONSYS_EMI_ADDR_INFO;
 
 typedef int(*CONSYS_IC_EMI_MPU_SET_REGION_PROTECTION) (void);

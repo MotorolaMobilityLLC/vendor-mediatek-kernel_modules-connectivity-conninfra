@@ -103,11 +103,11 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 ********************************************************************************
 */
 
-int core_tc(int par1, int par2, int par3)
+int core_tc_pwr_on()
 {
 	int iret = 0;
 
-	pr_info("test start");
+	pr_info("Power on test start");
 	iret = conninfra_core_power_on(CONNDRV_TYPE_BT);
 	pr_info("BT power on %s (result = %d)", iret? "fail" : "pass", iret);
 	osal_sleep_ms(100);
@@ -121,6 +121,13 @@ int core_tc(int par1, int par2, int par3)
 	pr_info("Wi-Fi power on %s (result = %d)", iret? "fail" : "pass", iret);
 	osal_sleep_ms(200);
 
+	return iret;
+}
+
+int core_tc_pwr_off()
+{
+	int iret = 0;
+
 	iret = conninfra_core_power_off(CONNDRV_TYPE_WIFI);
 	pr_info("Wi-Fi power off %s (result = %d)", iret? "fail" : "pass", iret);
 	osal_sleep_ms(100);
@@ -132,6 +139,17 @@ int core_tc(int par1, int par2, int par3)
 	osal_sleep_ms(100);
 	iret = conninfra_core_power_off(CONNDRV_TYPE_FM);
 	pr_info("FM power off %s (result = %d)", iret? "fail" : "pass", iret);
+
+	return iret;
+}
+
+
+int core_tc(int par1, int par2, int par3)
+{
+	int iret = 0;
+
+	iret = core_tc_pwr_on();
+	iret = core_tc_pwr_off();
 
 	//pr_info("core_tc %s (result = %d)", iret? "fail" : "pass", iret);
 	return 0;
