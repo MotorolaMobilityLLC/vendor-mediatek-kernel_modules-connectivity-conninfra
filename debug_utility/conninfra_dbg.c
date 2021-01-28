@@ -146,11 +146,16 @@ int conninfra_dbg_reg_read(int par1, int par2, int par3)
 	int iRet;
 
 	iRet = conninfra_core_reg_read(par2, &value, par3);
-	snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE,
+	ret = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE,
 			"read chip register (0x%08x) with mask (0x%08x) %s, value = 0x%08x\n",
 			par2, par3, iRet != 0 ? "failed" : "succeed", iRet != 0 ? -1 : value);
+	if (ret < 0) {
+		pr_info("read chip register (0x%08x) with mask (0x%08x) error(%d)\n",
+			par2, par3, ret);
+	} else
+		pr_info("%s", buf);
 
-	pr_info("%s", buf);
+
 	ret = osal_lock_sleepable_lock(&g_dump_lock);
 	if (ret) {
 		pr_err("dump_lock fail!!");
