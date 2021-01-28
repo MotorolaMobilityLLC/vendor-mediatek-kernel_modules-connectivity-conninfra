@@ -181,8 +181,8 @@ int consys_plt_pmic_ctrl_dump(const char* tag)
 
 	for (index = 0; index < ATOP_DUMP_NUM; index++) {
 		consys_spi_read(SYS_SPI_TOP, adie_cr_list[index], &adie_value);
-		snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[index], adie_value);
-		strncat(tmp_buf, tmp, strlen(tmp));
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[index], adie_value) >= 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
 	}
 	pr_info("[%s] ATOP:%s\n", (tag == NULL?__func__:tag), tmp_buf);
 	consys_hw_force_conninfra_sleep();

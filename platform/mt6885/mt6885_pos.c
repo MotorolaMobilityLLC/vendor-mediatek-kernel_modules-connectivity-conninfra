@@ -63,6 +63,8 @@ const static char* g_spi_system_name[SYS_SPI_MAX] = {
 	"SYS_SPI_WF3",
 };
 
+const char* g_pos_unknown_str = "unknown";
+
 #define ADIE_CONFIG_NUM	2
 
 // E1 WF/GPS/FM on(default)
@@ -100,6 +102,21 @@ static void consys_spi_write_offset_range_nolock(
 	enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int value,
 	unsigned int reg_offset, unsigned int value_offset, unsigned int size);
 static int connsys_a_die_thermal_cal(int efuse_valid, unsigned int efuse);
+
+const char* get_adie_ctrl_type_str(enum consys_adie_ctl_type type)
+{
+	if (type >=	CONNSYS_ADIE_CTL_HOST_BT && type < CONNSYS_ADIE_CTL_MAX)
+		return gAdieCtrlType[type];
+	return g_pos_unknown_str;
+}
+
+const char* get_spi_sys_name(enum sys_spi_subsystem subsystem)
+{
+	if (subsystem >= SYS_SPI_WF1 && subsystem < SYS_SPI_MAX)
+		return g_spi_system_name[subsystem];
+	return g_pos_unknown_str;
+}
+
 
 unsigned int consys_emi_set_remapping_reg(
 	phys_addr_t con_emi_base_addr,
@@ -2121,14 +2138,14 @@ static void consys_spi_write_offset_range_nolock(
 	int ret;
 
 	pr_info("[%s][%s] addr=0x%04x value=0x%08x reg_offset=%d value_offset=%d size=%d",
-		__func__, g_spi_system_name[subsystem], addr, value, reg_offset, value_offset, size);
+		__func__, get_spi_sys_name(subsystem), addr, value, reg_offset, value_offset, size);
 	value = (value >> value_offset);
 	value = GET_BIT_RANGE(value, size, 0);
 	value = (value << reg_offset);
 	ret = consys_spi_read_nolock(subsystem, addr, &data);
 	if (ret) {
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
-			__func__, g_spi_system_name[subsystem], addr, ret);
+			__func__, get_spi_sys_name(subsystem), addr, ret);
 		return;
 	}
 	reg_mask = GENMASK(reg_offset + size - 1, reg_offset);
@@ -2136,7 +2153,7 @@ static void consys_spi_write_offset_range_nolock(
 	data2 = (data2 | value);
 	consys_spi_write_nolock(subsystem, addr, data2);
 	pr_info("[%s][%s] Write CR:0x%08x from 0x%08x to 0x%08x",
-		__func__, g_spi_system_name[subsystem],
+		__func__, get_spi_sys_name(subsystem),
 		addr, data, data2);
 }
 
@@ -2172,7 +2189,7 @@ int consys_adie_top_ck_en_on(enum consys_adie_ctl_type type)
 
 	if (consys_sema_acquire_timeout(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[%s][%s] acquire semaphore (%d) timeout\n",
-			__func__, gAdieCtrlType[type], CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
+			__func__, get_adie_ctrl_type_str(type), CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
 		return -1;
 	}
 
@@ -2200,14 +2217,14 @@ int consys_adie_top_ck_en_off(enum consys_adie_ctl_type type)
 
 	if (consys_sema_acquire_timeout(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[%s][%s] acquire semaphoreaore (%d) timeout\n",
-			__func__, gAdieCtrlType[type], CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
+			__func__, get_adie_ctrl_type_str(type), CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
 		return -1;
 	}
 
 	status = CONSYS_REG_READ(
 		CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_TOP_CK_EN_CTRL);
 	if ((status & (0x1 << type)) == 0) {
-		pr_warn("[%s][%s] already off\n", __func__, gAdieCtrlType[type]);
+		pr_warn("[%s][%s] already off\n", __func__, get_adie_ctrl_type_str(type));
 	} else {
 		CONSYS_CLR_BIT(
 			CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_TOP_CK_EN_CTRL, (0x1 << type));
