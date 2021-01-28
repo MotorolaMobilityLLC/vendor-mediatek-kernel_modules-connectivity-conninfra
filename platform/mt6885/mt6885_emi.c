@@ -117,26 +117,26 @@ int consys_emi_mpu_set_region_protection(void)
 
 void consys_emi_get_md_shared_emi(phys_addr_t* base, unsigned int* size)
 {
-#ifdef CONFIG_MTK_ECCCI_DRIVER
 	phys_addr_t mdPhy = 0;
-	int ret;
+	int ret = 0;
 
+#ifdef CONFIG_MTK_ECCCI_DRIVER
 	mdPhy = get_smem_phy_start_addr(MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
-	if (ret) {
+#else
+	pr_info("[%s] ECCCI Driver is not supported.\n", __func__);
+#endif
+	if (ret && mdPhy) {
 		pr_info("MCIF base=0x%llx size=0x%x", mdPhy, ret);
 		if (base)
 			*base = mdPhy;
 		if (size)
 			*size = ret;
-	} else
+	} else {
 		pr_info("MCIF is not supported");
-#else
-	pr_info("[%s] ECCCI Driver is not supported.\n", __func__);
-	if (base)
-		*base = 0;
-	if (size)
-		*size = 0;
-
-#endif
+		if (base)
+			*base = 0;
+		if (size)
+			*size = 0;
+	}
 }
 
