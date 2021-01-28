@@ -183,6 +183,8 @@ int consys_plt_pmic_get_from_dts(struct platform_device *pdev, struct conninfra_
 		if (ret) {
 			pr_info("VCN13 regulator notifier request failed\n");
 		}
+		/* Set VS2 to 1.4625V */
+		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOSEL, 0x35);
 	}
 	reg_VCN18 = regulator_get(&pdev->dev, "vcn18");
 	if (!reg_VCN18)
@@ -353,8 +355,8 @@ int consys_plt_pmic_bt_power_ctrl(unsigned int enable)
 	if (enable) {
 		/* request VS2 to 1.4V by VS2 VOTER (use bit 4) */
 		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOTER_EN_SET, 0x10);
-		/* Set VCN13 to 1.32V */
-		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0x2);
+		/* Set VCN13 to 1.37V */
+		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0x7);
 	} else {
 		/* restore VCN13 to 1.3V */
 		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0);
