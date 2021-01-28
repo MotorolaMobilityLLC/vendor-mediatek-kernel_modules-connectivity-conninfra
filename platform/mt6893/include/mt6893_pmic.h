@@ -3,8 +3,8 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6893_H_
-#define _PLATFORM_MT6893_H_
+#ifndef _PLATFORM_MT6893_PMIC_H_
+#define _PLATFORM_MT6893_PMIC_H_
 
 #include "osal.h"
 #include "pmic_mng.h"
@@ -56,4 +56,4 @@ P_CONSYS_PLATFORM_PMIC_OPS get_consys_platform_pmic_ops(void);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_MT6893_H_ */
+#endif				/* _PLATFORM_MT6893_PMIC_H_ */

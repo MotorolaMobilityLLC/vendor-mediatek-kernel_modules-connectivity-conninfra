@@ -17,6 +17,7 @@
 #include "consys_hw.h"
 #include "consys_reg_util.h"
 #include "osal.h"
+#include "mt6893.h"
 #include "mt6893_pmic.h"
 #include "mt6893_pos.h"
 #include "mt6893_consys_reg.h"

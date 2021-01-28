@@ -156,7 +156,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
 		check = consys_platform_spm_conn_ctrl(enable);
 		if (check) {
-			pr_err("Turn on oonn_infra power fail.\n");
+			pr_err("Turn on conn_infra power fail\n");
 			return -1;
 		}
 #else

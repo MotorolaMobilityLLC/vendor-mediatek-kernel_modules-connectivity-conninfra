@@ -73,7 +73,7 @@ const static struct a_die_reg_config adie_e1_default[ADIE_CONFIG_NUM] =
 
 const static struct a_die_reg_config adie_e1_bt_only[ADIE_CONFIG_NUM] =
 {
-	{ATOP_RG_TOP_XTAL_01, 0xc180, 0xc100},
+	{ATOP_RG_TOP_XTAL_01, 0xc180, 0x100},
 	{ATOP_RG_TOP_XTAL_02, 0xf0ff0080, 0xf0ff0000},
 };
 
@@ -176,7 +176,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		 * Action: polling
 		 */
 		check = 0;
-		CONSYS_REG_BIT_POLLING(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS, 1, 1, 500, 10, check);
+		CONSYS_REG_BIT_POLLING(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS, 1, 1, 10, 500, check);
 		if (check != 0)
 			pr_err("Check conn_infra_on primary power fail. 0x1000_616C is 0x%08x. Expect [1] as 1.\n",
 				CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS));
@@ -198,7 +198,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		 * Action: polling
 		 */
 		check = 0;
-		CONSYS_REG_BIT_POLLING(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS_2ND, 1, 1, 500, 10, check);
+		CONSYS_REG_BIT_POLLING(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS_2ND, 1, 1, 10, 500, check);
 		if (check != 0)
 			pr_err("Check conn_infra_on secondary power fail. 0x1000_6170 is 0x%08x. Expect [1] as 1.\n",
 				CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_PWR_STATUS_2ND));
@@ -256,7 +256,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		/* Check AHB RX bus sleep protect turn off
-		 * (polling "10 times" and each polling interval is "0.5ms")
+		 * (polling "100 times" and each polling interval is "0.5ms")
 		 * Address: 0x1000_1724[2] (INFRA_TOPAXI_PROTECTEN2_STA1[2])
 		 * Data: 1'b0
 		 * Action: polling
@@ -264,7 +264,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		check = 0;
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET,
-			2, 0, 10, 500, check);
+			2, 0, 100, 500, check);
 		if (check != 0)
 			pr_err("Polling AHB RX bus sleep protect turn off fail. status=0x%08x\n",
 				CONSYS_REG_READ(CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET));
@@ -302,19 +302,25 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		/* Check AXI TX bus sleep protect turn off
-		 * (polling "10 times" and each polling interval is "0.5ms")
+		 * (polling "100 times" and each polling interval is "0.5ms")
 		 * Address: 0x1000_1228[13] (INFRA_TOPAXI_PROTECTEN_STA1[13])
 		 * Data: 1'b0
 		 * Action: polling
 		 */
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET,
-			13, 0, 10, 500, check);
+			13, 0, 100, 500, check);
 		if (check != 0)
 			pr_err("polling AHB TX bus sleep protect turn off fail. Status=0x%08x\n",
 				CONSYS_REG_READ(CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET));
 #endif
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
+		/* Wait 6ms (apply this for CONNSYS XO clock ready)
+		 * [NOTE]
+		 *   This setting could be changed at different design architecture
+		 * and the characteristic of AFE WBG)
+		 */
+		mdelay(6);
 	} else {
 
 		/* Enable AXI bus sleep protect */
@@ -337,14 +343,14 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_SET_OFFSET,
 			0x00002000);
 
-		/* check AHB TX bus sleep protect turn on (polling "10 times")
+		/* check AHB TX bus sleep protect turn on (polling "100 times")
 		 * Address: 0x1000_1228[13]
 		 * Data: 1'b1
 		 * Action: polling
 		 */
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET,
-			13, 1, 0, 500, check);
+			13, 1, 100, 500, check);
 		if (check)
 			pr_err("Polling AHB TX bus sleep protect turn on fail.\n");
 
@@ -370,7 +376,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		 */
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET,
-			14, 1, 10, 1000, check);
+			14, 1, 100, 1000, check);
 		if (check)
 			pr_err("Polling AXI Rx bus sleep protect turn on fail.\n");
 
@@ -391,7 +397,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		 */
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET,
-			2, 1, 10, 0, check);
+			2, 1, 10, 1000, check);
 		if (check)
 			pr_err("Polling AHB RX bus sleep protect turn on fail.\n");
 
@@ -681,6 +687,26 @@ int consys_polling_chipid(void)
 	unsigned int consys_hw_ver = 0;
 	unsigned int consys_configuration_id = 0;
 	int ret = -1;
+	int check;
+
+	/* Check ap2conn slpprot_rdy
+	 * (polling "10 times" for specific project code and each polling interval is "1ms")
+	 * Address:
+	 * 	CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL_CONN_INFRA_ON2OFF_SLP_PROT_ACK
+	 * 	0x1806_0184[5]
+	 * Value: 1'b0
+	 * Action: polling
+	 * Note: deadfeed CDC issue
+	 */
+	check = 0;
+	CONSYS_REG_BIT_POLLING(
+		CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL, 5, 0, 10, 1000, check);
+	if (check) {
+		pr_err("[%s] Check ap2conn slpprot_rdy fail. value=0x%x WAKEUP_TOP=[0x%x]\n",
+			__func__,
+			CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL),
+			CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_CONN_INFRA_WAKEPU_TOP));
+	}
 
 	while (--retry > 0) {
 		consys_hw_ver = CONSYS_REG_READ(
@@ -775,7 +801,7 @@ int connsys_spi_master_cfg(unsigned int next_status)
 	 * CONN_WT_SLP_CTL_REG_WB_WF_ZPS_ADDR_ADDR(0x78) = 0x009c008c
 	 * CONN_WT_SLP_CTL_REG_WB_BT_CK_ADDR_ADDR(0x7c[11:0]) = 0xa08
 	 * CONN_WT_SLP_CTL_REG_WB_BT_WAKE_ADDR_ADDR(0x80[11:0]) = 0x094
-	 * CONN_WT_SLP_CTL_REG_WB_TOP_CK_ADDR_ADDR(0x84[11:0]) = 0xA2c
+	 * CONN_WT_SLP_CTL_REG_WB_TOP_CK_ADDR_ADDR(0x84[11:0]) = 0x02c
 	 * CONN_WT_SLP_CTL_REG_WB_GPS_CK_ADDR_ADDR(0x88)      = 0x0AFC0A0C
 	 * CONN_WT_SLP_CTL_REG_WB_WF_B0_CMD_ADDR_ADDR(0x8c[11:0])  = 0x0F0
 	 * CONN_WT_SLP_CTL_REG_WB_WF_B1_CMD_ADDR_ADDR(0x90[11:0])  = 0x0F4
@@ -796,7 +822,7 @@ int connsys_spi_master_cfg(unsigned int next_status)
 		0x094, 0xfff);
 	CONSYS_REG_WRITE_MASK(
 		CON_REG_WT_SPL_CTL_ADDR + CONN_WT_SLP_CTL_REG_WB_TOP_CK_ADDR,
-		0xa2c, 0xfff);
+		0x02c, 0xfff);
 	CONSYS_REG_WRITE(
 		CON_REG_WT_SPL_CTL_ADDR + CONN_WT_SLP_CTL_REG_WB_GPS_CK_ADDR,
 		0x0AFC0A0C);
@@ -845,7 +871,7 @@ int connsys_spi_master_cfg(unsigned int next_status)
 	 * 	CONN_WT_SLP_CTL_REG_WB_BG_OFF4_WB_BG_OFF4(0x5c)   = 0x44E0FFF5
 	 * }
 	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF5_WB_BG_OFF5(0x60)   = 0x00000001
-	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF6_WB_BG_OFF6(0x64)   = 0x00000001
+	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF6_WB_BG_OFF6(0x64)   = 0x00000000
 	 * CONN_WT_SLP_CTL_REG_WB_RG_OFF7_WB_BG_OFF7(0x68)   = 0x00040019
 	 * CONN_WT_SLP_CTL_REG_WB_RG_OFF8_WB_BG_OFF8(0x6c)   = 0x00410440
 	 */
@@ -973,7 +999,7 @@ static int connsys_a_die_efuse_read(unsigned int efuse_addr)
 	consys_spi_read_nolock(SYS_SPI_TOP, ATOP_EFUSE_CTRL, &ret);
 	ret &= ~(0x43ff00c0);
 	ret |= (0x1 << 30);
-	ret |= ((efuse_addr << 16) & 0x1ff0000);
+	ret |= ((efuse_addr << 16) & 0x3ff0000);
 	consys_spi_write_nolock(SYS_SPI_TOP, ATOP_EFUSE_CTRL, ret);
 
 	/* Polling EFUSE busy = low
@@ -1393,49 +1419,26 @@ int connsys_afe_wbg_cal(void)
 int connsys_subsys_pll_initial(void)
 {
 	/* Check with DE, only 26M on mobile phone */
-
+	/* Set BPLL stable time = 30us (value = 30 * 1000 *1.01 / 38.46ns)
+	 * 	CONN_AFE_CTL_RG_PLL_STB_TIME_RG_WBG_BPLL_STB_TIME (0x180030F4[30:16]) = 0x314
+	 * Set WPLL stable time = 50us (value = 50 * 1000 *1.01 / 38.46ns)
+	 * 	CONN_AFE_CTL_RG_PLL_STB_TIME_RG_WBG_WPLL_STB_TIME (0x180030F4[14:0]) = 0x521
+	 */
 	CONSYS_REG_WRITE_MASK(
 		CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_PLL_STB_TIME,
-		0x314521, 0x7fff7fff);
+		0x03140521, 0x7fff7fff);
+
+	/* BT pll_en will turn on  BPLL only (may change in different XTAL option)
+	 * 	CONN_AFE_CTL_RG_DIG_EN_02_RG_WBG_EN_BT_PLL (0x18003004[7:6])=0x1
+	 * WF pll_en will turn on  BPLL + WPLL only (may change in different XTAL option)
+	 * 	CONN_AFE_CTL_RG_DIG_EN_02_RG_WBG_EN_WF_PLL (0x18003004[1:0])=0x3
+	 * MCU pll_en will turn on  BPLL + WPLL (may change in different XTAL option)
+	 * 	CONN_AFE_CTL_RG_DIG_EN_02_RG_WBG_EN_MCU_PLL (0x18003004[3:2])=0x3
+	 */
 	CONSYS_REG_WRITE_MASK(
 		CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_02,
 		0x4f, 0xcf);
-#if 0
-	switch (xtal_freq) {
-		case 0: /* SYS_XTAL_40000K */
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_PLL_STB_TIME,
-				0x4bc7e4, 0x7fff7fff);
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_02,
-				0x4e, 0xcf);
-			break;
-		case 1: /* SYS_XTAL_26000K */
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_PLL_STB_TIME,
-				0x314521, 0x7fff7fff);
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_02,
-				0x4f, 0xcf);
-			break;
-		case 2: /* SYS_XTAL_25000K */
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_PLL_STB_TIME,
-				0x2f64ef, 0x7fff7fff);
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_02,
-				0xcf, 0xcf);
-			break;
-		case 3: /* SYS_XTAL_24000K */
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_PLL_STB_TIME,
-				0x2d74bc, 0x7fff7fff);
-			CONSYS_REG_WRITE_MASK(
-				CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_02,
-				0x4e, 0xcf);
-			break;
-	}
-#endif
+
 	return 0;
 }
 
@@ -1494,7 +1497,7 @@ static int connsys_bt_low_power_setting(bool bt_only)
 
 void connsys_debug_select_config(void)
 {
-#if 0
+#if 1
 	/* select conn_infra_cfg debug_sel to low pwoer related
 	 * Address: 0x18001B00[2:0]
 	 * Data: 3'b000
@@ -1573,7 +1576,7 @@ int connsys_low_power_setting(unsigned int curr_status, unsigned int next_status
 
 		/* Unmask on2off/off2on slpprot_rdy enable checker @conn_infra off power off=> check slpprot_rdy = 1'b1 and go to sleep
 		 * Address: CONN_INFRA_CFG_PWRCTRL0_CONN_INFRA_CFG_SLP_RDY_MASK (0x18001860[15:12])
-		 * Data: 4'h0
+		 * Data: 4'h1
 		 * Action: write
 		 */
 		CONSYS_REG_WRITE_MASK(
@@ -1837,7 +1840,7 @@ int connsys_low_power_setting(unsigned int curr_status, unsigned int next_status
 	return 0;
 }
 
-static int consys_sema_acquire(enum conn_semaphore_type index)
+static int consys_sema_acquire(unsigned int index)
 {
 	if (CONSYS_REG_READ_BIT(
 		CONN_REG_SEMAPHORE_ADDR + CONN_SEMAPHORE_M2_OWN_STA + index*4, 0x1) == 0x1) {
@@ -1847,9 +1850,14 @@ static int consys_sema_acquire(enum conn_semaphore_type index)
 	}
 }
 
-int consys_sema_acquire_timeout(enum conn_semaphore_type index, unsigned int usec)
+int consys_sema_acquire_timeout(unsigned int index, unsigned int usec)
 {
 	int i, check, r1, r2;
+
+	if (index >= CONN_SEMA_NUM_MAX) {
+		pr_err("[%s] wrong parameter: %d", __func__, index);
+		return CONN_SEMA_GET_FAIL;
+	}
 
 	/* debug for bus hang */
 	if (consys_reg_mng_reg_readable() == 0) {
@@ -1882,8 +1890,10 @@ int consys_sema_acquire_timeout(enum conn_semaphore_type index, unsigned int use
 	return CONN_SEMA_GET_FAIL;
 }
 
-void consys_sema_release(enum conn_semaphore_type index)
+void consys_sema_release(unsigned int index)
 {
+	if (index >= CONN_SEMA_NUM_MAX)
+		return;
 	CONSYS_REG_WRITE(
 		(CONN_REG_SEMAPHORE_ADDR + CONN_SEMAPHORE_M2_OWN_REL + index*4), 0x1);
 }

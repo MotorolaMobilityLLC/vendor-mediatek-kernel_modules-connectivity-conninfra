@@ -107,7 +107,6 @@
 
 #define AP2CONN_EFUSE_DATA			0x0818
 #define CONN_INFRA_CFG_RC_CTL_0		0x0834
-#define CONN_INFRA_CFG_RC_CTL_0		0x0834
 #define CONN_INFRA_CFG_RC_CTL_0_GPS	0x0838
 #define CONN_INFRA_CFG_RC_CTL_1_GPS	0x083C
 #define CONN_INFRA_CFG_RC_CTL_0_BT	0x0840
@@ -213,9 +212,9 @@
 #define CONN_WT_SLP_CTL_REG_WB_GPS_L5_EN_ADDR	0x0098
 
 /**********************************************************************/
-/* Base: GPT2 timer (0x1800_a000) */
+/* Base: GPT2 timer (0x1800_7000) */
 /**********************************************************************/
-#define CONN_GPT2_CTRL_BASE			0x1800a000
+#define CONN_GPT2_CTRL_BASE			0x18007000
 #define CONN_GPT2_CTRL_THERMAL_EN	0x38
 
 /**********************************************************************/
