@@ -94,14 +94,13 @@ int calibration_test(void)
 
 	memset(&g_cal_drv_ops_cb, 0, sizeof(struct sub_drv_ops_cb));
 
-	g_cal_drv_ops_cb.pre_cal_cb.pre_cal_pwr_on_cb =
-						pre_cal_power_on_handler;
-	g_cal_drv_ops_cb.pre_cal_cb.pre_cal_do_cal_cb = pre_cal_do_cal_handler;
+	g_cal_drv_ops_cb.pre_cal_cb.pwr_on_cb = pre_cal_power_on_handler;
+	g_cal_drv_ops_cb.pre_cal_cb.do_cal_cb = pre_cal_do_cal_handler;
 
 
 	pr_info("[%s] cb init [%p][%p]", __func__,
-				g_cal_drv_ops_cb.pre_cal_cb.pre_cal_pwr_on_cb,
-				g_cal_drv_ops_cb.pre_cal_cb.pre_cal_do_cal_cb);
+				g_cal_drv_ops_cb.pre_cal_cb.pwr_on_cb,
+				g_cal_drv_ops_cb.pre_cal_cb.do_cal_cb);
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_BT, &g_cal_drv_ops_cb);
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI, &g_cal_drv_ops_cb);
@@ -127,6 +126,7 @@ int calibration_test(void)
 
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_BT);
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
+	pr_info("[%s] finish.", __func__);
 	return 0;
 }
 

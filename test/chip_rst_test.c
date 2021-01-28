@@ -108,18 +108,19 @@ int chip_rst_test(void)
 	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
 	if (ret)
 		pr_warn("[%s] fail [%d]", __func__, ret);
+	else
+		pr_info("Trigger chip reset success. Test pass.");
 	osal_sleep_ms(10);
 
-	pr_info("[%s]>>>>>>>", __func__);
+	pr_info("Try to trigger whole chip reset when reset is ongoing. It should be fail.");
 	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
-	if (ret)
-		pr_warn("[%s] fail [%d]", __func__, ret);
-	pr_info("[%s] ---------------------", __func__);
+	pr_info("Test %s. ret = %d.", ret == 1? "pass": "fail", ret);
 
 	osal_sleep_ms(1000);
 
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_BT);
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
+	pr_info("chip_rst_test finish");
 	return 0;
 }
 

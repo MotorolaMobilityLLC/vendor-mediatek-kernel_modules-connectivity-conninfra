@@ -74,7 +74,7 @@ enum consys_drv_type {
 */
 
 /* EMI */
-unsigned int conninfra_get_phy_addr(void);
+void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size);
 
 /* power on/off */
 int conninfra_pwr_on(enum consys_drv_type drv_type);
@@ -110,8 +110,8 @@ struct whole_chip_rst_cb {
 
 /* subsys callback register */
 struct pre_calibration_cb {
-	int (*pre_cal_pwr_on_cb)(void);
-	int (*pre_cal_do_cal_cb)(void);
+	int (*pwr_on_cb)(void);
+	int (*do_cal_cb)(void);
 };
 
 struct sub_drv_ops_cb {
