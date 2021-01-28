@@ -2,13 +2,9 @@ MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
 ###############################################################################
 # Necessary Check
 
-ifeq ($(AUTOCONF_H),)
-    $(error AUTOCONF_H is not defined)
+ifneq ($(KERNEL_OUT),)
+    ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
 endif
-
-
-
-ccflags-y += -imacros $(AUTOCONF_H)
 
 #ifeq ($(CONFIG_MTK_COMBO_CHIP),)
 #    $(error CONFIG_MTK_COMBO_CHIP not defined)
@@ -26,8 +22,17 @@ KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 CONNSYS_PLATFORM := $(TARGET_BOARD_PLATFORM_CONNINFRA)
 
 ifeq ($(CONNSYS_PLATFORM),)
+$(info $$CONFIG_MTK_COMBO_CHIP is [${CONFIG_MTK_COMBO_CHIP}])
+ifneq ($(CONFIG_MTK_COMBO_CHIP),)
+# replace CONSYS_XXXX to mtXXXX
+CONNINFRA_PLATFORM_ID := $(patsubst CONSYS_%,mt%,$(subst ",,$(CONFIG_MTK_COMBO_CHIP)))
+$(info CONNINFRA_PLATFORM_ID is [${CONNINFRA_PLATFORM_ID}])
+CONNSYS_PLATFORM := $(CONNINFRA_PLATFORM_ID)
+else
 CONNSYS_PLATFORM := $(MTK_PLATFORM)
 endif
+endif
+$(info $$CONNSYS_PLATFORM is [${CONNSYS_PLATFORM}])
 
 #ccflags-y += -D MTK_WCN_REMOVE_KERNEL_MODULE
 ifeq ($(CONFIG_ARM64), y)
@@ -36,12 +41,6 @@ endif
 
 # Option for some ALPS specific feature, ex: AEE.
 ccflags-y += -D CONNINFRA_PLAT_ALPS=1
-
-#ifeq ($(CONFIG_MTK_CONN_LTE_IDC_SUPPORT),y)
-#    ccflags-y += -D WMT_IDC_SUPPORT=1
-#else
-#    ccflags-y += -D WMT_IDC_SUPPORT=0
-#endif
 
 ccflags-y += -D MTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
 ccflags-y += -D MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE=1
@@ -87,6 +86,7 @@ ccflags-y += -I$(src)/include
 ccflags-y += -I$(src)/base/include
 ccflags-y += -I$(src)/core/include
 ccflags-y += -I$(src)/conf/include
+ccflags-y += -I$(src)/drv_init/include
 ccflags-y += -I$(src)/platform/include
 ccflags-y += -I$(src)/debug_utility
 ccflags-y += -I$(src)/debug_utility/include
@@ -97,7 +97,6 @@ ccflags-y += -I$(src)/debug_utility/coredump/platform/include
 
 # By Plaftfrom
 ccflags-y += -I$(src)/platform/$(CONNSYS_PLATFORM)/include
-
 
 ifneq ($(TARGET_BUILD_VARIANT), user)
     ccflags-y += -D CONNINFRA_DBG_SUPPORT=1
@@ -146,6 +145,13 @@ $(MODULE_NAME)-objs += debug_utility/connsyslog/platform/$(CONNSYS_PLATFORM)/$(C
 $(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
 $(MODULE_NAME)-objs += debug_utility/coredump/platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
+
+# Drv init
+$(MODULE_NAME)-objs += drv_init/bluetooth_drv_init.o
+$(MODULE_NAME)-objs += drv_init/conn_drv_init.o
+$(MODULE_NAME)-objs += drv_init/fm_drv_init.o
+$(MODULE_NAME)-objs += drv_init/gps_drv_init.o
+$(MODULE_NAME)-objs += drv_init/wlan_drv_init.o
 
 ###############################################################################
 # test
