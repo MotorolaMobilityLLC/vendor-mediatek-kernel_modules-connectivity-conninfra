@@ -260,17 +260,18 @@ static int conninfra_mmap(struct file *pFile, struct vm_area_struct *pVma)
 
 	if (bufId == 0) {
 		if (pVma->vm_end - pVma->vm_start > addr_info->emi_size)
-			return -1;
+			return -EINVAL;
 		pr_info("conninfra_mmap size: %lu\n", pVma->vm_end - pVma->vm_start);
 		if (remap_pfn_range(pVma, pVma->vm_start, addr_info->emi_ap_phy_addr >> PAGE_SHIFT,
 			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
 			return -EAGAIN;
+		return 0;
 	} else if (bufId == 1) {
 		if (addr_info == NULL)
-			return -1;
+			return -EINVAL;
 		if (addr_info->md_emi_size == 0 ||
 		    pVma->vm_end - pVma->vm_start > addr_info->md_emi_size)
-			return -1;
+			return -EINVAL;
 		pr_info("MD direct path size=%u map size=%lu\n",
 			addr_info->md_emi_size,
 			pVma->vm_end - pVma->vm_start);
@@ -278,8 +279,10 @@ static int conninfra_mmap(struct file *pFile, struct vm_area_struct *pVma)
 			addr_info->md_emi_phy_addr >> PAGE_SHIFT,
 			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
 			return -EAGAIN;
+		return 0;
 	}
-	return 0;
+	/* Invalid bufId */
+	return -EINVAL;
 }
 
 static int conninfra_dev_get_blank_state(void)
