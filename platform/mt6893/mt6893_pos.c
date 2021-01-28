@@ -17,8 +17,6 @@
 #include "mt6893_pos.h"
 #include "mt6893.h"
 
-#include <linux/ratelimit.h>
-
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -244,8 +242,8 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		udelay(500);
 
 		/* Disable AXI bus sleep protect */
-		/* Turn off AXI RX bus sleep protect (AP2CONN AHB Bus protect)
-		 * (apply this for INFRA AHB bus accessing when CONNSYS had been turned on)
+		/* Turn off AXI RX bus sleep protect (AP2CONN AXI Bus protect)
+		 * (apply this for INFRA AXI bus accessing when CONNSYS had been turned on)
 		 * Address: 0x1000_1718[31:0] (INFRA_TOPAXI_PROTECTEN2_CLR)
 		 * Data: 0x0000_0002
 		 * Action: write
@@ -255,7 +253,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			0x00000002);
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
-		/* Check AHB RX bus sleep protect turn off
+		/* Check AXI RX bus sleep protect turn off
 		 * (polling "100 times" and each polling interval is "0.5ms")
 		 * Address: 0x1000_1724[2] (INFRA_TOPAXI_PROTECTEN2_STA1[2])
 		 * Data: 1'b0
@@ -266,13 +264,13 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET,
 			2, 0, 100, 500, check);
 		if (check != 0)
-			pr_err("Polling AHB RX bus sleep protect turn off fail. status=0x%08x\n",
+			pr_err("Polling AXI RX bus sleep protect turn off fail. status=0x%08x\n",
 				CONSYS_REG_READ(CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET));
 #endif
 
 		/* Turn off AXI Rx bus sleep protect (CONN2AP AXI Rx Bus protect)
 		 * (disable sleep protection when CONNSYS had been turned on)
-		 * Note : Should turn off AHB Rx sleep protection first.
+		 * Note : Should turn off AXI Rx sleep protection first.
 		 */
 		CONSYS_REG_WRITE(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_CLR_OFFSET,
@@ -311,7 +309,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET,
 			13, 0, 100, 500, check);
 		if (check != 0)
-			pr_err("polling AHB TX bus sleep protect turn off fail. Status=0x%08x\n",
+			pr_err("polling AXI TX bus sleep protect turn off fail. Status=0x%08x\n",
 				CONSYS_REG_READ(CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET));
 #endif
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
@@ -343,7 +341,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_SET_OFFSET,
 			0x00002000);
 
-		/* check AHB TX bus sleep protect turn on (polling "100 times")
+		/* check AXI TX bus sleep protect turn on (polling "100 times")
 		 * Address: 0x1000_1228[13]
 		 * Data: 1'b1
 		 * Action: polling
@@ -352,7 +350,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN_STA1_OFFSET,
 			13, 1, 100, 500, check);
 		if (check)
-			pr_err("Polling AHB TX bus sleep protect turn on fail.\n");
+			pr_err("Polling AXI TX bus sleep protect turn on fail.\n");
 
 		/* Turn on AXI Rx bus sleep protect (CONN2AP AXI RX Bus protect)
 		 * (apply this for INFRA AXI bus protection to prevent bus hang when
@@ -390,7 +388,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 		CONSYS_REG_WRITE(
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_SET_OFFSET,
 			0x00000002);
-		/* check AHB RX bus sleep protect turn on (polling "10 times")
+		/* check AXI RX bus sleep protect turn on (polling "10 times")
 		 * Address: 0x1000_1724[2] (INFRA_TOPAXI_PROTECTEN2_STA1[2])
 		 * Value: 1'b1
 		 * Action: polling
@@ -399,7 +397,7 @@ int consys_conninfra_on_power_ctrl(unsigned int enable)
 			CON_REG_INFRACFG_AO_ADDR + INFRA_TOPAXI_PROTECTEN2_STA1_OFFSET,
 			2, 1, 10, 1000, check);
 		if (check)
-			pr_err("Polling AHB RX bus sleep protect turn on fail.\n");
+			pr_err("Polling AXI RX bus sleep protect turn on fail.\n");
 
 		/* Assert "conn_infra_on" isolation, set "connsys_iso_en"=1
 		 * Address: CONN_PWR_CON[1] (0x1000_6304[1])
@@ -494,7 +492,7 @@ int consys_conninfra_wakeup(void)
 		CONSYS_REG_BIT_POLLING(
 			CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL, 5, 0, 10, 1000, check);
 
-		if (check) {
+		if (check != 0) {
 			pr_err("[%s] Check ap2conn slpprot_rdy fail. value=0x%x WAKEUP_TOP=[0x%x]\n",
 				__func__,
 				CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL),
@@ -529,7 +527,7 @@ int consys_conninfra_wakeup(void)
 	/* Check CONNSYS version ID
 	 * (polling "10 times" for specific project code and each polling interval is "1ms")
 	 * Address: CONN_HW_VER (0x1800_1000[31:0])
-	 * Data: 32'h2001_0000
+	 * Data: 32'h2001_0101
 	 * Action: polling
 	 */
 	check = 0;
@@ -724,8 +722,9 @@ int consys_polling_chipid(void)
 	}
 
 	if (retry == 0) {
-		pr_err("Read CONSYS version id fail. Expect 0x%x but get 0x%x\n",
-			consys_hw_ver, CONN_HW_VER, consys_hw_ver);
+		check = consys_reg_mng_is_bus_hang();
+		pr_err("Read CONSYS version id fail. Expect 0x%x but get 0x%x\n, bus hang check=[%d]",
+			CONN_HW_VER, consys_hw_ver, check);
 		return -1;
 	}
 
@@ -802,8 +801,8 @@ int connsys_spi_master_cfg(unsigned int next_status)
 	 * CONN_WT_SLP_CTL_REG_WB_BT_CK_ADDR_ADDR(0x7c[11:0]) = 0xa08
 	 * CONN_WT_SLP_CTL_REG_WB_BT_WAKE_ADDR_ADDR(0x80[11:0]) = 0x094
 	 * CONN_WT_SLP_CTL_REG_WB_TOP_CK_ADDR_ADDR(0x84[11:0]) = 0x02c
-	 * CONN_WT_SLP_CTL_REG_WB_GPS_CK_ADDR_ADDR(0x88)      = 0x0AFC0A0C
-	 * CONN_WT_SLP_CTL_REG_WB_WF_B0_CMD_ADDR_ADDR(0x8c[11:0])  = 0x0F0
+	 * CONN_WT_SLP_CTL_REG_WB_GPS_CK_ADDR_ADDR(0x88[11:0]) = 0x0AFC0A0C
+	 * CONN_WT_SLP_CTL_REG_WB_WF_B0_CMD_ADDR_ADDR(0x8c[11:0]) = 0x0F0
 	 * CONN_WT_SLP_CTL_REG_WB_WF_B1_CMD_ADDR_ADDR(0x90[11:0])  = 0x0F4
 	 * CONN_WT_SLP_CTL_REG_WB_GPS_RFBUF_ADDR(0x18005094[11:0])  = 0x0FC
 	 * CONN_WT_SLP_CTL_REG_WB_GPS_L5_EN_ADDR(0x18005098[11:0]) = 0x0F8
@@ -851,11 +850,11 @@ int connsys_spi_master_cfg(unsigned int next_status)
 	 * CONN_WT_SLP_CTL_REG_WB_BG_ON1_WB_BG_ON1(0x30)     = 0x00000000
 	 * CONN_WT_SLP_CTL_REG_WB_BG_ON2_WB_BG_ON2(0x34)     = 0x00000000
 	 * if (BT_only) {
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_ON3_WB_BG_ON3(0x38)     = 0x74E03F75
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_ON4_WB_BG_ON4(0x3c)     = 0x76E83F75
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_ON3_WB_BG_ON3(0x38)     = 0x74E03F75
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_ON4_WB_BG_ON4(0x3c)     = 0x76E83F75
 	 * } else {
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_ON3_WB_BG_ON3(0x38)     = 0x74E0FFF5
-	 *	CONN_WT_SLP_CTL_REG_WB_BG_ON4_WB_BG_ON4(0x3c)     = 0x76E8FFF5
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_ON3_WB_BG_ON3(0x38)     = 0x74E0FFF5
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_ON4_WB_BG_ON4(0x3c)     = 0x76E8FFF5
 	 * }
 	 * CONN_WT_SLP_CTL_REG_WB_BG_ON5_WB_BG_ON5(0x40)     = 0x00000000
 	 * CONN_WT_SLP_CTL_REG_WB_BG_ON6_WB_BG_ON6(0x44)     = 0xFFFFFFFF
@@ -864,11 +863,11 @@ int connsys_spi_master_cfg(unsigned int next_status)
 	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF1_WB_BG_OFF1(0x50)   = 0x57400000
 	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF2_WB_BG_OFF2(0x54)   = 0x57400000
 	 * if (BT only) {
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_OFF3_WB_BG_OFF3(0x58)   = 0x44E03F75
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_OFF4_WB_BG_OFF4(0x5c)   = 0x44E03F75
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_OFF3_WB_BG_OFF3(0x58)   = 0x44E03F75
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_OFF4_WB_BG_OFF4(0x5c)   = 0x44E03F75
 	 * } else {
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_OFF3_WB_BG_OFF3(0x58)   = 0x44E0FFF5
-	 * 	CONN_WT_SLP_CTL_REG_WB_BG_OFF4_WB_BG_OFF4(0x5c)   = 0x44E0FFF5
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_OFF3_WB_BG_OFF3(0x58)   = 0x44E0FFF5
+	 *    CONN_WT_SLP_CTL_REG_WB_BG_OFF4_WB_BG_OFF4(0x5c)   = 0x44E0FFF5
 	 * }
 	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF5_WB_BG_OFF5(0x60)   = 0x00000001
 	 * CONN_WT_SLP_CTL_REG_WB_BG_OFF6_WB_BG_OFF6(0x64)   = 0x00000000
@@ -1787,6 +1786,7 @@ int connsys_low_power_setting(unsigned int curr_status, unsigned int next_status
 
 		consys_config_setup();
 		connsys_debug_select_config();
+
 		/*
 		 * set 0x1800_0090 = 4'h6
 		 */
