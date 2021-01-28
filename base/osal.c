@@ -262,9 +262,17 @@ void osal_dump_thread_state(const unsigned char *name)
 	//return connectivity_export_dump_thread_state(name);
 }
 
+static inline bool __osal_is_valid_thread(P_OSAL_THREAD pThread)
+{
+	if ((pThread) && !IS_ERR_OR_NULL(pThread->pThread))
+		return true;
+	else
+		return false;
+}
+
 void osal_thread_show_stack(P_OSAL_THREAD pThread)
 {
-	if ((pThread) && (pThread->pThread))
+	if (__osal_is_valid_thread(pThread))
 		KERNEL_show_stack(pThread->pThread, NULL);
 }
 
@@ -274,20 +282,25 @@ void osal_thread_show_stack(P_OSAL_THREAD pThread)
  */
 int osal_thread_create(P_OSAL_THREAD pThread)
 {
+	struct task_struct *task;
+
 	if (!pThread)
 		return -1;
 
-	pThread->pThread = kthread_create(pThread->pThreadFunc,
+	task = kthread_create(pThread->pThreadFunc,
 				pThread->pThreadData, pThread->threadName);
-	if (pThread->pThread == NULL)
+	if (IS_ERR(task)) {
+		pr_err("[%s] create %s thread fail", __func__, pThread->threadName);
 		return -1;
+	}
 
+	pThread->pThread = task;
 	return 0;
 }
 
 int osal_thread_run(P_OSAL_THREAD pThread)
 {
-	if ((pThread) && (pThread->pThread)) {
+	if (__osal_is_valid_thread(pThread)) {
 		wake_up_process(pThread->pThread);
 		return 0;
 	} else {
@@ -299,7 +312,7 @@ int osal_thread_stop(P_OSAL_THREAD pThread)
 {
 	int iRet;
 
-	if ((pThread) && (pThread->pThread)) {
+	if (__osal_is_valid_thread(pThread)) {
 		iRet = kthread_stop(pThread->pThread);
 		pThread->pThread = NULL;
 		return iRet;
@@ -309,7 +322,7 @@ int osal_thread_stop(P_OSAL_THREAD pThread)
 
 int osal_thread_should_stop(P_OSAL_THREAD pThread)
 {
-	if ((pThread) && (pThread->pThread))
+	if (__osal_is_valid_thread(pThread))
 		return kthread_should_stop();
 	else
 		return 1;
@@ -321,7 +334,7 @@ int osal_thread_wait_for_event(P_OSAL_THREAD pThread,
 {
 	/*  P_DEV_WMT pDevWmt;*/
 
-	if ((pThread) && (pThread->pThread) && (pEvent) && (pChecker)) {
+	if (__osal_is_valid_thread(pThread) && (pEvent) && (pChecker)) {
 		return wait_event_interruptible(pEvent->waitQueue, (
 					   osal_thread_should_stop(pThread)
 					   || (*pChecker) (pThread)));
@@ -331,7 +344,7 @@ int osal_thread_wait_for_event(P_OSAL_THREAD pThread,
 
 int osal_thread_destroy(P_OSAL_THREAD pThread)
 {
-	if (pThread && (pThread->pThread)) {
+	if (__osal_is_valid_thread(pThread)) {
 		kthread_stop(pThread->pThread);
 		pThread->pThread = NULL;
 	}
@@ -360,7 +373,7 @@ static int osal_thread_sched_retrieve(P_OSAL_THREAD pThread,
 	/* always clear sched to simplify error handling at caller side */
 	memset(sched, 0, sizeof(OSAL_THREAD_SCHEDSTATS));
 
-	if (!pThread || !pThread->pThread)
+	if (!__osal_is_valid_thread(pThread))
 		return -2;
 
 	memcpy(&se, &pThread->pThread->se, sizeof(struct sched_entity));
