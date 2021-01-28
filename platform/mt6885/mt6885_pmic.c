@@ -81,6 +81,9 @@ static int consys_pmic_vcn33_2_power_ctl(bool enable);
 
 static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event);
 
+static int consys_plt_pmic_exit_idle_power_ctrl(void);
+static int consys_plt_pmic_enter_idle_power_ctrl(void);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -105,6 +108,7 @@ struct regulator *reg_VCN33_2_WIFI;
 struct notifier_block vcn13_nb;
 
 static struct conninfra_dev_cb* g_dev_cb;
+static int g_first_power_on = 0;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -205,6 +209,8 @@ int consys_plt_pmic_get_from_dts(struct platform_device *pdev, struct conninfra_
 		if (ret) {
 			pr_info("VCN13 regulator notifier request failed\n");
 		}
+		/* Set VS2 to 1.4625V */
+		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOSEL, 0x35);
 	}
 	reg_VCN18 = regulator_get(&pdev->dev, "vcn18");
 	if (!reg_VCN18)
@@ -310,7 +316,7 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable)
 			KERNEL_pmic_ldo_vcn18_lp(SRCLKEN5, 0, 1, HW_OFF);
 			KERNEL_pmic_ldo_vcn18_lp(SRCLKEN4, 0, 1, HW_OFF);
 			/* SW_LP =1 */
-			KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN18_LP, 1);
+			KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN18_LP, 0);
 			regulator_set_voltage(reg_VCN18, 1800000, 1800000);
 			ret = regulator_enable(reg_VCN18);
 			if (ret)
@@ -323,11 +329,13 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable)
 			KERNEL_pmic_ldo_vcn13_lp(SRCLKEN5, 0, 1, HW_OFF);
 			KERNEL_pmic_ldo_vcn13_lp(SRCLKEN4, 0, 1, HW_OFF);
 			/* SW_LP =1 */
-			KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN13_LP, 1);
+			KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN13_LP, 0);
 			regulator_set_voltage(reg_VCN13, 1300000, 1300000);
 			ret = regulator_enable(reg_VCN13);
 			if (ret)
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
+
+			g_first_power_on = 1;
 		} else {
 			/* Legacy mode */
 			/* HW_OP_EN = 1, HW_OP_CFG = 1 */
@@ -361,6 +369,9 @@ int consys_plt_pmic_wifi_power_ctrl(unsigned int enable)
 {
 	int ret;
 
+	if (enable)
+		consys_plt_pmic_enter_idle_power_ctrl();
+
 	ret = consys_pmic_vcn33_1_power_ctl(enable, reg_VCN33_1_WIFI);
 	if (ret)
 		pr_err("%s VCN33_1 fail\n", (enable? "Enable" : "Disable"));
@@ -373,28 +384,65 @@ int consys_plt_pmic_wifi_power_ctrl(unsigned int enable)
 int consys_plt_pmic_bt_power_ctrl(unsigned int enable)
 {
 	if (enable) {
+		consys_plt_pmic_exit_idle_power_ctrl();
+		udelay(50);
+
 		/* request VS2 to 1.4V by VS2 VOTER (use bit 4) */
 		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOTER_EN_SET, 0x10);
-		/* Set VCN13 to 1.32V */
-		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0x2);
+
+		/* Set VS2 sleep voltage to 1.375V */
+		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOSEL_SLEEP, 0x2E);
+		/* Set VCN13 to 1.37V */
+		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0x7);
+		udelay(50);
+		consys_plt_pmic_enter_idle_power_ctrl();
 	} else {
+		consys_plt_pmic_exit_idle_power_ctrl();
+		udelay(50);
 		/* restore VCN13 to 1.3V */
 		KERNEL_pmic_set_register_value(PMIC_RG_VCN13_VOCAL, 0);
+		/* Restore VS2 sleep voltage to 1.35V */
+		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOSEL_SLEEP, 0x2C);
+
 		/* clear bit 4 of VS2 VOTER then VS2 can restore to 1.35V */
 		KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOTER_EN_CLR, 0x10);
+		udelay(50);
+		consys_plt_pmic_enter_idle_power_ctrl();
 	}
 	return consys_pmic_vcn33_1_power_ctl(enable, reg_VCN33_1_BT);
 }
 
 int consys_plt_pmic_gps_power_ctrl(unsigned int enable)
 {
+	if (enable)
+		consys_plt_pmic_enter_idle_power_ctrl();
 	return 0;
 }
 
 int consys_plt_pmic_fm_power_ctrl(unsigned int enable)
 {
+	if (enable)
+		consys_plt_pmic_enter_idle_power_ctrl();
 	return 0;
 }
 
+int consys_plt_pmic_exit_idle_power_ctrl(void)
+{
+	if (consys_is_rc_mode_enable() && g_first_power_on == 0) {
+		KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN18_LP, 0);
+		KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN13_LP, 0);
+		g_first_power_on = 1;
+	}
+	return 0;
+}
 
+int consys_plt_pmic_enter_idle_power_ctrl(void)
+{
+	if (consys_is_rc_mode_enable() && g_first_power_on == 1) {
+		KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN18_LP, 1);
+		KERNEL_pmic_set_register_value(PMIC_RG_LDO_VCN13_LP, 1);
+		g_first_power_on = 0;
+	}
+	return 0;
+}
 
