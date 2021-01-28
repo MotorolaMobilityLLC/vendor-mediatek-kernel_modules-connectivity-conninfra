@@ -67,7 +67,6 @@ struct consys_platform_emi_ops* get_consys_platform_emi_ops(void);
 struct consys_emi_addr_info* consys_emi_get_phy_addr(void);
 int consys_emi_mpu_set_region_protection(void);
 void consys_emi_get_md_shared_emi(phys_addr_t*, unsigned int*);
-unsigned int consys_emi_get_fw_emi_size(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S

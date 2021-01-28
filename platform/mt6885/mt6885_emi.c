@@ -81,7 +81,6 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection,
 	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg,
 	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi,
-	.consys_ic_emi_get_fw_emi_size = consys_emi_get_fw_emi_size,
 };
 
 /*******************************************************************************
@@ -141,7 +140,3 @@ void consys_emi_get_md_shared_emi(phys_addr_t* base, unsigned int* size)
 #endif
 }
 
-unsigned int consys_emi_get_fw_emi_size(void)
-{
-	return 0x450000;
-}

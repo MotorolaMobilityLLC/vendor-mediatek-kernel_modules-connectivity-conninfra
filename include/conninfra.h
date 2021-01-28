@@ -89,20 +89,13 @@ enum connsys_clock_schematic
 	CONNSYS_CLOCK_SCHEMATIC_MAX,
 };
 
-/* Conninfra driver allocate EMI for FW and WFDAM
+/* Conninfra driver allocate EMI for FW
  * (FW includes: BT, WIFI and their MCU)
- * +-----------+  +
- * |           |  |
- * |    FW     |  |
- * |           |  |
- * +-----------+  v
+ * +-----------+
  * |           |
- * |           | FW_WFDMA
- * |           |  ^
- * |   WFDMA   |  |
- * |           |  |
- * |           |  |
- * +-----------+  +
+ * |    FW     |
+ * |           |
+ * +-----------+
  *
  * MCIF region is provided by MD
  * +-----------+
@@ -114,9 +107,7 @@ enum connsys_clock_schematic
  */
 enum connsys_emi_type
 {
-	CONNSYS_EMI_FW_WFDMA = 0,
 	CONNSYS_EMI_FW,
-	CONNSYS_EMI_WFDMA,
 	CONNSYS_EMI_MCIF,
 
 	CONNSYS_EMI_MAX,

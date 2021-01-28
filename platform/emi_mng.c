@@ -115,20 +115,15 @@ struct consys_platform_emi_ops* __weak get_consys_platform_emi_ops(void)
 
 int emi_mng_init(void)
 {
-	unsigned int fw_emi_size = gConEmiSize;
-
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = get_consys_platform_emi_ops();
 
-	if (consys_platform_emi_ops->consys_ic_emi_get_fw_emi_size)
-		fw_emi_size = consys_platform_emi_ops->consys_ic_emi_get_fw_emi_size();
-	pr_info("[emi_mng_init] gConEmiPhyBase = [0x%llx] size = [%llx] fw size = [%llx] ops=[%p]",
-			gConEmiPhyBase, gConEmiSize, fw_emi_size, consys_platform_emi_ops);
+	pr_info("[emi_mng_init] gConEmiPhyBase = [0x%llx] size = [%llx] ops=[%p]",
+			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
 
 	if (gConEmiPhyBase) {
 		connsys_emi_addr_info.emi_ap_phy_addr = gConEmiPhyBase;
 		connsys_emi_addr_info.emi_size = gConEmiSize;
-		connsys_emi_addr_info.fw_emi_size = fw_emi_size;
 	} else {
 		pr_err("consys emi memory address gConEmiPhyBase invalid\n");
 	}
