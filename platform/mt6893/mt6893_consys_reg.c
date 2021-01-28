@@ -234,7 +234,7 @@ static void consys_bus_hang_dump_a(void)
 	}
 
 	/* ap2conn gals sleep protect status
-	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable raedy)
+	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable ready)
 	 *  r16 : 0x1000_1724
 	 *  r17 : 0x1000_1228
 	 */
@@ -279,7 +279,7 @@ static void consys_bus_hang_dump_b(void)
 
 	/*
 	 * Consys status check
-	 * debug sel 0x18001B00[2:0] 3'b011
+	 * debug sel 0x18001B00[2:0] 3'b010
 	 * 0x1806_02C8
 	 *			[25] conninfra_bus_osc_en
 	 *			[24] conn_pta_osc_en
@@ -292,7 +292,7 @@ static void consys_bus_hang_dump_b(void)
 	 */
 	/*CONSYS_REG_WRITE_MASK(CON_REG_INFRA_CFG_ADDR + CONN_INFRA_CFG_DBG_MUX_SEL,
 								0x2, 0x7);*/
-	/*r1 = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_DBG_DUMMY_3);*/
+	/*r1 = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_DBG_DUMMY_2);*/
 
 	/* Conninfra Off power state
 	 * 0x1806_02CC
@@ -329,8 +329,8 @@ static void consys_bus_hang_dump_b(void)
 	r4 = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR);
 
 	/* conn_infra on2off sleep protect status
-	 *	- 0x1806_0184[5] (sleep protect enable raedy), should be 1'b0
-	 * cr6 : 0x1806_0000
+	 *	- 0x1806_0184[5] (sleep protect enable ready), should be 1'b0
+	 * cr6 : 0x1806_0184
 	 */
 	r5 = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL);
 
@@ -463,7 +463,7 @@ static int consys_is_bus_hang(void)
 	 */
 
 	/* 1. Check ap2conn gals sleep protect status
-	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable raedy)
+	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable ready)
 	 * 		both of them should be 1'b0  (CR at ap side)
 	 */
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_AO_ADDR +
@@ -471,20 +471,19 @@ static int consys_is_bus_hang(void)
 	if (r != 0)
 		return CONNINFRA_AP2CONN_RX_SLP_PROT_ERR;
 
-
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_AO_ADDR +
 			INFRA_TOPAXI_PROTECTEN_STA1_OFFSET, (0x1 << 13));
 	if (r != 0)
 		return CONNINFRA_AP2CONN_TX_SLP_PROT_ERR;
-
-	/* STEP - 2 */
-	consys_bus_hang_dump_b();
 
 	/* 2. Check conn_infra_on clock 0x1020E504[0] = 1’b1 */
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_BASE_ADDR +
 			INFRA_AP2MD_GALS_CTL, 0x1);
 	if (r != 1)
 		return CONNINFRA_AP2CONN_CLK_ERR;
+
+	/* STEP - 2 */
+	consys_bus_hang_dump_b();
 
 #if 0
 	/* 3. Check conn_infra off bus clock
@@ -514,7 +513,7 @@ static int consys_is_bus_hang(void)
 
 #if 0
 	/* 5. Check conn_infra on2off sleep protect status
-	 *	- 0x1806_0184[5] (sleep protect enable raedy), should be 1'b0
+	 *	- 0x1806_0184[5] (sleep protect enable ready), should be 1'b0
 	 */
 	r = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL);
 	if (r & TOP_SLP_PROT_CTRL_CONN_INFRA_ON2OFF_SLP_PROT_ACK_BIT)
@@ -546,7 +545,7 @@ int consys_check_reg_readable(void)
 
 
 	/* 1. Check ap2conn gals sleep protect status
-	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable raedy)
+	 *	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx) (sleep protect enable ready)
 	 * 		both of them should be 1'b0  (CR at ap side)
 	 */
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_AO_ADDR +
@@ -607,7 +606,7 @@ int consys_check_reg_readable(void)
 		return 0;
 
 	/* 5. Check conn_infra on2off sleep protect status
-	 *	- 0x1806_0184[5] (sleep protect enable raedy), should be 1'b0
+	 *	- 0x1806_0184[5] (sleep protect enable ready), should be 1'b0
 	 */
 	r = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_TOP_CONN_SLP_PROT_CTRL);
 	if (r & TOP_SLP_PROT_CTRL_CONN_INFRA_ON2OFF_SLP_PROT_ACK_BIT)
