@@ -105,7 +105,7 @@ int calibration_test(void)
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_BT, &g_cal_drv_ops_cb);
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI, &g_cal_drv_ops_cb);
 
-	ret = connfinfra_core_pre_cal_start();
+	ret = conninfra_core_pre_cal_start();
 	if (ret)
 		pr_warn("[%s] fail [%d]", __func__, ret);
 

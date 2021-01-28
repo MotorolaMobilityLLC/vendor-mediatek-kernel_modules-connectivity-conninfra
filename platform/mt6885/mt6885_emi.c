@@ -25,10 +25,12 @@
 #endif
 #include <linux/of_reserved_mem.h>
 
-#include "osal.h"
 #include "mt6885_emi.h"
+#include "mt6885.h"
+#include "mt6885_consys_reg.h"
 #include "consys_hw.h"
-#include "consys_hw_util.h"
+#include "consys_reg_util.h"
+#include "mt6885_pos.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -71,6 +73,10 @@ static int consys_reset_emi_coredump(unsigned char __iomem *addr);
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+
+extern unsigned long long gConEmiSize;
+extern phys_addr_t gConEmiPhyBase;
+
 EMI_CTRL_STATE_OFFSET connsys_emi_state_off = {
 	.emi_apmem_ctrl_state = EXP_APMEM_CTRL_STATE,
 	.emi_apmem_ctrl_host_sync_state = EXP_APMEM_CTRL_HOST_SYNC_STATE,
@@ -92,20 +98,14 @@ EMI_CTRL_STATE_OFFSET connsys_emi_state_off = {
 };
 
 
-CONSYS_EMI_ADDR_INFO connsys_emi_addr_info = {
-	.emi_ap_phy_addr = 0,
-	.emi_size = 0
-};
-
-CONSYS_PLATFORM_EMI_OPS g_consys_platform_emi_ops = {
+struct consys_platform_emi_ops g_consys_platform_emi_ops = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection,
 	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg,
-	.consys_ic_emi_get_phy_addr = consys_emi_get_phy_addr,
+	//.consys_ic_emi_get_phy_addr = consys_emi_get_phy_addr,
 	/* should be done by subsys */
 	.consys_ic_emi_coredump_remapping = consys_emi_coredump_remapping,
 	.consys_ic_reset_emi_coredump = consys_reset_emi_coredump,
 };
-
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -117,7 +117,7 @@ CONSYS_PLATFORM_EMI_OPS g_consys_platform_emi_ops = {
 ********************************************************************************
 */
 
-P_CONSYS_PLATFORM_EMI_OPS get_consys_platform_emi_ops(void)
+struct consys_platform_emi_ops* get_consys_platform_emi_ops(void)
 {
 	return &g_consys_platform_emi_ops;
 }
@@ -141,51 +141,6 @@ int consys_emi_mpu_set_region_protection(void)
 	emi_mpu_set_protection(&region_info);
 #endif
 	return 0;
-}
-
-unsigned int consys_emi_set_remapping_reg(void)
-{
-	/* For direct path */
-	//phys_addr_t mdPhy = 0;
-	//int size = 0;
-
-	pr_info("[%s]", __func__);
-	connsys_emi_addr_info.emi_ap_phy_addr = gConEmiPhyBase;
-	connsys_emi_addr_info.emi_size = gConEmiSize;
-
-	/* EMI Registers remapping */
-	CONSYS_REG_WRITE_OFFSET_RANGE(conn_reg.conn_host_csr_top_base + CONN2AP_REMAP_MCU_EMI_BASE_ADDR_OFFSET,
-					  gConEmiPhyBase, 0, 16, 20);
-	pr_info("CONSYS_EMI_MAPPING dump in restore cb(0x%08x)\n",
-			CONSYS_REG_READ(conn_reg.conn_host_csr_top_base + CONN2AP_REMAP_MCU_EMI_BASE_ADDR_OFFSET));
-
-#if 0
-	/*Perisys Configuration Registers remapping*/
-	CONSYS_REG_WRITE_OFFSET_RANGE(conn_reg.topckgen_base + CONSYS_EMI_PERI_MAPPING_OFFSET,
-					  0x10003000, 0, 16, 20);
-	pr_info("PERISYS_MAPPING dump in restore cb(0x%08x)\n",
-			CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_PERI_MAPPING_OFFSET));
-
-	/*Modem Configuration Registers remapping*/
-	mdPhy = get_smem_phy_start_addr(MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &size);
-	if (size == 0)
-		pr_info("MD direct path is not supported\n");
-	else {
-		CONSYS_REG_WRITE_OFFSET_RANGE(
-			conn_reg.topckgen_base + CONSYS_EMI_AP_MD_OFFSET,
-			mdPhy, 0, 16, 20);
-		pr_info("MD_MAPPING dump in restore cb(0x%08x)\n",
-			CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_AP_MD_OFFSET));
-	}
-	mtk_wcn_emi_addr_info.emi_direct_path_ap_phy_addr = mdPhy;
-	mtk_wcn_emi_addr_info.emi_direct_path_size = size;
-#endif
-	return 0;
-}
-
-P_CONSYS_EMI_ADDR_INFO consys_emi_get_phy_addr(void)
-{
-	return &connsys_emi_addr_info;
 }
 
 int consys_emi_coredump_remapping(unsigned char __iomem **addr, unsigned int enable)

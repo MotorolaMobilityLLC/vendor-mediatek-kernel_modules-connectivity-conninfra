@@ -16,8 +16,8 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_MT6885_H_
-#define _PLATFORM_MT6885_H_
+#ifndef _PLATFORM_MT6885_EMI_H_
+#define _PLATFORM_MT6885_EMI_H_
 
 #include "osal.h"
 #include "emi_mng.h"
@@ -30,11 +30,6 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-
-/* Base: conn_host_csr_top */
-#define CONN2AP_REMAP_MCU_EMI_BASE_ADDR_OFFSET	0x000001c4
-#define CONN2AP_REMAP_MD_SHARE_EMI_BASE_ADDR_OFFSET	0x000001cc
-
 
 #define CONSYS_EMI_COREDUMP_OFFSET	(0x68000)
 #define CONSYS_EMI_AP_PHY_OFFSET	(0x00000)
@@ -77,10 +72,10 @@
 ********************************************************************************
 */
 
-P_CONSYS_PLATFORM_EMI_OPS get_consys_platform_emi_ops(void);
-P_CONSYS_EMI_ADDR_INFO consys_emi_get_phy_addr(void);
+struct consys_platform_emi_ops* get_consys_platform_emi_ops(void);
+
+struct consys_emi_addr_info* consys_emi_get_phy_addr(void);
 int consys_emi_mpu_set_region_protection(void);
-unsigned int consys_emi_set_remapping_reg(void);
 int consys_emi_coredump_remapping(unsigned char __iomem **addr, unsigned int enable);
 int consys_reset_emi_coredump(unsigned char __iomem *addr);
 
@@ -90,4 +85,4 @@ int consys_reset_emi_coredump(unsigned char __iomem *addr);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_MT6885_H_ */
+#endif				/* _PLATFORM_MT6789_EMI_H_ */

@@ -16,16 +16,10 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _CONNINFRA_CORE_H_
-#define _CONNINFRA_CORE_H_
+#ifndef _PLATFORM_MT6885_CONSYS_REG_H_
+#define _PLATFORM_MT6885_CONSYS_REG_H_
 
-#include <linux/semaphore.h>
-#include <linux/platform_device.h>
-
-#include "osal.h"
-#include "msg_thread.h"
-#include "conninfra.h"
-
+#include "consys_reg_base.h"
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -35,6 +29,7 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -50,64 +45,38 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_DRV_STS_ {
-	DRV_STS_POWER_OFF = 0,	/* initial state */
-	DRV_STS_POWER_ON = 1,	/* powered on */
-	DRV_STS_RESET = 2,
-	DRV_STS_MAX
-} ENUM_DRV_STS, *P_ENUM_DRV_STS;
 
-struct subsys_drv_inst {
-	ENUM_DRV_STS drv_status;	/* Controlled driver status */
-	unsigned int rst_state;
-	struct sub_drv_ops_cb ops_cb;
-	struct msg_thread_ctx msg_ctx;
+enum consys_base_addr_index {
+	CONN_INFRA_RGU_BASE_INDEX = 0,
+	CONN_INFRA_CFG_BASE_INDEX = 1,
+	CONN_HOST_CSR_TOP_BASE_INDEX = 2,
+	INFRACFG_AO_BASE_INDEX = 3,
+	TOPRGU_BASE_INDEX= 4,
+	SPM_BASE_INDEX = 5,
+	INFRACFG_BASE_INDEX = 6,
+	CONN_WT_SLP_CTL_REG_INDEX = 7,
+
+	CONSYS_BASE_ADDR_MAX
 };
 
 
-/*
- * state of conninfra
- *
- */
-struct conninfra_ctx {
-	ENUM_DRV_STS infra_drv_status;
-
-	struct subsys_drv_inst drv_inst[CONNDRV_TYPE_MAX];
-	/*struct spinlock infra_lock;*/
-	spinlock_t infra_lock;
-
-	OSAL_SLEEPABLE_LOCK rst_lock;
-	struct semaphore rst_sema;
-	atomic_t rst_state;
-
-	struct semaphore pre_cal_sema;
-	atomic_t pre_cal_state;
-
-	struct msg_thread_ctx msg_ctx;
-	struct msg_thread_ctx cb_ctx;
-
-	unsigned int hw_ver;
-	unsigned int fw_ver;
-	unsigned int ip_ver;
-
-	struct osal_op_history cored_op_history;
-
+struct consys_base_addr {
+	struct consys_reg_base_addr reg_base_addr[CONSYS_BASE_ADDR_MAX];
 };
 
-//typedef enum _ENUM_CONNINFRA_CORE_OPID_T {
-typedef enum {
-	CONNINFRA_OPID_PWR_ON 		= 0,
-	CONNINFRA_OPID_PWR_OFF		= 1,
-	CONNINFRA_OPID_THERM_CTRL	= 2,
-	CONNINFRA_OPID_MAX
-} conninfra_core_opid;
+extern struct consys_base_addr conn_reg;
 
-/* For the operation which may callback subsys driver */
-typedef enum {
-	CONNINFRA_CB_OPID_CHIP_RST         = 0,
-	CONNINFRA_CB_OPID_PRE_CAL          = 1,
-	CONNINFRA_CB_OPID_MAX
-} conninfra_core_cb_opid;
+#define CON_REG_INFRA_RGU_ADDR 		conn_reg.reg_base_addr[CONN_INFRA_RGU_BASE_INDEX].vir_addr
+#define CON_REG_INFRA_CFG_ADDR 		conn_reg.reg_base_addr[CONN_INFRA_CFG_BASE_INDEX].vir_addr
+#define CON_REG_HOST_CSR_ADDR 		conn_reg.reg_base_addr[CONN_HOST_CSR_TOP_BASE_INDEX].vir_addr
+#define CON_REG_INFRACFG_AO_ADDR 	conn_reg.reg_base_addr[INFRACFG_AO_BASE_INDEX].vir_addr
+
+#define CON_REG_TOP_RGU_ADDR 		conn_reg.reg_base_addr[TOPRGU_BASE_INDEX].vir_addr
+#define CON_REG_SPM_BASE_ADDR 		conn_reg.reg_base_addr[SPM_BASE_INDEX].vir_addr
+#define CON_REG_INFRACFG_BASE_ADDR 	conn_reg.reg_base_addr[INFRACFG_BASE_INDEX].vir_addr
+#define CON_REG_WT_SPL_CTL_ADDR 	conn_reg.reg_base_addr[CONN_WT_SLP_CTL_REG_INDEX].vir_addr
+
+
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -124,32 +93,12 @@ typedef enum {
 ********************************************************************************
 */
 
-extern int conninfra_core_init(void);
-extern int conninfra_core_deinit(void);
-
-int conninfra_core_power_on(enum consys_drv_type type);
-int conninfra_core_power_off(enum consys_drv_type type);
-
-int conninfra_core_lock_rst(void);
-int conninfra_core_unlock_rst(void);
-int conninfra_core_trg_chip_rst(enum consys_drv_type drv, char *reason);
-
-int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
-						struct sub_drv_ops_cb *cb);
-int conninfra_core_subsys_ops_unreg(enum consys_drv_type type);
-
-int conninfra_core_pre_cal_start(void);
-
-/* NOTE: NOT thread-safe
- * return value
- * 1 : Yes, 0: NO
- */
-int conninfra_core_reg_readable(void);
-int conninfra_core_is_consys_reg(phys_addr_t addr);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 
-#endif				/* _CONNINFRA_CORE_H_ */
+struct consys_base_addr* get_conn_reg_base_addr(void);
+
+#endif				/* _PLATFORM_MT6789_CONSYS_REG_H_ */

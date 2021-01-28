@@ -120,12 +120,14 @@ $(MODULE_NAME)-objs += platform/consys_hw.o
 $(MODULE_NAME)-objs += platform/clock_mng.o
 $(MODULE_NAME)-objs += platform/pmic_mng.o
 $(MODULE_NAME)-objs += platform/emi_mng.o
+$(MODULE_NAME)-objs += platform/consys_reg_mng.o
 
 # By Plaftfrom
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
 $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_emi.o
-
+$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_consys_reg.o
+$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pos.o
 
 ###############################################################################
 # test

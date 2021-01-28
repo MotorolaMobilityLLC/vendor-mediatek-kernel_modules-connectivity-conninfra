@@ -69,4 +69,4 @@ P_CONSYS_PLATFORM_PMIC_OPS get_consys_platform_pmic_ops(void);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_MT6885_H_ */
+#endif				/* _PLATFORM_MT6789_H_ */

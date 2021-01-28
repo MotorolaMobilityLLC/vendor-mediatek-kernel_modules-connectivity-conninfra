@@ -16,7 +16,10 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_MT6885_H_
-#define _PLATFORM_MT6885_H_
+#ifndef _PLATFORM_DEF_H_
+#define _PLATFORM_DEF_H_
 
-#endif				/* _PLATFORM_MT6789_H_ */
+#include <linux/delay.h>
+#include <sync_write.h>
+
+#endif				/* _PLATFORM_DEF_H_ */

@@ -20,9 +20,6 @@
 
 #include <linux/memblock.h>
 #include <linux/platform_device.h>
-//#ifdef CONFIG_MTK_EMI
-//#include <mt_emi_api.h>
-//#endif
 #include <linux/of_reserved_mem.h>
 #include <upmu_common.h>
 #include <linux/regulator/consumer.h>
@@ -85,7 +82,6 @@ CONSYS_PLATFORM_PMIC_OPS g_consys_platform_pmic_ops = {
 	.consys_pmic_bt_power_ctrl = consys_plt_pmic_bt_power_ctrl,
 	.consys_pmic_gps_power_ctrl = consys_plt_pmic_gps_power_ctrl,
 	.consys_pmic_fm_power_ctrl = consys_plt_pmic_fm_power_ctrl,
-
 };
 
 struct regulator *reg_VCN18;

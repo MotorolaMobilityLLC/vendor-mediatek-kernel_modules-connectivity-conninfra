@@ -16,7 +16,20 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_MT6885_H_
-#define _PLATFORM_MT6885_H_
+#ifndef _PLATFORM_MT6885_POS_H_
+#define _PLATFORM_MT6885_POS_H_
 
-#endif				/* _PLATFORM_MT6789_H_ */
+
+unsigned int consys_emi_set_remapping_reg(unsigned int);
+
+int consys_conninfra_on_power_ctrl(unsigned int enable);
+void consys_set_if_pinmux(unsigned int enable);
+int consys_polling_chipid(void);
+
+int connsys_d_die_cfg(void);
+int connsys_spi_master_cfg(void);
+int connsys_a_die_cfg(void);
+int connsys_afe_wbg_cal(void);
+int connsys_low_power_setting(void);
+
+#endif				/* _PLATFORM_MT6789_POS_H_ */

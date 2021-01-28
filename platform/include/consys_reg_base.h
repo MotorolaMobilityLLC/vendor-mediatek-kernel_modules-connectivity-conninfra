@@ -16,7 +16,12 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_MT6885_H_
-#define _PLATFORM_MT6885_H_
+#ifndef _PLATFORM_CONSYS_REG_BASE_H_
+#define _PLATFORM_CONSYS_REG_BASE_H_
 
-#endif				/* _PLATFORM_MT6789_H_ */
+struct consys_reg_base_addr {
+	unsigned long vir_addr;
+	unsigned long long size;
+};
+
+#endif				/* _PLATFORM_CONSYS_REG_BASE_H_ */

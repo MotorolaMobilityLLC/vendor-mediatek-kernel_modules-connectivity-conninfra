@@ -122,10 +122,9 @@ static const msg_opid_func infra_subdrv_opfunc[] = {
 ********************************************************************************
 */
 
-static int opfunc_power_on(struct msg_op_data *op)
+static int opfunc_power_on_internal(unsigned int drv_type)
 {
 	int ret;
-	unsigned int drv_type = op->op_data[0];
 
 	/* Check abnormal type */
 	if (drv_type > CONNDRV_TYPE_MAX) {
@@ -181,10 +180,16 @@ static int opfunc_power_on(struct msg_op_data *op)
 	return 0;
 }
 
-static int opfunc_power_off(struct msg_op_data *op)
+static int opfunc_power_on(struct msg_op_data *op)
+{
+	unsigned int drv_type = op->op_data[0];
+
+	return opfunc_power_on_internal(drv_type);
+}
+
+static int opfunc_power_off_internal(unsigned int drv_type)
 {
 	int i, ret;
-	unsigned int drv_type = op->op_data[0];
 	bool try_power_off = true;
 
 	/* Check abnormal type */
@@ -247,16 +252,31 @@ static int opfunc_power_off(struct msg_op_data *op)
 	return 0;
 }
 
+static int opfunc_power_off(struct msg_op_data *op)
+{
+	unsigned int drv_type = op->op_data[0];
+
+	return opfunc_power_off_internal(drv_type);
+}
+
 static int opfunc_chip_rst(struct msg_op_data *op)
 {
 	int i, ret;
 	struct subsys_drv_inst *drv_inst;
+	unsigned int drv_pwr_state[CONNDRV_TYPE_MAX];
+
+	if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
+		pr_info("No subsys on, just return");
+		return 0;
+	}
 
 	atomic_set(&g_conninfra_ctx.rst_state, 0);
 	sema_init(&g_conninfra_ctx.rst_sema, 1);
 	/* pre */
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		drv_inst = &g_conninfra_ctx.drv_inst[i];
+		drv_pwr_state[i] = drv_inst->drv_status;
+		pr_info("subsys %d is %d", i, drv_inst->drv_status);
 		ret = msg_thread_send_1(&drv_inst->msg_ctx,
 				INFRA_SUBDRV_OPID_PRE_RESET, i);
 	}
@@ -267,6 +287,22 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	/* reset */
 	/* call consys_hw */
 	/*******************************************************/
+	/* Turn off subsys one-by-one  */
+	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+		if (drv_pwr_state[i]) {
+			ret = opfunc_power_off_internal(i);
+			pr_info("Call subsys(%d) power off ret=%d", i, ret);
+		}
+	}
+	pr_info("conninfra status should be power off. Status=%d", g_conninfra_ctx.infra_drv_status);
+	/* Turn on subsys */
+	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+		if (drv_pwr_state[i]) {
+			ret = opfunc_power_on_internal(i);
+			pr_info("Call subsys(%d) power on ret=%d", i, ret);
+		}
+	}
+	pr_info("conninfra status should be power on. Status=%d", g_conninfra_ctx.infra_drv_status);
 
 	/* post */
 	atomic_set(&g_conninfra_ctx.rst_state, 0);
@@ -450,7 +486,7 @@ int conninfra_core_power_off(enum consys_drv_type type)
 	return 0;
 }
 
-int connfinfra_core_pre_cal_start(void)
+int conninfra_core_pre_cal_start(void)
 {
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
@@ -463,6 +499,20 @@ int connfinfra_core_pre_cal_start(void)
 	}
 	return 0;
 }
+
+int conninfra_core_reg_readable(void)
+{
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	if (infra_ctx->infra_drv_status == DRV_STS_POWER_ON)
+		return consys_hw_reg_readable();
+	return 0;
+}
+
+int conninfra_core_is_consys_reg(phys_addr_t addr)
+{
+	return consys_hw_is_connsys_reg(addr);
+}
+
 
 int conninfra_core_lock_rst(void)
 {
