@@ -205,8 +205,7 @@ static int conninfra_dev_init(void)
 						CONNINFRA_DRVIER_NAME);
 	if (iret) {
 		pr_err("fail to register chrdev\n");
-		//goto err0;
-		return -2;
+		return -1;
 	}
 
 	cdev_init(&gConninfraCdev, &gConninfraDevFops);
@@ -238,9 +237,10 @@ static int conninfra_dev_init(void)
 	conninfra_fb_notifier.notifier_call
 				= conninfra_dev_fb_notifier_callback;
 	iret = fb_register_client(&conninfra_fb_notifier);
-	if (iret)
+	if (iret) {
 		pr_err("register fb_notifier fail");
-	else
+		return -3;
+	} else
 		pr_info("register fb_notifier success");
 
 	iret = conninfra_test_setup();
@@ -250,13 +250,13 @@ static int conninfra_dev_init(void)
 	iret = consys_hw_init();
 	if (iret) {
 		pr_err("init consys_hw fail\n", iret);
-		return -3;
+		return -4;
 	}
 
 	iret = conninfra_core_init();
 	if (iret) {
 		pr_err("conninfra init fail");
-		return -1;
+		return -5;
 	}
 
 
@@ -280,7 +280,7 @@ err1:
 		gConnInfraMajor = -1;
 	}
 
-	return iret ? iret : -1;
+	return -2;
 }
 
 static void conninfra_dev_deinit(void)

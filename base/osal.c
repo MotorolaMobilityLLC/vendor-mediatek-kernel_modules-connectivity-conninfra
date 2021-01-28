@@ -1343,22 +1343,22 @@ void osal_buffer_dump(const unsigned char *buf,
 {
 	int k;
 	unsigned int dump_len;
-	char str[64] = {""};
+	char str[DBG_LOG_STR_SIZE] = {""};
 	int strlen = 0;
-	char *p;
 
 	pr_info("[%s] len=%d, limit=%d, start dump\n", title, len, limit);
 
 	dump_len = ((limit != 0) && (len > limit)) ? limit : len;
-	p = str;
 	for (k = 0; k < dump_len; k++) {
 		if ((k+1) % 16 != 0) {
-			strlen = osal_sprintf(p, "%02x ", buf[k]);
-			p += strlen;
+			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
+						"%02x ", buf[k]);
 		} else {
-			strlen = osal_sprintf(p, "%02x\n",  buf[k]);
+			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
+						"%02x ", buf[k]);
+
 			pr_info("%s", str);
-			p = str;
+			strlen = 0;
 		}
 	}
 	if (k % 16 != 0)
@@ -1374,23 +1374,22 @@ void osal_buffer_dump_data(const unsigned int *buf,
 {
 	int k;
 	unsigned int dump_len;
-	char str[100] = {""};
+	char str[DBG_LOG_STR_SIZE] = {""};
 	int strlen = 0;
-	char *p;
 
 	dump_len = ((limit != 0) && (len > limit)) ? limit : len;
-	p = str;
 	for (k = 0; k < dump_len; k++) {
 		if (((k+1) % 8 != 0) && (k < (dump_len - 1))) {
-			strlen = osal_sprintf(p, "0x%08x,", buf[k]);
-			p += strlen;
+			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
+							"0x%08x,", buf[k]);
 		} else {
-			strlen = osal_sprintf(p, "0x%08x\n", buf[k]);
+			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
+							"0x%08x,", buf[k]);
 			if (flag)
 				osal_ftrace_print("%s%s", title, str);
 			else
 				pr_info("%s%s", title, str);
-			p = str;
+			strlen = 0;
 		}
 	}
 	if (k % 8 != 0) {
@@ -1496,7 +1495,7 @@ static void _osal_opq_dump(const char *qName, P_OSAL_OP_Q pOpQ)
 		}
 
 		if (op) {
-			printed += sprintf(buf + printed,
+			printed += snprintf(buf + printed, OPQ_DUMP_LINE_BUF_SIZE - printed,
 						"[%u(%u)]%p:%u(%d)(%d)-%u-",
 						idx,
 						(rd & RB_MASK(pOpQ)),
@@ -1506,12 +1505,13 @@ static void _osal_opq_dump(const char *qName, P_OSAL_OP_Q pOpQ)
 						op->result,
 						op->op.u4InfoBit);
 			for (opDataIdx = 0; opDataIdx < OPQ_DUMP_OPDATA_PER_OP; opDataIdx++)
-				printed += sprintf(buf + printed, "%zx,",
-								op->op.au4OpData[opDataIdx]);
+				printed += snprintf(buf + printed, OPQ_DUMP_LINE_BUF_SIZE - printed,
+						"%zx,", op->op.au4OpData[opDataIdx]);
 			buf[printed-1] = ' ';
-		} else
-			printed += sprintf(buf + printed, "[%u(%u)]%p ",
-							idx, (rd & RB_MASK(pOpQ)), op);
+		} else {
+			printed += snprintf(buf + printed, OPQ_DUMP_LINE_BUF_SIZE - printed,
+						"[%u(%u)]%p ", idx, (rd & RB_MASK(pOpQ)), op);
+		}
 		buf[printed++] = ' ';
 
 		if (idxInBuf == OPQ_DUMP_OP_PER_LINE - 1  || rd == wt - 1) {
