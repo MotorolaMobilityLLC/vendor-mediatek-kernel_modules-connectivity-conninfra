@@ -82,7 +82,7 @@ static int consys_bus_clock_ctrl(enum consys_drv_type, unsigned int, int);
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-struct consys_hw_ops_struct g_consys_hw_ops = {
+struct consys_hw_ops_struct g_consys_hw_ops_mt6893 = {
 	/* load from dts */
 	/* TODO: mtcmos should move to a independent module */
 	.consys_plt_clk_get_from_dts = consys_clk_get_from_dts,
@@ -93,41 +93,54 @@ struct consys_hw_ops_struct g_consys_hw_ops = {
 	.consys_plt_co_clock_type = consys_co_clock_type,
 
 	/* POS */
-	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl,
-	.consys_plt_set_if_pinmux = consys_set_if_pinmux,
+	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl_mt6893,
+	.consys_plt_set_if_pinmux = consys_set_if_pinmux_mt6893,
 
-	.consys_plt_polling_consys_chipid = consys_polling_chipid,
-	.consys_plt_d_die_cfg = connsys_d_die_cfg,
-	.consys_plt_spi_master_cfg = connsys_spi_master_cfg,
-	.consys_plt_a_die_cfg = connsys_a_die_cfg,
-	.consys_plt_afe_wbg_cal = connsys_afe_wbg_cal,
-	.consys_plt_subsys_pll_initial = connsys_subsys_pll_initial,
-	.consys_plt_low_power_setting = connsys_low_power_setting,
+	.consys_plt_polling_consys_chipid = consys_polling_chipid_mt6893,
+	.consys_plt_d_die_cfg = connsys_d_die_cfg_mt6893,
+	.consys_plt_spi_master_cfg = connsys_spi_master_cfg_mt6893,
+	.consys_plt_a_die_cfg = connsys_a_die_cfg_mt6893,
+	.consys_plt_afe_wbg_cal = connsys_afe_wbg_cal_mt6893,
+	.consys_plt_subsys_pll_initial = connsys_subsys_pll_initial_mt6893,
+	.consys_plt_low_power_setting = connsys_low_power_setting_mt6893,
 	.consys_plt_soc_chipid_get = consys_soc_chipid_get,
-	.consys_plt_conninfra_wakeup = consys_conninfra_wakeup,
-	.consys_plt_conninfra_sleep = consys_conninfra_sleep,
-	.consys_plt_is_rc_mode_enable = consys_is_rc_mode_enable,
+	.consys_plt_conninfra_wakeup = consys_conninfra_wakeup_mt6893,
+	.consys_plt_conninfra_sleep = consys_conninfra_sleep_mt6893,
+	.consys_plt_is_rc_mode_enable = consys_is_rc_mode_enable_mt6893,
 
 	/* debug */
 	.consys_plt_clock_fail_dump = consys_clock_fail_dump,
 	.consys_plt_get_hw_ver = consys_get_hw_ver,
 
-	.consys_plt_spi_read = consys_spi_read,
-	.consys_plt_spi_write = consys_spi_write,
-	.consys_plt_adie_top_ck_en_on = consys_adie_top_ck_en_on,
-	.consys_plt_adie_top_ck_en_off = consys_adie_top_ck_en_off,
-	.consys_plt_spi_clock_switch = consys_spi_clock_switch,
-	.consys_plt_subsys_status_update = consys_subsys_status_update,
+	.consys_plt_spi_read = consys_spi_read_mt6893,
+	.consys_plt_spi_write = consys_spi_write_mt6893,
+	.consys_plt_adie_top_ck_en_on = consys_adie_top_ck_en_on_mt6893,
+	.consys_plt_adie_top_ck_en_off = consys_adie_top_ck_en_off_mt6893,
+	.consys_plt_spi_clock_switch = consys_spi_clock_switch_mt6893,
+	.consys_plt_subsys_status_update = consys_subsys_status_update_mt6893,
 
 	.consys_plt_thermal_query = consys_thermal_query,
 	.consys_plt_power_state = consys_power_state,
-	.consys_plt_config_setup = consys_config_setup,
+	.consys_plt_config_setup = consys_config_setup_mt6893,
 	.consys_plt_bus_clock_ctrl = consys_bus_clock_ctrl,
 };
 
-
 struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
 struct consys_plat_thermal_data g_consys_plat_therm_data;
+
+extern struct consys_hw_ops_struct g_consys_hw_ops_mt6893;
+extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6893;
+extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893;
+extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6893;
+
+const struct conninfra_plat_data mt6893_plat_data = {
+	.chip_id = PLATFORM_SOC_CHIP,
+	.consys_hw_version = CONN_HW_VER,
+	.hw_ops = &g_consys_hw_ops_mt6893,
+	.reg_ops = &g_dev_consys_reg_ops_mt6893,
+	.platform_emi_ops = &g_consys_platform_emi_ops_mt6893,
+	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6893,
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -138,10 +151,6 @@ struct consys_plat_thermal_data g_consys_plat_therm_data;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-struct consys_hw_ops_struct* get_consys_platform_ops(void)
-{
-	return &g_consys_hw_ops;
-}
 
 /* mtcmos contorl */
 int consys_clk_get_from_dts(struct platform_device *pdev)
@@ -338,13 +347,13 @@ int consys_thermal_query(void)
 		return -1;
 	}
 
-	consys_adie_top_ck_en_on(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
+	consys_adie_top_ck_en_on_mt6893(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
 
 	/* Hold Semaphore, TODO: may not need this, because
 		thermal cr seperate for different  */
-	if (consys_sema_acquire_timeout(CONN_SEMA_THERMAL_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6893(CONN_SEMA_THERMAL_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[THERM QRY] Require semaphore fail\n");
-		consys_adie_top_ck_en_off(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
+		consys_adie_top_ck_en_off_mt6893(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
 		iounmap(addr);
 		return -1;
 	}
@@ -393,8 +402,8 @@ int consys_thermal_query(void)
 			(CONSYS_REG_READ(CONN_TOP_THERM_CTL_ADDR + CONN_TOP_THERM_CTL_THERM_CAL_EN) &
 				~(0x1 << 19)));
 
-	consys_sema_release(CONN_SEMA_THERMAL_INDEX);
-	consys_adie_top_ck_en_off(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
+	consys_sema_release_mt6893(CONN_SEMA_THERMAL_INDEX);
+	consys_adie_top_ck_en_off_mt6893(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
 
 	iounmap(addr);
 
@@ -447,7 +456,7 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		}
 
 		if (bpll_switch || wpll_switch) {
-			while (consys_sema_acquire_timeout(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
+			while (consys_sema_acquire_timeout_mt6893(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
 
 			if (bpll_switch) {
 				CONSYS_SET_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
@@ -459,7 +468,7 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 				udelay(50);
 			}
 
-			consys_sema_release(CONN_SEMA_BUS_CONTROL);
+			consys_sema_release_mt6893(CONN_SEMA_BUS_CONTROL);
 		}
 
 		pr_info("drv=[%d] conninfra_bus_clock_wpll=[%u]->[%u] %s conninfra_bus_clock_bpll=[%u]->[%u] %s",
@@ -484,7 +493,7 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		}
 
 		if (bpll_switch || wpll_switch) {
-			while (consys_sema_acquire_timeout(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
+			while (consys_sema_acquire_timeout_mt6893(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
 
 			if (wpll_switch) {
 				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 20));
@@ -494,7 +503,7 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
 			}
 
-			consys_sema_release(CONN_SEMA_BUS_CONTROL);
+			consys_sema_release_mt6893(CONN_SEMA_BUS_CONTROL);
 		}
 
 		pr_info("drv=[%d] conninfra_bus_clock_wpll=[%u]->[%u] %s conninfra_bus_clock_bpll=[%u]->[%u] %s",
