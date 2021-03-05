@@ -1246,16 +1246,12 @@ int osal_usleep_range(unsigned long min, unsigned long max)
 	return 0;
 }
 
-int osal_gettimeofday(struct timeval *tv)
+int osal_gettimeofday(struct timespec64 *tv)
 {
-	struct timespec64 now;
-
 	if (tv == NULL)
 		return -1;
 
-	ktime_get_real_ts64(&now);
-	tv->tv_sec = now.tv_sec;
-	tv->tv_usec = now.tv_nsec / NSEC_PER_USEC;
+	ktime_get_real_ts64(tv);
 
 	return 0;
 }

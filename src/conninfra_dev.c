@@ -123,8 +123,10 @@ static void conninfra_clock_fail_dump_cb(void);
 static int conninfra_conn_reg_readable(void);
 static int conninfra_conn_is_bus_hang(void);
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 static void conninfra_devapc_violation_cb(void);
 static void conninfra_register_devapc_callback(void);
+#endif
 
 static int conninfra_dev_suspend_cb(void);
 static int conninfra_dev_resume_cb(void);
@@ -173,12 +175,14 @@ static struct work_struct gPwrOnOffWork;
 static atomic_t g_es_lr_flag_for_blank = ATOMIC_INIT(0); /* for ctrl blank flag */
 static int last_thermal_value;
 static int g_temp_thermal_value;
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 /* For DEVAPC callback */
 static struct work_struct g_conninfra_devapc_work;
 static struct devapc_vio_callbacks conninfra_devapc_handle = {
 	.id = INFRA_SUBSYS_CONN,
 	.debug_dump = conninfra_devapc_violation_cb,
 };
+#endif
 /* For PMIC callback */
 static struct conninfra_pmic_work g_conninfra_pmic_work;
 
@@ -481,6 +485,7 @@ static int conninfra_conn_is_bus_hang(void)
 	return conninfra_core_is_bus_hang();
 }
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 static void conninfra_devapc_violation_cb(void)
 {
 	schedule_work(&g_conninfra_devapc_work);
@@ -496,6 +501,7 @@ static void conninfra_register_devapc_callback(void)
 	INIT_WORK(&g_conninfra_devapc_work, conninfra_devapc_handler);
 	register_devapc_vio_callback(&conninfra_devapc_handle);
 }
+#endif
 
 static int conninfra_dev_suspend_cb(void)
 {
@@ -588,7 +594,10 @@ static int conninfra_dev_do_drv_init()
 
 	wmt_export_platform_bridge_register(&g_plat_bridge);
 
+
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 	conninfra_register_devapc_callback();
+#endif
 	conninfra_register_pmic_callback();
 	conninfra_register_thermal_callback();
 

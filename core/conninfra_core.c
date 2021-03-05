@@ -177,12 +177,12 @@ static void reset_chip_rst_trg_data(void)
 	memset(g_conninfra_ctx.trg_reason, '\0', CHIP_RST_REASON_MAX_LEN);
 }
 
-static unsigned long timeval_to_ms(struct timeval *begin, struct timeval *end)
+static unsigned long timespec64_to_ms(struct timespec64 *begin, struct timespec64 *end)
 {
 	unsigned long time_diff;
 
-	time_diff = (end->tv_sec - begin->tv_sec) * 1000;
-	time_diff += (end->tv_usec - begin->tv_usec) / 1000;
+	time_diff = (end->tv_sec - begin->tv_sec) * MSEC_PER_SEC;
+	time_diff += (end->tv_nsec - begin->tv_nsec) / NSEC_PER_MSEC;
 
 	return time_diff;
 }
@@ -385,7 +385,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	struct subsys_drv_inst *drv_inst;
 	unsigned int drv_pwr_state[CONNDRV_TYPE_MAX];
 	const unsigned int subdrv_all_done = (0x1 << CONNDRV_TYPE_MAX) - 1;
-	struct timeval pre_begin, pre_end, reset_end, done_end;
+	struct timespec64 pre_begin, pre_end, reset_end, done_end;
 
 	if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
 		pr_info("No subsys on, just return");
@@ -485,9 +485,9 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	osal_gettimeofday(&done_end);
 
 	pr_info("[chip_rst] summary pre=[%lu] reset=[%lu] post=[%lu]",
-				timeval_to_ms(&pre_begin, &pre_end),
-				timeval_to_ms(&pre_end, &reset_end),
-				timeval_to_ms(&reset_end, &done_end));
+				timespec64_to_ms(&pre_begin, &pre_end),
+				timespec64_to_ms(&pre_end, &reset_end),
+				timespec64_to_ms(&reset_end, &done_end));
 
 	return 0;
 }
@@ -500,7 +500,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	int bt_cal_ret, wf_cal_ret;
 	struct subsys_drv_inst *drv_inst;
 	int pre_cal_done_state = (0x1 << CONNDRV_TYPE_BT) | (0x1 << CONNDRV_TYPE_WIFI);
-	struct timeval begin, bt_cal_begin, wf_cal_begin, end;
+	struct timespec64 begin, bt_cal_begin, wf_cal_begin, end;
 
 	/* Check BT/WIFI status again */
 	ret = osal_lock_sleepable_lock(&g_conninfra_ctx.core_lock);
@@ -601,9 +601,9 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	osal_gettimeofday(&end);
 
 	pr_info("[pre_cal] summary pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
-			timeval_to_ms(&begin, &bt_cal_begin),
-			bt_cal_ret, timeval_to_ms(&bt_cal_begin, &wf_cal_begin),
-			wf_cal_ret, timeval_to_ms(&wf_cal_begin, &end));
+			timespec64_to_ms(&begin, &bt_cal_begin),
+			bt_cal_ret, timespec64_to_ms(&bt_cal_begin, &wf_cal_begin),
+			wf_cal_ret, timespec64_to_ms(&wf_cal_begin, &end));
 
 	return 0;
 }
@@ -1559,7 +1559,7 @@ void conninfra_core_pre_cal_blocking(void)
 #define BLOCKING_CHECK_MONITOR_THREAD 100
 	int ret;
 	struct pre_cal_info *cal_info = &g_conninfra_ctx.cal_info;
-	struct timeval start, end;
+	struct timespec64 start, end;
 	unsigned long diff;
 	static bool ever_pre_cal = false;
 
@@ -1598,7 +1598,7 @@ void conninfra_core_pre_cal_blocking(void)
 	}
 	osal_gettimeofday(&end);
 
-	diff = timeval_to_ms(&start, &end);
+	diff = timespec64_to_ms(&start, &end);
 	if (diff > BLOCKING_CHECK_MONITOR_THREAD)
 		pr_info("blocking spent [%lu]", diff);
 }

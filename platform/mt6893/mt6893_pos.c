@@ -1514,7 +1514,7 @@ void connsys_debug_select_config(void)
 			0x1, 0x7);
 	{
 		void __iomem *vir_addr = NULL;
-		vir_addr = ioremap_nocache(0x18006000, 0x1000);
+		vir_addr = ioremap(0x18006000, 0x1000);
 		if (vir_addr) {
 			/* wpll_rdy/bpll_rdy status dump
 			 * 1.???Set 0x1800_604C = 0xFFFF_FFFF
