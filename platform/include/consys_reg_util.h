@@ -103,6 +103,13 @@
 	} \
 }
 
+#define ADDR(Field) (Field##_ADDR)
+#define MASK(Field) (Field##_MASK)
+#define SHFT(Field) (Field##_SHFT)
+
+#define CONSYS_REG_WRITE_HW_ENTRY(Field, Value) \
+	CONSYS_REG_WRITE_MASK(ADDR(Field), (Value << SHFT(Field)), MASK(Field))
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************

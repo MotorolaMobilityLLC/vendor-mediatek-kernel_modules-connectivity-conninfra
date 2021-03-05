@@ -32,7 +32,7 @@ static int consys_dump_conninfra_status(void);
 static int consys_dump_cpupcr(enum conn_dump_cpupcr_type, int times, unsigned long interval_us);
 static int consys_is_host_csr(unsigned long addr);
 
-struct consys_reg_mng_ops g_dev_consys_reg_ops = {
+struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6893 = {
 	.consys_reg_mng_init = consys_reg_init,
 	.consys_reg_mng_deinit = consys_reg_deinit,
 
@@ -64,17 +64,7 @@ const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"IOCFG_RT",
 };
 
-struct consys_base_addr conn_reg;
-
-struct consys_reg_mng_ops* get_consys_reg_mng_ops(void)
-{
-	return &g_dev_consys_reg_ops;
-}
-
-struct consys_base_addr* get_conn_reg_base_addr()
-{
-	return &conn_reg;
-}
+struct consys_base_addr conn_reg_mt6893;
 
 static void consys_bus_hang_dump_c(void)
 {
@@ -310,7 +300,7 @@ static void consys_bus_hang_dump_b(void)
 	r2 = CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_DBG_DUMMY_3);
 
 
-	/* conn_infra_on clock 0x1020E504[0] = 1’b1
+	/* conn_infra_on clock 0x1020E504[0] = 1'b1
 	 *
 	 * cr4 : 0x1020_E504
 	 */
@@ -476,7 +466,7 @@ static int consys_is_bus_hang(void)
 	if (r != 0)
 		return CONNINFRA_AP2CONN_TX_SLP_PROT_ERR;
 
-	/* 2. Check conn_infra_on clock 0x1020E504[0] = 1’b1 */
+	/* 2. Check conn_infra_on clock 0x1020E504[0] = 1'b1 */
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_BASE_ADDR +
 			INFRA_AP2MD_GALS_CTL, 0x1);
 	if (r != 1)
@@ -560,7 +550,7 @@ int consys_check_reg_readable(void)
 
 	/* STEP - 2 */
 
-	/* 2. Check conn_infra_on clock 0x1020E504[0] = 1’b1 */
+	/* 2. Check conn_infra_on clock 0x1020E504[0] = 1'b1 */
 	r = CONSYS_REG_READ_BIT(CON_REG_INFRACFG_BASE_ADDR +
 			INFRA_AP2MD_GALS_CTL, 0x1);
 	if (r != 1)
@@ -625,7 +615,7 @@ int consys_is_consys_reg(unsigned int addr)
 static int consys_is_host_csr(unsigned long addr)
 {
 	struct consys_reg_base_addr *host_csr_addr =
-			&conn_reg.reg_base_addr[CONN_HOST_CSR_TOP_BASE_INDEX];
+			&conn_reg_mt6893.reg_base_addr[CONN_HOST_CSR_TOP_BASE_INDEX];
 
 	if (addr >= host_csr_addr->phy_addr &&
 			addr < host_csr_addr->phy_addr + host_csr_addr->size)
@@ -642,16 +632,16 @@ unsigned long consys_reg_validate_idx_n_offset(unsigned int idx, unsigned long o
 		return 0;
 	}
 
-	res = conn_reg.reg_base_addr[idx].phy_addr;
+	res = conn_reg_mt6893.reg_base_addr[idx].phy_addr;
 
 	if (res == 0) {
 		pr_warn("ConsysReg failed: No support the base idx is 0 index=[%d]\n", idx);
 		return 0;
 	}
 
-	if (offset >= conn_reg.reg_base_addr[idx].size) {
+	if (offset >= conn_reg_mt6893.reg_base_addr[idx].size) {
 		pr_warn("ConnReg failed: index(%d), offset(%d) over max size(%llu) %s\n",
-				idx, (int) offset, conn_reg.reg_base_addr[idx].size);
+				idx, (int) offset, conn_reg_mt6893.reg_base_addr[idx].size);
 		return 0;
 	}
 	return res;
@@ -664,8 +654,8 @@ int consys_find_can_write_reg(unsigned int *idx, unsigned long *offset)
 	int max, mask = 0x0000000F;
 	int before, after, ret;
 
-	addr = conn_reg.reg_base_addr[CONN_INFRA_RGU_BASE_INDEX].vir_addr;
-	max = conn_reg.reg_base_addr[CONN_INFRA_RGU_BASE_INDEX].size;
+	addr = conn_reg_mt6893.reg_base_addr[CONN_INFRA_RGU_BASE_INDEX].vir_addr;
+	max = conn_reg_mt6893.reg_base_addr[CONN_INFRA_RGU_BASE_INDEX].size;
 
 	pr_info("[%s] addr=[%p]\n", __func__, addr);
 
@@ -701,14 +691,14 @@ unsigned long consys_reg_get_phy_addr_by_idx(unsigned int idx)
 {
 	if (idx >= CONSYS_BASE_ADDR_MAX)
 		return 0;
-	return conn_reg.reg_base_addr[idx].phy_addr;
+	return conn_reg_mt6893.reg_base_addr[idx].phy_addr;
 }
 
 unsigned long consys_reg_get_virt_addr_by_idx(unsigned int idx)
 {
 	if (idx >= CONSYS_BASE_ADDR_MAX)
 		return 0;
-	return conn_reg.reg_base_addr[idx].vir_addr;
+	return conn_reg_mt6893.reg_base_addr[idx].vir_addr;
 }
 
 
@@ -718,12 +708,6 @@ int consys_reg_get_chip_id_idx_offset(unsigned int *idx, unsigned long *offset)
 	*offset = CONN_CFG_ID_OFFSET;
 	return 0;
 }
-
-int consys_reg_get_reg_symbol_num(void)
-{
-	return CONSYS_BASE_ADDR_MAX;
-}
-
 
 int consys_reg_init(struct platform_device *pdev)
 {
@@ -737,7 +721,7 @@ int consys_reg_init(struct platform_device *pdev)
 	pr_info("[%s] node=[%p]\n", __func__, node);
 	if (node) {
 		for (i = 0; i < CONSYS_BASE_ADDR_MAX; i++) {
-			base_addr = &conn_reg.reg_base_addr[i];
+			base_addr = &conn_reg_mt6893.reg_base_addr[i];
 
 			ret = of_address_to_resource(node, i, &res);
 			if (ret) {
@@ -769,12 +753,12 @@ static int consys_reg_deinit(void)
 	int i = 0;
 
 	for (i = 0; i < CONSYS_BASE_ADDR_MAX; i++) {
-		if (conn_reg.reg_base_addr[i].vir_addr) {
+		if (conn_reg_mt6893.reg_base_addr[i].vir_addr) {
 			pr_info("[%d] Unmap %s (0x%zx)",
 				i, consys_base_addr_index_to_str[i],
-				conn_reg.reg_base_addr[i].vir_addr);
-			iounmap((void __iomem*)conn_reg.reg_base_addr[i].vir_addr);
-			conn_reg.reg_base_addr[i].vir_addr = 0;
+				conn_reg_mt6893.reg_base_addr[i].vir_addr);
+			iounmap((void __iomem*)conn_reg_mt6893.reg_base_addr[i].vir_addr);
+			conn_reg_mt6893.reg_base_addr[i].vir_addr = 0;
 		}
 	}
 

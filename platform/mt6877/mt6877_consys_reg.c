@@ -90,6 +90,7 @@ static void consys_bus_hang_dump_a_rc(void)
 	}
 	pr_info("[rc_trace] %s", tmp_buf);
 
+	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 	for (i = 0x98; i <= 0xd4; i += 4) {
 		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[%x]",
 			CONSYS_REG_READ(addr + i)) >= 0)

@@ -42,6 +42,7 @@
 ********************************************************************************
 */
 #include <linux/delay.h>
+#include <linux/ratelimit.h>
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -82,6 +83,7 @@ static int opfunc_subdrv_post_reset(struct msg_op_data *op);
 static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op);
 static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op);
 static int opfunc_subdrv_therm_ctrl(struct msg_op_data *op);
+static int opfunc_subdrv_time_change(struct msg_op_data *op);
 
 static void _conninfra_core_update_rst_status(enum chip_rst_status status);
 
@@ -144,6 +146,7 @@ typedef enum {
 	INFRA_SUBDRV_OPID_CAL_PWR_ON	= 2,
 	INFRA_SUBDRV_OPID_CAL_DO_CAL	= 3,
 	INFRA_SUBDRV_OPID_THERM_CTRL	= 4,
+	INFRA_SUBDRV_OPID_TIME_CHANGED	= 5,
 
 	INFRA_SUBDRV_OPID_MAX
 } infra_subdrv_op;
@@ -155,6 +158,7 @@ static const msg_opid_func infra_subdrv_opfunc[] = {
 	[INFRA_SUBDRV_OPID_CAL_PWR_ON] = opfunc_subdrv_cal_pwr_on,
 	[INFRA_SUBDRV_OPID_CAL_DO_CAL] = opfunc_subdrv_cal_do_cal,
 	[INFRA_SUBDRV_OPID_THERM_CTRL] = opfunc_subdrv_therm_ctrl,
+	[INFRA_SUBDRV_OPID_TIME_CHANGED] = opfunc_subdrv_time_change,
 };
 
 enum pre_cal_type {
@@ -197,6 +201,26 @@ static unsigned int opfunc_get_current_status(void)
 	}
 
 	return ret;
+}
+
+/* Should be called in conninfra_core
+ */
+static void _status_dump(void)
+{
+	const char* drv_name[] = {
+		"bt ", "fm ", "gps ", "wifi ", "conninfra"
+	};
+	char buf[256] = {'\0'};
+	unsigned int i, buf_len = 0, str_len;
+
+	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+		str_len = strlen(drv_name[i]);
+		if (g_conninfra_ctx.drv_inst[i].drv_status && (buf_len + str_len < 256)) {
+			strncat(buf, drv_name[i], str_len);
+			buf_len += str_len;
+		}
+	}
+	pr_info("Connsys status: %s", buf);
 }
 
 static void opfunc_vcn_control_internal(unsigned int drv_type, bool on)
@@ -253,15 +277,23 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		return 0;
 	}
 
+	/* POWER ON SEQUENCE */
 	ret = consys_hw_pwr_on(opfunc_get_current_status(), drv_type);
 	if (ret) {
 		pr_err("Conninfra power on fail. drv(%d) ret=(%d)\n",
 			drv_type, ret);
 		osal_unlock_sleepable_lock(&infra_ctx->core_lock);
-		return -3;
+		return ret;
 	}
-	/* POWER ON SEQUENCE */
-	g_conninfra_ctx.infra_drv_status = DRV_STS_POWER_ON;
+	if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
+		g_conninfra_ctx.infra_drv_status = DRV_STS_POWER_ON;
+		ret = consys_hw_enable_power_dump();
+		if (ret) {
+			pr_err("[Conninfra Pwr On] consys_hw_enable_power_dump fail, ret=%d", ret);
+			atomic_set(&g_conninfra_ctx.power_dump_enable, 0);
+		} else
+			atomic_set(&g_conninfra_ctx.power_dump_enable, 1);
+	}
 
 	g_conninfra_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
 
@@ -315,6 +347,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 
 	/* Special case for force power off */
 	if (drv_type == CONNDRV_TYPE_CONNINFRA) {
+		atomic_set(&g_conninfra_ctx.power_dump_enable, 0);
 		if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
 			pr_warn("Connsys already off, do nothing for force off\n");
 			return 0;
@@ -340,15 +373,18 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 			osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 			return 0;
 		}
-		/* VCNx disable */
-		opfunc_vcn_control_internal(drv_type, false);
 		g_conninfra_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_OFF;
 		/* is there subsys on ? */
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++)
 			if (g_conninfra_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON)
 				try_power_off = false;
 
+		/* Disable power dump if we would power off later. */
+		if (try_power_off)
+			atomic_set(&g_conninfra_ctx.power_dump_enable, 0);
 		/* POWER OFF SEQUENCE */
+		/* VCNx disable */
+		opfunc_vcn_control_internal(drv_type, false);
 		ret = consys_hw_pwr_off(curr_status, drv_type);
 		if (ret) {
 			pr_err("Conninfra power on fail. drv(%d) ret=(%d)\n",
@@ -608,19 +644,64 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	return 0;
 }
 
+static void conninfra_detect_time_change(void) {
+	static struct timespec64 prev_utc;
+	static ktime_t prev_ktime;
+	static int counter = 0;
+	struct timespec64 curr_utc;
+	ktime_t curr_ktime;
+	unsigned long utc_diff;
+	unsigned long ktime_diff_ms;
+	unsigned long ktime_utc_diff_ms;
+	bool time_changed = false;
+	int i, ret;
+	struct subsys_drv_inst *drv_inst;
+
+	osal_gettimeofday(&curr_utc);
+	curr_ktime = ktime_get();
+
+	if (counter != 0) {
+		utc_diff = timespec64_to_ms(&prev_utc, &curr_utc);
+		ktime_diff_ms = (unsigned long)((curr_ktime - prev_ktime)/1000000);
+		ktime_utc_diff_ms = max(ktime_diff_ms, utc_diff) - min(ktime_diff_ms, utc_diff);
+		if (ktime_utc_diff_ms >= 5000) {
+			pr_info("[%s] detect time change, send sync command\n", __func__);
+			time_changed = true;
+		}
+	}
+
+	memcpy(&prev_utc, &curr_utc, sizeof(struct timespec64));
+	prev_ktime = curr_ktime;
+	counter++;
+
+	if (time_changed) {
+		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+			drv_inst = &g_conninfra_ctx.drv_inst[i];
+			ret = msg_thread_send_1(&drv_inst->msg_ctx,
+				INFRA_SUBDRV_OPID_TIME_CHANGED, i);
+			pr_info("[%s] send to %s, ret=%d\n", __func__, drv_name[i], ret);
+		}
+	}
+}
+
 
 static int opfunc_therm_ctrl(struct msg_op_data *op)
 {
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 	int ret = -1;
 	int *data_ptr = (int*)op->op_data[0];
 
 	if (g_conninfra_ctx.infra_drv_status != DRV_STS_POWER_ON) {
 		*data_ptr = 0;
-		return CONNINFRA_ERR_POWER_OFF;
+		return 0;
 	}
 
 	if (data_ptr)
 		ret = consys_hw_therm_query(data_ptr);
+
+	if (__ratelimit(&_rs))
+		_status_dump();
+	conninfra_detect_time_change();
 	return ret;
 }
 
@@ -917,25 +998,20 @@ static int opfunc_dump_power_state(struct msg_op_data *op)
 {
 	int ret;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	unsigned long flag;
 
-	ret = osal_lock_sleepable_lock(&infra_ctx->core_lock);
-	if (ret) {
-		pr_err("core_lock fail!!");
-		return ret;
+	/* check if dump state is enable */
+	if (atomic_read(&g_conninfra_ctx.power_dump_enable) == 0) {
+		pr_info("[%s] power dump is not enable", __func__);
+		return 0;
 	}
 
-	/* check if conninfra already on */
-	if (g_conninfra_ctx.infra_drv_status != DRV_STS_POWER_ON) {
-		ret = -1;
-		goto err;
-	}
-
+	spin_lock_irqsave(&infra_ctx->power_dump_lock, flag);
 	ret = consys_hw_dump_power_state();
 	if (ret)
-		pr_err("dump power state fail");
+		pr_err("[%s] dump power state fail, ret=%d", __func__, ret);
 
-err:
-	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
+	spin_unlock_irqrestore(&g_conninfra_ctx.power_dump_lock, flag);
 	return ret;
 
 }
@@ -1036,6 +1112,18 @@ static int opfunc_subdrv_therm_ctrl(struct msg_op_data *op)
 	return 0;
 }
 
+static int opfunc_subdrv_time_change(struct msg_op_data *op)
+{
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+
+	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
+	pr_info("[%s] drv=[%s] callback=%s\n", __func__, drv_thread_name[drv_type], drv_inst->ops_cb.time_change_notify);
+	if (drv_inst->ops_cb.time_change_notify)
+		drv_inst->ops_cb.time_change_notify();
+	pr_info("[%s][%s] DONE\n", __func__, drv_thread_name[drv_type]);
+	return 0;
+}
 
 /*
  * CONNINFRA API
@@ -1049,7 +1137,7 @@ int conninfra_core_power_on(enum consys_drv_type type)
 				CONNINFRA_OPID_PWR_ON, 0, type);
 	if (ret) {
 		pr_err("[%s] fail, ret = %d\n", __func__, ret);
-		return -1;
+		return ret;
 	}
 	return 0;
 }
@@ -1638,12 +1726,30 @@ static void conninfra_core_pre_cal_work_handler(struct work_struct *work)
 	pr_info("[%s] [pre_cal][ret=%d] -----------", __func__, ret);
 }
 
+int conninfra_core_reset_power_state(void)
+{
+	unsigned long flag;
+	/* Called inside platform suspend callback, could not call sleepable lock
+	 * To setup sleep count function
+	 */
+	if (atomic_read(&g_conninfra_ctx.power_dump_enable)) {
+		spin_lock_irqsave(&g_conninfra_ctx.power_dump_lock, flag);
+		consys_hw_reset_power_state();
+		spin_unlock_irqrestore(&g_conninfra_ctx.power_dump_lock, flag);
+	}
+	return 0;
+}
+
 
 int conninfra_core_dump_power_state(void)
 {
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
+	/* Two information in this dump
+	 * 1. Power state
+	 * 2. Sleep count (if supported)
+	 */
 	ret = msg_thread_send(&infra_ctx->msg_ctx,
 				CONNINFRA_OPID_DUMP_POWER_STATE);
 	if (ret) {
@@ -1742,7 +1848,8 @@ int conninfra_core_init(void)
 	spin_lock_init(&infra_ctx->infra_lock);
 	osal_sleepable_lock_init(&infra_ctx->core_lock);
 	spin_lock_init(&infra_ctx->rst_lock);
-
+	spin_lock_init(&infra_ctx->power_dump_lock);
+	atomic_set(&infra_ctx->power_dump_enable, 0);
 
 	ret = msg_thread_init(&infra_ctx->msg_ctx, "conninfra_cored",
 				conninfra_core_opfunc, CONNINFRA_OPID_MAX);

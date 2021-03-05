@@ -22,13 +22,7 @@
 #include "consys_reg_mng.h"
 #include "consys_reg_util.h"
 
-struct consys_reg_mng_ops* g_consys_reg_ops = NULL;
-
-struct consys_reg_mng_ops* __weak get_consys_reg_mng_ops(void)
-{
-	pr_warn("No specify project\n");
-	return NULL;
-}
+const struct consys_reg_mng_ops* g_consys_reg_ops = NULL;
 
 int consys_reg_mng_reg_readable(void)
 {
@@ -80,11 +74,11 @@ int consys_reg_mng_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times, 
 	return -1;
 }
 
-int consys_reg_mng_init(struct platform_device *pdev)
+int consys_reg_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data)
 {
 	int ret = 0;
 	if (g_consys_reg_ops == NULL)
-		g_consys_reg_ops = get_consys_reg_mng_ops();
+		g_consys_reg_ops = (const struct consys_reg_mng_ops*)plat_data->reg_ops;
 
 	if (g_consys_reg_ops &&
 		g_consys_reg_ops->consys_reg_mng_init)

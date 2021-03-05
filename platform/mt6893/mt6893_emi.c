@@ -41,6 +41,7 @@
 
 #define	DOMAIN_AP	0
 #define	DOMAIN_CONN	2
+#define	DOMAIN_SCP	3
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -69,9 +70,9 @@
 extern unsigned long long gConEmiSize;
 extern phys_addr_t gConEmiPhyBase;
 
-struct consys_platform_emi_ops g_consys_platform_emi_ops = {
+struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893 = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection,
-	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg,
+	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg_mt6893,
 	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi,
 };
 
@@ -85,11 +86,6 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops = {
 ********************************************************************************
 */
 
-struct consys_platform_emi_ops* get_consys_platform_emi_ops(void)
-{
-	return &g_consys_platform_emi_ops;
-}
-
 int consys_emi_mpu_set_region_protection(void)
 {
 #if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
@@ -101,6 +97,8 @@ int consys_emi_mpu_set_region_protection(void)
 	mtk_emimpu_set_addr(&region, start, end);
 	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
 	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
+	/* for scp */
+	mtk_emimpu_set_apc(&region, DOMAIN_SCP, MTK_EMIMPU_NO_PROTECTION);
 	mtk_emimpu_set_protection(&region);
 	mtk_emimpu_free_region(&region);
 

@@ -75,7 +75,7 @@ extern unsigned long long gConEmiSize;
 extern phys_addr_t gConEmiPhyBase;
 #endif
 
-struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
+const struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
 
 struct consys_emi_addr_info connsys_emi_addr_info = {
 	.emi_ap_phy_addr = 0,
@@ -118,13 +118,6 @@ struct consys_emi_addr_info* emi_mng_get_phy_addr(void)
 	return &connsys_emi_addr_info;
 }
 
-
-struct consys_platform_emi_ops* __weak get_consys_platform_emi_ops(void)
-{
-	pr_warn("No specify project\n");
-	return NULL;
-}
-
 #ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
 static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 {
@@ -152,13 +145,14 @@ static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 }
 #endif
 
-int emi_mng_init(struct platform_device *pdev)
+
+int emi_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data)
 {
 #ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
 	emi_mng_allocate_connsys_emi(pdev);
 #endif
 	if (consys_platform_emi_ops == NULL)
-		consys_platform_emi_ops = get_consys_platform_emi_ops();
+		consys_platform_emi_ops = (const struct consys_platform_emi_ops*)plat_data->platform_emi_ops;
 
 	pr_info("[emi_mng_init] gConEmiPhyBase = [0x%llx] size = [%llx] ops=[%p]",
 			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
@@ -185,6 +179,7 @@ int emi_mng_init(struct platform_device *pdev)
 
 int emi_mng_deinit(void)
 {
+	consys_platform_emi_ops = NULL;
 	return 0;
 }
 
