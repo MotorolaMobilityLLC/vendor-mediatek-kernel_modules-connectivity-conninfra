@@ -224,7 +224,7 @@ static int connlog_emi_init(struct connlog_dev* handler, phys_addr_t emiaddr, un
 
 	handler->phyAddrEmiBase = emiaddr;
 	handler->emi_size = emi_size;
-	handler->virAddrEmiLogBase = ioremap_nocache(handler->phyAddrEmiBase, emi_size);
+	handler->virAddrEmiLogBase = ioremap(handler->phyAddrEmiBase, emi_size);
 	handler->log_offset.emi_base_offset = CONNLOG_EMI_BASE_OFFSET;
 	handler->log_offset.emi_size = cal_log_size;
 	handler->log_offset.emi_read = CONNLOG_EMI_READ;
@@ -1090,11 +1090,11 @@ EXPORT_SYMBOL(connsys_log_deinit);
 void connsys_log_get_utc_time(
 	unsigned int *second, unsigned int *usecond)
 {
-	struct timeval time;
+	struct timespec64 time;
 
 	osal_gettimeofday(&time);
 	*second = (unsigned int)time.tv_sec; /* UTC time second unit */
-	*usecond = (unsigned int)time.tv_usec; /* UTC time microsecond unit */
+	*usecond = (unsigned int)time.tv_nsec / NSEC_PER_USEC; /* UTC time microsecond unit */
 }
 EXPORT_SYMBOL(connsys_log_get_utc_time);
 
@@ -1132,7 +1132,7 @@ static enum alarmtimer_restart connlog_alarm_timer_handler(struct alarm *alarm,
 	int i;
 
 	connsys_log_get_utc_time(&tsec, &tusec);
-	rtc_time_to_tm(tsec, &tm);
+	rtc_time64_to_tm(tsec, &tm);
 	pr_info("[connsys_log_alarm] alarm_timer triggered [%d-%02d-%02d %02d:%02d:%02d.%09u]"
 			, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday
 			, tm.tm_hour, tm.tm_min, tm.tm_sec, tusec);

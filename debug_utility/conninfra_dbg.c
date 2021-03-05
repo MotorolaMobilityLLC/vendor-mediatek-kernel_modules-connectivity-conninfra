@@ -250,7 +250,7 @@ static int conninfra_dbg_ap_reg_read(int par1, int par2, int par3)
 	unsigned char *ap_reg_base = NULL;
 
 	pr_info("AP register read, reg address:0x%x\n", par2);
-	ap_reg_base = ioremap_nocache(par2, 0x4);
+	ap_reg_base = ioremap(par2, 0x4);
 	if (ap_reg_base) {
 		value = readl(ap_reg_base);
 		pr_info("AP register read, reg address:0x%x, value:0x%x\n", par2, value);
@@ -268,7 +268,7 @@ static int conninfra_dbg_ap_reg_write(int par1, int par2, int par3)
 
 	pr_info("AP register write, reg address:0x%x, value:0x%x\n", par2, par3);
 
-	ap_reg_base = ioremap_nocache(par2, 0x4);
+	ap_reg_base = ioremap(par2, 0x4);
 	if (ap_reg_base) {
 		writel(par3, ap_reg_base);
 		value = readl(ap_reg_base);
@@ -389,7 +389,7 @@ static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3)
 	}
 
 	pr_info("EMI dump, offset=0x%x(physical addr=0x%x), size=0x%x\n", par2, start, size);
-	vir_addr = ioremap_nocache(start, size);
+	vir_addr = ioremap(start, size);
 	if (!vir_addr) {
 		pr_err("ioremap fail");
 		osal_free(buf);
@@ -550,11 +550,18 @@ ssize_t conninfra_dbg_write(struct file *filp, const char __user *buffer, size_t
 
 int conninfra_dev_dbg_init(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
+	static const struct proc_ops conninfra_dbg_fops = {
+		.proc_read = conninfra_dbg_read,
+		.proc_write = conninfra_dbg_write,
+	};
+#else
 	static const struct file_operations conninfra_dbg_fops = {
 		.owner = THIS_MODULE,
 		.read = conninfra_dbg_read,
 		.write = conninfra_dbg_write,
 	};
+#endif
 	int i_ret = 0;
 
 	g_conninfra_dbg_entry = proc_create(CONNINFRA_DBG_PROCNAME, 0664, NULL, &conninfra_dbg_fops);
