@@ -1387,6 +1387,10 @@ int connsys_coredump_setup_dump_region(void* handler)
 	memset(buf, '\0', sizeof(buf));
 	wsize = snprintf(buf, BUF_SIZE, "[CR region](base,length): ");
 
+	if (wsize < 0) {
+		pr_info("[%s::%d] snprintf error\n", __func__, __LINE__);
+	}
+
 	offset = CONNSYS_DUMP_CR_REGION_OFFSET;
 	for (i = 0; i < cr_regions_idx && idx < total_count; i++, idx++, offset+=8) {
 		ctx->dump_regions[idx].base = conndump_get_dmp_info(ctx, offset, false);
@@ -1395,12 +1399,21 @@ int connsys_coredump_setup_dump_region(void* handler)
 		if (wsize >= 0 && wsize < (BUF_SIZE - accum_size)) {
 			accum_size += wsize;
 			wsize = snprintf(buf + accum_size, (BUF_SIZE - accum_size), "[%d](0x%x, %d), ", idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
+
+			if (wsize < 0) {
+				pr_info("[%s::%d] snprintf error\n", __func__, __LINE__);
+			}
 		}
 
 		if (cr_count % MAX_IN_LINE == 0) {
 			pr_info("%s", buf);
 			memset(buf, '\0', sizeof(buf));
 			wsize = snprintf(buf, BUF_SIZE, "[CR region](base,length): ");
+
+			if (wsize < 0) {
+				pr_info("[%s::%d] snprintf error\n", __func__, __LINE__);
+			}
+
 			accum_size = 0;
 		}
 
