@@ -15,6 +15,7 @@
 #include <pmic_api_buck.h>
 #include <upmu_common.h>
 
+#include "osal.h"
 #include "consys_hw.h"
 #include "pmic_mng.h"
 #include "mt6877_pos.h"
