@@ -511,14 +511,7 @@ static void consys_raise_vcn13_vs2_voltage(enum vcn13_state next_state)
 	}
 	pr_info("[%s] curr_vcn13_state=%d next_state=%d\n", __func__, curr_vcn13_state, next_state);
 	/* Check raise window, the duration to previous action should be 1 ms. */
-#if 1	/* workaround */
-	if (atomic_read(&g_voltage_change_status) == 1) {
-		udelay(1000);
-	}
-	atomic_set(&g_voltage_change_status, 0);
-#else
 	while (atomic_read(&g_voltage_change_status) == 1);
-#endif
 	pr_info("[%s] check down\n", __func__);
 	curr_vcn13_state = next_state;
 
@@ -621,8 +614,7 @@ static void consys_raise_vcn13_vs2_voltage(enum vcn13_state next_state)
 
 	/* start timer */
 	atomic_set(&g_voltage_change_status, 1);
-	osal_timer_modify(&g_voltage_change_timer, jiffies + HZ/1000);
-	
+	osal_timer_modify(&g_voltage_change_timer, 1);
 }
 
 int consys_plt_pmic_raise_voltage(unsigned int drv_type, bool raise, bool onoff)
