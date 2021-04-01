@@ -1076,6 +1076,13 @@ int connsys_afe_wbg_cal_mt6877(void)
 	CONSYS_CLR_BIT(CONN_AFE_CTL_RG_DIG_EN_01_ADDR, (0x1 << 0));
 
 	/* AFE WBG CAL SEQ2 (TX calibration)
+	 * 0.Before DACK, downgrade VCM to 0.6V
+	 * 	update RG TX value for BT0
+	 * 		CONN_AFE_CTL_RG_WBG_BT0_TX_03_RG_BT0_BBTX_VCM_VGER	0x18003058[25:22]=4'b0000
+	 * 	update RG TX value for WF0
+	 * 		CONN_AFE_CTL_RG_WBG_WF0_TX_03_RG_W0_BBTX_VCM_VGER	0x18003078[25:22]=4'b0000
+	 * 	update RG TX value for WF1
+	 * 		CONN_AFE_CTL_RG_WBG_WF1_TX_03_RG_W1_BBTX_VCM_VGER	0x18003094[25:22]=4'b0000
 	 * 1. AFE WBG TX calibration, set "AFE RG_WBG_EN_BPLL_UP" = 1
 	 * 	CONN_AFE_CTL_RG_DIG_EN_03_RG_WBG_EN_BPLL_UP	0x18003008[21]=1'b1
 	 * 2. AFE WBG TX calibration, delay 30us
@@ -1089,6 +1096,9 @@ int connsys_afe_wbg_cal_mt6877(void)
 	 * 7. AFE WBG TX calibration, set "AFE RG_WBG_EN_TXCAL_WF1" = 1
 	 * 	CONN_AFE_CTL_RG_DIG_EN_01_RG_WBG_EN_TXCAL_WF1	0x18003000[19]=1'b1
 	 */
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_BT0_TX_03_RG_BT0_BBTX_VCM_VGER, 0x0);
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_WF0_TX_03_RG_W0_BBTX_VCM_VGER, 0x0);
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_WF1_TX_03_RG_W1_BBTX_VCM_VGER, 0x0);
 	CONSYS_SET_BIT(CONN_AFE_CTL_RG_DIG_EN_03_ADDR, (0x1 << 21));
 	udelay(30);
 	CONSYS_SET_BIT(CONN_AFE_CTL_RG_DIG_EN_03_ADDR, (0x1 << 20));
@@ -1115,6 +1125,19 @@ int connsys_afe_wbg_cal_mt6877(void)
 	CONSYS_CLR_BIT(CONN_AFE_CTL_RG_DIG_EN_01_ADDR, (0x1 << 19));
 	CONSYS_CLR_BIT(CONN_AFE_CTL_RG_DIG_EN_03_ADDR, (0x1 << 21));
 	CONSYS_CLR_BIT(CONN_AFE_CTL_RG_DIG_EN_03_ADDR, (0x1 << 20));
+
+	/* After DACK, set VCM back to 0.65V (default)
+	 * update RG TX value for BT0
+	 * 	CONN_AFE_CTL_RG_WBG_BT0_TX_03_RG_BT0_BBTX_VCM_VGER	0x18003058[25:22]=4'b0100
+	 * update RG TX value for WF0
+	 * 	CONN_AFE_CTL_RG_WBG_WF0_TX_03_RG_W0_BBTX_VCM_VGER	0x18003078[25:22]=4'b0100
+	 * update RG TX value for WF1
+	 * 	CONN_AFE_CTL_RG_WBG_WF1_TX_03_RG_W1_BBTX_VCM_VGER	0x18003094[25:22]=4'b0100
+	 */
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_BT0_TX_03_RG_BT0_BBTX_VCM_VGER, 0x4);
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_WF0_TX_03_RG_W0_BBTX_VCM_VGER, 0x4);
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_AFE_CTL_RG_WBG_WF1_TX_03_RG_W1_BBTX_VCM_VGER, 0x4);
+
 
 	/* Initial BT path if WF is in cal(need set this CR after WBG cal)
 	 * 	ATOP RG_ENCAL_WBTAC_IF_SW	0x070=32'h00000005
@@ -1262,10 +1285,20 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 			 * 	0x18001380[31] = 1'b0
 			 * Disable legacy osc control
 			 * 	0x18001380[0] = 1'b0
+			 * Legacy OSC control stable time
+			 * 	CONN_INFRA_CFG_OSC_CTL_0_XO_VCORE_RDY_STABLE_TIME
+			 * 		0x18001300[7:0]=8'd6
+			 * 	CONN_INFRA_CFG_OSC_CTL_0_XO_INI_STABLE_TIME
+			 * 		0x18001300[15:8]=8'd7
+			 * 	CONN_INFRA_CFG_OSC_CTL_0_XO_BG_STABLE_TIME
+			 * 		0x18001300[23:16]=8'd8
+			 * Legacy OSC control unmask conn_srcclkena_ack
+			 * 	CONN_INFRA_CFG_OSC_CTL_1_ACK_FOR_XO_STATE_MASK
+			 * 		0x18001304[16]=1'b0
 			 * Enable osc_rc_en_bk
 			 * 	0x18001380[30] = 1'b1
 			 * Unmask osc_en for osc_en_rc
-			 * 	0x18001388[7:4] = 4'b0010
+			 * 	0x18001388[7:4] = 4'b1101
 			 * Enable conn_emi_bt_only_rc_en => conn_srcclkena = conn_srcclkena_cfg || conn_srcclkena_emi
 			 * 	0x18001400[16] = 1'b1
 			 */
@@ -1278,8 +1311,10 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 			CONSYS_SET_BIT(CONN_CFG_EMI_CTL_0_ADDR, (0x1 << 0));
 			CONSYS_CLR_BIT(CONN_CFG_CONN_INFRA_CFG_RC_CTL_0_ADDR, (0x1 << 31));
 			CONSYS_CLR_BIT(CONN_CFG_CONN_INFRA_CFG_RC_CTL_0_ADDR, (0x1 << 0));
+			CONSYS_REG_WRITE_MASK(CONN_CFG_OSC_CTL_0_ADDR, 0x00080706, 0x00ffffff);
+			CONSYS_CLR_BIT(CONN_CFG_OSC_CTL_1_ADDR, (0x1 << 16));
 			CONSYS_SET_BIT(CONN_CFG_CONN_INFRA_CFG_RC_CTL_0_ADDR, (0x1 << 30));
-			CONSYS_REG_WRITE_MASK(CONN_CFG_CONN_INFRA_CFG_RC_CTL_1_ADDR, 0x20, 0xf0);
+			CONSYS_REG_WRITE_MASK(CONN_CFG_CONN_INFRA_CFG_RC_CTL_1_ADDR, 0xd0, 0xf0);
 			CONSYS_SET_BIT(CONN_CFG_EMI_CTL_0_ADDR, (0x1 << 16));
 		}
 		/* RC mode check end */
@@ -1384,6 +1419,11 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 		}
 		iounmap(addr);
 
+		/* The config is moved to WIFI driver and WIFI FW.
+		 * 0x1801_d000 is on conninfra off domain. The config could not be kept after
+		 * conninfra went to sleep.
+		 */
+#if 0
 		/* Enable debug control bus timeout feature (axi layer)
 		 * CONN_INFRA_VDNR_AXI_LAYER_DEBUG_CTRL_AO_CONN_INFRA_VDNR_AXI_LAYER_U_DEBUG_CTRL_AO_CONN_INFRA_CTRL0
 		 * 	0x1801_D000[9]=1'b1
@@ -1411,6 +1451,7 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 			return -1;
 		}
 		iounmap(addr);
+#endif
 
 		/* De-assert CONNSYS S/W reset (TOP RGU CR), set "ap_sw_rst_b"=1
 		 * WDT_SWSYSRST[12] = 1'b0
