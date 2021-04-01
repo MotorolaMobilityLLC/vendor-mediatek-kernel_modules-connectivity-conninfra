@@ -193,7 +193,8 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 		if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
 			consys_hw_ops->consys_plt_clock_buffer_ctrl(0);
 		ret = pmic_mng_common_power_ctrl(0);
-		pr_info("Power off a-die power, ret=%d\n", ret);
+		if (ret)
+			pr_info("Power off a-die power, ret=%d\n", ret);
 	} else {
 		pr_info("[%s] Part 0: only subsys (%d) off (curr_status=0x%x, next_status = 0x%x)\n",
 			__func__, off_radio, curr_status, next_status);
