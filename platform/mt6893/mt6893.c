@@ -7,11 +7,13 @@
 
 #include <linux/clk.h>
 #include <linux/delay.h>
+#include <linux/math64.h>
 #include <linux/memblock.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
+#include <linux/types.h>
 
 #include <connectivity_build_in_adapter.h>
 
@@ -77,6 +79,7 @@ static void consys_clock_fail_dump(void);
 static int consys_thermal_query(void);
 static int consys_power_state(void);
 static int consys_bus_clock_ctrl(enum consys_drv_type, unsigned int, int);
+static unsigned long long consys_soc_timestamp_get(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -123,6 +126,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6893 = {
 	.consys_plt_power_state = consys_power_state,
 	.consys_plt_config_setup = consys_config_setup_mt6893,
 	.consys_plt_bus_clock_ctrl = consys_bus_clock_ctrl,
+	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get,
 };
 
 struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
@@ -517,3 +521,31 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 	}
 	return 0;
 }
+
+static unsigned long long consys_soc_timestamp_get(void)
+{
+#define TICK_PER_MS	(13000)
+	void __iomem *addr = NULL;
+	u32 tick_h = 0, tick_l = 0;
+	u64 timestamp = 0;
+
+	/* 0x1001_7000	sys_timer@13M
+	 * - 0x0008	CNTCV_L	32	System counter count value low
+	 * - 0x000C	CNTCV_H	32	System counter count value high
+	 */
+	addr = ioremap(0x10017000, 0x10);
+	if (addr) {
+		tick_l = CONSYS_REG_READ(addr + 0x0008);
+		tick_h = CONSYS_REG_READ(addr + 0x000c);
+		iounmap(addr);
+	} else {
+		pr_info("[%s] remap fail", __func__);
+		return 0;
+	}
+
+	timestamp = ((((u64)tick_h << 32) & 0xFFFFFFFF00000000) | ((u64)tick_l & 0x00000000FFFFFFFF));
+	do_div(timestamp, TICK_PER_MS);
+
+	return timestamp;
+}
+

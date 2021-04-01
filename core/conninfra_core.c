@@ -646,32 +646,32 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 
 static void conninfra_detect_time_change(void) {
 	static struct timespec64 prev_utc;
-	static ktime_t prev_ktime;
+	static u64 prev_soc_time;
 	static int counter = 0;
 	struct timespec64 curr_utc;
-	ktime_t curr_ktime;
+	u64 curr_soc_time;
 	unsigned long utc_diff;
-	unsigned long ktime_diff_ms;
-	unsigned long ktime_utc_diff_ms;
+	unsigned long soc_time_diff_ms;
+	unsigned long soc_utc_diff_ms;
 	bool time_changed = false;
 	int i, ret;
 	struct subsys_drv_inst *drv_inst;
 
 	osal_gettimeofday(&curr_utc);
-	curr_ktime = ktime_get();
+	curr_soc_time = consys_hw_soc_timestamp_get();
 
 	if (counter != 0) {
 		utc_diff = timespec64_to_ms(&prev_utc, &curr_utc);
-		ktime_diff_ms = (unsigned long)((curr_ktime - prev_ktime)/1000000);
-		ktime_utc_diff_ms = max(ktime_diff_ms, utc_diff) - min(ktime_diff_ms, utc_diff);
-		if (ktime_utc_diff_ms >= 5000) {
+		soc_time_diff_ms = (unsigned long)(curr_soc_time - prev_soc_time);
+		soc_utc_diff_ms = max(soc_time_diff_ms, utc_diff) - min(soc_time_diff_ms, utc_diff);
+		if (soc_utc_diff_ms >= 5000) {
 			pr_info("[%s] detect time change, send sync command\n", __func__);
 			time_changed = true;
 		}
 	}
 
-	memcpy(&prev_utc, &curr_utc, sizeof(struct timespec64));
-	prev_ktime = curr_ktime;
+	memcpy(&prev_utc, &curr_utc, sizeof(struct timeval));
+	prev_soc_time = curr_soc_time;
 	counter++;
 
 	if (time_changed) {
@@ -679,7 +679,6 @@ static void conninfra_detect_time_change(void) {
 			drv_inst = &g_conninfra_ctx.drv_inst[i];
 			ret = msg_thread_send_1(&drv_inst->msg_ctx,
 				INFRA_SUBDRV_OPID_TIME_CHANGED, i);
-			pr_info("[%s] send to %s, ret=%d\n", __func__, drv_name[i], ret);
 		}
 	}
 }
@@ -1118,10 +1117,10 @@ static int opfunc_subdrv_time_change(struct msg_op_data *op)
 	struct subsys_drv_inst *drv_inst;
 
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
-	pr_info("[%s] drv=[%s] callback=%s\n", __func__, drv_thread_name[drv_type], drv_inst->ops_cb.time_change_notify);
-	if (drv_inst->ops_cb.time_change_notify)
+	if (drv_inst->ops_cb.time_change_notify) {
+		pr_info("[%s] drv=[%s]", __func__, drv_thread_name[drv_type]);
 		drv_inst->ops_cb.time_change_notify();
-	pr_info("[%s][%s] DONE\n", __func__, drv_thread_name[drv_type]);
+	}
 	return 0;
 }
 
