@@ -17,7 +17,9 @@
 
 #include "osal.h"
 #include "consys_hw.h"
+#include "consys_reg_util.h"
 #include "pmic_mng.h"
+#include "mt6877_consys_reg_offset.h"
 #include "mt6877_pos.h"
 
 /*******************************************************************************
@@ -57,6 +59,7 @@ static struct regulator *reg_VCN18;
 static struct regulator *reg_VCN33_1_BT;
 static struct regulator *reg_VCN33_1_WIFI;
 static struct regulator *reg_VCN33_2_WIFI;
+static struct notifier_block vcn13_nb;
 
 static struct conninfra_dev_cb* g_dev_cb;
 
@@ -80,6 +83,9 @@ static int consys_pmic_vcn33_2_power_ctl_mt6877(bool);
 static int consys_plt_pmic_raise_voltage_mt6877(unsigned int, bool, bool);
 static void consys_plt_pmic_raise_voltage_timer_handler_mt6877(timer_handler_arg);
 
+static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
+static int consys_plt_pmic_event_notifier_mt6877(unsigned int, unsigned int);
+
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6877 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6877,
 	/* vcn 18 */
@@ -90,14 +96,24 @@ const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6877 = {
 	.consys_pmic_gps_power_ctrl = consys_plt_pmic_gps_power_ctrl_mt6877,
 	.consys_pmic_fm_power_ctrl = consys_plt_pmic_fm_power_ctrl_mt6877,
 	.consys_pmic_raise_voltage = consys_plt_pmic_raise_voltage_mt6877,
+	.consys_pmic_event_notifier = consys_plt_pmic_event_notifier_mt6877,
 };
 
 int consys_plt_pmic_get_from_dts_mt6877(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
 {
+	int ret;
+
 	g_dev_cb = dev_cb;
 	reg_VCN13 = devm_regulator_get_optional(&pdev->dev, "vcn13");
 	if (!reg_VCN13)
 		pr_err("Regulator_get VCN_13 fail\n");
+	else {
+		vcn13_nb.notifier_call = consys_vcn13_oc_notify;
+		ret = devm_regulator_register_notifier(reg_VCN13, &vcn13_nb);
+		if (ret)
+			pr_info("VCN13 regulator notifier request failed\n");
+	}
+
 	reg_VCN18 = regulator_get(&pdev->dev, "vcn18");
 	if (!reg_VCN18)
 		pr_err("Regulator_get VCN_18 fail\n");
@@ -387,3 +403,120 @@ void consys_plt_pmic_raise_voltage_timer_handler_mt6877(timer_handler_arg data)
 	atomic_set(&g_voltage_change_status, 0);
 }
 
+int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event,
+				  void *unused)
+{
+	if (event != REGULATOR_EVENT_OVER_CURRENT)
+		return NOTIFY_OK;
+
+	if (g_dev_cb != NULL && g_dev_cb->conninfra_pmic_event_notifier != NULL)
+		g_dev_cb->conninfra_pmic_event_notifier(0, 0);
+	return NOTIFY_OK;
+}
+
+int consys_plt_pmic_event_notifier_mt6877(unsigned int id, unsigned int event)
+{
+#define LOG_TMP_BUF_SZ 256
+#define ATOP_DUMP_NUM 10
+	static int oc_counter = 0;
+	unsigned int dump1_a, dump1_b, dump2_a, adie_value;
+	void __iomem *addr = NULL;
+	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
+	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
+	int ret;
+	const unsigned int adie_cr_list[ATOP_DUMP_NUM] = {
+		0xa10, 0x90, 0x94, 0xa0,
+		0xa18, 0xa1c, 0xc8, 0x3c,
+		0x0b4, 0x34c
+	};
+	int i;
+
+	oc_counter++;
+	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	/* 1. Dump host csr status
+	 * a. 0x1806_02CC 
+	 * b. 0x1806_02C8
+	 *
+	 * 2. Dump R13 status
+	 * a. 0x10006110
+	 *
+	 * 3. Dump RC status
+	 * - 0x1000F928, 0x1000F92C, 0x1000F930, 0x1000F934
+	 * - trace/timer
+	 *
+	 * 4. Wake up conninfra
+	 *
+	 * 5. Dump a-die ck_en
+	 * - 0x1800_50a8
+	 * - 0x1800_5120/0x1800_5124/0x1800_5128/0x1800_512C/0x1800_5130/0x1800_5134
+	 *
+	 * 6. Dump a-die status
+	 * a. 0xa10
+	 * b. 0x090/0x094/0x0a0
+	 * c. 0xa18/0xa1c/0x0c8/0x03c
+	 *
+	 * 7. Make conninfra sleep
+	 */
+	dump1_a = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_3_ADDR);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL,
+		0x0);
+	dump1_b = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+
+	dump2_a = CONSYS_REG_READ(SPM_MD32PCM_SCU_STA0);
+	pr_info("0x1806_02CC=[0x%08x] 0x1806_02C8=[0x%08x] 0x1000_6110=[0x%08x]",
+		dump1_a, dump1_b, dump2_a);
+
+	addr = ioremap(0x1000F900, 0x100);
+	if (addr) {
+		pr_info("[rc_status] [0x%08x][0x%08x][0x%08x][0x%08x]",
+			CONSYS_REG_READ(addr + 0x28), CONSYS_REG_READ(addr + 0x2c),
+			CONSYS_REG_READ(addr + 0x30), CONSYS_REG_READ(addr + 0x34));
+		memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+		for (i = 0x50; i <= 0x94; i+= 4) {
+			if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%08x]",
+				CONSYS_REG_READ(addr + i)) >= 0)
+				strncat(tmp_buf, tmp, strlen(tmp));
+		}
+		pr_info("[rc_trace] %s", tmp_buf);
+
+		memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+		for (i = 0x98; i <= 0xd4; i += 4) {
+			if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%08x]",
+				CONSYS_REG_READ(addr + i)) >= 0)
+				strncat(tmp_buf, tmp, strlen(tmp));
+		}
+		pr_info("[rc_timer] %s", tmp_buf);
+		iounmap(addr);
+	} else {
+		pr_info("[%s] ioremap 0x1000_F900 fail", __func__);
+	}
+
+	ret = consys_hw_force_conninfra_wakeup();
+	if (ret) {
+		pr_info("[%s] force conninfra wakeup fail\n", __func__);
+		return NOTIFY_OK;
+	}
+
+	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+	for (i = 0x120; i <= 0x134; i+= 4) {
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%08x]",
+			CONSYS_REG_READ(CONN_REG_CONN_WT_SLP_CTL_REG_ADDR + i)) >= 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+	}
+	pr_info("a-die ck:%s [0x%08x]", tmp_buf, CONSYS_REG_READ(CONN_WT_SLP_CTL_REG_WB_CK_STA_ADDR));
+
+	connsys_adie_top_ck_en_ctl_mt6877(true);
+	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+	for (i = 0; i < ATOP_DUMP_NUM; i++) {
+		consys_spi_read_mt6877(SYS_SPI_TOP, adie_cr_list[i], &adie_value);
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[i], adie_value) >= 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+	}
+	connsys_adie_top_ck_en_ctl_mt6877(false);
+	pr_info("ATOP:%s\n", tmp_buf);
+
+	consys_hw_force_conninfra_sleep();
+	return NOTIFY_OK;
+}
