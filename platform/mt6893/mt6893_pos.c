@@ -2176,7 +2176,7 @@ int consys_adie_top_ck_en_on_mt6893(enum consys_adie_ctl_type type)
 	unsigned int status;
 	int ret;
 
-	if (type >= CONNSYS_ADIE_CTL_MAX) {
+	if (type >= CONNSYS_ADIE_CTL_MAX || type < CONNSYS_ADIE_CTL_HOST_BT) {
 		pr_err("[%s] invalid parameter(%d)\n", __func__, type);
 		return -1;
 	}
@@ -2204,7 +2204,7 @@ int consys_adie_top_ck_en_off_mt6893(enum consys_adie_ctl_type type)
 	unsigned int status;
 	int ret = 0;
 
-	if (type >= CONNSYS_ADIE_CTL_MAX) {
+	if (type >= CONNSYS_ADIE_CTL_MAX || type < CONNSYS_ADIE_CTL_HOST_BT) {
 		pr_err("[%s] invalid parameter(%d)\n", __func__, type);
 		return -1;
 	}
