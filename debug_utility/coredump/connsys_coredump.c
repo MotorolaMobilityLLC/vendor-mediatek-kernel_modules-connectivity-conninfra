@@ -229,6 +229,18 @@ bool __weak is_host_view_cr(unsigned int addr, unsigned int* host_view)
 	return false;
 }
 
+bool __weak is_host_csr_readable(void)
+{
+	pr_err("[%s] Miss platform ops!\n", __func__);
+	return false;
+}
+
+enum cr_category __weak get_cr_category(unsigned int addr)
+{
+	pr_err("[%s] Miss platform ops!\n", __func__);
+	return SUBSYS_CR;
+}
+
 /*----------------------------------------------------------------------------*/
 
 
@@ -445,6 +457,7 @@ do { \
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t\t<reason>%s</reason>\n",
 			ctx->info.reason);
+		snprintf(ctx->info.keyword, CONNSYS_ASSERT_KEYWORD_SIZE, "%s", ctx->info.reason);
 	} else {
 		/* FW assert */
 		if (full_dump) {
@@ -953,7 +966,6 @@ static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, u
 	void __iomem* vir_addr = 0;
 
 	if (is_host_view_cr(base, NULL)) {
-		pr_info("Host view CR: 0x%x, skip dynamic remap\n", base);
 		return length;
 	}
 
@@ -992,7 +1004,6 @@ static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int b
 	unsigned int host_cr;
 
 	if (is_host_view_cr(base, &host_cr)) {
-		pr_info("Map 0x%x to 0x%x\n", base, host_cr);
 		vir_addr = ioremap(host_cr, length);
 	} else {
 		vir_addr = ioremap(ctx->hw_config.seg1_phy_addr, length);
@@ -1015,6 +1026,14 @@ static void conndump_unmap(struct connsys_dump_ctx* ctx, void __iomem* vir_addr)
 	iounmap(vir_addr);
 }
 
+
+static bool __is_cr_dumpable(unsigned int addr, bool subsys_readable, bool host_csr_readable)
+{
+	enum cr_category type = get_cr_category(addr);
+	if (type == CONN_HOST_CSR && host_csr_readable)
+		return true;
+	return subsys_readable;
+}
 
 /*****************************************************************************
  * FUNCTION
@@ -1039,18 +1058,21 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx)
 	int i;
 	int addr, value;
 	unsigned int buff_idx = 0;
+	bool subsys_readable = false, host_csr_readable = false;
 
-	if (!conndump_check_cr_readable(ctx)) {
-		pr_err("CR not readable, skip cr dump\n");
-		return -1;
-	}
+	subsys_readable = conndump_check_cr_readable(ctx);
+	host_csr_readable = is_host_csr_readable();
+
+	if (!subsys_readable || !host_csr_readable)
+		pr_info("host_csr_readable=[%d] subsys_readable=[%d]\n", host_csr_readable, subsys_readable);
 
 	for (idx = 0; idx < ctx->dump_regions_num; idx++) {
 		/* empty name means cr regions  */
 		if (ctx->dump_regions[idx].name[0] == 0 &&
 		    (ctx->dump_regions[idx].base > 0) &&
 		    (ctx->dump_regions[idx].base & 0x3) == 0 &&
-		    (ctx->dump_regions[idx].length & 0x3) == 0) {
+		    (ctx->dump_regions[idx].length & 0x3) == 0 &&
+		    __is_cr_dumpable(ctx->dump_regions[idx].base, subsys_readable, host_csr_readable)) {
 			pr_info("[%s][Region %d] base=0x%x size=0x%x\n", __func__, idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
 			map_length = conndump_setup_dynamic_remap(
 					ctx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
@@ -1071,7 +1093,6 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx)
 					memcpy(&per_cr[6], &value, 4);
 					per_cr[10] = ']';
 					if (buff_size < CR_PER_LINE) {
-						pr_info("[%s] Dump buffer full (%d-th cr), flush to native space.\n", __func__, i);
 						/* pack it! */
 						conndump_netlink_send_to_native(ctx->conn_type, "[M]", ctx->page_dump_buf, buff_idx);
 
@@ -1091,7 +1112,6 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx)
 
 	/* pack remaining item */
 	if (buff_idx) {
-		pr_info("[%s] send remain %d bytes\n", __func__, buff_idx);
 		conndump_netlink_send_to_native(ctx->conn_type, "[M]", ctx->page_dump_buf, buff_idx);
 	}
 

@@ -3,8 +3,14 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
-#include <linux/printk.h>
 
+#include <linux/memblock.h>
+#include <linux/platform_device.h>
+#include <linux/printk.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+
+#include "consys_reg_util.h"
 #include "connsys_debug_utility.h"
 #include "connsys_coredump_hw_config.h"
 
@@ -108,4 +114,46 @@ bool is_host_view_cr(unsigned int addr, unsigned int* host_view)
 		return true;
 	}
 	return false;
+}
+
+bool is_host_csr_readable(void)
+{
+	void __iomem *vir_addr_tx = NULL;
+	void __iomem *vir_addr_rx = NULL;
+	bool ret = false;
+	unsigned int rx, tx;
+
+	/* AP2CONN_INFRA ON
+	 * 1. Check ap2conn gals sleep protect status
+	 * 	- 0x1000_1724 [2] / 0x1000_1228 [13] (infracfg_ao)(rx/tx)
+	 * 	(sleep protect enable ready)
+	 * 	both of them should be 1'b0  (CR at ap side)
+	 */
+	vir_addr_rx = ioremap(0x10001724, 0x4);
+	vir_addr_tx = ioremap(0x10001228, 0x4);
+	if (vir_addr_tx && vir_addr_rx) {
+		rx = CONSYS_REG_READ_BIT(vir_addr_rx, (0x1 << 2));
+		tx = CONSYS_REG_READ_BIT(vir_addr_tx, (0x1 << 13));
+		if ((rx == 0) && (tx == 0)) {
+			ret = true;
+		}
+	} else
+		pr_info("[%s] remap fail, [%p][%p]", __func__, vir_addr_rx, vir_addr_tx);
+
+	if (vir_addr_rx)
+		iounmap(vir_addr_rx);
+	if (vir_addr_tx)
+		iounmap(vir_addr_tx);
+	return ret;
+}
+
+enum cr_category get_cr_category(unsigned int addr)
+{
+	if (addr >= 0x7c000000 && addr <= 0x7c3fffff) {
+		if (addr >= 0x7c060000 && addr <= 0x7c06ffff) {
+			return CONN_HOST_CSR;
+		}
+		return CONN_INFRA_CR;
+	}
+	return SUBSYS_CR;
 }

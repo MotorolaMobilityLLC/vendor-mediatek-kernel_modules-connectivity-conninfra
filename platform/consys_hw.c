@@ -107,7 +107,7 @@ struct conninfra_dev_cb *g_conninfra_dev_cb;
 const struct conninfra_plat_data *g_conninfra_plat_data = NULL;
 
 struct pinctrl *g_conninfra_pinctrl_ptr = NULL;
-
+static atomic_t g_hw_init_done = ATOMIC_INIT(0);
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -595,6 +595,13 @@ int consys_hw_tcxo_parser(struct platform_device *pdev)
 	return 0;
 }
 
+u64 consys_hw_soc_timestamp_get(void)
+{
+	if (consys_hw_ops->consys_plt_soc_timestamp_get)
+		return consys_hw_ops->consys_plt_soc_timestamp_get();
+	return 0;
+}
+
 int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
@@ -649,6 +656,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 
 	g_pdev = pdev;
 
+	atomic_set(&g_hw_init_done, 1);
 	return 0;
 }
 
@@ -659,6 +667,7 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 	else
 		pr_info("consys_plt_clk_detach is null");
 
+	atomic_set(&g_hw_init_done, 0);
 	if (g_pdev)
 		g_pdev = NULL;
 
@@ -691,13 +700,22 @@ static void consys_hw_ap_resume_handler(struct work_struct *work)
 
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
-	int iRet = 0;
+	int iRet = 0, retry = 0;
+	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
 	g_conninfra_dev_cb = dev_cb;
-
+	atomic_set(&g_hw_init_done, 0);
 	iRet = platform_driver_register(&mtk_conninfra_dev_drv);
 	if (iRet)
 		pr_err("Conninfra platform driver registered failed(%d)\n", iRet);
+	else {
+		while (atomic_read(&g_hw_init_done) == 0 && retry < 100) {
+			osal_sleep_ms(50);
+			retry++;
+			if (__ratelimit(&_rs))
+				pr_info("g_hw_init_done = 0, retry = %d", retry);
+		}
+	}
 
 	INIT_WORK(&ap_resume_work, consys_hw_ap_resume_handler);
 	pr_info("[consys_hw_init] result [%d]\n", iRet);
