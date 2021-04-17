@@ -336,14 +336,14 @@ int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 int msg_thread_send_wait(struct msg_thread_ctx *ctx, int opid,
 						int timeout)
 {
-	return msg_thread_send_wait_3(ctx, opid, timeout, 0, 0, 0);
+	return msg_thread_send_wait_4(ctx, opid, timeout, 0, 0, 0, 0);
 }
 
 int msg_thread_send_wait_1(struct msg_thread_ctx *ctx,
 							int opid, int timeout,
 							size_t param1)
 {
-	return msg_thread_send_wait_3(ctx, opid, timeout, param1, 0, 0);
+	return msg_thread_send_wait_4(ctx, opid, timeout, param1, 0, 0, 0);
 }
 
 
@@ -352,7 +352,7 @@ int msg_thread_send_wait_2(struct msg_thread_ctx *ctx,
 							size_t param1,
 							size_t param2)
 {
-	return msg_thread_send_wait_3(ctx, opid, timeout, param1, param2, 0);
+	return msg_thread_send_wait_4(ctx, opid, timeout, param1, param2, 0, 0);
 }
 
 int msg_thread_send_wait_3(struct msg_thread_ctx *ctx,
@@ -360,6 +360,16 @@ int msg_thread_send_wait_3(struct msg_thread_ctx *ctx,
 							size_t param1,
 							size_t param2,
 							size_t param3)
+{
+	return msg_thread_send_wait_4(ctx, opid, timeout, param1, param2, param3, 0);
+}
+
+int msg_thread_send_wait_4(struct msg_thread_ctx *ctx,
+							int opid, int timeout,
+							size_t param1,
+							size_t param2,
+							size_t param3,
+							size_t param4)
 {
 	struct msg_op *op = NULL;
 	P_OSAL_SIGNAL signal;
@@ -374,6 +384,7 @@ int msg_thread_send_wait_3(struct msg_thread_ctx *ctx,
 	op->op.op_data[0] = param1;
 	op->op.op_data[1] = param2;
 	op->op.op_data[2] = param3;
+	op->op.op_data[3] = param4;
 
 	signal = &op->signal;
 	signal->timeoutValue = timeout > 0 ? timeout : MSG_OP_TIMEOUT;
