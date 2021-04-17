@@ -69,6 +69,7 @@ static int consys_power_state_dump_mt6877(void);
 
 static unsigned long long consys_soc_timestamp_get_mt6877(void);
 
+static unsigned int consys_adie_detection_mt6877(void);
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -105,6 +106,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6877 = {
 
 	.consys_plt_spi_read = consys_spi_read_mt6877,
 	.consys_plt_spi_write = consys_spi_write_mt6877,
+	.consys_plt_spi_update_bits = consys_spi_update_bits_mt6877,
 	.consys_plt_spi_clock_switch = consys_spi_clock_switch_mt6877,
 	.consys_plt_subsys_status_update = consys_subsys_status_update_mt6877,
 
@@ -113,6 +115,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6877 = {
 	.consys_plt_reset_power_state = consys_reset_power_state_mt6877,
 	.consys_plt_power_state = consys_power_state_dump_mt6877,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6877,
+	.consys_plt_adie_detection = consys_adie_detection_mt6877,
 };
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6877;
@@ -510,4 +513,9 @@ static unsigned long long consys_soc_timestamp_get_mt6877(void)
 	do_div(timestamp, TICK_PER_MS);
 
 	return timestamp;
+}
+
+static unsigned int consys_adie_detection_mt6877(void)
+{
+	return 0x6635;
 }

@@ -85,6 +85,8 @@ static int consys_thermal_query(void);
 static int consys_power_state(void);
 static int consys_bus_clock_ctrl(enum consys_drv_type, unsigned int, int);
 static unsigned long long consys_soc_timestamp_get(void);
+static unsigned int consys_adie_detection_mt6885(void);
+
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -121,6 +123,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6885 = {
 
 	.consys_plt_spi_read = consys_spi_read_mt6885,
 	.consys_plt_spi_write = consys_spi_write_mt6885,
+	.consys_plt_spi_update_bits = consys_spi_update_bits_mt6885,
 	.consys_plt_adie_top_ck_en_on = consys_adie_top_ck_en_on_mt6885,
 	.consys_plt_adie_top_ck_en_off = consys_adie_top_ck_en_off_mt6885,
 	.consys_plt_spi_clock_switch = consys_spi_clock_switch_mt6885,
@@ -131,6 +134,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6885 = {
 	.consys_plt_config_setup = consys_config_setup_mt6885,
 	.consys_plt_bus_clock_ctrl = consys_bus_clock_ctrl,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get,
+	.consys_plt_adie_detection = consys_adie_detection_mt6885,
 };
 
 
@@ -474,5 +478,10 @@ static unsigned long long consys_soc_timestamp_get(void)
 	do_div(timestamp, TICK_PER_MS);
 
 	return timestamp;
+}
+
+static unsigned int consys_adie_detection_mt6885(void)
+{
+	return 0x6635;
 }
 

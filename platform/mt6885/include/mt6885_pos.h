@@ -43,6 +43,7 @@ int consys_spi_write_mt6885(enum sys_spi_subsystem subsystem, unsigned int addr,
 int consys_spi_write_offset_range_mt6885(
 	enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int value,
 	unsigned int reg_offset, unsigned int value_offset, unsigned int size);
+int consys_spi_update_bits_mt6885(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 int consys_adie_top_ck_en_on_mt6885(enum consys_adie_ctl_type type);
 int consys_adie_top_ck_en_off_mt6885(enum consys_adie_ctl_type type);

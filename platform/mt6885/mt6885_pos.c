@@ -2170,6 +2170,38 @@ static void consys_spi_write_offset_range_nolock(
 		addr, data, data2);
 }
 
+int consys_spi_update_bits_mt6885(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+{
+	int ret = 0;
+	unsigned int curr_val = 0;
+	unsigned int new_val = 0;
+	bool change = false;
+
+	/* Get semaphore before updating bits */
+	if (consys_sema_acquire_timeout_mt6885(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+		pr_err("[SPI WRITE] Require semaphore fail\n");
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
+	ret = consys_spi_read_nolock(subsystem, addr, &curr_val);
+
+	if (ret) {
+		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
+			__func__, get_spi_sys_name(subsystem), addr, ret);
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
+	new_val = (curr_val & (~mask)) | (data & mask);
+	change = (curr_val != new_val);
+
+	if (change) {
+		ret = consys_spi_write_nolock(subsystem, addr, new_val);
+	}
+
+	consys_sema_release_mt6885(CONN_SEMA_RFSPI_INDEX);
+
+	return ret;
+}
 
 static int consys_adie_top_ck_en_ctrl(bool on)
 {
