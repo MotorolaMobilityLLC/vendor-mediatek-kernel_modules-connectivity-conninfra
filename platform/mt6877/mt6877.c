@@ -7,9 +7,7 @@
 
 #include <linux/clk.h>
 #include <linux/delay.h>
-#include <linux/math64.h>
 #include <linux/of.h>
-#include <linux/types.h>
 #include <mtk_clkbuf_ctl.h>
 
 #include <connectivity_build_in_adapter.h>
@@ -67,7 +65,6 @@ static int consys_enable_power_dump_mt6877(void);
 static int consys_reset_power_state_mt6877(void);
 static int consys_power_state_dump_mt6877(void);
 
-static unsigned long long consys_soc_timestamp_get_mt6877(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -112,7 +109,6 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6877 = {
 	.consys_plt_enable_power_dump = consys_enable_power_dump_mt6877,
 	.consys_plt_reset_power_state = consys_reset_power_state_mt6877,
 	.consys_plt_power_state = consys_power_state_dump_mt6877,
-	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6877,
 };
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6877;
@@ -220,33 +216,13 @@ int consys_reset_power_state_mt6877(void)
 	 */
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_CONN_INFRA_SLP_COUNTER_CLR,
-		0x1);
-	udelay(150);
-	CONSYS_REG_WRITE_HW_ENTRY(
-		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_CONN_INFRA_SLP_COUNTER_CLR,
 		0x0);
-
-	CONSYS_REG_WRITE_HW_ENTRY(
-		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_WFSYS_SLP_COUNTER_CLR,
-		0x1);
-	udelay(150);
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_WFSYS_SLP_COUNTER_CLR,
 		0x0);
-
-	CONSYS_REG_WRITE_HW_ENTRY(
-		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_BTSYS_SLP_COUNTER_CLR,
-		0x1);
-	udelay(150);
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_BTSYS_SLP_COUNTER_CLR,
 		0x0);
-
-
-	CONSYS_REG_WRITE_HW_ENTRY(
-		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_GPSSYS_SLP_COUNTER_CLR,
-		0x1);
-	udelay(150);
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP_HOST_GPSSYS_SLP_COUNTER_CLR,
 		0x0);
@@ -281,36 +257,13 @@ static inline void __sleep_count_trigger_read(void)
 
 }
 
-void consys_power_state(void)
-{
-	unsigned int i, str_len;
-	unsigned int buf_len = 0;
-	unsigned int r;
-	const char* osc_str[] = {
-          "fm ", "gps ", "bgf ", "wf ", "ap2conn ", "conn_thm ", "conn_pta ", "conn_infra_bus "};
-	char buf[256] = {'\0'};
-
-	CONSYS_REG_WRITE_HW_ENTRY(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL,
-                                  0x0);
-	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
-
-	for (i = 0; i < 8; i++) {
-		str_len = strlen(osc_str[i]);
-		if ((r & (0x1 << (18 + i))) > 0 && (buf_len + str_len < 256)) {
-			strncat(buf, osc_str[i], str_len);
-			buf_len += str_len;
-		}
-	}
-	pr_info("[%s] [0x%x] %s", __func__, r, buf);
-
-}
-
 int consys_power_state_dump_mt6877(void)
 {
 	unsigned int conninfra_sleep_cnt, conninfra_sleep_time;
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
 	unsigned int gps_sleep_cnt, gps_sleep_time;
+	unsigned int power_state;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
@@ -364,7 +317,7 @@ int consys_power_state_dump_mt6877(void)
 		gps_sleep_time, gps_sleep_cnt);
 
 	/* Power state */
-	consys_power_state();
+	pr_info("[consys_power_state][%x]", power_state);
 	return 0;
 }
 
@@ -426,7 +379,7 @@ int consys_thermal_query_mt6877(void)
 	unsigned int i;
 	unsigned int efuse0, efuse1, efuse2, efuse3;
 
-	addr = ioremap_nocache(CONN_GPT2_CTRL_BASE, 0x100);
+	addr = ioremap(CONN_GPT2_CTRL_BASE, 0x100);
 	if (addr == NULL) {
 		pr_err("GPT2_CTRL_BASE remap fail");
 		return -1;
@@ -483,31 +436,4 @@ int consys_thermal_query_mt6877(void)
 	iounmap(addr);
 
 	return res;
-}
-
-static unsigned long long consys_soc_timestamp_get_mt6877(void)
-{
-#define TICK_PER_MS	(13000)
-	void __iomem *addr = NULL;
-	u32 tick_h = 0, tick_l = 0;
-	u64 timestamp = 0;
-
-	/* 0x1001_7000	sys_timer@13M
-	 * - 0x0008	CNTCV_L	32	System counter count value low
-	 * - 0x000C	CNTCV_H	32	System counter count value high
-	 */
-	addr = ioremap(0x10017000, 0x10);
-	if (addr) {
-		tick_l = CONSYS_REG_READ(addr + 0x0008);
-		tick_h = CONSYS_REG_READ(addr + 0x000c);
-		iounmap(addr);
-	} else {
-		pr_info("[%s] remap fail", __func__);
-		return 0;
-	}
-
-	timestamp = ((((u64)tick_h << 32) & 0xFFFFFFFF00000000) | ((u64)tick_l & 0x00000000FFFFFFFF));
-	do_div(timestamp, TICK_PER_MS);
-
-	return timestamp;
 }
