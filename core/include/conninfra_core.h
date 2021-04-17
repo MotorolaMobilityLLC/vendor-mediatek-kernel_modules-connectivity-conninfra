@@ -170,6 +170,7 @@ typedef enum {
 	CONNINFRA_OPID_FORCE_CONNINFRA_SLEEP	= 14,
 	CONNINFRA_OPID_DUMP_POWER_STATE		= 15,
 	CONNINFRA_OPID_RAISE_VOLTAGE		= 16,
+	CONNINFRA_OPID_RFSPI_UPDATE_BITS	= 17,
 	CONNINFRA_OPID_MAX
 } conninfra_core_opid;
 
@@ -239,6 +240,7 @@ void conninfra_core_clock_fail_dump_cb(void);
 
 int conninfra_core_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int conninfra_core_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+int conninfra_core_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 int conninfra_core_adie_top_ck_en_on(enum consys_adie_ctl_type type);
 int conninfra_core_adie_top_ck_en_off(enum consys_adie_ctl_type type);
