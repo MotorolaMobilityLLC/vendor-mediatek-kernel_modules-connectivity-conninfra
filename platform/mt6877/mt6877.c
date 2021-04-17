@@ -426,7 +426,7 @@ int consys_thermal_query_mt6877(void)
 	unsigned int i;
 	unsigned int efuse0, efuse1, efuse2, efuse3;
 
-	addr = ioremap_nocache(CONN_GPT2_CTRL_BASE, 0x100);
+	addr = ioremap(CONN_GPT2_CTRL_BASE, 0x100);
 	if (addr == NULL) {
 		pr_err("GPT2_CTRL_BASE remap fail");
 		return -1;

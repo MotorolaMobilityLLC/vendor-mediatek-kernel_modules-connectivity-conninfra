@@ -519,7 +519,7 @@ int connsys_d_die_cfg_mt6877(void)
 	memset_io(CONN_INFRA_SYSRAM_BASE, 0x0, CONN_INFRA_SYSRAM_SIZE);
 #else
 	void __iomem *addr = NULL;
-	addr = ioremap_nocache(CONN_INFRA_SYSRAM_BASE, CONN_INFRA_SYSRAM_SIZE);
+	addr = ioremap(CONN_INFRA_SYSRAM_BASE, CONN_INFRA_SYSRAM_SIZE);
 	if (addr != NULL) {
 		memset_io(addr, 0x0, CONN_INFRA_SYSRAM_SIZE);
 		iounmap(addr);
@@ -1403,7 +1403,7 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 		 * CONN_INFRA_VDNR_GEN_ON_DEBUG_CTRL_AO_CONN_INFRA_VDNR_GEN_ON_U_DEBUG_CTRL_AO_CONN_INFRA_ON_CTRL0
 		 * 	0x1800_F000[9]=1'b0
 		 */
-		addr = ioremap_nocache(0x1800f000, 0x10);
+		addr = ioremap(0x1800f000, 0x10);
 		if (addr) {
 			CONSYS_SET_BIT(addr, (0x1 << 9));
 			CONSYS_REG_WRITE_MASK(addr, 0x07f40000, 0xffff0000);
@@ -1436,7 +1436,7 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 		 * CONN_INFRA_VDNR_AXI_LAYER_DEBUG_CTRL_AO_CONN_INFRA_VDNR_AXI_LAYER_U_DEBUG_CTRL_AO_CONN_INFRA_CTRL0
 		 * 	0x1801_D000[9]=1'b0
 		 */
-		addr = ioremap_nocache(0x1801d000, 0x10);
+		addr = ioremap(0x1801d000, 0x10);
 		if (addr) {
 			CONSYS_SET_BIT(addr, (0x1 << 9));
 			CONSYS_REG_WRITE_MASK(addr, 0x30e00000, 0xffff0000);
@@ -1889,7 +1889,7 @@ bool consys_is_rc_mode_enable_mt6877(void)
 	 * 	[0] srclken_rc_en
 	 */
 	if (!ever_read) {
-		addr = ioremap_nocache(RC_CENTRAL_CFG1, 0x4);
+		addr = ioremap(RC_CENTRAL_CFG1, 0x4);
 		if (addr != NULL) {
 			ret = (bool)CONSYS_REG_READ_BIT(addr, 0x1);
 			iounmap(addr);
