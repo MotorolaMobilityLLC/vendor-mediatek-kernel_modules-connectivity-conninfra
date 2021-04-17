@@ -69,6 +69,7 @@
 #define CONNINFRA_IOCTL_GET_CHIP_ID _IOR(CONNINFRA_DEV_IOC_MAGIC, 0, int)
 #define CONNINFRA_IOCTL_SET_COREDUMP_MODE _IOW(CONNINFRA_DEV_IOC_MAGIC, 1, unsigned int)
 #define CONNINFRA_IOCTL_DO_MODULE_INIT _IOR(CONNINFRA_DEV_IOC_MAGIC, 2, int)
+#define CONNINFRA_IOCTL_GET_ADIE_CHIP_ID _IOR(CONNINFRA_DEV_IOC_MAGIC, 3, int)
 
 #define CONNINFRA_DEV_INIT_TO_MS (2 * 1000)
 
@@ -292,6 +293,9 @@ static long conninfra_dev_unlocked_ioctl(struct file *filp, unsigned int cmd, un
 		break;
 	case CONNINFRA_IOCTL_SET_COREDUMP_MODE:
 		connsys_coredump_set_dump_mode(arg);
+		break;
+	case CONNINFRA_IOCTL_GET_ADIE_CHIP_ID:
+		retval = consys_hw_detect_adie_chipid();
 		break;
 	}
 

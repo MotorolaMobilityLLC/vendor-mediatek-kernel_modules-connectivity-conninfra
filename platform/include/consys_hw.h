@@ -84,6 +84,7 @@ typedef int(*CONSYS_PLT_IS_CONNSYS_REG) (unsigned int addr);
 
 typedef int(*CONSYS_PLT_SPI_READ)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 typedef int(*CONSYS_PLT_SPI_WRITE)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+typedef int(*CONSYS_PLT_SPI_UPDATE_BITS)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_ON)(enum consys_adie_ctl_type type);
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_OFF)(enum consys_adie_ctl_type type);
@@ -104,6 +105,8 @@ typedef void(*CONSYS_PLT_CONFIG_SETUP)(void);
 
 typedef int(*CONSYS_PLT_BUS_CLOCK_CTRL)(enum consys_drv_type drv_type, unsigned int, int);
 typedef u64(*CONSYS_PLT_SOC_TIMESTAMP_GET)(void);
+
+typedef unsigned int (*CONSYS_PLT_ADIE_DETECTION)(void);
 
 struct consys_hw_ops_struct {
 	/* load from dts */
@@ -141,6 +144,7 @@ struct consys_hw_ops_struct {
 	/* For SPI operation */
 	CONSYS_PLT_SPI_READ consys_plt_spi_read;
 	CONSYS_PLT_SPI_WRITE consys_plt_spi_write;
+	CONSYS_PLT_SPI_UPDATE_BITS consys_plt_spi_update_bits;
 
 	/* For a-die top_ck_en control */
 	CONSYS_PLT_ADIE_TOP_CK_EN_ON consys_plt_adie_top_ck_en_on;
@@ -163,6 +167,8 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_BUS_CLOCK_CTRL consys_plt_bus_clock_ctrl;
 
 	CONSYS_PLT_SOC_TIMESTAMP_GET consys_plt_soc_timestamp_get;
+
+	CONSYS_PLT_ADIE_DETECTION consys_plt_adie_detection;
 };
 
 struct conninfra_dev_cb {
@@ -237,6 +243,7 @@ int consys_hw_dump_bus_status(void);
 
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 int consys_hw_adie_top_ck_en_on(enum consys_adie_ctl_type type);
 int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type);
@@ -271,6 +278,10 @@ int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onof
  * unit: ms
  */
 u64 consys_hw_soc_timestamp_get(void);
+
+// Auto a-die detection
+unsigned int consys_hw_detect_adie_chipid(void);
+unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
