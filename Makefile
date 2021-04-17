@@ -82,6 +82,7 @@ ccflags-y += -I$(src)/debug_utility/connsyslog
 ccflags-y += -I$(src)/debug_utility/connsyslog/platform/include
 ccflags-y += -I$(src)/debug_utility/coredump
 ccflags-y += -I$(src)/debug_utility/coredump/platform/include
+ccflags-y += -I$(src)/debug_utility/metlog
 
 # By Plaftfrom
 ccflags-y += -I$(src)/platform/$(CONNSYS_PLATFORM)/include
@@ -156,6 +157,7 @@ $(MODULE_NAME)-objs += drv_init/fm_drv_init.o
 $(MODULE_NAME)-objs += drv_init/gps_drv_init.o
 $(MODULE_NAME)-objs += drv_init/wlan_drv_init.o
 
+$(MODULE_NAME)-objs += debug_utility/metlog/metlog.o
 ###############################################################################
 # test
 ###############################################################################
