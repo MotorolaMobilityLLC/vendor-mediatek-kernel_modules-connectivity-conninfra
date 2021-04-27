@@ -38,6 +38,9 @@
 #include <mtk_clkbuf_ctl.h>
 #endif
 
+#include "mt6893_connsyslog.h"
+#include "coredump_mng.h"
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -94,7 +97,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6893 = {
 
 	/* clock */
 	.consys_plt_clock_buffer_ctrl = consys_clock_buffer_ctrl,
-	.consys_plt_co_clock_type = consys_co_clock_type,
+	.consys_plt_co_clock_type = consys_co_clock_type_mt6893,
 
 	/* POS */
 	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl_mt6893,
@@ -132,21 +135,27 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6893 = {
 	.consys_plt_adie_detection = consys_adie_detection_mt6893,
 };
 
-struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
-struct consys_plat_thermal_data g_consys_plat_therm_data;
+#if (!COMMON_KERNEL_CLK_SUPPORT)
+static struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
+#endif
+
+static struct consys_plat_thermal_data_mt6893 g_consys_plat_therm_data;
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6893;
 extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6893;
 extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6893;
+extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6893;
 
-const struct conninfra_plat_data mt6893_plat_data = {
+struct conninfra_plat_data mt6893_plat_data = {
 	.chip_id = PLATFORM_SOC_CHIP,
 	.consys_hw_version = CONN_HW_VER,
 	.hw_ops = &g_consys_hw_ops_mt6893,
 	.reg_ops = &g_dev_consys_reg_ops_mt6893,
 	.platform_emi_ops = &g_consys_platform_emi_ops_mt6893,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6893,
+	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6893,
+	.connsyslog_config = &g_connsyslog_config,
 };
 
 /*******************************************************************************
@@ -190,7 +199,7 @@ int consys_clk_detach(void)
 }
 
 
-int consys_platform_spm_conn_ctrl(unsigned int enable)
+int consys_platform_spm_conn_ctrl_mt6893(unsigned int enable)
 {
 	int ret = 0;
 #if COMMON_KERNEL_CLK_SUPPORT
@@ -259,7 +268,7 @@ int consys_clock_buffer_ctrl(unsigned int enable)
 	return 0;
 }
 
-int consys_co_clock_type(void)
+int consys_co_clock_type_mt6893(void)
 {
 	const struct conninfra_conf *conf;
 
@@ -292,9 +301,9 @@ void consys_clock_fail_dump(void)
 }
 
 
-void update_thermal_data(struct consys_plat_thermal_data* input)
+void update_thermal_data_mt6893(struct consys_plat_thermal_data_mt6893* input)
 {
-	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data));
+	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data_mt6893));
 	/* Special factor, not in POS */
 	/* THERMCR1 [16:17]*/
 	CONSYS_REG_WRITE(CONN_TOP_THERM_CTL_ADDR + CONN_TOP_THERM_CTL_THERMCR1,
@@ -303,9 +312,9 @@ void update_thermal_data(struct consys_plat_thermal_data* input)
 
 }
 
-int calculate_thermal_temperature(int y)
+static int calculate_thermal_temperature(int y)
 {
-	struct consys_plat_thermal_data *data = &g_consys_plat_therm_data;
+	struct consys_plat_thermal_data_mt6893 *data = &g_consys_plat_therm_data;
 	int t;
 	int const_offset = 25;
 

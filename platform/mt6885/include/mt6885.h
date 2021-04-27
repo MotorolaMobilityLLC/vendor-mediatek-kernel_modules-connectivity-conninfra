@@ -45,14 +45,14 @@ enum conn_semaphore_type
 	CONN_SEMA_NUM_MAX = 32 /* can't be omitted */
 };
 
-int consys_platform_spm_conn_ctrl(unsigned int enable);
-int consys_co_clock_type(void);
+int consys_platform_spm_conn_ctrl_mt6885(unsigned int enable);
+int consys_co_clock_type_mt6885(void);
 
-struct consys_plat_thermal_data {
+struct consys_plat_thermal_data_mt6885 {
 	int thermal_b;
 	int slop_molecule;
 	int offset;
 };
 
-void update_thermal_data(struct consys_plat_thermal_data* input);
+void update_thermal_data_mt6885(struct consys_plat_thermal_data_mt6885* input);
 #endif /* _PLATFORM_MT6885_H_ */

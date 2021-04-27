@@ -46,7 +46,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6893 = {
 };
 
 
-const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
+static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"CONN_INFRA_RGU_BASE",
 	"CONN_INFRA_CFG_BASE",
 	"CONN_HOST_CSR_TOP_BASE",
@@ -647,7 +647,7 @@ unsigned long consys_reg_validate_idx_n_offset(unsigned int idx, unsigned long o
 	return res;
 }
 
-int consys_find_can_write_reg(unsigned int *idx, unsigned long *offset)
+int consys_find_can_write_reg_mt6893(unsigned int *idx, unsigned long *offset)
 {
 	int i;
 	size_t addr = 0, addr_offset;
@@ -687,14 +687,14 @@ int consys_find_can_write_reg(unsigned int *idx, unsigned long *offset)
 }
 
 
-unsigned long consys_reg_get_phy_addr_by_idx(unsigned int idx)
+unsigned long consys_reg_get_phy_addr_by_idx_mt6893(unsigned int idx)
 {
 	if (idx >= CONSYS_BASE_ADDR_MAX)
 		return 0;
 	return conn_reg_mt6893.reg_base_addr[idx].phy_addr;
 }
 
-unsigned long consys_reg_get_virt_addr_by_idx(unsigned int idx)
+unsigned long consys_reg_get_virt_addr_by_idx_mt6893(unsigned int idx)
 {
 	if (idx >= CONSYS_BASE_ADDR_MAX)
 		return 0;
@@ -702,7 +702,7 @@ unsigned long consys_reg_get_virt_addr_by_idx(unsigned int idx)
 }
 
 
-int consys_reg_get_chip_id_idx_offset(unsigned int *idx, unsigned long *offset)
+int consys_reg_get_chip_id_idx_offset_mt6893(unsigned int *idx, unsigned long *offset)
 {
 	*idx = CONN_INFRA_CFG_BASE_INDEX;
 	*offset = CONN_CFG_ID_OFFSET;

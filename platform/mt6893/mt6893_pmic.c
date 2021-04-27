@@ -13,10 +13,10 @@
 #include "pmic_mng.h"
 #if (COMMON_KERNEL_PMIC_SUPPORT)
 #include <linux/regmap.h>
-#include <linux/mfd/mt6397/core.h>
+#include "mt6893_pmic.h"
 #else
 #include <pmic_api_buck.h>
-#include <upmu_common.h>
+#include <linux/mfd/mt6359p/registers.h>
 #endif
 #include <linux/regulator/consumer.h>
 #include <linux/notifier.h>
@@ -25,7 +25,6 @@
 #include "consys_reg_util.h"
 #include "osal.h"
 #include "mt6893.h"
-#include "mt6893_pmic.h"
 #include "mt6893_pos.h"
 #include "mt6893_consys_reg.h"
 #include "mt6893_consys_reg_offset.h"
@@ -94,12 +93,12 @@ struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6893 = {
 	.consys_pmic_raise_voltage = consys_plt_pmic_raise_voltage,
 };
 
-struct regulator *reg_VCN13;
-struct regulator *reg_VCN18;
-struct regulator *reg_VCN33_1_BT;
-struct regulator *reg_VCN33_1_WIFI;
-struct regulator *reg_VCN33_2_WIFI;
-struct notifier_block vcn13_nb;
+static struct regulator *reg_VCN13;
+static struct regulator *reg_VCN18;
+static struct regulator *reg_VCN33_1_BT;
+static struct regulator *reg_VCN33_1_WIFI;
+static struct regulator *reg_VCN33_2_WIFI;
+static struct notifier_block vcn13_nb;
 
 static struct conninfra_dev_cb* g_dev_cb;
 
@@ -563,7 +562,7 @@ static void consys_raise_vcn13_vs2_voltage(enum vcn13_state next_state)
 			regmap_update_bits(g_regmap,
 				PMIC_RG_VCN13_VOCAL_ADDR,
 				PMIC_RG_VCN13_VOCAL_MASK << PMIC_RG_VCN13_VOCAL_SHIFT,
-				0x2 << PMIC_RG_VCN13_VOCAL_SHIFT);			
+				0x2 << PMIC_RG_VCN13_VOCAL_SHIFT);
 #else
 			/* Set VS2 to 1.4V */
 			KERNEL_pmic_set_register_value(PMIC_RG_BUCK_VS2_VOSEL, 0x30);

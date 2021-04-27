@@ -26,6 +26,7 @@
 #include "connsys_coredump_hw_config.h"
 #include "conndump_netlink.h"
 #include "osal.h"
+#include "coredump_mng.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -196,54 +197,6 @@ static void conndump_free(const void* dst);
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
-/* Platform relative function */
-/* ------------------------------------------------------------------------------*/
-struct coredump_hw_config* __weak get_coredump_platform_config(int conn_type)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return NULL;
-}
-
-unsigned int __weak get_coredump_platform_chipid(void)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return 0;
-}
-
-char* __weak get_task_string(int conn_type, int task_id)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return "ERROR";
-}
-
-char* __weak get_sys_name(int conn_type)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return "ERROR";
-}
-
-bool __weak is_host_view_cr(unsigned int addr, unsigned int* host_view)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return false;
-}
-
-bool __weak is_host_csr_readable(void)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return false;
-}
-
-enum cr_category __weak get_cr_category(unsigned int addr)
-{
-	pr_err("[%s] Miss platform ops!\n", __func__);
-	return SUBSYS_CR;
-}
-
-/*----------------------------------------------------------------------------*/
-
-
 static unsigned long timespec64_to_ms(struct timespec64 *begin, struct timespec64 *end)
 {
 	unsigned long time_diff;
@@ -417,7 +370,7 @@ do { \
 	/* Init buffer */
 	memset(buf, '\0', max_len);
 	FORMAT_STRING(buf, len, max_len, sec_len, "<main>\n");
-	FORMAT_STRING(buf, len, max_len, sec_len, "\t<chipid>MT%x</chipid>\n", get_coredump_platform_chipid());
+	FORMAT_STRING(buf, len, max_len, sec_len, "\t<chipid>MT%x</chipid>\n", coredump_mng_get_platform_chipid());
 
 	/* <issue> section */
 	FORMAT_STRING(buf, len, max_len, sec_len,
@@ -465,11 +418,11 @@ do { \
 		if (full_dump) {
 			FORMAT_STRING(buf, len, max_len, sec_len,
 				"\t\t\t<task>%s</task>\n",
-				get_task_string(ctx->conn_type, ctx->info.fw_task_id));
+				coredump_mng_get_task_string(ctx->conn_type, ctx->info.fw_task_id));
 			FORMAT_STRING(buf, len, max_len, sec_len,
 				"\t\t\t<irqx>IRQ_0x%x_%s</irqx>\n",
 				ctx->info.fw_irq,
-				get_sys_name(ctx->conn_type));
+				coredump_mng_get_sys_name(ctx->conn_type));
 			FORMAT_STRING(buf, len, max_len, sec_len,
 				"\t\t\t<isr>0x%x</isr>\n",
 				ctx->info.fw_isr);
@@ -967,7 +920,7 @@ static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, u
 	unsigned int map_len = (length > DYNAMIC_MAP_MAX_SIZE? DYNAMIC_MAP_MAX_SIZE : length);
 	void __iomem* vir_addr = 0;
 
-	if (is_host_view_cr(base, NULL)) {
+	if (coredump_mng_is_host_view_cr(base, NULL)) {
 		return length;
 	}
 
@@ -1005,7 +958,7 @@ static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int b
 	void __iomem* vir_addr = 0;
 	unsigned int host_cr;
 
-	if (is_host_view_cr(base, &host_cr)) {
+	if (coredump_mng_is_host_view_cr(base, &host_cr)) {
 		vir_addr = ioremap(host_cr, length);
 	} else {
 		vir_addr = ioremap(ctx->hw_config.seg1_phy_addr, length);
@@ -1031,7 +984,7 @@ static void conndump_unmap(struct connsys_dump_ctx* ctx, void __iomem* vir_addr)
 
 static bool __is_cr_dumpable(unsigned int addr, bool subsys_readable, bool host_csr_readable)
 {
-	enum cr_category type = get_cr_category(addr);
+	enum cr_category type = coredump_mng_get_cr_category(addr);
 	if (type == CONN_HOST_CSR && host_csr_readable)
 		return true;
 	return subsys_readable;
@@ -1063,7 +1016,7 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx)
 	bool subsys_readable = false, host_csr_readable = false;
 
 	subsys_readable = conndump_check_cr_readable(ctx);
-	host_csr_readable = is_host_csr_readable();
+	host_csr_readable = coredump_mng_is_host_csr_readable();
 
 	if (!subsys_readable || !host_csr_readable)
 		pr_info("host_csr_readable=[%d] subsys_readable=[%d]\n", host_csr_readable, subsys_readable);
@@ -1564,7 +1517,7 @@ EXPORT_SYMBOL(connsys_coredump_start);
  *****************************************************************************/
 phys_addr_t connsys_coredump_get_start_offset(int conn_type)
 {
-	struct coredump_hw_config *config = get_coredump_platform_config(conn_type);
+	struct coredump_hw_config *config = coredump_mng_get_platform_config(conn_type);
 
 	if (config)
 		return config->start_offset;
@@ -1588,9 +1541,11 @@ void* connsys_coredump_init(
 {
 	struct connsys_dump_ctx* ctx = 0;
 	struct netlink_event_cb nl_cb;
-	struct coredump_hw_config *config = get_coredump_platform_config(conn_type);
+	struct coredump_hw_config *config;
 	phys_addr_t emi_base;
 	unsigned int emi_size, mcif_emi_size;
+
+	config = coredump_mng_get_platform_config(conn_type);
 
 	/* Get EMI config */
 	if (config == NULL) {
@@ -1730,5 +1685,3 @@ void connsys_coredump_set_dump_mode(enum connsys_coredump_mode mode)
 		atomic_set(&g_dump_mode, mode);
 }
 EXPORT_SYMBOL(connsys_coredump_set_dump_mode);
-
-

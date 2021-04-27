@@ -505,7 +505,9 @@ int consys_polling_chipid_mt6877(void)
 	if (retry == 0) {
 		pr_err("Read CONSYS version id fail. Expect 0x%x but get 0x%x\n",
 			CONN_HW_VER, consys_hw_ver);
+#if defined(KERNEL_clk_buf_show_status_info)
 		connectivity_export_clk_buf_show_status_info();
+#endif
 		return -1;
 	}
 

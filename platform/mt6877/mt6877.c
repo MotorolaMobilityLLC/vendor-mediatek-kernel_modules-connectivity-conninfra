@@ -25,6 +25,9 @@
 #include "mt6877_pos.h"
 #include "mt6877_consys_reg.h"
 #include "mt6877_consys_reg_offset.h"
+#include "mt6877_connsyslog.h"
+#include "clock_mng.h"
+#include "coredump_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -122,6 +125,7 @@ extern struct consys_hw_ops_struct g_consys_hw_ops_mt6877;
 extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6877;
 extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6877;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6877;
+extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6877;
 
 const struct conninfra_plat_data mt6877_plat_data = {
 	.chip_id = PLATFORM_SOC_CHIP,
@@ -130,6 +134,8 @@ const struct conninfra_plat_data mt6877_plat_data = {
 	.reg_ops = &g_dev_consys_reg_ops_mt6877,
 	.platform_emi_ops = &g_consys_platform_emi_ops_mt6877,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6877,
+	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6877,
+	.connsyslog_config = &g_connsyslog_config,
 };
 
 static struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
@@ -189,10 +195,12 @@ int consys_clock_buffer_ctrl_mt6877(unsigned int enable)
 	 * clock buffer is HW controlled, not SW controlled.
 	 * Keep this function call to update status.
 	 */
+#if (!COMMON_KERNEL_CLK_SUPPORT)
 	if (enable)
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, true);	/*open XO_WCN*/
 	else
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, false);	/*close XO_WCN*/
+#endif
 	return 0;
 }
 
@@ -203,7 +211,9 @@ unsigned int consys_soc_chipid_get_mt6877(void)
 
 void consys_clock_fail_dump_mt6877(void)
 {
+#if defined(KERNEL_clk_buf_show_status_info)
 	KERNEL_clk_buf_show_status_info();
+#endif
 }
 
 int consys_enable_power_dump_mt6877(void)

@@ -381,7 +381,7 @@ static void consys_bus_hang_dump_c(bool offclock)
 	 * 	WRITE	0x18060440	0x0002_0001	READ	0x1806_0458
 	 * 	WRITE	0x18060440	0x0003_0001	READ	0x1806_0458
 	 */
-	addr = ioremap_nocache(0x1801d400, 0x20);
+	addr = ioremap(0x1801d400, 0x20);
 	if (addr) {
 		axi1 = CONSYS_REG_READ(addr + 0x08);
 		axi2 = CONSYS_REG_READ(addr + 0x0c);
