@@ -24,8 +24,12 @@
 #include <mt_emi_api.h>
 #endif
 #include <linux/of_reserved_mem.h>
-
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <soc/mediatek/emi.h>
+#else
 #include <memory/mediatek/emi.h>
+#endif
 #include "mt6885_emi.h"
 #include "mt6885.h"
 #include "mt6885_consys_reg.h"
@@ -70,6 +74,8 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static int consys_emi_mpu_set_region_protection_mt6885(void);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -79,9 +85,9 @@ extern unsigned long long gConEmiSize;
 extern phys_addr_t gConEmiPhyBase;
 
 struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6885 = {
-	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection,
+	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection_mt6885,
 	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg_mt6885,
-	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi,
+	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi_mt6885,
 };
 
 /*******************************************************************************
@@ -94,8 +100,9 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6885 = {
 ********************************************************************************
 */
 
-int consys_emi_mpu_set_region_protection(void)
+static int consys_emi_mpu_set_region_protection_mt6885(void)
 {
+#if IS_ENABLED(CONFIG_MEDIATEK_EMI)
 	struct emimpu_region_t region;
 	unsigned long long start = gConEmiPhyBase;
 	unsigned long long end = gConEmiPhyBase + gConEmiSize - 1;
@@ -110,10 +117,13 @@ int consys_emi_mpu_set_region_protection(void)
 	mtk_emimpu_free_region(&region);
 
 	pr_info("setting MPU for EMI share memory\n");
+#else
+	pr_info("[%s] not enable\n", __func__);
+#endif
 	return 0;
 }
 
-void consys_emi_get_md_shared_emi(phys_addr_t* base, unsigned int* size)
+void consys_emi_get_md_shared_emi_mt6885(phys_addr_t* base, unsigned int* size)
 {
 	phys_addr_t mdPhy = 0;
 	int ret = 0;

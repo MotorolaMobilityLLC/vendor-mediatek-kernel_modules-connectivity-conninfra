@@ -50,8 +50,7 @@
 */
 
 struct consys_emi_addr_info* consys_emi_get_phy_addr(void);
-int consys_emi_mpu_set_region_protection(void);
-void consys_emi_get_md_shared_emi(phys_addr_t*, unsigned int*);
+void consys_emi_get_md_shared_emi_mt6893(phys_addr_t*, unsigned int*);
 
 /*******************************************************************************
 *                              F U N C T I O N S

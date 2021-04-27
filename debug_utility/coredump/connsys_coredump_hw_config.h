@@ -12,7 +12,6 @@ enum cr_category {
 	SUBSYS_CR = 2,
 };
 
-
 struct coredump_hw_config {
 	char* name;
 	phys_addr_t start_offset;
@@ -27,4 +26,3 @@ struct coredump_hw_config {
 };
 
 #endif
-

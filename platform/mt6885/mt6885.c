@@ -43,6 +43,9 @@
 #include "mt6885_consys_reg.h"
 #include "mt6885_consys_reg_offset.h"
 #include "mt6885_pos.h"
+#include "mt6885_connsyslog.h"
+#include "clock_mng.h"
+#include "coredump_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -99,7 +102,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6885 = {
 
 	/* clock */
 	.consys_plt_clock_buffer_ctrl = consys_clock_buffer_ctrl,
-	.consys_plt_co_clock_type = consys_co_clock_type,
+	.consys_plt_co_clock_type = consys_co_clock_type_mt6885,
 
 	/* POS */
 	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl_mt6885,
@@ -138,13 +141,14 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6885 = {
 };
 
 
-struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
-struct consys_plat_thermal_data g_consys_plat_therm_data;
+static struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
+static struct consys_plat_thermal_data_mt6885 g_consys_plat_therm_data;
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6885;
 extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6885;
 extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6885;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6885;
+extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6885;
 
 const struct conninfra_plat_data mt6885_plat_data = {
 	.chip_id = PLATFORM_SOC_CHIP,
@@ -153,6 +157,8 @@ const struct conninfra_plat_data mt6885_plat_data = {
 	.reg_ops = &g_dev_consys_reg_ops_mt6885,
 	.platform_emi_ops = &g_consys_platform_emi_ops_mt6885,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6885,
+	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6885,
+	.connsyslog_config = &g_connsyslog_config,
 };
 
 
@@ -179,7 +185,7 @@ int consys_clk_get_from_dts(struct platform_device *pdev)
 	return 0;
 }
 
-int consys_platform_spm_conn_ctrl(unsigned int enable)
+int consys_platform_spm_conn_ctrl_mt6885(unsigned int enable)
 {
 	int ret = 0;
 
@@ -203,14 +209,16 @@ int consys_clock_buffer_ctrl(unsigned int enable)
 	 * clock buffer is HW controlled, not SW controlled.
 	 * Keep this function call to update status.
 	 */
+#if (!COMMON_KERNEL_CLK_SUPPORT)
 	if (enable)
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, true);	/*open XO_WCN*/
 	else
 		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, false);	/*close XO_WCN*/
+#endif
 	return 0;
 }
 
-int consys_co_clock_type(void)
+int consys_co_clock_type_mt6885(void)
 {
 	const struct conninfra_conf *conf;
 
@@ -243,9 +251,9 @@ void consys_clock_fail_dump(void)
 }
 
 
-void update_thermal_data(struct consys_plat_thermal_data* input)
+void update_thermal_data_mt6885(struct consys_plat_thermal_data_mt6885* input)
 {
-	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data));
+	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data_mt6885));
 	/* Special factor, not in POS */
 	/* THERMCR1 [16:17]*/
 	CONSYS_REG_WRITE(CONN_TOP_THERM_CTL_ADDR + CONN_TOP_THERM_CTL_THERMCR1,
@@ -254,9 +262,9 @@ void update_thermal_data(struct consys_plat_thermal_data* input)
 
 }
 
-int calculate_thermal_temperature(int y)
+static int calculate_thermal_temperature(int y)
 {
-	struct consys_plat_thermal_data *data = &g_consys_plat_therm_data;
+	struct consys_plat_thermal_data_mt6885 *data = &g_consys_plat_therm_data;
 	int t;
 	int const_offset = 25;
 

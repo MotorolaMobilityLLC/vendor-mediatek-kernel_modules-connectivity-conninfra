@@ -10,7 +10,11 @@
 #include "mt6877_pos.h"
 
 /* For EMI MPU */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <soc/mediatek/emi.h>
+#else
 #include <memory/mediatek/emi.h>
+#endif
 /* For MCIF */
 #include <mtk_ccci_common.h>
 /*******************************************************************************
@@ -63,7 +67,7 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6877 = {
 	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi_mt6877,
 };
 
-int consys_emi_mpu_set_region_protection_mt6877(void)
+static int consys_emi_mpu_set_region_protection_mt6877(void)
 {
 #if IS_ENABLED(CONFIG_MEDIATEK_EMI)
 	struct emimpu_region_t region;

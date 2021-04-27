@@ -62,6 +62,8 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static int consys_emi_mpu_set_region_protection_mt6893(void);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -71,9 +73,9 @@ extern unsigned long long gConEmiSize;
 extern phys_addr_t gConEmiPhyBase;
 
 struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893 = {
-	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection,
+	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection_mt6893,
 	.consys_ic_emi_set_remapping_reg = consys_emi_set_remapping_reg_mt6893,
-	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi,
+	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi_mt6893,
 };
 
 /*******************************************************************************
@@ -86,9 +88,9 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893 = {
 ********************************************************************************
 */
 
-int consys_emi_mpu_set_region_protection(void)
+static int consys_emi_mpu_set_region_protection_mt6893(void)
 {
-#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
+#if IS_ENABLED(CONFIG_MEDIATEK_EMI)
 	struct emimpu_region_t region;
 	unsigned long long start = gConEmiPhyBase;
 	unsigned long long end = gConEmiPhyBase + gConEmiSize - 1;
@@ -107,7 +109,7 @@ int consys_emi_mpu_set_region_protection(void)
 	return 0;
 }
 
-void consys_emi_get_md_shared_emi(phys_addr_t* base, unsigned int* size)
+void consys_emi_get_md_shared_emi_mt6893(phys_addr_t* base, unsigned int* size)
 {
 	phys_addr_t mdPhy = 0;
 	int ret = 0;

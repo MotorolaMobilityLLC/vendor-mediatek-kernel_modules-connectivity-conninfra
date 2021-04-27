@@ -82,7 +82,7 @@ int connlog_test_init(void)
 		return 1;
 	}
 
-	ret = connsys_dedicated_log_path_apsoc_init(emi_addr);
+	ret = connsys_dedicated_log_path_apsoc_init(emi_addr, NULL);
 	if (ret) {
 		pr_err("connsys_dedicated_log_path_apsoc_init should fail\n");
 		return 2;
