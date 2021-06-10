@@ -594,21 +594,6 @@ static int conninfra_dev_do_drv_init()
 	}
 	init_done = 1;
 
-		/* init power on off handler */
-	INIT_WORK(&gPwrOnOffWork, conninfra_dev_pwr_on_off_handler);
-	conninfra_fb_notifier.notifier_call
-				= conninfra_dev_fb_notifier_callback;
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-	iret = mtk_disp_notifier_register("conninfra_driver", &conninfra_fb_notifier);
-#else
-	iret = fb_register_client(&conninfra_fb_notifier);
-#endif
-	if (iret)
-		pr_err("register fb_notifier fail");
-	else
-		pr_info("register fb_notifier success");
-
 #ifdef CFG_CONNINFRA_UT_SUPPORT
 	iret = conninfra_test_setup();
 	if (iret)
@@ -637,6 +622,20 @@ static int conninfra_dev_do_drv_init()
 
 	wmt_export_platform_bridge_register(&g_plat_bridge);
 
+	/* init power on off handler */
+	INIT_WORK(&gPwrOnOffWork, conninfra_dev_pwr_on_off_handler);
+	conninfra_fb_notifier.notifier_call
+				= conninfra_dev_fb_notifier_callback;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+	iret = mtk_disp_notifier_register("conninfra_driver", &conninfra_fb_notifier);
+#else
+	iret = fb_register_client(&conninfra_fb_notifier);
+#endif
+	if (iret)
+		pr_info("register fb_notifier fail");
+	else
+		pr_info("register fb_notifier success");
 
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
 	conninfra_register_devapc_callback();
