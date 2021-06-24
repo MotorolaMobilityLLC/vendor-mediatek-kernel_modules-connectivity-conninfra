@@ -72,6 +72,11 @@
 
 #define CONNINFRA_DEV_INIT_TO_MS (2 * 1000)
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) \
+	&& LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
+#define SSPM_DEBUG_DUMP
+#endif
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -129,6 +134,10 @@ static void conninfra_clock_fail_dump_cb(void);
 static int conninfra_conn_reg_readable(void);
 static int conninfra_conn_is_bus_hang(void);
 
+#ifdef SSPM_DEBUG_DUMP
+static int conninfra_conn_bus_dump(void);
+#endif
+
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
 static void conninfra_devapc_violation_cb(void);
 static void conninfra_register_devapc_callback(void);
@@ -169,7 +178,12 @@ struct wmt_platform_bridge g_plat_bridge = {
 	.thermal_query_cb = conninfra_thermal_query_cb,
 	.clock_fail_dump_cb  = conninfra_clock_fail_dump_cb,
 	.conninfra_reg_readable_cb = conninfra_conn_reg_readable,
+#ifdef SSPM_DEBUG_DUMP
+	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang,
+	.conninfra_reg_is_bus_hang_no_lock_cb = conninfra_conn_bus_dump
+#else
 	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang
+#endif
 };
 
 
@@ -522,6 +536,16 @@ static int conninfra_conn_is_bus_hang(void)
 	}
 	return conninfra_core_is_bus_hang();
 }
+
+/* For sspm debug dump
+ * To dump connsys bus status when sspm ipi timeout
+ */
+#ifdef SSPM_DEBUG_DUMP
+static int conninfra_conn_bus_dump(void)
+{
+	return conninfra_core_conn_bus_dump();
+}
+#endif
 
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
 static void conninfra_devapc_violation_cb(void)
