@@ -714,6 +714,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	coredump_mng_init(g_conninfra_plat_data);
 	g_pdev = pdev;
 
+	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	pwr_info.chip_id = consys_hw_chipid_get();
 	pwr_info.adie_id = consys_hw_detect_adie_chipid();
 	pwr_info.get_temp = consys_hw_therm_query;
@@ -722,7 +723,6 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 		pr_info("conn_pwr_init is failed %d.", ret);
 
 	atomic_set(&g_hw_init_done, 1);
-	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	return 0;
 }
 
