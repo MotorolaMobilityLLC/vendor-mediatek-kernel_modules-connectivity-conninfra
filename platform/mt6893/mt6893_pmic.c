@@ -131,6 +131,7 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 #define ATOP_DUMP_NUM 10
 #define LOG_TMP_BUF_SZ 256
 	static int oc_counter = 0;
+	static int oc_dump = 0;
 	int ret;
 	unsigned int adie_value = 0;
 	unsigned int value1 = 0, value2 = 0, value3 = 0;
@@ -145,6 +146,12 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 
 	oc_counter++;
 	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	if (oc_counter == 1 || oc_counter == (oc_dump * 100)) {
+		oc_dump++;
+	} else {
+		return NOTIFY_OK;
+	}
 
 	consys_hw_is_bus_hang();
 	ret = consys_hw_force_conninfra_wakeup();
