@@ -2222,15 +2222,15 @@ int connsys_adie_clock_buffer_setting_mt6983_gen(
 				return CONNINFRA_SPI_OP_FAIL;
 			}
 
-			curr_bt = (curr_status & (0x1 << CONNDRV_TYPE_WIFI) >> CONNDRV_TYPE_WIFI);
-			curr_fm = (curr_status & (0x1 << CONNDRV_TYPE_FM) >> CONNDRV_TYPE_FM);
-			curr_gps = (curr_status & (0x1 << CONNDRV_TYPE_GPS) >> CONNDRV_TYPE_GPS);
-			curr_wifi = (curr_status & (0x1 << CONNDRV_TYPE_WIFI) >> CONNDRV_TYPE_WIFI);
+			curr_bt = (curr_status & (0x1 << CONNDRV_TYPE_BT)) >> CONNDRV_TYPE_BT;
+			curr_fm = (curr_status & (0x1 << CONNDRV_TYPE_FM)) >> CONNDRV_TYPE_FM;
+			curr_gps = (curr_status & (0x1 << CONNDRV_TYPE_GPS)) >> CONNDRV_TYPE_GPS;
+			curr_wifi = (curr_status & (0x1 << CONNDRV_TYPE_WIFI)) >> CONNDRV_TYPE_WIFI;
 
-			next_bt = (next_status & (0x1 << CONNDRV_TYPE_WIFI) >> CONNDRV_TYPE_WIFI);
-			next_fm = (next_status & (0x1 << CONNDRV_TYPE_FM) >> CONNDRV_TYPE_FM);
-			next_gps = (next_status & (0x1 << CONNDRV_TYPE_GPS) >> CONNDRV_TYPE_GPS);
-			next_wifi = (next_status & (0x1 << CONNDRV_TYPE_WIFI) >> CONNDRV_TYPE_WIFI);
+			next_bt = (next_status & (0x1 << CONNDRV_TYPE_BT)) >> CONNDRV_TYPE_BT;
+			next_fm = (next_status & (0x1 << CONNDRV_TYPE_FM)) >> CONNDRV_TYPE_FM;
+			next_gps = (next_status & (0x1 << CONNDRV_TYPE_GPS)) >> CONNDRV_TYPE_GPS;
+			next_wifi = (next_status & (0x1 << CONNDRV_TYPE_WIFI)) >> CONNDRV_TYPE_WIFI;
 
 			bt_on = (curr_bt != next_bt) ? next_bt : -1;
 			fm_on = (curr_fm != next_fm) ? next_fm : -1;
