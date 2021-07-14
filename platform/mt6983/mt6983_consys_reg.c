@@ -24,7 +24,7 @@ static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 #endif
 
-struct consys_base_addr conn_reg;
+struct consys_base_addr conn_reg_mt6983;
 
 struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983 = {
 	.consys_reg_mng_init = consys_reg_init,
@@ -63,16 +63,6 @@ static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"spm",
 	"top_rgu",
 };
-
-struct consys_base_addr* get_conn_reg_base_addr()
-{
-	return &conn_reg;
-}
-
-int consys_reg_get_reg_symbol_num(void)
-{
-	return CONSYS_BASE_ADDR_MAX;
-}
 
 int consys_is_consys_reg(unsigned int addr)
 {
@@ -615,7 +605,7 @@ int consys_reg_init(struct platform_device *pdev)
 	pr_info("[%s] node=[%p]\n", __func__, node);
 	if (node) {
 		for (i = 0; i < CONSYS_BASE_ADDR_MAX; i++) {
-			base_addr = &conn_reg.reg_base_addr[i];
+			base_addr = &conn_reg_mt6983.reg_base_addr[i];
 
 			ret = of_address_to_resource(node, i, &res);
 			if (ret) {
@@ -647,12 +637,12 @@ static int consys_reg_deinit(void)
 	int i = 0;
 
 	for (i = 0; i < CONSYS_BASE_ADDR_MAX; i++) {
-		if (conn_reg.reg_base_addr[i].vir_addr) {
+		if (conn_reg_mt6983.reg_base_addr[i].vir_addr) {
 			pr_info("[%d] Unmap %s (0x%zx)",
 				i, consys_base_addr_index_to_str[i],
-				conn_reg.reg_base_addr[i].vir_addr);
-			iounmap((void __iomem*)conn_reg.reg_base_addr[i].vir_addr);
-			conn_reg.reg_base_addr[i].vir_addr = 0;
+				conn_reg_mt6983.reg_base_addr[i].vir_addr);
+			iounmap((void __iomem*)conn_reg_mt6983.reg_base_addr[i].vir_addr);
+			conn_reg_mt6983.reg_base_addr[i].vir_addr = 0;
 		}
 	}
 

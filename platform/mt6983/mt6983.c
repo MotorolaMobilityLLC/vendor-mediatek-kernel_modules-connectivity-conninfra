@@ -320,7 +320,7 @@ static inline void __sleep_count_trigger_read(void)
 
 }
 
-void consys_power_state(void)
+static void consys_power_state(void)
 {
 #if 0
 	unsigned int i, str_len;
