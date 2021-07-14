@@ -1721,6 +1721,11 @@ void conninfra_core_pre_cal_blocking(void)
 	unsigned long diff;
 	static bool ever_pre_cal = false;
 
+	if (g_pre_cal_mode == PRE_CAL_ALL_DISABLED) {
+		pr_info("g_pre_cal_mode == PRE_CAL_ALL_DISABLED\n");
+		return;
+	}
+
 	osal_gettimeofday(&start);
 
 	/* non-zero means lock got, zero means not */

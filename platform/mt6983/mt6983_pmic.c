@@ -31,7 +31,6 @@
 ********************************************************************************
 */
 
-
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -70,8 +69,10 @@ static int consys_plt_pmic_wifi_power_ctrl_mt6983(unsigned int);
 static int consys_plt_pmic_bt_power_ctrl_mt6983(unsigned int);
 static int consys_plt_pmic_gps_power_ctrl_mt6983(unsigned int);
 static int consys_plt_pmic_fm_power_ctrl_mt6983(unsigned int);
-static int consys_pmic_vcn33_1_power_ctl_mt6983(bool);
-static int consys_pmic_vcn33_2_power_ctl_mt6983(bool);
+static int consys_pmic_vcn33_1_power_ctl_mt6983_lg(bool);
+static int consys_pmic_vcn33_1_power_ctl_mt6983_rc(bool);
+static int consys_pmic_vcn33_2_power_ctl_mt6983_lg(bool);
+static int consys_pmic_vcn33_2_power_ctl_mt6983_rc(bool);
 static int consys_pmic_vant18_power_ctl_mt6983(bool);
 
 #if 0
@@ -102,8 +103,10 @@ int consys_plt_pmic_get_from_dts_mt6983(struct platform_device *pdev, struct con
 
 	g_dev_cb = dev_cb;
 	reg_VCN13 = devm_regulator_get_optional(&pdev->dev, "mt6363_vcn13");
-	if (!reg_VCN13)
+	if (IS_ERR(reg_VCN13)) { 
 		pr_err("Regulator_get VCN_13 fail\n");
+		reg_VCN13 = NULL;
+	}
 	else {
 		vcn13_nb.notifier_call = consys_vcn13_oc_notify;
 		ret = devm_regulator_register_notifier(reg_VCN13, &vcn13_nb);
@@ -112,21 +115,30 @@ int consys_plt_pmic_get_from_dts_mt6983(struct platform_device *pdev, struct con
 	}
 
 	reg_VRFIO18 = devm_regulator_get(&pdev->dev, "mt6363_vrfio18");
-	if (!reg_VRFIO18)
+	if (IS_ERR(reg_VRFIO18)) {
 		pr_err("Regulator_get VCN_18 fail\n");
+		reg_VRFIO18 = NULL;
+	}
 	reg_VCN33_1 = devm_regulator_get(&pdev->dev, "mt6373_vcn33_1");
-	if (!reg_VCN33_1)
+	if (IS_ERR(reg_VCN33_1)) {
 		pr_err("Regulator_get VCN33_1 fail\n");
+		reg_VCN33_1 = NULL;
+	}
 	reg_VCN33_2 = devm_regulator_get(&pdev->dev, "mt6373_vcn33_2");
-	if (!reg_VCN33_2)
+	if (IS_ERR(reg_VCN33_2)) {
 		pr_err("Regulator_get VCN33_2 fail\n");
+		reg_VCN33_2 = NULL;
+	}
 	reg_VANT18 = devm_regulator_get(&pdev->dev, "mt6373_vant18");
-	if (!reg_VANT18)
+	if (IS_ERR(reg_VANT18)) {
 		pr_err("Regulator_get VANT18 fail\n");
-
+		reg_VANT18 = NULL;
+	}
 	reg_buckboost = devm_regulator_get_optional(&pdev->dev, "rt6160-buckboost");
-	if (!reg_buckboost)
+	if (IS_ERR(reg_buckboost)) {
 		pr_info("Regulator_get buckboost fail\n");
+		reg_buckboost = NULL;
+	}
 
 	return 0;
 }
@@ -156,6 +168,10 @@ int consys_plt_pmic_common_power_ctrl_mt6983(unsigned int enable)
 		if (ret)
 			pr_err("Enable VCN13 fail. ret=%d\n", ret);
 	} else {
+		/* vant18 is enabled in consys_plt_pmic_common_power_low_power_mode_mt6983 */
+		/* Please refer to POS for more information */
+		consys_pmic_vant18_power_ctl_mt6983(0);
+
 		/* Add 1ms sleep to delay make sure that VCN13/18 would be turned off later then VCN33. */
 		msleep(1);
 		/* set PMIC VCN13 LDO SW_EN = 0, SW_LP =0 (sw disable) */
@@ -181,6 +197,7 @@ static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int addre
 						unsigned int mask, unsigned int value)
 {
 	int old_value = 0;
+	int new_value = 0;
 
 	if (!rmap) {
 		pr_err("%s regmap is NULL\n", __func__);
@@ -188,8 +205,8 @@ static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int addre
 	}
 
 	regmap_read(rmap, address, &old_value);
-	old_value = (old_value & ~mask) | value;
-	regmap_write(rmap, address, old_value);
+	new_value = (old_value & ~mask) | value;
+	regmap_write(rmap, address, new_value);
 }
 
 int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
@@ -203,11 +220,6 @@ int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
 	if (!enable)
 		return 0;
 
-	if (consys_is_rc_mode_enable_mt6983() == 0) {
-		pr_err("rc mode is disabled!! This shouldn't happen!!\n");
-		return -1;
-	}
-
 	/* Set buckboost to 3.65V (for VCN33_1 & VCN33_2) */
 	/* Notice that buckboost might not be enabled. */
 	if (reg_buckboost) {
@@ -215,53 +227,88 @@ int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
 		pr_info("Set buckboost to 3.65V\n");
 	}
 
-	/* 1. set PMIC VRFIO18 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
-	/* 1.1. set PMIC VRFIO18 LDO op_mode = 0 */
-	/* 1.2. set PMIC VRFIO18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_MODE_ADDR, 1 << 6, 0 << 6);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 1 << 6);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_CFG_ADDR,  1 << 6, 0 << 6);
+	if (consys_is_rc_mode_enable_mt6983()) {
+		/* 1. set PMIC VRFIO18 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
+		/* 1.1. set PMIC VRFIO18 LDO op_mode = 0 */
+		/* 1.2. set PMIC VRFIO18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_MODE_ADDR, 1 << 6, 0 << 6);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 1 << 6);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_RC6_OP_CFG_ADDR,  1 << 6, 0 << 6);
 
-	sleep_mode = consys_get_sleep_mode_mt6983();
-	if (sleep_mode == 1) {
-		/* set PMIC VRFIO18 LDO SW_EN = 1, SW_LP =1 */
-		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_IDLE);
+		sleep_mode = consys_get_sleep_mode_mt6983();
+		if (sleep_mode == 1) {
+			/* set PMIC VRFIO18 LDO SW_EN = 1, SW_LP =1 */
+			regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_IDLE);
+		} else {
+			/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 */
+			regulator_disable(reg_VRFIO18);
+			regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
+		}
+
+		/* 1. set PMIC VCN13 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
+		/* 1.1. set PMIC VCN13 LDO op_mode = 0 */
+		/* 1.2. set PMIC VCN13 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_MODE_ADDR, 1 << 6, 0 << 6);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 1 << 6);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_CFG_ADDR,  1 << 6, 0 << 6);
+
+		/* 2. set PMIC VCN13 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =1 */
+		regulator_set_mode(reg_VCN13, REGULATOR_MODE_IDLE);
 	} else {
-		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 */
-		regulator_disable(reg_VRFIO18);
+		/* 1. set PMIC VRFIO18 LDO PMIC HW mode control by SRCCLKENA0 */
+		/* 1.1. set PMIC VRFIO18 LDO op_mode = 1 */ 
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+
+		/*  if (A-die sleep mode-2 ){ */
+		/*    1.2. set PMIC VRFIO18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		/*  }else{ //A-die sleep mode-1 */
+		/*    1.2. set PMIC VRFIO18 LDO HW_OP_EN = 1, HW_OP_CFG = 1 */
+		sleep_mode = consys_get_sleep_mode_mt6983();
+		if (sleep_mode == 2) {
+			consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR,   1 << 0, 1 << 0);
+			consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_CFG_ADDR,  1 << 0, 0 << 0);
+		} else {
+			consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR,   1 << 0, 1 << 0);
+			consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_CFG_ADDR,  1 << 0, 1 << 0);
+		}
+
+		/* 2. set PMIC VRFIO18 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
+
+		/* 1. set PMIC VCN13 LDO PMIC HW mode control by SRCCLKENA0 */
+		/* 1.1. set PMIC VCN13 LDO op_mode = 1 */
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+
+		/* 1.2. set PMIC VCN13 LDO HW_OP_EN = 1, HW_OP_CFG = 1 */
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR,   1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VRFIO18_HW0_OP_CFG_ADDR,  1 << 0, 1 << 0);
+
+		/* 2. set PMIC VCN13 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
+		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
 	}
 
-	/* 1. set PMIC VCN13 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
-	/* 1.1. set PMIC VCN13 LDO op_mode = 0 */
-	/* 1.2. set PMIC VCN13 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_MODE_ADDR, 1 << 6, 0 << 6);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 1 << 6);
-	consys_pmic_regmap_set_value(r, MT6363_RG_LDO_VCN13_RC6_OP_CFG_ADDR,  1 << 6, 0 << 6);
-
-	/* 2. set PMIC VCN13 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =1 */
-	regulator_set_mode(reg_VCN13, REGULATOR_MODE_IDLE);
-
-	consys_pmic_vcn33_1_power_ctl_mt6983(enable);
-	consys_pmic_vcn33_2_power_ctl_mt6983(enable);
+	if (consys_is_rc_mode_enable_mt6983()) {
+		consys_pmic_vcn33_1_power_ctl_mt6983_rc(enable);
+		consys_pmic_vcn33_2_power_ctl_mt6983_rc(enable);
+	}
 	consys_pmic_vant18_power_ctl_mt6983(enable);
 #endif
 	return 0;
@@ -269,12 +316,29 @@ int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
 
 int consys_plt_pmic_wifi_power_ctrl_mt6983(unsigned int enable)
 {
-	return 0;
+	int ret;
+
+	/* necessary in legacy mode only */
+	if (consys_is_rc_mode_enable_mt6983())
+		return 0;
+
+	ret = consys_pmic_vcn33_1_power_ctl_mt6983_lg(enable);
+	if (ret)
+		pr_info("%s VCN33_1 fail\n", (enable? "Enable" : "Disable"));
+
+	ret = consys_pmic_vcn33_2_power_ctl_mt6983_lg(enable);
+	if (ret)
+		pr_info("%s VCN33_2 fail\n", (enable? "Enable" : "Disable"));
+
+	return ret;
 }
 
 int consys_plt_pmic_bt_power_ctrl_mt6983(unsigned int enable)
 {
-	return 0;
+	/* necessary in legacy mode only */
+	if (consys_is_rc_mode_enable_mt6983())
+		return 0;
+	return consys_pmic_vcn33_1_power_ctl_mt6983_lg(enable);
 }
 
 int consys_plt_pmic_gps_power_ctrl_mt6983(unsigned int enable)
@@ -287,7 +351,7 @@ int consys_plt_pmic_fm_power_ctrl_mt6983(unsigned int enable)
 	return 0;
 }
 
-static int consys_pmic_vcn33_1_power_ctl_mt6983(bool enable)
+static int consys_pmic_vcn33_1_power_ctl_mt6983_rc(bool enable)
 {
 	struct regmap *r = g_regmap_mt6373;
 
@@ -310,7 +374,72 @@ static int consys_pmic_vcn33_1_power_ctl_mt6983(bool enable)
 	return 0;
 }
 
-static int consys_pmic_vcn33_2_power_ctl_mt6983(bool enable)
+static int consys_pmic_vcn33_1_power_ctl_mt6983_lg(bool enable)
+{
+	struct regmap *r = g_regmap_mt6373;
+	static int enable_count = 0;
+
+
+	/* In legacy mode, VCN33_1 should be turned on either WIFI or BT is on */
+	/* we use a counter to record the usage. */
+	if (enable)
+		enable_count++;
+	else
+		enable_count--;
+
+	pr_info("%s enable_count %d\n", __func__, enable_count);
+	if (enable_count < 0 || enable_count > 2) {
+		pr_info("enable_count %d is unexpected!!!\n", enable_count);
+		return 0;
+	}
+
+	if (enable_count == 0) {
+		regulator_disable(reg_VCN33_1);
+		return 0;
+	}
+
+	/* vcn33_1 is already on in these two cases */
+	if (enable_count == 2 || (enable_count == 1 && enable == 0))
+		return 0;
+
+	/* !!! Notice that following steps will be executed only when enable_count == 1 !!!*/
+	/* 1. set PMIC VCN33_1 LDO PMIC HW mode control by SRCCLKENA0 */
+	/* 1.1. set PMIC VCN33_1 LDO op_mode = 1 */
+	/* 1.2. set PMIC VCN33_1 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+
+	/* 2. set PMIC VCN33_1 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
+	regulator_set_mode(reg_VCN33_1, REGULATOR_MODE_NORMAL);
+	regulator_enable(reg_VCN33_1);
+
+	return 0;
+}
+
+
+static int consys_pmic_vcn33_2_power_ctl_mt6983_lg(bool enable)
+{
+	struct regmap *r = g_regmap_mt6373;
+
+	if (!enable)
+		regulator_disable(reg_VCN33_2);
+	else {
+		/* 1. set PMIC VCN33_2 LDO PMIC HW mode control by SRCCLKENA0 */
+		/* 1.1. set PMIC VCN33_2 LDO op_mode = 1 */
+		/* 1.2. set PMIC VCN33_2 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+
+		/* 2. set PMIC VCN33_2 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
+		regulator_set_mode(reg_VCN33_2, REGULATOR_MODE_NORMAL);
+		regulator_enable(reg_VCN33_2);
+	}
+	return 0;
+}
+
+static int consys_pmic_vcn33_2_power_ctl_mt6983_rc(bool enable)
 {
 	struct regmap *r = g_regmap_mt6373;
 
@@ -334,17 +463,34 @@ static int consys_pmic_vant18_power_ctl_mt6983(bool enable)
 {
 	struct regmap *r = g_regmap_mt6373;
 
-	if (!enable)
+	if (!enable) {
+		if (consys_is_rc_mode_enable_mt6983() == 0)
+			regulator_disable(reg_VANT18);
 		return 0;
-	/* 1. set PMIC VANT18 LDO PMIC HW mode control by PMRC_EN[10][6] */
-	/* 1.1. set PMIC VANT18 LDO op_mode = 0 */
-	/* 1.2. set PMIC VANT18 LDO  HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_MODE_ADDR,  1 << 6, 0 << 6);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_EN_ADDR,    1 << 6, 1 << 6);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_CFG_ADDR,   1 << 6, 0 << 6);
+	}
+
+	if (consys_is_rc_mode_enable_mt6983()) {
+		/* 1. set PMIC VANT18 LDO PMIC HW mode control by PMRC_EN[10][6] */
+		/* 1.1. set PMIC VANT18 LDO op_mode = 0 */
+		/* 1.2. set PMIC VANT18 LDO  HW_OP_EN = 1, HW_OP_CFG = 0 */
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_MODE_ADDR,  1 << 6, 0 << 6);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_EN_ADDR,    1 << 6, 1 << 6);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_CFG_ADDR,   1 << 6, 0 << 6);
+	} else {
+		/* 1. set PMIC VANT18 LDO PMIC HW mode control by SRCCLKENA0 */
+		/* 1.1. set PMIC VANT18 LDO op_mode = 1 */
+		/* 1.2. set PMIC VANT18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+
+		/* 2. set PMIC VANT18 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
+		regulator_set_mode(reg_VANT18, REGULATOR_MODE_NORMAL);
+		regulator_enable(reg_VANT18);
+	}
 
 	return 0;
 }

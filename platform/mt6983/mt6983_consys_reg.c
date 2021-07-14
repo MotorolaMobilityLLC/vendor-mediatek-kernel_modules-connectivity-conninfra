@@ -72,6 +72,7 @@ int consys_is_consys_reg(unsigned int addr)
 }
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
+#if 0
 static void consys_bus_hang_dump_a_rc(void)
 {
 	unsigned int i;
@@ -101,6 +102,8 @@ static void consys_bus_hang_dump_a_rc(void)
 
 	iounmap(addr);
 }
+#endif
+#endif
 
 static void consys_bus_hang_dump_a(void)
 {
@@ -172,8 +175,8 @@ static void consys_bus_hang_dump_a(void)
 		(consys_is_rc_mode_enable_mt6983()? "RC" : "Legacy"),
 		a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
 		r_rx, r_tx);
-#endif
 	consys_bus_hang_dump_a_rc();
+#endif
 
 }
 
@@ -591,7 +594,6 @@ int consys_check_reg_readable(void)
 #endif
 	return 1;
 }
-#endif
 
 int consys_reg_init(struct platform_device *pdev)
 {
