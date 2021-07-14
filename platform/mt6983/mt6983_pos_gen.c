@@ -31,7 +31,7 @@
 #include "conninfra.h"
 
 
-const unsigned int g_cmdbt_dwn_value_ary[1024] = {
+const unsigned int g_cmdbt_dwn_value_ary_mt6983[1024] = {
 	0x16000400, 0x16011805, 0x16100A00, 0x16111805, 0x16200045, 0x16210000, 0xCCCCCCCC, 0x16002060,
 	0x16011801, 0x1610FFFF, 0x1611FFFF, 0x31000100, 0x16002070, 0x16011801, 0x1610FFFF, 0x16110000,
 	0x31000100, 0x1600C000, 0x16011801, 0x16100000, 0x16110000, 0x31000100, 0x1600C008, 0x16011801,
@@ -2786,7 +2786,7 @@ int connsys_low_power_setting_mt6983_gen(void)
 	addr_offset = 0x0;
 	for (i = 0; i < 1024; i++) {
 		CONSYS_REG_WRITE(vir_addr_consys_gen_conn_infra_sysram_base_offset +
-			addr_offset, g_cmdbt_dwn_value_ary[i]);
+			addr_offset, g_cmdbt_dwn_value_ary_mt6983[i]);
 		addr_offset += 0x4;
 	}
 
