@@ -13,7 +13,7 @@
  * Reference POS file,
  * - Lepin_power_on_sequence_20210628.xlsx
  * - Lepin_conn_infra_sub_task_210630.xlsx
- * - conn_infra_cmdbt_instr_autogen_se_20210503.txt
+ * - conn_infra_cmdbt_instr_autogen_20210503.txt
  */
 
 
@@ -2783,6 +2783,9 @@ int connsys_low_power_setting_mt6983_gen(void)
 		CONSYS_GEN_CKGEN_BUS_OFFSET_ADDR, (0x1 << 0));
 
 	/* conn_infra cmdbt code download */
+	CONSYS_REG_WRITE(CONN_CFG_BASE +
+		CONSYS_GEN_CMDBT_FETCH_START_ADDR0_OFFSET_ADDR, 0x18050200);
+
 	addr_offset = 0x0;
 	for (i = 0; i < 1024; i++) {
 		CONSYS_REG_WRITE(vir_addr_consys_gen_conn_infra_sysram_base_offset +
