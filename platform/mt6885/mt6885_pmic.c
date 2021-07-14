@@ -146,9 +146,16 @@ static int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event
 static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 {
 	static int oc_counter = 0;
+	static int oc_dump = 0;
 
 	oc_counter++;
 	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	if (oc_counter == 1 || oc_counter == (oc_dump * 100)) {
+		oc_dump++;
+	} else {
+		return NOTIFY_OK;
+	}
 
 	consys_plt_pmic_ctrl_dump("VCN13 OC");
 	return NOTIFY_OK;

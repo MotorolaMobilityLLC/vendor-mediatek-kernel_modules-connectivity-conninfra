@@ -366,6 +366,7 @@ int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
 #define ATOP_DUMP_NUM 10
 #if 0
 	static int oc_counter = 0;
+	static int oc_dump = 0;
 	unsigned int dump1_a, dump1_b, dump2_a, adie_value;
 	void __iomem *addr = NULL;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
@@ -380,6 +381,12 @@ int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
 
 	oc_counter++;
 	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	if (oc_counter == 1 || oc_counter == (oc_dump * 100)) {
+		oc_dump++;
+	} else {
+		return NOTIFY_OK;
+	}
 
 	/* 1. Dump host csr status
 	 * a. 0x1806_02CC 
