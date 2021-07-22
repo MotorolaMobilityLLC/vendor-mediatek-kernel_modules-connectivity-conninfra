@@ -74,8 +74,7 @@ int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable)
 
 int consys_conninfra_wakeup_mt6983(void)
 {
-	consys_conninfra_wakeup_mt6983_gen();
-	return consys_polling_chipid_mt6983();
+	return consys_conninfra_wakeup_mt6983_gen();
 }
 
 int consys_conninfra_sleep_mt6983(void)
@@ -134,19 +133,7 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 
 int consys_polling_chipid_mt6983(void)
 {
-	unsigned int consys_hw_ver = 0;
-	int check = 0;
-
-	check = consys_polling_chipid_mt6983_gen(&consys_hw_ver);
-
-	if (check) {
-#if defined(KERNEL_clk_buf_show_status_info)
-		connectivity_export_clk_buf_show_status_info();
-#endif
-		return -1;
-	}
-
-	return 0;
+	return consys_polling_chipid_mt6983_gen(NULL);
 }
 
 int connsys_d_die_cfg_mt6983(void)
