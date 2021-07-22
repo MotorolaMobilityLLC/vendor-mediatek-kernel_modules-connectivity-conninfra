@@ -464,7 +464,9 @@ static int consys_pmic_vant18_power_ctl_mt6983(bool enable)
 	struct regmap *r = g_regmap_mt6373;
 
 	if (!enable) {
-		if (consys_is_rc_mode_enable_mt6983() == 0)
+		/* 1. VANT18 will be set to SW_EN=1 only in legacy momde. */
+		/* 2. VANT18 might not be enabled because power on fail before low power control is executed. */
+		if (consys_is_rc_mode_enable_mt6983() == 0 && regulator_is_enabled(reg_VANT18))
 			regulator_disable(reg_VANT18);
 		return 0;
 	}
