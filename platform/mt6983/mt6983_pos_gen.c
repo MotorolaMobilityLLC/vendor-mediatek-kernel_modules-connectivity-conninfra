@@ -1552,7 +1552,8 @@ int connsys_a_die_cfg_adie6637_PART2_mt6983_gen(unsigned int hw_ver_id)
 
 	/* Update WF XOBUF disable, WF sys will enable XOBUF when WF Power On */
 	#ifndef CONFIG_FPGA_EARLY_PORTING
-		consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ADIE6637_ATOP_RG_TOP_XO_02, 0x8000000);
+		consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ADIE6637_ATOP_RG_TOP_XO_02, 0x88000000);
+		pr_info("enable WF XOBUF, set to 0x88000000\n");
 	#endif
 
 	/* Update WF XOBUF disable, WF sys will enable XOBUF when WF Power On */
@@ -2264,7 +2265,8 @@ int connsys_adie_clock_buffer_setting_mt6983_gen(
 		/* turn off WF XO_BUF */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
 			if (wifi_on == 0) {
-				consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ATOP_RG_TOP_XO_2, 0x8000000);
+				consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ATOP_RG_TOP_XO_2, 0x88000000);
+				pr_info("WF XO_BUF 0x88000000\n");
 				consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ATOP_RG_TOP_XO_3, 0x0);
 			}
 		#endif
