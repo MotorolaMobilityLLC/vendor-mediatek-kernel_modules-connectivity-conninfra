@@ -159,6 +159,11 @@ int consys_co_clock_type_mt6983(void)
 	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support)
 		return CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
 
+	/* This is used to set clock frequency to 52M becasue dynamic */
+	/* detection is not ready yet. */
+	if (conf->co_clock_flag == 2)
+		return CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+
 	if (!map)
 		pr_err("%s, failed to get regmap.\n", __func__);
 	else {
