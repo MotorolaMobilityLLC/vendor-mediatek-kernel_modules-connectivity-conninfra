@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lepin_power_on_sequence_20210701.xlsx
+ * - Lepin_power_on_sequence_20210714.xlsx
  * - Lepin_conn_infra_sub_task_210708.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210712.txt
  */
@@ -248,6 +248,7 @@ int consys_conninfra_sleep_mt6983_gen(void);
 /****************************************************************************************************/
 #define CONSYS_GEN_ADIE_CTL_OFFSET_ADDR                                                     0x10
 #define CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL0_OFFSET_ADDR                                      0x200
+#define CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR                                      0x210
 #define CONSYS_GEN_OSC_CTL_0_OFFSET_ADDR                                                    0x300
 #define CONSYS_GEN_OSC_CTL_1_OFFSET_ADDR                                                    0x304
 #define CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_0_OFFSET_ADDR                                      0x340
