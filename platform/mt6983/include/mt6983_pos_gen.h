@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lepin_power_on_sequence_20210714.xlsx
- * - Lepin_conn_infra_sub_task_210708.xlsx
+ * - Lxxxn_power_on_sequence_20210716.xlsx
+ * - Lxxxn_conn_infra_sub_task_210708.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210712.txt
  */
 
