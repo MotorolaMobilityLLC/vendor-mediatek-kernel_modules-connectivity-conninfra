@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lepin_power_on_sequence_20210701.xlsx
+ * - Lepin_power_on_sequence_20210714.xlsx
  * - Lepin_conn_infra_sub_task_210708.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210712.txt
  */
@@ -2812,14 +2812,33 @@ int connsys_low_power_setting_mt6983_gen(void)
 
 int consys_conninfra_wakeup_mt6983_gen(void)
 {
+	int check = 0;
+
 	if (CONN_HOST_CSR_TOP_BASE == 0) {
 		pr_err("CONN_HOST_CSR_TOP_BASE is not defined\n");
+		return -1;
+	}
+
+	if (CONN_CFG_ON_BASE == 0) {
+		pr_err("CONN_CFG_ON_BASE is not defined\n");
 		return -1;
 	}
 
 	/* wake up conn_infra */
 	CONSYS_REG_WRITE(CONN_HOST_CSR_TOP_BASE +
 		CONSYS_GEN_CONN_INFRA_WAKEPU_TOP_OFFSET_ADDR, 0x1);
+
+	/* check CONN_INFRA cmdbt restore done */
+	/* (polling "10 times" for specific project code and each polling interval is "0.5ms") */
+	check = 0;
+	CONSYS_REG_BIT_POLLING(CONN_CFG_ON_BASE +
+		CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR,
+		16, 1, 10, 500, check);
+	if (check != 0) {
+		pr_err("check CONN_INFRA cmdbt restore done fail, Status=0x%08x\n",
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR));
+	}
 
 	return 0;
 }
