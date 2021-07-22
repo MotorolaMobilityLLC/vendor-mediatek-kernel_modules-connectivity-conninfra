@@ -61,6 +61,7 @@
 #if COMMON_KERNEL_PMIC_SUPPORT
 static int consys_mt6363_probe(struct platform_device *pdev);
 static int consys_mt6373_probe(struct platform_device *pdev);
+static int consys_mt6368_probe(struct platform_device *pdev);
 #endif
 
 /*******************************************************************************
@@ -73,6 +74,7 @@ const struct consys_platform_pmic_ops* consys_platform_pmic_ops = NULL;
 struct regmap *g_regmap;
 struct regmap *g_regmap_mt6363;
 struct regmap *g_regmap_mt6373;
+struct regmap *g_regmap_mt6368;
 #endif
 
 /*******************************************************************************
@@ -88,6 +90,10 @@ const struct of_device_id consys_pmic_mt6363_of_ids[] = {
 };
 const struct of_device_id consys_pmic_mt6373_of_ids[] = {
 	{.compatible = "mediatek,mt6373-consys",},
+	{}
+};
+const struct of_device_id consys_pmic_mt6368_of_ids[] = {
+	{.compatible = "mediatek,mt6368-consys",},
 	{}
 };
 #endif
@@ -107,6 +113,15 @@ static struct platform_driver consys_mt6373_dev_drv = {
 		.name = "mt6373-consys",
 #ifdef CONFIG_OF
 		.of_match_table = consys_pmic_mt6373_of_ids,
+#endif
+		},
+};
+static struct platform_driver consys_mt6368_dev_drv = {
+	.probe = consys_mt6368_probe,
+	.driver = {
+		.name = "mt6368-consys",
+#ifdef CONFIG_OF
+		.of_match_table = consys_pmic_mt6368_of_ids,
 #endif
 		},
 };
@@ -138,6 +153,18 @@ static int consys_mt6373_probe(struct platform_device *pdev)
 		pr_info("%s failed to get g_regmap_mt6373\n", __func__);
 	else
 		pr_info("%s get regmap_mt6373 success!!\n", __func__);
+
+	return 0;
+}
+
+static int consys_mt6368_probe(struct platform_device *pdev)
+{
+	g_regmap_mt6368 = dev_get_regmap(pdev->dev.parent, NULL);
+
+	if (!g_regmap_mt6368)
+		pr_info("%s failed to get g_regmap_mt6368\n", __func__);
+	else
+		pr_info("%s get regmap_mt6368 success!!\n", __func__);
 
 	return 0;
 }
@@ -289,6 +316,13 @@ int pmic_mng_register_device(void)
 		pr_err("Conninfra pmic mt6373 driver registered failed(%d)\n", ret);
 	else
 		pr_info("%s mt6373 ok.\n", __func__);
+
+	ret = platform_driver_register(&consys_mt6368_dev_drv);
+	if (ret)
+		pr_err("Conninfra pmic mt6368 driver registered failed(%d)\n", ret);
+	else
+		pr_info("%s mt6368 ok.\n", __func__);
+
 #endif
 	return 0;
 }
