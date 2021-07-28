@@ -13,7 +13,7 @@
  * Reference POS file,
  * - Lxxxn_power_on_sequence_20210721.xlsx
  * - Lxxxn_conn_infra_sub_task_210721.xlsx
- * - conn_infra_cmdbt_instr_autogen_20210721.txt
+ * - conn_infra_cmdbt_instr_autogen_20210721_1.txt
  */
 
 
