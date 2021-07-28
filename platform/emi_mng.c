@@ -36,7 +36,7 @@
 ********************************************************************************
 */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
-#define ALLOCATE_CONNSYS_EMI_FROM_KO 1
+#define ALLOCATE_CONNSYS_EMI_FROM_DTS 1
 #endif
 
 /*******************************************************************************
@@ -69,7 +69,7 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
+#if defined(ALLOCATE_CONNSYS_EMI_FROM_DTS)
 phys_addr_t gConEmiPhyBase;
 EXPORT_SYMBOL(gConEmiPhyBase);
 unsigned long long gConEmiSize;
@@ -97,43 +97,6 @@ struct consys_emi_addr_info connsys_emi_addr_info = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
-#if 0
-/* Define weak function in case emi mpu ko is not inserted */
-#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
-__weak int mtk_emimpu_init_region(struct emimpu_region_t *rg_info, unsigned int rg_num)
-{
-	pr_info("%s is weak function\n", __func__);
-	return 0;
-}
-
-__weak int mtk_emimpu_set_addr(struct emimpu_region_t *rg_info,
-	unsigned long long start, unsigned long long end)
-{
-	pr_info("%s is weak function\n", __func__);
-	return 0;
-}
-
-__weak int mtk_emimpu_set_apc(struct emimpu_region_t *rg_info,
-	unsigned int d_num, unsigned int apc)
-{
-	pr_info("%s is weak function\n", __func__);
-	return 0;
-}
-
-__weak int mtk_emimpu_set_protection(struct emimpu_region_t *rg_info)
-{
-	pr_info("%s is weak function\n", __func__);
-	return 0;
-}
-
-__weak int mtk_emimpu_free_region(struct emimpu_region_t *rg_info)
-{
-	pr_info("%s is weak function\n", __func__);
-	return 0;
-}
-#endif
-#endif
-
 int emi_mng_set_region_protection(void)
 {
 	if (consys_platform_emi_ops &&
@@ -157,7 +120,7 @@ struct consys_emi_addr_info* emi_mng_get_phy_addr(void)
 	return &connsys_emi_addr_info;
 }
 
-#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
+#ifdef ALLOCATE_CONNSYS_EMI_FROM_DTS
 static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 {
 	struct device_node *np;
@@ -182,13 +145,43 @@ static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 
 	return 0;
 }
-#endif
 
+static int emi_mng_get_emi_allocated_by_lk2(struct platform_device *pdev)
+{
+	struct device_node *node;
+	unsigned int phy_addr = 0;
+	unsigned int phy_size = 0;
+
+	node = pdev->dev.of_node;
+	if (!node) {
+		pr_info("%s: unable to get consys node\n", __func__);
+		return -1;
+	}
+
+	if (of_property_read_u32(node, "emi-addr", &phy_addr)) {
+		pr_info("%s: unable to get emi_addr\n", __func__);
+		return -1;
+	}
+
+	if (of_property_read_u32(node, "emi-size", &phy_size)) {
+		pr_info("%s: unable to get emi_size\n", __func__);
+		return -1;
+	}
+
+	pr_info("%s emi_addr %x, emi_size %x\n", __func__, phy_addr, phy_size);
+	gConEmiPhyBase = phy_addr;
+	gConEmiSize = phy_size;
+
+	return 0;
+}
+#endif
 
 int emi_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data)
 {
-#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
-	emi_mng_allocate_connsys_emi(pdev);
+	/* EMI should be allocated either from ko or lk2 */
+#ifdef ALLOCATE_CONNSYS_EMI_FROM_DTS
+	if (emi_mng_allocate_connsys_emi(pdev) < 0)
+		emi_mng_get_emi_allocated_by_lk2(pdev);
 #endif
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = (const struct consys_platform_emi_ops*)plat_data->platform_emi_ops;
