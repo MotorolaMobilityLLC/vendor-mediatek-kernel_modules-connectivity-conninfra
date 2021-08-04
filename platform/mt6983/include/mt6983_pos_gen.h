@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210721.xlsx
+ * - Lxxxn_power_on_sequence_20210726.xlsx
  * - Lxxxn_conn_infra_sub_task_210721.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210721_1.txt
  */
@@ -335,11 +335,6 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_RG_DIG_EN_03_OFFSET_ADDR                                                 0x8
 #define CONSYS_GEN_RG_DIG_TOP_01_OFFSET_ADDR                                                0xC
 #define CONSYS_GEN_RG_PLL_STB_TIME_OFFSET_ADDR                                              0xF4
-
-/****************************************************************************************************/
-/* Base: CONSYS_GEN_DISP0_MUTEX_BASE_ADDR (0x1400_1000)                                             */
-/****************************************************************************************************/
-#define CONSYS_GEN_DISP0_MUTEX_BASE_ADDR                                                    0x14001000
 
 /****************************************************************************************************/
 /* Base: CONN_BUS_CR_ON_BASE (0x1800_E000)                                                          */

@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210721.xlsx
+ * - Lxxxn_power_on_sequence_20210726.xlsx
  * - Lxxxn_conn_infra_sub_task_210721.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210721_1.txt
  */
@@ -2400,24 +2400,9 @@ int connsys_adie_clock_buffer_setting_mt6635_e2_bt_only_mt6983_gen(void)
 
 int connsys_low_power_setting_mt6983_gen(void)
 {
-	void __iomem *vir_addr_consys_gen_disp0_mutex_base = NULL;
 	void __iomem *vir_addr_consys_gen_conn_infra_sysram_base_offset = NULL;
 	int i = 0;
 	unsigned int addr_offset = 0;
-
-	vir_addr_consys_gen_disp0_mutex_base = ioremap(CONSYS_GEN_DISP0_MUTEX_BASE_ADDR, 0x340);
-	vir_addr_consys_gen_conn_infra_sysram_base_offset = ioremap(CONSYS_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR, 0x10);
-
-	if (!vir_addr_consys_gen_disp0_mutex_base) {
-		pr_notice("vir_addr_consys_gen_disp0_mutex_base(%x) ioremap fail\n", CONSYS_GEN_DISP0_MUTEX_BASE_ADDR);
-		return -1;
-	}
-
-	if (!vir_addr_consys_gen_conn_infra_sysram_base_offset) {
-		pr_notice("vir_addr_consys_gen_conn_infra_sysram_base_offset(%x) ioremap fail\n", CONSYS_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR);
-		iounmap(vir_addr_consys_gen_disp0_mutex_base);
-		return -1;
-	}
 
 	if (CONN_CFG_ON_BASE == 0) {
 		pr_notice("CONN_CFG_ON_BASE is not defined\n");
@@ -2456,6 +2441,14 @@ int connsys_low_power_setting_mt6983_gen(void)
 
 	if (CONN_HOST_CSR_TOP_BASE == 0) {
 		pr_notice("CONN_HOST_CSR_TOP_BASE is not defined\n");
+		return -1;
+	}
+
+	vir_addr_consys_gen_conn_infra_sysram_base_offset = ioremap(CONSYS_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR, 0x10);
+
+	if (!vir_addr_consys_gen_conn_infra_sysram_base_offset) {
+		pr_notice("vir_addr_consys_gen_conn_infra_sysram_base_offset(%x) ioremap fail\n",
+			CONSYS_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR);
 		return -1;
 	}
 
@@ -2558,20 +2551,20 @@ int connsys_low_power_setting_mt6983_gen(void)
 
 		/* enable conn_top rc osc_ctrl_gps */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
-			CONSYS_SET_BIT(vir_addr_consys_gen_disp0_mutex_base +
-				0x340, (0x1 << 4));
+			CONSYS_SET_BIT(CONN_CFG_ON_BASE +
+				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_0_OFFSET_ADDR, (0x1 << 4));
 		#endif
 
 		/* enable conn_top rc osc_ctrl_bt */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
-			CONSYS_SET_BIT(vir_addr_consys_gen_disp0_mutex_base +
-				0x340, (0x1 << 5));
+			CONSYS_SET_BIT(CONN_CFG_ON_BASE +
+				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_0_OFFSET_ADDR, (0x1 << 5));
 		#endif
 
 		/* enable conn_top rc osc_ctrl_wf */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
-			CONSYS_SET_BIT(vir_addr_consys_gen_disp0_mutex_base +
-				0x340, (0x1 << 6));
+			CONSYS_SET_BIT(CONN_CFG_ON_BASE +
+				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_0_OFFSET_ADDR, (0x1 << 6));
 		#endif
 
 		/* set conn_srcclkena control by conn_infra_emi_ctl */
@@ -2805,9 +2798,6 @@ int connsys_low_power_setting_mt6983_gen(void)
 	/* Conn_infra HW_CONTROL => conn_infra enter dsleep mode */
 	CONSYS_SET_BIT(CONN_CFG_ON_BASE +
 		CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL0_OFFSET_ADDR, (0x1 << 0));
-
-	if (vir_addr_consys_gen_disp0_mutex_base)
-		iounmap(vir_addr_consys_gen_disp0_mutex_base);
 
 	if (vir_addr_consys_gen_conn_infra_sysram_base_offset)
 		iounmap(vir_addr_consys_gen_conn_infra_sysram_base_offset);
