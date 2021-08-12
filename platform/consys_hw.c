@@ -757,6 +757,9 @@ int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state)
 	/* suspend callback is in atomic context */
 	if (g_conninfra_dev_cb && g_conninfra_dev_cb->conninfra_suspend_cb)
 		ret = (*g_conninfra_dev_cb->conninfra_suspend_cb)();
+
+	conn_pwr_suspend();
+
 	return ret;
 }
 
@@ -772,6 +775,8 @@ static void consys_hw_ap_resume_handler(struct work_struct *work)
 {
 	if (g_conninfra_dev_cb && g_conninfra_dev_cb->conninfra_resume_cb)
 		(*g_conninfra_dev_cb->conninfra_resume_cb)();
+
+	conn_pwr_resume();
 }
 
 /* this function is used by conninfra_dbg. */
