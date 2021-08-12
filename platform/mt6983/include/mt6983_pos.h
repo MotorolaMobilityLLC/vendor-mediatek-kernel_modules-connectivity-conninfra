@@ -19,6 +19,7 @@ int consys_polling_chipid_mt6983(void);
 int connsys_d_die_cfg_mt6983(void);
 int connsys_spi_master_cfg_mt6983(unsigned int);
 int connsys_a_die_cfg_mt6983(void);
+void connsys_afe_sw_patch_mt6983(void);
 int connsys_afe_wbg_cal_mt6983(void);
 int connsys_subsys_pll_initial_mt6983(void);
 int connsys_low_power_setting_mt6983(unsigned int, unsigned int);

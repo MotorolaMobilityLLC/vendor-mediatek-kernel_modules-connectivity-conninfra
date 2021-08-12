@@ -65,11 +65,17 @@ unsigned int consys_emi_set_remapping_reg_mt6983(
 
 int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable)
 {
+	int ret = 0;
+
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
-	return consys_platform_spm_conn_ctrl_mt6983(enable);
+	ret = consys_platform_spm_conn_ctrl_mt6983(enable);
 #else
-	return consys_conninfra_on_power_ctrl_mt6983_gen(enable);
+	ret = consys_conninfra_on_power_ctrl_mt6983_gen(enable);
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
+	if (enable)
+		consys_update_ap2conn_hclk_mt6983_gen();
+
+	return ret;
 }
 
 int consys_conninfra_wakeup_mt6983(void)
@@ -89,6 +95,7 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 	struct pinctrl_state *tcxo_pinctrl_clr;
 	int ret = -1;
 #endif
+	int clock_type = consys_co_clock_type_mt6983();
 
 	if (enable) {
 		consys_set_if_pinmux_mt6983_gen(1);
@@ -96,7 +103,8 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 		 * 	Set GPIO135 pinmux for TCXO mode (Aux3)(CONN_TCXOENA_REQ)
 		 */
 
-		if (consys_co_clock_type_mt6983() == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
+		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
+			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
 	#if defined(CFG_CONNINFRA_ON_CTP)
 			consys_set_gpio_tcxo_mode_mt6983_gen(1, 1);
 	#else
@@ -113,7 +121,8 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 	} else {
 		consys_set_if_pinmux_mt6983_gen(0);
 
-		if (consys_co_clock_type_mt6983() == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
+		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
+			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
 	#if defined(CFG_CONNINFRA_ON_CTP)
 			consys_set_gpio_tcxo_mode_mt6983_gen(1, 0);
 	#else
@@ -214,15 +223,15 @@ int connsys_a_die_cfg_mt6983(void)
 	unsigned int sysram_clock_type = 0;
 
 	clock_type = consys_co_clock_type_mt6983();
-	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS) {
-		pr_info("A-die co-clock 52M\n");
+	/* FW only cares 26M or 52M */
+	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS ||
+		clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
 		sysram_clock_type = 2;
-	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS) {
-		pr_info("A-die co-clock 26M\n");
+	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS ||
+		clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
 		sysram_clock_type = 1;
 	} else {
-		pr_info("A-die tcxo 26M\n");
-		sysram_clock_type = 3;
+		pr_notice("unexpected value\n");
 	}
 
 	// Write clock type to conninfra sysram
@@ -277,6 +286,11 @@ int connsys_a_die_cfg_mt6983(void)
 	pr_info("sleep_mode = %d\n", sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6983_gen(adie_id, sleep_mode);
 	return 0;
+}
+
+void connsys_afe_sw_patch_mt6983(void)
+{
+	connsys_afe_sw_patch_mt6983_gen();
 }
 
 int connsys_afe_wbg_cal_mt6983(void)
