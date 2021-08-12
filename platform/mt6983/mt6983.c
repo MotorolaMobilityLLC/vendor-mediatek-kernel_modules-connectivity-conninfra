@@ -433,9 +433,10 @@ static int calculate_thermal_temperature(int y)
 	int t;
 	int const_offset = 30;
 
-	/* temperature = (y-b)*slope + (offset)?*/
+	/*  temperature = (y-b)*slope + (offset) */
+	/* Postpone division to avoid getting wrong slope becasue of integer division */
 	t = (y - (data->thermal_b == 0 ? 0x38 : data->thermal_b)) *
-			((data->slop_molecule + 1866) / 1000) + const_offset;
+			(data->slop_molecule + 1866) / 1000 + const_offset;
 
 	pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
 			y, data->thermal_b, const_offset, data->slop_molecule, data->offset,
