@@ -623,3 +623,25 @@ int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
 #endif
 	return NOTIFY_OK;
 }
+
+void consys_pmic_debug_log_mt6983(void)
+{
+	struct regmap *r = g_regmap_mt6363;
+	struct regmap *r2 = g_regmap_mt6373;
+	int vcn13, vrfio18, vcn33_1, vcn33_2, vant18;
+
+	if (!r || !r2) {
+		pr_notice("%s regmap is NULL\n", __func__);
+		return;
+	}
+
+	regmap_read(r, MT6363_RG_LDO_VCN13_MON_ADDR, &vcn13);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_MON_ADDR, &vrfio18);
+	regmap_read(r2, MT6373_RG_LDO_VCN33_1_MON_ADDR, &vcn33_1);
+	regmap_read(r2, MT6373_RG_LDO_VCN33_2_MON_ADDR, &vcn33_2);
+	regmap_read(r2, MT6373_RG_LDO_VANT18_MON_ADDR, &vant18);
+
+	pr_info("%s vcn13:0x%x,vrfio18:0x%x,vcn33_1:0x%x,vcn33_2:0x%x,vant18:0x%x\n",
+		__func__, vcn13, vrfio18, vcn33_1, vcn33_2, vant18);
+}
+
