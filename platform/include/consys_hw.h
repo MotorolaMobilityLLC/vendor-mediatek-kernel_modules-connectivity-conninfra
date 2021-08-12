@@ -65,6 +65,7 @@ typedef int(*CONSYS_PLT_POLLING_CONSYS_CHIPID) (void);
 typedef int(*CONSYS_PLT_D_DIE_CFG) (void);
 typedef int(*CONSYS_PLT_SPI_MASTER_CFG) (unsigned int next_status);
 typedef int(*CONSYS_PLT_A_DIE_CFG) (void);
+typedef void(*CONSYS_PLT_AFE_SW_PATCH) (void);
 typedef int(*CONSYS_PLT_AFE_WBG_CAL) (void);
 typedef int(*CONSYS_PLT_SUBSYS_PLL_INITIAL) (void);
 typedef int(*CONSYS_PLT_LOW_POWER_SETTING) (unsigned int curr_status, unsigned int next_status);
@@ -125,6 +126,7 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_D_DIE_CFG consys_plt_d_die_cfg;
 	CONSYS_PLT_SPI_MASTER_CFG consys_plt_spi_master_cfg;
 	CONSYS_PLT_A_DIE_CFG consys_plt_a_die_cfg;
+	CONSYS_PLT_AFE_SW_PATCH consys_plt_afe_sw_patch;
 	CONSYS_PLT_AFE_WBG_CAL consys_plt_afe_wbg_cal;
 	CONSYS_PLT_SUBSYS_PLL_INITIAL consys_plt_subsys_pll_initial;
 	CONSYS_PLT_LOW_POWER_SETTING consys_plt_low_power_setting;

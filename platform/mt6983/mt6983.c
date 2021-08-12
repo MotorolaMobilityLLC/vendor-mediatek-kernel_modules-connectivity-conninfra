@@ -97,6 +97,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6983 = {
 	.consys_plt_spi_master_cfg = connsys_spi_master_cfg_mt6983,
 	.consys_plt_a_die_cfg = connsys_a_die_cfg_mt6983,
 	.consys_plt_afe_wbg_cal = connsys_afe_wbg_cal_mt6983,
+	.consys_plt_afe_sw_patch = connsys_afe_sw_patch_mt6983,
 	.consys_plt_subsys_pll_initial = connsys_subsys_pll_initial_mt6983,
 	.consys_plt_low_power_setting = connsys_low_power_setting_mt6983,
 	.consys_plt_soc_chipid_get = consys_soc_chipid_get_mt6983,
@@ -145,7 +146,9 @@ int consys_co_clock_type_mt6983(void)
 {
 	const struct conninfra_conf *conf;
 	struct regmap *map = consys_clock_mng_get_regmap();
-	int value;
+	int value = 0, clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
+	const char *clock_name[CONNSYS_CLOCK_SCHEMATIC_MAX] = {
+		"26M co-clock", "52M co-clock", "26M tcxo", "52M tcxo"};
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();
@@ -156,22 +159,23 @@ int consys_co_clock_type_mt6983(void)
 	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d",
 		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support);
 
-	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support)
-		return CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
-
-	/* This is used to set clock frequency to 52M becasue dynamic */
-	/* detection is not ready yet. */
-	if (conf->co_clock_flag == 2)
-		return CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
-
-	if (!map)
-		pr_err("%s, failed to get regmap.\n", __func__);
-	else {
-		regmap_read(map, DCXO_DIGCLK_ELR, &value);
-		if (value & 0x1)
-			return CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
+		if (conf->co_clock_flag == 3)
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
+		else
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
+	} else {
+		if (!map)
+			pr_notice("%s, failed to get regmap.\n", __func__);
+		else {
+			regmap_read(map, DCXO_DIGCLK_ELR, &value);
+			if (value & 0x1)
+				clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+		}
 	}
-	return CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
+	pr_info("%s: %s\n", __func__, clock_name[clock_type]);
+
+	return clock_type;
 }
 
 int consys_clk_get_from_dts_mt6983(struct platform_device *pdev)
