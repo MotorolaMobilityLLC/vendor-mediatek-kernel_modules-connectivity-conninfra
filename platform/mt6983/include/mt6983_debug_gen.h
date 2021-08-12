@@ -56,21 +56,18 @@ void consys_print_power_debug_dbg_level_1_mt6983_debug_gen(
 void consys_print_power_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info);
-int consys_print_power_debug_mt6983_debug_gen(
-		int level,
-		struct conn_debug_info_mt6983 *pdbg_level_0_info,
-		struct conn_debug_info_mt6983 *pdbg_level_1_info,
-		struct conn_debug_info_mt6983 *pdbg_level_2_info);
 void consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_1_info);
 void consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info);
-int consys_print_bus_debug_mt6983_debug_gen(
+void consys_print_bus_slpprot_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
-		struct conn_debug_info_mt6983 *pdbg_level_1_info,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info);
+void consys_print_bus_slpprot_debug_dbg_level_0_mt6983_debug_gen(
+		int level,
+		struct conn_debug_info_mt6983 *pdbg_level_0_info);
 
 /************************************************************************************/
 /* Base: SPM_REG_BASE (0x1C00_1000)                                                 */
@@ -149,6 +146,14 @@ int consys_print_bus_debug_mt6983_debug_gen(
 /* Base: CONN_CFG_ON_BASE (0x1800_1000)                                             */
 /************************************************************************************/
 #define CONSYS_DBG_GEN_CONN_INFRA_CFG_RC_STATUS_OFFSET_ADDR                 0x344
+#define CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_SLP_STATUS_OFFSET_ADDR            0x404
+#define CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_EMI_SLP_STATUS_OFFSET_ADDR        0x408
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_SLP_STATUS_OFFSET_ADDR            0x434
+#define CONSYS_DBG_GEN_CONN_INFRA_WF_SLP_STATUS_OFFSET_ADDR                 0x444
+#define CONSYS_DBG_GEN_GALS_CONN2BT_SLP_STATUS_OFFSET_ADDR                  0x454
+#define CONSYS_DBG_GEN_GALS_BT2CONN_SLP_STATUS_OFFSET_ADDR                  0x464
+#define CONSYS_DBG_GEN_GALS_CONN2GPS_SLP_STATUS_OFFSET_ADDR                 0x474
+#define CONSYS_DBG_GEN_GALS_GPS2CONN_SLP_STATUS_OFFSET_ADDR                 0x484
 
 /************************************************************************************/
 /* Base: CONN_RGU_ON_BASE (0x1800_0000)                                             */
@@ -186,5 +191,11 @@ int consys_print_bus_debug_mt6983_debug_gen(
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_0_OFFSET_ADDR     0x3c
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_1_OFFSET_ADDR     0x40
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_2_OFFSET_ADDR     0x44
+
+/************************************************************************************/
+/* Base: INFRACFG_AO_REG_BASE (0x1000_1000)                                         */
+/************************************************************************************/
+#define CONSYS_DBG_GEN_INFRASYS_PROTECT_RDY_STA_1_OFFSET_ADDR               0xc5c
+#define CONSYS_DBG_GEN_MCU_CONNSYS_PROTECT_RDY_STA_0_OFFSET_ADDR            0xc9c
 
 #endif /* _PLATFORM_MT6983_DEBUG_GEN_H_ */

@@ -16,6 +16,7 @@
 #include "mt6983_pos_gen.h"
 #include "mt6983_debug_gen.h"
 #include "osal.h"
+#include "mt6983_pmic.h"
 
 #define LOG_TMP_BUF_SZ 256
 
@@ -114,6 +115,9 @@ static void consys_print_bus_debug(int level)
 {
 	pr_info("%s\n", __func__);
 
+	consys_print_bus_slpprot_debug_dbg_level_0_mt6983_debug_gen(level, debug_info);
+	consys_print_log("[slpprot_a]", debug_info);
+
 	if (level >= 1) {
 		consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(level, debug_info);
 		consys_print_log("[CONN_BUS_B]", debug_info);
@@ -121,6 +125,8 @@ static void consys_print_bus_debug(int level)
 	if (level >= 2) {
 		consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(level, debug_info);
 		consys_print_log("[CONN_BUS_C]", debug_info);
+		consys_print_bus_slpprot_debug_dbg_level_2_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[slpprot_c]", debug_info);
 	}
 }
 
@@ -138,6 +144,7 @@ int consys_print_debug_mt6983(int level)
 
 	consys_print_power_debug(level);
 	consys_print_bus_debug(level);
+	consys_pmic_debug_log_mt6983();
 
 	return 0;
 }
