@@ -205,7 +205,9 @@ int consys_get_sleep_mode_mt6983(void)
 
 	if (conn_hw_env.adie_hw_version == MT6637E1)
 		return 1;
-	return 2;
+
+	/* This is a temp solution for WIFI RX fail when sleep mode = 2 */
+	return 1;
 }
 
 int connsys_a_die_cfg_mt6983(void)
