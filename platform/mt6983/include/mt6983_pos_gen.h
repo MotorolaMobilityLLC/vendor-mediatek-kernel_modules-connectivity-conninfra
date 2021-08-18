@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210730.xlsx
- * - Lxxxn_conn_infra_sub_task_210721.xlsx
+ * - Lxxxn_power_on_sequence_20210810.xlsx
+ * - Lxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210730.txt
  */
 
@@ -331,6 +331,8 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_ADIE6637_ATOP_RG_WF2_TIME_COUNT_02                                       0x394
 #define CONSYS_GEN_ADIE6637_ATOP_RG_BT0_XOBUF_TIME                                          0x430
 #define CONSYS_GEN_ADIE6637_ATOP_RG_BT0_CKEN_TIME                                           0x438
+#define CONSYS_GEN_ADIE6637_ATOP_RG_WF0_TOP_01                                              0x754
+#define CONSYS_GEN_ADIE6637_ATOP_RG_WF1_TOP_01                                              0x758
 #define CONSYS_GEN_ADIE6637_ATOP_RG_TOP_XO_02                                               0xB04
 #define CONSYS_GEN_ADIE6637_ATOP_RG_TOP_XO_03                                               0xB08
 #define CONSYS_GEN_ADIE6637_ATOP_RG_TOP_XO_07                                               0xB18
