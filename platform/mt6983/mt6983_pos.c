@@ -626,7 +626,7 @@ int consys_spi_clock_switch_mt6983(enum connsys_spi_speed_type type)
 		/* 0x1804210C WR      [5]:1'b1  => Select hs clock mux to FM */
 		/* 0x1804210C WR      [4]:1'b1  => Select hs clock of FM */
 		CONSYS_REG_WRITE_HW_ENTRY(
-			CONN_CLKGEN_TOP_CKGEN_RFSPI_PLL_REQ_CONN_RFSPI_BPLL_REQ_M4, 1);
+			CONN_CLKGEN_TOP_CKGEN_RFSPI_PLL_REQ_SET_CONN_RFSPI_WPLL_REQ_M4, 1);
 		check = 0;
 		CONSYS_REG_BIT_POLLING(CONN_CFG_PLL_STATUS_ADDR, 1, 1, 100, 50, check);
 		if (check == 0) {
