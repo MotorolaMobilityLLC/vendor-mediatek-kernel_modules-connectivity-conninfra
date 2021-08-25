@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210810.xlsx
+ * - Lxxxn_power_on_sequence_20210817.xlsx
  * - Lxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210730.txt
  */
@@ -549,7 +549,7 @@ unsigned int consys_emi_set_remapping_reg_mt6983_gen(
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
 		CONSYS_GEN_CONN2AP_REMAP_WF_PERI_BASE_ADDR_OFFSET_ADDR, 0x1000, 0xFFFFF);
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
-		CONSYS_GEN_CONN2AP_REMAP_BT_PERI_BASE_ADDR_OFFSET_ADDR, 0x1000, 0xFFFFF);
+		CONSYS_GEN_CONN2AP_REMAP_BT_PERI_BASE_ADDR_OFFSET_ADDR, 0x1E00, 0xFFFFF);
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
 		CONSYS_GEN_CONN2AP_REMAP_GPS_PERI_BASE_ADDR_OFFSET_ADDR, 0x1000, 0xFFFFF);
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
