@@ -1992,7 +1992,6 @@ int conninfra_core_init(void)
 	conninfra_wake_lock.init_flag = 0;
 	osal_wake_lock_init(&conninfra_wake_lock);
 
-	connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID), gConEmiPhyBase);
 	return ret;
 }
 
