@@ -217,6 +217,8 @@ static int consys_check_conninfra_off_domain(void)
 static int __consys_check_reg_readable(int print_if_no_err)
 {
 	unsigned int r;
+	int wakeup_conninfra = 0;
+	int ret = 1;
 
 	if (consys_check_conninfra_on_domain() == 0) {
 		consys_print_debug_mt6983(0);
@@ -224,24 +226,32 @@ static int __consys_check_reg_readable(int print_if_no_err)
 	}
 
 	if (consys_check_conninfra_off_domain() == 0) {
+		pr_info("%s: check conninfra off failed\n", __func__);
 		consys_print_debug_mt6983(1);
-		return 0;
+		if (print_if_no_err == 0)
+			return 0;
+
+		/* wake up conninfra to read off register */
+		wakeup_conninfra = 1;
+		consys_hw_force_conninfra_wakeup();
+		ret = 0;
 	}
+
 	/* Check conn_infra off domain bus hang irq status */
 	/* - 0x1802_3400[2:0], should be 3'b000, or means conn_infra off bus might hang */
 	r = CONSYS_REG_READ_BIT(CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
 			(0x1 << 0) | (0x1 << 1) | (0x1 << 2));
 	if (r != 0) {
-		pr_info("%s bus timeout 0x1802_3400[2:0] = %x\n", __func__, r);
+		pr_info("%s bus timeout 0x1802_3400[2:0] = 0x%x\n", __func__, r);
 		consys_print_debug_mt6983(2);
-		return 0;
-
-	}
-
-	if (print_if_no_err)
+		ret = 0;
+	} else if (print_if_no_err)
 		consys_print_debug_mt6983(2);
 
-	return 1;
+	if (wakeup_conninfra)
+		consys_hw_force_conninfra_sleep();
+
+	return ret;
 }
 
 static void consys_debug_init_mt6983(void)

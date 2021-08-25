@@ -502,7 +502,7 @@ static int consys_pmic_vant18_power_ctl_mt6983(bool enable)
 	return 0;
 }
 
-int consys_dump_oc_cr(void)
+static int consys_dump_oc_cr(void)
 {
 #define LOG_TMP_BUF_SZ 256
 #define ATOP_DUMP_NUM 8
