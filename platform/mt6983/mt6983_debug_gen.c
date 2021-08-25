@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference debug file,
- * - [Lxxxn]connsys_power_debug.xlsx
- * - (Lxxxn)conn_infra_bus_debug_ctrl.xlsx
+ * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-15)
+ * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-07-01)
  */
 
 
@@ -435,8 +435,9 @@ void consys_print_power_debug_dbg_level_1_mt6983_debug_gen(
 			0, 2, 0x5);
 
 	update_debug_read_info_mt6983_debug_gen(pdbg_level_1_info,
-			NULL, 0x18060000 + 0x2C8,
-			CONSYS_REG_READ(CONN_HOST_CSR_TOP_BASE + 0x2C8));
+			NULL, 0x18060000 + CONSYS_DBG_GEN_CONN_INFRA_CFG_ON_DBG_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_HOST_CSR_TOP_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_CFG_ON_DBG_OFFSET_ADDR));
 
 	/* B3 */
 	update_debug_read_info_mt6983_debug_gen(pdbg_level_1_info,
