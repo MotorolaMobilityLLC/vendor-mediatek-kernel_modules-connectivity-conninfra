@@ -74,6 +74,7 @@ static int consys_power_state_dump_mt6983(void);
 static unsigned long long consys_soc_timestamp_get_mt6983(void);
 
 static unsigned int consys_adie_detection_mt6983(void);
+static void consys_set_mcu_control_mt6983(int type, bool onoff);
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -121,6 +122,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6983 = {
 	.consys_plt_power_state = consys_power_state_dump_mt6983,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6983,
 	.consys_plt_adie_detection = consys_adie_detection_mt6983,
+	.consys_plt_set_mcu_control = consys_set_mcu_control_mt6983,
 };
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6983;
@@ -558,8 +560,18 @@ static unsigned int consys_adie_detection_mt6983(void)
 	return ADIE_6637;
 }
 
-
 unsigned int consys_get_adie_chipid_mt6983(void)
 {
 	return ADIE_6637;
+}
+
+static void consys_set_mcu_control_mt6983(int type, bool onoff)
+{
+	pr_info("[%s] Set mcu control type=[%d] onoff=[%d]\n", __func__, type, onoff);
+
+	if (onoff) { // Turn on
+		CONSYS_SET_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
+	} else { // Turn off
+		CONSYS_CLR_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
+	}
 }
