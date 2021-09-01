@@ -18,14 +18,11 @@ struct fw_log_mcu_info g_bt_mcu_info;
 static ssize_t fw_log_bt_mcu_read(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
-	pr_debug("%s\n", __func__);
 	return connsys_log_read_to_user(CONN_DEBUG_TYPE_BT_MCU, buf, count);
 }
 
 static unsigned int fw_log_bt_mcu_poll(struct file *filp, poll_table *wait)
 {
-	pr_debug("%s\n", __func__);
-
 	poll_wait(filp, &(g_bt_mcu_info.wq), wait);
 
 	if (connsys_log_get_buf_size(CONN_DEBUG_TYPE_BT_MCU) > 0)
