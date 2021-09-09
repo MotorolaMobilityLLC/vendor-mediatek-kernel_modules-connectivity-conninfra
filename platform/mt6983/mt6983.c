@@ -569,9 +569,8 @@ static void consys_set_mcu_control_mt6983(int type, bool onoff)
 {
 	pr_info("[%s] Set mcu control type=[%d] onoff=[%d]\n", __func__, type, onoff);
 
-	if (onoff) { // Turn on
+	if (onoff) // Turn on
 		CONSYS_SET_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
-	} else { // Turn off
+	else // Turn off
 		CONSYS_CLR_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
-	}
 }
