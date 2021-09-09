@@ -1385,6 +1385,7 @@ int connsys_coredump_start(
 	bool full_dump = false;
 	struct timespec64 begin, end, put_done;
 	struct timespec64 mem_start, mem_end, cr_start, cr_end, emi_dump_start, emi_dump_end;
+	unsigned int coredump_mode = 0;
 
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
@@ -1392,12 +1393,11 @@ int connsys_coredump_start(
 		return 0;
 
 	/* TODO: Check coredump mode */
-	if (connsys_coredump_get_mode() == DUMP_MODE_RESET_ONLY) {
-		pr_info("Chip reset only, skip coredump\n");
-		return 0;
-	}
+	coredump_mode = connsys_coredump_get_mode();
+	if (coredump_mode == DUMP_MODE_RESET_ONLY)
+		pr_info("Chip reset only, skip coredump, only print exception summary\n");
 
-	pr_info("[COREDUMP] dump_property=[0x%x] drv=[%d] reason=[%s]\n", dump_property, drv, reason);
+	pr_info("[COREDUMP] dump_property=[0x%x] drv=[%d] reason=[%s] mode=[%d]\n", dump_property, drv, reason, coredump_mode);
 	osal_gettimeofday(&begin);
 	conndump_set_dump_state(ctx, CORE_DUMP_START);
 	/* Reset assert info */
@@ -1420,6 +1420,10 @@ int connsys_coredump_start(
 			break;
 		} else if (conndump_get_dump_state(ctx) == CORE_DUMP_TIMEOUT) {
 			pr_err("Coredump timeout\n");
+
+			if (coredump_mode == DUMP_MODE_RESET_ONLY)
+				return 0;
+
 			if (ctx->callback.poll_cpupcr) {
 				pr_info("Debug dump:\n");
 				ctx->callback.poll_cpupcr(5, 1);
@@ -1434,6 +1438,10 @@ int connsys_coredump_start(
 		}
 		if (dump_property & CONNSYS_DUMP_PROPERTY_NO_WAIT) {
 			pr_info("Don't wait dump status, go to partial dump\n");
+
+			if (coredump_mode == DUMP_MODE_RESET_ONLY)
+				return 0;
+
 			if (ctx->callback.poll_cpupcr) {
 				pr_info("Debug dump:\n");
 				ctx->callback.poll_cpupcr(5, 1);
@@ -1448,6 +1456,12 @@ int connsys_coredump_start(
 
 	/* Get print_buff */
 	conndump_dump_print_buff(ctx);
+
+	if (coredump_mode == DUMP_MODE_RESET_ONLY) {
+		pr_info("Coredump mode=[0], print exception summary done\n");
+		conndump_set_dump_state(ctx, CORE_DUMP_INIT);
+		return 0;
+	}
 
 	/* Get dump_buff and send to pack it */
 	conndump_dump_dump_buff(ctx);
