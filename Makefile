@@ -95,6 +95,13 @@ ccflags-y += -I$(src)/platform/mt6879/include/CODA
 endif
 endif
 
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6895),y)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6895),)
+ccflags-y += -I$(src)/platform/mt6895/include
+ccflags-y += -I$(src)/platform/mt6895/include/CODA
+endif
+endif
+
 ifneq ($(TARGET_BUILD_VARIANT), user)
     ccflags-y += -D CONNINFRA_DBG_SUPPORT=1
 else
@@ -186,6 +193,19 @@ $(MODULE_NAME)-objs += platform/mt6879/mt6879_pos.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_pos_gen.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_coredump.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_debug_gen.o
+endif
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6895),y)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6895),)
+$(MODULE_NAME)-objs += platform/mt6895/mt6895.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_pmic.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_emi.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_consys_reg.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_pos.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_pos_gen.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_coredump.o
+$(MODULE_NAME)-objs += platform/mt6895/mt6895_debug_gen.o
 endif
 endif
 
