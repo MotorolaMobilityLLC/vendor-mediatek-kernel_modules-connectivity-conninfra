@@ -117,7 +117,7 @@ int consys_plt_pmic_get_from_dts_mt6895(struct platform_device *pdev, struct con
 
 	reg_VRFIO18 = devm_regulator_get(&pdev->dev, "mt6363_vrfio18");
 	if (IS_ERR(reg_VRFIO18)) {
-		pr_notice("Regulator_get VCN_18 fail\n");
+		pr_notice("Regulator_get VRFIO18 fail\n");
 		reg_VRFIO18 = NULL;
 	} else {
 		vrfio18_nb.notifier_call = consys_vrfio18_oc_notify;
@@ -126,17 +126,17 @@ int consys_plt_pmic_get_from_dts_mt6895(struct platform_device *pdev, struct con
 			pr_info("VRFIO18 regulator notifier request failed\n");
 	}
 
-	reg_VCN33_1 = devm_regulator_get(&pdev->dev, "mt6373_vcn33_1");
+	reg_VCN33_1 = devm_regulator_get(&pdev->dev, "mt6368_vcn33_1");
 	if (IS_ERR(reg_VCN33_1)) {
 		pr_notice("Regulator_get VCN33_1 fail\n");
 		reg_VCN33_1 = NULL;
 	}
-	reg_VCN33_2 = devm_regulator_get(&pdev->dev, "mt6373_vcn33_2");
+	reg_VCN33_2 = devm_regulator_get(&pdev->dev, "mt6368_vcn33_2");
 	if (IS_ERR(reg_VCN33_2)) {
 		pr_notice("Regulator_get VCN33_2 fail\n");
 		reg_VCN33_2 = NULL;
 	}
-	reg_VANT18 = devm_regulator_get(&pdev->dev, "mt6373_vant18");
+	reg_VANT18 = devm_regulator_get(&pdev->dev, "mt6368_vant18");
 	if (IS_ERR(reg_VANT18)) {
 		pr_notice("Regulator_get VANT18 fail\n");
 		reg_VANT18 = NULL;
@@ -361,7 +361,7 @@ int consys_plt_pmic_fm_power_ctrl_mt6895(unsigned int enable)
 static int consys_pmic_vcn33_1_power_ctl_mt6895_rc(bool enable)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
-	struct regmap *r = g_regmap_mt6373;
+	struct regmap *r = g_regmap_mt6368;
 
 	if (!enable)
 		return 0;
@@ -369,12 +369,12 @@ static int consys_pmic_vcn33_1_power_ctl_mt6895_rc(bool enable)
 	/* 1. set PMIC VCN33_1 LDO PMIC HW mode control by PMRC_EN[8][7] */
 	/* 1.1. set PMIC VCN33_1 LDO op_mode = 0 */
 	/* 1.2. set PMIC VCN33_1 LDO  HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC7_OP_MODE_ADDR, 1 << 7, 0 << 7);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC7_OP_EN_ADDR,   1 << 7, 1 << 7);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_RC7_OP_CFG_ADDR,  1 << 7, 0 << 7);
 
 	/* 2. set PMIC VCN33_1 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 	regulator_set_mode(reg_VCN33_1, REGULATOR_MODE_NORMAL);
@@ -384,7 +384,7 @@ static int consys_pmic_vcn33_1_power_ctl_mt6895_rc(bool enable)
 
 static int consys_pmic_vcn33_1_power_ctl_mt6895_lg(bool enable)
 {
-	struct regmap *r = g_regmap_mt6373;
+	struct regmap *r = g_regmap_mt6368;
 	static int enable_count = 0;
 
 
@@ -414,9 +414,9 @@ static int consys_pmic_vcn33_1_power_ctl_mt6895_lg(bool enable)
 	/* 1. set PMIC VCN33_1 LDO PMIC HW mode control by SRCCLKENA0 */
 	/* 1.1. set PMIC VCN33_1 LDO op_mode = 1 */
 	/* 1.2. set PMIC VCN33_1 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_1_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_1_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
 
 	/* 2. set PMIC VCN33_1 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 	regulator_set_mode(reg_VCN33_1, REGULATOR_MODE_NORMAL);
@@ -428,7 +428,7 @@ static int consys_pmic_vcn33_1_power_ctl_mt6895_lg(bool enable)
 
 static int consys_pmic_vcn33_2_power_ctl_mt6895_lg(bool enable)
 {
-	struct regmap *r = g_regmap_mt6373;
+	struct regmap *r = g_regmap_mt6368;
 
 	if (!enable)
 		regulator_disable(reg_VCN33_2);
@@ -436,9 +436,9 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_lg(bool enable)
 		/* 1. set PMIC VCN33_2 LDO PMIC HW mode control by SRCCLKENA0 */
 		/* 1.1. set PMIC VCN33_2 LDO op_mode = 1 */
 		/* 1.2. set PMIC VCN33_2 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
 
 		/* 2. set PMIC VCN33_2 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VCN33_2, REGULATOR_MODE_NORMAL);
@@ -450,7 +450,7 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_lg(bool enable)
 static int consys_pmic_vcn33_2_power_ctl_mt6895_rc(bool enable)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
-	struct regmap *r = g_regmap_mt6373;
+	struct regmap *r = g_regmap_mt6368;
 
 	if (!enable)
 		return 0;
@@ -458,9 +458,9 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_rc(bool enable)
 	/* 1. set PMIC VCN33_2 LDO PMIC HW mode control by PMRC_EN[8] */
 	/* 1.1. set PMIC VCN33_2 LDO op_mode = 0 */
 	/* 1.2. set PMIC VCN33_2 LDO  HW_OP_EN = 1, HW_OP_CFG = 0 */
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
-	consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VCN33_2_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_RC8_OP_MODE_ADDR, 1 << 0, 0 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_RC8_OP_EN_ADDR,   1 << 0, 1 << 0);
+	consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VCN33_2_RC8_OP_CFG_ADDR,  1 << 0, 0 << 0);
 
 	/* 2. set PMIC VCN33_2 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 	regulator_set_mode(reg_VCN33_2, REGULATOR_MODE_NORMAL);
@@ -471,7 +471,7 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_rc(bool enable)
 static int consys_pmic_vant18_power_ctl_mt6895(bool enable)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
-	struct regmap *r = g_regmap_mt6373;
+	struct regmap *r = g_regmap_mt6368;
 
 	if (!enable) {
 		/* 1. VANT18 will be set to SW_EN=1 only in legacy momde. */
@@ -485,19 +485,19 @@ static int consys_pmic_vant18_power_ctl_mt6895(bool enable)
 		/* 1. set PMIC VANT18 LDO PMIC HW mode control by PMRC_EN[10][6] */
 		/* 1.1. set PMIC VANT18 LDO op_mode = 0 */
 		/* 1.2. set PMIC VANT18 LDO  HW_OP_EN = 1, HW_OP_CFG = 0 */
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_MODE_ADDR,  1 << 6, 0 << 6);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_EN_ADDR,    1 << 6, 1 << 6);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_RC6_OP_CFG_ADDR,   1 << 6, 0 << 6);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC6_OP_MODE_ADDR,  1 << 6, 0 << 6);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC6_OP_EN_ADDR,    1 << 6, 1 << 6);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_RC6_OP_CFG_ADDR,   1 << 6, 0 << 6);
 	} else {
 		/* 1. set PMIC VANT18 LDO PMIC HW mode control by SRCCLKENA0 */
 		/* 1.1. set PMIC VANT18 LDO op_mode = 1 */
 		/* 1.2. set PMIC VANT18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
-		consys_pmic_regmap_set_value(r, MT6373_RG_LDO_VANT18_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_HW0_OP_MODE_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_HW0_OP_EN_ADDR, 1 << 0, 1 << 0);
+		consys_pmic_regmap_set_value(r, MT6368_RG_LDO_VANT18_HW0_OP_CFG_ADDR, 1 << 0, 0 << 0);
 
 		/* 2. set PMIC VANT18 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VANT18, REGULATOR_MODE_NORMAL);
@@ -593,7 +593,7 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 void consys_pmic_debug_log_mt6895(void)
 {
 	struct regmap *r = g_regmap_mt6363;
-	struct regmap *r2 = g_regmap_mt6373;
+	struct regmap *r2 = g_regmap_mt6368;
 	int vcn13, vrfio18, vcn33_1, vcn33_2, vant18;
 
 	if (!r || !r2) {
@@ -603,9 +603,9 @@ void consys_pmic_debug_log_mt6895(void)
 
 	regmap_read(r, MT6363_RG_LDO_VCN13_MON_ADDR, &vcn13);
 	regmap_read(r, MT6363_RG_LDO_VRFIO18_MON_ADDR, &vrfio18);
-	regmap_read(r2, MT6373_RG_LDO_VCN33_1_MON_ADDR, &vcn33_1);
-	regmap_read(r2, MT6373_RG_LDO_VCN33_2_MON_ADDR, &vcn33_2);
-	regmap_read(r2, MT6373_RG_LDO_VANT18_MON_ADDR, &vant18);
+	regmap_read(r2, MT6368_RG_LDO_VCN33_1_MON_ADDR, &vcn33_1);
+	regmap_read(r2, MT6368_RG_LDO_VCN33_2_MON_ADDR, &vcn33_2);
+	regmap_read(r2, MT6368_RG_LDO_VANT18_MON_ADDR, &vant18);
 
 	pr_info("%s vcn13:0x%x,vrfio18:0x%x,vcn33_1:0x%x,vcn33_2:0x%x,vant18:0x%x\n",
 		__func__, vcn13, vrfio18, vcn33_1, vcn33_2, vant18);
