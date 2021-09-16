@@ -14,13 +14,13 @@
 #include "consys_reg_util.h"
 #include "plat_def.h"
 /* cr base address */
-#include "mt6983_consys_reg.h"
+#include "mt6879_consys_reg.h"
 /* cr offset */
-#include "mt6983_consys_reg_offset.h"
+#include "mt6879_consys_reg_offset.h"
 /* For function declaration */
-#include "mt6983.h"
-#include "mt6983_pos.h"
-#include "mt6983_pos_gen.h"
+#include "mt6879.h"
+#include "mt6879_pos.h"
+#include "mt6879_pos_gen.h"
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -56,57 +56,54 @@ static const char* get_spi_sys_name(enum sys_spi_subsystem subsystem);
 #endif
 static int connsys_adie_clock_buffer_setting(unsigned int curr_status, unsigned int next_status);
 
-unsigned int consys_emi_set_remapping_reg_mt6983(
+unsigned int consys_emi_set_remapping_reg_mt6879(
 	phys_addr_t con_emi_base_addr,
 	phys_addr_t md_shared_emi_base_addr)
 {
-	return consys_emi_set_remapping_reg_mt6983_gen(con_emi_base_addr, md_shared_emi_base_addr, 16);
+	return consys_emi_set_remapping_reg_mt6879_gen(con_emi_base_addr, md_shared_emi_base_addr, 16);
 }
 
-int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable)
+int consys_conninfra_on_power_ctrl_mt6879(unsigned int enable)
 {
 	int ret = 0;
 
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
-	ret = consys_platform_spm_conn_ctrl_mt6983(enable);
+	ret = consys_platform_spm_conn_ctrl_mt6879(enable);
 #else
-	ret = consys_conninfra_on_power_ctrl_mt6983_gen(enable);
+	ret = consys_conninfra_on_power_ctrl_mt6879_gen(enable);
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
-	if (enable)
-		consys_update_ap2conn_hclk_mt6983_gen();
+
+	consys_update_ap2conn_hclk_mt6879_gen();
 
 	return ret;
 }
 
-int consys_conninfra_wakeup_mt6983(void)
+int consys_conninfra_wakeup_mt6879(void)
 {
-	return consys_conninfra_wakeup_mt6983_gen();
+	return consys_conninfra_wakeup_mt6879_gen();
 }
 
-int consys_conninfra_sleep_mt6983(void)
+int consys_conninfra_sleep_mt6879(void)
 {
-	return consys_conninfra_sleep_mt6983_gen();
+	return consys_conninfra_sleep_mt6879_gen();
 }
 
-void consys_set_if_pinmux_mt6983(unsigned int enable)
+void consys_set_if_pinmux_mt6879(unsigned int enable)
 {
 #ifndef CFG_CONNINFRA_ON_CTP
 	struct pinctrl_state *tcxo_pinctrl_set;
 	struct pinctrl_state *tcxo_pinctrl_clr;
 	int ret = -1;
 #endif
-	int clock_type = consys_co_clock_type_mt6983();
 
 	if (enable) {
-		consys_set_if_pinmux_mt6983_gen(1);
+		consys_set_if_pinmux_mt6879_gen(1);
 		/* if(TCXO mode)
 		 * 	Set GPIO135 pinmux for TCXO mode (Aux3)(CONN_TCXOENA_REQ)
 		 */
-
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
+		if (consys_co_clock_type_mt6879() == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
 	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6983_gen(1, 1);
+			consys_set_gpio_tcxo_mode_mt6879_gen(1, 1);
 	#else
 			if (!IS_ERR(g_conninfra_pinctrl_ptr)) {
 				tcxo_pinctrl_set = pinctrl_lookup_state(g_conninfra_pinctrl_ptr, "conninfra_tcxo_set");
@@ -119,12 +116,11 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
 		}
 	} else {
-		consys_set_if_pinmux_mt6983_gen(0);
+		consys_set_if_pinmux_mt6879_gen(0);
 
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
+		if (consys_co_clock_type_mt6879() == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
 	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6983_gen(1, 0);
+			consys_set_gpio_tcxo_mode_mt6879_gen(1, 0);
 	#else
 			if (!IS_ERR(g_conninfra_pinctrl_ptr)) {
 				tcxo_pinctrl_clr = pinctrl_lookup_state(g_conninfra_pinctrl_ptr, "conninfra_tcxo_clr");
@@ -140,27 +136,27 @@ void consys_set_if_pinmux_mt6983(unsigned int enable)
 
 }
 
-int consys_polling_chipid_mt6983(void)
+int consys_polling_chipid_mt6879(void)
 {
-	return consys_polling_chipid_mt6983_gen(NULL);
+	return consys_polling_chipid_mt6879_gen(NULL);
 }
 
-int connsys_d_die_cfg_mt6983(void)
+int connsys_d_die_cfg_mt6879(void)
 {
 	unsigned int d_die_efuse = 0;
 
 	/* Reset conninfra sysram */
-	consys_init_conninfra_sysram_mt6983_gen();
+	consys_init_conninfra_sysram_mt6879_gen();
 
 	/* Read D-die Efuse
 	 * AP2CONN_EFUSE_DATA 0x1801_1020
 	 * Write to conninfra sysram: CONN_INFRA_SYSRAM_SW_CR_D_DIE_EFUSE(0x1805_3820)
 	 */
-	connsys_get_d_die_efuse_mt6983_gen(&d_die_efuse);
+	connsys_get_d_die_efuse_mt6879_gen(&d_die_efuse);
 	CONSYS_REG_WRITE(
 		CONN_INFRA_SYSRAM_SW_CR_D_DIE_EFUSE, d_die_efuse);
 
-	connsys_d_die_cfg_mt6983_gen();
+	connsys_d_die_cfg_mt6879_gen();
 
 #if defined(CONNINFRA_PLAT_BUILD_MODE)
 	CONSYS_REG_WRITE(CONN_INFRA_SYSRAM_SW_CR_BUILD_MODE, CONNINFRA_PLAT_BUILD_MODE);
@@ -178,7 +174,7 @@ static int connsys_adie_clock_buffer_setting(unsigned int curr_status, unsigned 
 	int ret = 0;
 
 	hw_version = CONSYS_REG_READ(CONN_INFRA_SYSRAM_SW_CR_A_DIE_CHIP_ID);
-	ret = connsys_adie_clock_buffer_setting_mt6983_gen(
+	ret = connsys_adie_clock_buffer_setting_mt6879_gen(
 		curr_status, next_status, hw_version, CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT);
 
 	if (ret)
@@ -187,13 +183,13 @@ static int connsys_adie_clock_buffer_setting(unsigned int curr_status, unsigned 
 	return 0;
 }
 
-int connsys_spi_master_cfg_mt6983(unsigned int next_status)
+int connsys_spi_master_cfg_mt6879(unsigned int next_status)
 {
-	connsys_wt_slp_top_ctrl_adie6637_mt6983_gen();
+	connsys_wt_slp_top_ctrl_adie6637_mt6879_gen();
 	return 0;
 }
 
-int consys_get_sleep_mode_mt6983(void)
+int consys_get_sleep_mode_mt6879(void)
 {
 	int platform_config;
 
@@ -206,10 +202,11 @@ int consys_get_sleep_mode_mt6983(void)
 	if (conn_hw_env.adie_hw_version == MT6637E1)
 		return 1;
 
+	/* This is a temp solution for WIFI RX fail when sleep mode = 2 */
 	return 1;
 }
 
-int connsys_a_die_cfg_mt6983(void)
+int connsys_a_die_cfg_mt6879(void)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
@@ -217,22 +214,22 @@ int connsys_a_die_cfg_mt6983(void)
 	unsigned int adie_id = 0;
 	unsigned int hw_ver_id = 0;
 	int check = 0;
-	struct consys_plat_thermal_data_mt6983 input;
+	struct consys_plat_thermal_data_mt6879 input;
 	void __iomem *sysram_efuse_list[16] = { 0 };
 	unsigned int sleep_mode = 0;
 	unsigned int clock_type = 0;
 	unsigned int sysram_clock_type = 0;
 
-	clock_type = consys_co_clock_type_mt6983();
-	/* FW only cares 26M or 52M */
-	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS ||
-		clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
+	clock_type = consys_co_clock_type_mt6879();
+	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS) {
+		pr_info("A-die co-clock 52M\n");
 		sysram_clock_type = 2;
-	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS ||
-		clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
+	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS) {
+		pr_info("A-die co-clock 26M\n");
 		sysram_clock_type = 1;
 	} else {
-		pr_notice("unexpected value\n");
+		pr_info("A-die tcxo 26M\n");
+		sysram_clock_type = 3;
 	}
 
 	// Write clock type to conninfra sysram
@@ -242,21 +239,21 @@ int connsys_a_die_cfg_mt6983(void)
 	// 3: tcxo 26M
 	CONSYS_REG_WRITE(CONN_INFRA_SYSRAM_SW_CR_CLOCK_TYPE, sysram_clock_type);
 
-	memset(&input, 0, sizeof(struct consys_plat_thermal_data_mt6983));
+	memset(&input, 0, sizeof(struct consys_plat_thermal_data_mt6879));
 
-	connsys_a_die_switch_to_gpio_mode_mt6983_gen();
-	connsys_adie_top_ck_en_ctl_mt6983_gen(1);
-	connsys_a_die_cfg_deassert_adie_reset_mt6983_gen();
+	connsys_a_die_switch_to_gpio_mode_mt6879_gen();
+	connsys_adie_top_ck_en_ctl_mt6879_gen(1);
+	connsys_a_die_cfg_deassert_adie_reset_mt6879_gen();
 
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
-		connsys_adie_top_ck_en_ctl_mt6983_gen(0);
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+		connsys_adie_top_ck_en_ctl_mt6879_gen(0);
 		pr_err("[SPI READ] Require semaphore fail\n");
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 
-	check = connsys_a_die_cfg_read_adie_id_mt6983_gen(&adie_id, &hw_ver_id);
+	check = connsys_a_die_cfg_read_adie_id_mt6879_gen(&adie_id, &hw_ver_id);
 	if (check) {
-		consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+		consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 		return -1;
 	}
 	pr_info("[%s] A-die chip id: 0x%08x\n", __func__, adie_id);
@@ -269,47 +266,43 @@ int connsys_a_die_cfg_mt6983(void)
 	sysram_efuse_list[1] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_1;
 	sysram_efuse_list[2] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_2;
 	sysram_efuse_list[3] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_3;
-	connsys_a_die_efuse_read_get_efuse_info_mt6983_gen(sysram_efuse_list,
+	connsys_a_die_efuse_read_get_efuse_info_mt6879_gen(sysram_efuse_list,
 			&(input.slop_molecule), &(input.thermal_b), &(input.offset));
 	pr_info("slop_molecule=[%d], thermal_b =[%d], offset=[%d]", input.slop_molecule, input.thermal_b, input.offset);
-	update_thermal_data_mt6983(&input);
+	update_thermal_data_mt6879(&input);
 
-	connsys_a_die_cfg_PART2_mt6983_gen(hw_ver_id);
+	connsys_a_die_cfg_PART2_mt6879_gen(hw_ver_id);
 
-	consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 
-	connsys_a_die_switch_to_conn_mode_mt6983_gen();
+	connsys_a_die_switch_to_conn_mode_mt6879_gen();
 
-	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6983();
+	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6879();
+	pr_info("[%s] Check rc mode=[%d]\n", __func__, conn_hw_env.is_rc_mode);
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 
-	sleep_mode = consys_get_sleep_mode_mt6983();
+	sleep_mode = consys_get_sleep_mode_mt6879();
 	pr_info("sleep_mode = %d\n", sleep_mode);
-	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6983_gen(adie_id, sleep_mode);
+	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6879_gen(adie_id, sleep_mode);
 	return 0;
 }
 
-void connsys_afe_sw_patch_mt6983(void)
+int connsys_afe_wbg_cal_mt6879(void)
 {
-	connsys_afe_sw_patch_mt6983_gen();
+	return connsys_afe_wbg_cal_mt6879_gen(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT);
 }
 
-int connsys_afe_wbg_cal_mt6983(void)
+int connsys_subsys_pll_initial_mt6879(void)
 {
-	return connsys_afe_wbg_cal_mt6983_gen(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT);
+	return connsys_subsys_pll_initial_xtal_26000k_mt6879_gen();
 }
 
-int connsys_subsys_pll_initial_mt6983(void)
-{
-	return connsys_subsys_pll_initial_xtal_26000k_mt6983_gen();
-}
-
-int connsys_low_power_setting_mt6983(unsigned int curr_status, unsigned int next_status)
+int connsys_low_power_setting_mt6879(unsigned int curr_status, unsigned int next_status)
 {
 	connsys_adie_clock_buffer_setting(curr_status, next_status);
 
 	if (curr_status == 0) {
-		connsys_low_power_setting_mt6983_gen();
+		connsys_low_power_setting_mt6879_gen();
 	} else {
 		/* Not first on */
 	}
@@ -333,7 +326,7 @@ static int consys_sema_acquire(unsigned int index)
 	}
 }
 
-int consys_sema_acquire_timeout_mt6983(unsigned int index, unsigned int usec)
+int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 {
 	int i;
 
@@ -359,7 +352,7 @@ int consys_sema_acquire_timeout_mt6983(unsigned int index, unsigned int usec)
 	return CONN_SEMA_GET_FAIL;
 }
 
-void consys_sema_release_mt6983(unsigned int index)
+void consys_sema_release_mt6879(unsigned int index)
 {
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
@@ -437,7 +430,7 @@ static const struct spi_op spi_op_array[SYS_SPI_MAX] = {
 	},
 };
 
-int consys_spi_read_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
+int consys_spi_read_nolock_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	/* Read action:
 	 * 1. Polling busy_cr[polling_bit] should be 0
@@ -489,22 +482,22 @@ int consys_spi_read_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned int
 	return 0;
 }
 
-int consys_spi_read_mt6983(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
+int consys_spi_read_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	int ret = 0;
 	/* Get semaphore before read */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI READ] Require semaphore fail\n");
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 
-	ret = consys_spi_read_nolock_mt6983(subsystem, addr, data);
+	ret = consys_spi_read_nolock_mt6879(subsystem, addr, data);
 
-	consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 	return ret;
 }
 
-int consys_spi_write_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
+int consys_spi_write_nolock_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
 	int check = 0;
@@ -548,22 +541,22 @@ int consys_spi_write_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned in
 	return 0;
 }
 
-int consys_spi_write_mt6983(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
+int consys_spi_write_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	int ret = 0;
 	/* Get semaphore before read */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI WRITE] Require semaphore fail\n");
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 
-	ret = consys_spi_write_nolock_mt6983(subsystem, addr, data);
+	ret = consys_spi_write_nolock_mt6879(subsystem, addr, data);
 
-	consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 	return ret;
 }
 
-int consys_spi_update_bits_mt6983(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+int consys_spi_update_bits_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
 {
 	int ret = 0;
 	unsigned int curr_val = 0;
@@ -571,12 +564,12 @@ int consys_spi_update_bits_mt6983(enum sys_spi_subsystem subsystem, unsigned int
 	bool change = false;
 
 	/* Get semaphore before updating bits */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI WRITE] Require semaphore fail\n");
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 
-	ret = consys_spi_read_nolock_mt6983(subsystem, addr, &curr_val);
+	ret = consys_spi_read_nolock_mt6879(subsystem, addr, &curr_val);
 
 	if (ret) {
 #ifndef CONFIG_FPGA_EARLY_PORTING
@@ -590,21 +583,21 @@ int consys_spi_update_bits_mt6983(enum sys_spi_subsystem subsystem, unsigned int
 	change = (curr_val != new_val);
 
 	if (change) {
-		ret = consys_spi_write_nolock_mt6983(subsystem, addr, new_val);
+		ret = consys_spi_write_nolock_mt6879(subsystem, addr, new_val);
 	}
 
-	consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
 }
 
-int consys_spi_clock_switch_mt6983(enum connsys_spi_speed_type type)
+int consys_spi_clock_switch_mt6879(enum connsys_spi_speed_type type)
 {
 	int check;
 	int ret = 0;
 
 	/* Get semaphore before read */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI CLOCK SWITCH] Require semaphore fail\n");
 		return -1;
 	}
@@ -643,19 +636,19 @@ int consys_spi_clock_switch_mt6983(enum connsys_spi_speed_type type)
 		pr_err("[%s] wrong parameter %d\n", __func__, type);
 	}
 
-	consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
 }
 
-int consys_subsys_status_update_mt6983(bool on, int radio)
+int consys_subsys_status_update_mt6879(bool on, int radio)
 {
 	if (radio < CONNDRV_TYPE_BT || radio > CONNDRV_TYPE_WIFI) {
 		pr_err("[%s] wrong parameter: %d\n", __func__, radio);
 		return -1;
 	}
 
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[%s] acquire semaphore (%d) timeout\n",
 			__func__, CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
 		return -1;
@@ -663,9 +656,9 @@ int consys_subsys_status_update_mt6983(bool on, int radio)
 
 	/* When FM power on, give priority of selecting spi clock */
 	if (radio == CONNDRV_TYPE_FM) {
-		if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_SUCCESS) {
+		if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_SUCCESS) {
 			CONSYS_REG_WRITE_HW_ENTRY(CONN_RF_SPI_MST_REG_SPI_HSCK_CTL_FM_SPI_CK_CTL, on);
-			consys_sema_release_mt6983(CONN_SEMA_RFSPI_INDEX);
+			consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 		}
 	}
 
@@ -675,11 +668,11 @@ int consys_subsys_status_update_mt6983(bool on, int radio)
 		CONSYS_CLR_BIT(CONN_INFRA_SYSRAM_SW_CR_RADIO_STATUS, (0x1 << radio));
 	}
 
-	consys_sema_release_mt6983(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
+	consys_sema_release_mt6879(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
 	return 0;
 }
 
-bool consys_is_rc_mode_enable_mt6983(void)
+bool consys_is_rc_mode_enable_mt6879(void)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	return false;
@@ -712,7 +705,7 @@ bool consys_is_rc_mode_enable_mt6983(void)
 }
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
-void consys_spi_write_offset_range_nolock_mt6983(
+void consys_spi_write_offset_range_nolock_mt6879(
 	enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int value,
 	unsigned int reg_offset, unsigned int value_offset, unsigned int size)
 {
@@ -723,7 +716,7 @@ void consys_spi_write_offset_range_nolock_mt6983(
 	value = (value >> value_offset);
 	value = GET_BIT_RANGE(value, size, 0);
 	value = (value << reg_offset);
-	ret = consys_spi_read_nolock_mt6983(subsystem, addr, &data);
+	ret = consys_spi_read_nolock_mt6879(subsystem, addr, &data);
 	if (ret) {
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
@@ -732,7 +725,7 @@ void consys_spi_write_offset_range_nolock_mt6983(
 	reg_mask = GENMASK(reg_offset + size - 1, reg_offset);
 	data2 = data & (~reg_mask);
 	data2 = (data2 | value);
-	consys_spi_write_nolock_mt6983(subsystem, addr, data2);
+	consys_spi_write_nolock_mt6879(subsystem, addr, data2);
 }
 
 const char* get_spi_sys_name(enum sys_spi_subsystem subsystem)
@@ -753,7 +746,7 @@ const char* get_spi_sys_name(enum sys_spi_subsystem subsystem)
 }
 #endif
 
-int connsys_adie_top_ck_en_ctl_mt6983(bool onoff)
+int connsys_adie_top_ck_en_ctl_mt6879(bool onoff)
 {
-	return connsys_adie_top_ck_en_ctl_mt6983_gen(onoff);
+	return connsys_adie_top_ck_en_ctl_mt6879_gen(onoff);
 }
