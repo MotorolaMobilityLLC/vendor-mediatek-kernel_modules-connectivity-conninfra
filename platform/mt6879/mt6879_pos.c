@@ -33,7 +33,7 @@
 #define MT6637E1 0x66378A00
 #define MT6637E2 0x66378A01
 
-#define SEMA_HOLD_TIME_THRESHOLD 10000000 //10 ms
+#define SEMA_HOLD_TIME_THRESHOLD 10 //10 ms
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -53,6 +53,8 @@ struct a_die_reg_config {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static const char* get_spi_sys_name(enum sys_spi_subsystem subsystem);
 #endif
@@ -337,6 +339,7 @@ int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 		return CONN_SEMA_GET_FAIL;
 	for (i = 0; i < usec; i++) {
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
+			sema_get_time[index] = jiffies;
 			if (index == CONN_SEMA_RFSPI_INDEX)
 				local_irq_save(flags);
 			return CONN_SEMA_GET_SUCCESS;
@@ -359,6 +362,7 @@ int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 
 void consys_sema_release_mt6879(unsigned int index)
 {
+	u64 duration;
 	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
@@ -366,8 +370,11 @@ void consys_sema_release_mt6879(unsigned int index)
 	CONSYS_REG_WRITE(
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index*4), 0x1);
 
+	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
 	if (index == CONN_SEMA_RFSPI_INDEX)
 		local_irq_restore(flags);
+	if (duration > SEMA_HOLD_TIME_THRESHOLD)
+		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
 }
 
 struct spi_op {
