@@ -22,23 +22,19 @@
 
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
-#ifndef CONFIG_FPGA_EARLY_PORTING
 static int consys_check_reg_readable(void);
 static int __consys_check_reg_readable(int print_if_no_err);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
-#endif
 
 struct consys_base_addr conn_reg_mt6895;
 
 struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6895 = {
 	.consys_reg_mng_init = consys_reg_init,
 	.consys_reg_mng_deinit = consys_reg_deinit,
-#ifndef CONFIG_FPGA_EARLY_PORTING
 	.consys_reg_mng_check_reable = consys_check_reg_readable,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
 	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
-#endif
 };
 
 static struct conn_debug_info_mt6895 *debug_info;

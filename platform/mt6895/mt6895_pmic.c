@@ -311,13 +311,13 @@ int consys_plt_pmic_common_power_low_power_mode_mt6895(unsigned int enable)
 		/* 2. set PMIC VCN13 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
 	}
+#endif
 
 	if (consys_is_rc_mode_enable_mt6895()) {
 		consys_pmic_vcn33_1_power_ctl_mt6895_rc(enable);
 		consys_pmic_vcn33_2_power_ctl_mt6895_rc(enable);
 	}
 	consys_pmic_vant18_power_ctl_mt6895(enable);
-#endif
 	return 0;
 }
 
@@ -360,6 +360,7 @@ int consys_plt_pmic_fm_power_ctrl_mt6895(unsigned int enable)
 
 static int consys_pmic_vcn33_1_power_ctl_mt6895_rc(bool enable)
 {
+#ifndef CONFIG_FPGA_EARLY_PORTING
 	struct regmap *r = g_regmap_mt6373;
 
 	if (!enable)
@@ -377,7 +378,7 @@ static int consys_pmic_vcn33_1_power_ctl_mt6895_rc(bool enable)
 
 	/* 2. set PMIC VCN33_1 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 	regulator_set_mode(reg_VCN33_1, REGULATOR_MODE_NORMAL);
-
+#endif
 	return 0;
 }
 
@@ -448,6 +449,7 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_lg(bool enable)
 
 static int consys_pmic_vcn33_2_power_ctl_mt6895_rc(bool enable)
 {
+#ifndef CONFIG_FPGA_EARLY_PORTING
 	struct regmap *r = g_regmap_mt6373;
 
 	if (!enable)
@@ -462,12 +464,13 @@ static int consys_pmic_vcn33_2_power_ctl_mt6895_rc(bool enable)
 
 	/* 2. set PMIC VCN33_2 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 	regulator_set_mode(reg_VCN33_2, REGULATOR_MODE_NORMAL);
-
+#endif
 	return 0;
 }
 
 static int consys_pmic_vant18_power_ctl_mt6895(bool enable)
 {
+#ifndef CONFIG_FPGA_EARLY_PORTING
 	struct regmap *r = g_regmap_mt6373;
 
 	if (!enable) {
@@ -500,7 +503,7 @@ static int consys_pmic_vant18_power_ctl_mt6895(bool enable)
 		regulator_set_mode(reg_VANT18, REGULATOR_MODE_NORMAL);
 		regulator_enable(reg_VANT18);
 	}
-
+#endif
 	return 0;
 }
 
