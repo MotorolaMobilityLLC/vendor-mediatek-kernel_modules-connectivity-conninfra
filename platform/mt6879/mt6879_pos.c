@@ -4,6 +4,7 @@
  */
 
 #include <linux/pinctrl/consumer.h>
+#include <linux/irqflags.h>
 #include <connectivity_build_in_adapter.h>
 #include <linux/pm_runtime.h>
 
@@ -32,6 +33,7 @@
 #define MT6637E1 0x66378A00
 #define MT6637E2 0x66378A01
 
+#define SEMA_HOLD_TIME_THRESHOLD 10000000 //10 ms
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -51,6 +53,8 @@ struct a_die_reg_config {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static const char* get_spi_sys_name(enum sys_spi_subsystem subsystem);
 #endif
@@ -329,11 +333,15 @@ static int consys_sema_acquire(unsigned int index)
 int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 {
 	int i;
+	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return CONN_SEMA_GET_FAIL;
 	for (i = 0; i < usec; i++) {
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
+			sema_get_time[index] = get_jiffies_64();
+			if (index == CONN_SEMA_RFSPI_INDEX)
+				local_irq_save(flags);
 			return CONN_SEMA_GET_SUCCESS;
 		}
 		udelay(1);
@@ -354,10 +362,19 @@ int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 
 void consys_sema_release_mt6879(unsigned int index)
 {
+	u64 duration;
+	unsigned long flags = 0;
+
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
 	CONSYS_REG_WRITE(
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index*4), 0x1);
+
+	duration = jiffies64_to_nsecs(get_jiffies_64() - sema_get_time[index]);
+	if (index == CONN_SEMA_RFSPI_INDEX)
+		local_irq_restore(flags);
+	if (duration > SEMA_HOLD_TIME_THRESHOLD)
+		pr_notice("%s hold semaphore (%d) for %llu us\n", __func__, index, duration / 1000);
 }
 
 struct spi_op {
@@ -572,6 +589,7 @@ int consys_spi_update_bits_mt6879(enum sys_spi_subsystem subsystem, unsigned int
 	ret = consys_spi_read_nolock_mt6879(subsystem, addr, &curr_val);
 
 	if (ret) {
+		consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
