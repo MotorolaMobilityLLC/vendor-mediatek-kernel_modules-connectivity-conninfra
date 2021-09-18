@@ -83,6 +83,7 @@ static void consys_plt_pmic_raise_voltage_timer_handler_mt6983(timer_handler_arg
 
 static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_vrfio18_oc_notify(struct notifier_block*, unsigned long, void*);
+static int consys_plt_pmic_event_notifier_mt6983(unsigned int, unsigned int);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6983,
@@ -95,6 +96,7 @@ const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983 = {
 #if 0
 	.consys_pmic_raise_voltage = consys_plt_pmic_raise_voltage_mt6983,
 #endif
+	.consys_pmic_event_notifier = consys_plt_pmic_event_notifier_mt6983,
 };
 
 int consys_plt_pmic_get_from_dts_mt6983(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
@@ -502,18 +504,21 @@ static int consys_pmic_vant18_power_ctl_mt6983(bool enable)
 	return 0;
 }
 
-static int consys_dump_oc_cr(void)
+static int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
 {
 #define LOG_TMP_BUF_SZ 256
-#define ATOP_DUMP_NUM 8
+#define ATOP_DUMP_NUM 10
 	unsigned int adie_value;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
 	int ret, i;
 	const unsigned int adie_cr_list[ATOP_DUMP_NUM] = {
 		0x03C, 0x090, 0x094, 0x0A0,
-		0x0C8, 0x0FC, 0xA10, 0xB00
+		0x0C8, 0x0FC, 0xA10, 0xB00,
+		0xAFC, 0x160
 	};
+
+	consys_pmic_debug_log_mt6983();
 
 	ret = consys_hw_force_conninfra_wakeup();
 	if (ret) {
@@ -522,7 +527,7 @@ static int consys_dump_oc_cr(void)
 	}
 
 	/* dump d-die cr */
-	conninfra_is_bus_hang();
+	consys_hw_is_bus_hang();
 
 	/* dump a-die cr */
 	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
@@ -555,7 +560,8 @@ static int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event
 	else
 		return NOTIFY_OK;
 
-	consys_dump_oc_cr();
+	if (g_dev_cb != NULL && g_dev_cb->conninfra_pmic_event_notifier != NULL)
+		g_dev_cb->conninfra_pmic_event_notifier(0, 0);
 
 	return NOTIFY_OK;
 }
@@ -577,7 +583,8 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 	else
 		return NOTIFY_OK;
 
-	consys_dump_oc_cr();
+	if (g_dev_cb != NULL && g_dev_cb->conninfra_pmic_event_notifier != NULL)
+		g_dev_cb->conninfra_pmic_event_notifier(0, 0);
 
 	return NOTIFY_OK;
 }

@@ -4,6 +4,7 @@
  */
 
 #include <linux/pinctrl/consumer.h>
+#include <linux/irqflags.h>
 #include <connectivity_build_in_adapter.h>
 
 #include "consys_hw.h" /* for semaphore index */
@@ -24,6 +25,7 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+#define SEMA_HOLD_TIME_THRESHOLD 10 //10 ms
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -44,6 +46,8 @@ struct a_die_reg_config {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+
 static int consys_spi_read_nolock(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
 #ifndef CONFIG_FPGA_EARLY_PORTING
@@ -1568,11 +1572,15 @@ static int consys_sema_acquire(unsigned int index)
 int consys_sema_acquire_timeout_mt6877(unsigned int index, unsigned int usec)
 {
 	int i;
+	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return CONN_SEMA_GET_FAIL;
 	for (i = 0; i < usec; i++) {
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
+			sema_get_time[index] = jiffies;
+			if (index == CONN_SEMA_RFSPI_INDEX)
+				local_irq_save(flags);
 			return CONN_SEMA_GET_SUCCESS;
 		}
 		udelay(1);
@@ -1593,10 +1601,19 @@ int consys_sema_acquire_timeout_mt6877(unsigned int index, unsigned int usec)
 
 void consys_sema_release_mt6877(unsigned int index)
 {
+	u64 duration;
+	unsigned long flags = 0;
+
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
 	CONSYS_REG_WRITE(
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index*4), 0x1);
+
+	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
+	if (index == CONN_SEMA_RFSPI_INDEX)
+		local_irq_restore(flags);
+	if (duration > SEMA_HOLD_TIME_THRESHOLD)
+		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
 }
 
 struct spi_op {
@@ -1702,6 +1719,7 @@ static int consys_spi_read_nolock(enum sys_spi_subsystem subsystem, unsigned int
 	CONSYS_REG_WRITE(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->write_data_cr, 0);
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	udelay(1);
 	check = 0;
 	CONSYS_REG_BIT_POLLING(
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit, 0, 100, 50, check);
@@ -1771,6 +1789,7 @@ static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned in
 	CONSYS_REG_WRITE(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->write_data_cr, data);
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	udelay(1);
 	check = 0;
 	CONSYS_REG_BIT_POLLING(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit, 0, 100, 50, check);
 	if (check != 0) {
@@ -1816,6 +1835,7 @@ int consys_spi_update_bits_mt6877(enum sys_spi_subsystem subsystem, unsigned int
 	ret = consys_spi_read_nolock(subsystem, addr, &curr_val);
 
 	if (ret) {
+		consys_sema_release_mt6877(CONN_SEMA_RFSPI_INDEX);
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
 		return CONNINFRA_SPI_OP_FAIL;

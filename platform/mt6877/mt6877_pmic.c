@@ -695,14 +695,18 @@ int consys_plt_pmic_event_notifier_mt6877(unsigned int id, unsigned int event)
 	}
 	pr_info("a-die ck:%s [0x%08x]", tmp_buf, CONSYS_REG_READ(CONN_WT_SLP_CTL_REG_WB_CK_STA_ADDR));
 
+#if 0
 	connsys_adie_top_ck_en_ctl_mt6877(true);
+#endif
 	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 	for (i = 0; i < ATOP_DUMP_NUM; i++) {
 		consys_spi_read_mt6877(SYS_SPI_TOP, adie_cr_list[i], &adie_value);
 		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[i], adie_value) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}
+#if 0
 	connsys_adie_top_ck_en_ctl_mt6877(false);
+#endif
 	pr_info("ATOP:%s\n", tmp_buf);
 
 	consys_hw_force_conninfra_sleep();
