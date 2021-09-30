@@ -504,19 +504,37 @@ static int consys_pmic_vant18_power_ctl_mt6983(bool enable)
 	return 0;
 }
 
-static int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
+static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *adie_cr, int num, char *title)
 {
 #define LOG_TMP_BUF_SZ 256
-#define ATOP_DUMP_NUM 10
 	unsigned int adie_value;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
-	int ret, i;
-	const unsigned int adie_cr_list[ATOP_DUMP_NUM] = {
+	int i;
+
+	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+	for (i = 0; i < num; i++) {
+		consys_spi_read_mt6983(subsystem, adie_cr[i], &adie_value);
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%04x: 0x%08x]", adie_cr[i], adie_value) >= 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+	}
+	pr_info("%s:%s\n", title, tmp_buf);
+}
+
+static int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int event)
+{
+#define ATOP_DUMP_NUM 12
+#define AWF_DUMP_NUM 3
+	int ret;
+	const unsigned int adie_top_cr_list[ATOP_DUMP_NUM] = {
 		0x03C, 0x090, 0x094, 0x0A0,
 		0x0C8, 0x0FC, 0xA10, 0xB00,
-		0xAFC, 0x160
+		0xAFC, 0x160, 0xC54, 0xC58,
 	};
+	const unsigned int adie_wf_cr_list[AWF_DUMP_NUM] = {
+		0xFFF, 0x81, 0x80,
+	};
+
 
 	consys_pmic_debug_log_mt6983();
 
@@ -530,13 +548,9 @@ static int consys_plt_pmic_event_notifier_mt6983(unsigned int id, unsigned int e
 	consys_hw_is_bus_hang();
 
 	/* dump a-die cr */
-	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
-	for (i = 0; i < ATOP_DUMP_NUM; i++) {
-		consys_spi_read_mt6983(SYS_SPI_TOP, adie_cr_list[i], &adie_value);
-		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[i], adie_value) >= 0)
-			strncat(tmp_buf, tmp, strlen(tmp));
-	}
-	pr_info("ATOP:%s\n", tmp_buf);
+	dump_adie_cr(SYS_SPI_TOP, adie_top_cr_list, ATOP_DUMP_NUM, "A-die TOP");
+	dump_adie_cr(SYS_SPI_WF, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF0");
+	dump_adie_cr(SYS_SPI_WF1, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF1");
 
 	consys_hw_force_conninfra_sleep();
 
