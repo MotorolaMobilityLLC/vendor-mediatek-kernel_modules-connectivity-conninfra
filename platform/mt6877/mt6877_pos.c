@@ -20,6 +20,7 @@
 /* For function declaration */
 #include "mt6877.h"
 #include "mt6877_pos.h"
+#include "pmic_mng.h"
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -1185,11 +1186,18 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 {
 	bool bt_only = false;
 	void __iomem *addr = NULL;
+	unsigned int curr_wifi = 0;
+	unsigned int next_wifi = 0;
+	unsigned int wifi_on = -1;
 
 	if ((next_status & (~(0x1 << CONNDRV_TYPE_BT))) == 0)
 		bt_only = true;
 
 	connsys_adie_clock_buffer_setting(bt_only);
+
+	curr_wifi = (curr_status & (0x1 << CONNDRV_TYPE_WIFI)) >> CONNDRV_TYPE_WIFI;
+	next_wifi = (next_status & (0x1 << CONNDRV_TYPE_WIFI)) >> CONNDRV_TYPE_WIFI;
+	wifi_on = (curr_wifi != next_wifi) ? next_wifi : -1;
 
 	if (curr_status == 0) {
 		/* 1st On */
@@ -1548,6 +1556,11 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 
 	} else {
 		/* Not first on */
+		if (wifi_on == 0) { // wifi turn off
+			// Debug use for vcn13 oc
+			pr_info("Debug use: wifi power off, dump a-die status\n");
+			pmic_mng_event_cb(0, 7);
+		}
 	}
 	/* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
 	/* !!!!!!!!!!!!!!!!!!!!!! CANNOT add code after HERE!!!!!!!!!!!!!!!!!!!!!!!!!! */
