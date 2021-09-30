@@ -616,11 +616,12 @@ int consys_plt_pmic_event_notifier_mt6877(unsigned int id, unsigned int event)
 	oc_counter++;
 	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
 
-	if (oc_counter == 1 || oc_counter == (oc_dump * 100)) {
+	if (oc_counter <= 30)
+		oc_dump = 1;
+	else if (oc_counter == (oc_dump * 100))
 		oc_dump++;
-	} else {
+	else
 		return NOTIFY_OK;
-	}
 
 	/* 1. Dump host csr status
 	 * a. 0x1806_02CC 
