@@ -239,7 +239,6 @@ $(MODULE_NAME)-objs += test/cal_test.o
 $(MODULE_NAME)-objs += test/msg_evt_test.o
 $(MODULE_NAME)-objs += test/chip_rst_test.o
 $(MODULE_NAME)-objs += test/conninfra_test.o
-$(MODULE_NAME)-objs += test/mailbox_test.o
 $(MODULE_NAME)-objs += test/connsyslog_test.o
 $(MODULE_NAME)-objs += test/dump_test.o
 endif
