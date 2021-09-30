@@ -33,7 +33,6 @@
 #include "cal_test.h"
 #include "msg_evt_test.h"
 #include "chip_rst_test.h"
-#include "mailbox_test.h"
 #include "coredump_test.h"
 #include "consys_hw.h"
 
@@ -77,7 +76,6 @@ static int conf_tc(int par1, int par2, int par3);
 static int cal_tc(int par1, int par2, int par3);
 static int msg_evt_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
-static int mailbox_tc(int par1, int par2, int par3);
 static int emi_tc(int par1, int par2, int par3);
 static int log_tc(int par1, int par2, int par3);
 static int thermal_tc(int par1, int par2, int par3);
@@ -105,7 +103,6 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 	[0x03] = msg_evt_tc,
 	[0x04] = chip_rst_tc,
 	[0x05] = cal_tc,
-	[0x06] = mailbox_tc,
 	[0x07] = emi_tc,
 	[0x08] = log_tc,
 	[0x09] = thermal_tc,
@@ -231,12 +228,6 @@ static int cal_tc(int par1, int par2, int par3)
 {
 	pr_info("test start");
 	return calibration_test();
-}
-
-
-static int mailbox_tc(int par1, int par2, int par3)
-{
-	return mailbox_test();
 }
 
 static int emi_tc(int par1, int par2, int par3)

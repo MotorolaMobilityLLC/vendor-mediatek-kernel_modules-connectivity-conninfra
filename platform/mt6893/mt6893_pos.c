@@ -1459,7 +1459,7 @@ static int connsys_bt_low_power_setting(bool bt_only)
 {
 	int hw_version;
 	const struct a_die_reg_config* config = NULL;
-	unsigned int ret, i;
+	unsigned int ret = 0, i;
 
 	hw_version = CONSYS_REG_READ(
 		CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_CHIP_ID);
@@ -2157,6 +2157,11 @@ int consys_spi_update_bits_mt6893(enum sys_spi_subsystem subsystem, unsigned int
 	unsigned int curr_val = 0;
 	unsigned int new_val = 0;
 	bool change = false;
+
+	if (0 >= subsystem || SYS_SPI_MAX <= subsystem) {
+		pr_notice("%s subsystem [%d] is invalid.\n", __func__, subsystem);
+		return CONNINFRA_SPI_OP_FAIL;
+	}
 
 	/* Get semaphore before updating bits */
 	if (consys_sema_acquire_timeout_mt6893(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
