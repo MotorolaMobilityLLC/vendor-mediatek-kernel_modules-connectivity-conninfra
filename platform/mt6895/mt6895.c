@@ -532,7 +532,7 @@ static unsigned long long consys_soc_timestamp_get_mt6895(void)
 {
 #define TICK_PER_MS	(13000)
 	void __iomem *addr = NULL;
-	u32 tick_h = 0, tick_l = 0;
+	u32 tick_h = 0, tick_l = 0, tmp_h = 0;
 	u64 timestamp = 0;
 
 	/* 0x1c01_1000	sys_timer@13M (VLPSYS)
@@ -541,8 +541,11 @@ static unsigned long long consys_soc_timestamp_get_mt6895(void)
 	 */
 	addr = ioremap(0x1c011000, 0x10);
 	if (addr) {
-		tick_l = CONSYS_REG_READ(addr + 0x0008);
-		tick_h = CONSYS_REG_READ(addr + 0x000c);
+		do {
+			tick_h = CONSYS_REG_READ(addr + 0x000c);
+			tick_l = CONSYS_REG_READ(addr + 0x0008);
+			tmp_h = CONSYS_REG_READ(addr + 0x000c);
+		} while (tick_h != tmp_h);
 		iounmap(addr);
 	} else {
 		pr_info("[%s] remap fail", __func__);
