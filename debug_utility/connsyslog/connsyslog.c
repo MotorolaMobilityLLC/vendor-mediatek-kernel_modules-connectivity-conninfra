@@ -225,6 +225,11 @@ static int connlog_emi_init(struct connlog_dev* handler, phys_addr_t emiaddr, un
 {
 	int conn_type = handler->conn_type;
 
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, conn_type);
+		return -1;
+	}
+
 	if (emiaddr == 0) {
 		pr_err("[%s] consys emi memory address invalid emi_addr=%p emi_size=%d\n",
 			type_to_title[conn_type], emiaddr, emi_size);
@@ -290,7 +295,8 @@ static int connlog_emi_init(struct connlog_dev* handler, phys_addr_t emiaddr, un
 *****************************************************************************/
 static void connlog_emi_deinit(struct connlog_dev* handler)
 {
-	iounmap(handler->virAddrEmiLogBase);
+	if (handler->virAddrEmiLogBase)
+		iounmap(handler->virAddrEmiLogBase);
 }
 
 static int connlog_buffer_init(struct connlog_dev* handler)
@@ -1003,6 +1009,8 @@ static struct connlog_dev* connlog_subsys_init(
 	if (!handler)
 		return 0;
 
+	memset(handler, 0, sizeof(struct connlog_dev));
+
 	handler->conn_type = conn_type;
 	if (connlog_emi_init(handler, emi_addr, emi_size)) {
 		pr_err("[%s] EMI init failed\n", type_to_title[conn_type]);
@@ -1047,6 +1055,11 @@ static int construct_emi_offset_table(int conn_type, const struct connlog_emi_co
 	emi_offset_table[index].emi_buf = buf_offset; \
 	emi_offset_table[index].emi_guard_pattern_offset = guard_offset; \
 	emi_offset_table[index].emi_idx = idx;
+
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_PRIMARY_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, conn_type);
+		return -1;
+	}
 
 	if (is_mcu_block_existed) {
 		unsigned int primary_base = 0;
