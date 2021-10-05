@@ -12,7 +12,7 @@
  *
  * Reference debug file,
  * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-18)
- * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-07-01)
+ * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-09-27)
  */
 
 
@@ -196,6 +196,14 @@ void consys_print_bus_slpprot_debug_dbg_level_0_mt6895_debug_gen(
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_0_OFFSET_ADDR     0x3c
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_1_OFFSET_ADDR     0x40
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_2_OFFSET_ADDR     0x44
+
+/************************************************************************************/
+/* Base: CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_BASE_ADDR (0x1804_f000)             */
+/************************************************************************************/
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_BASE_ADDR                    0x1804f000
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f000_OFFSET_ADDR         0x0
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f004_OFFSET_ADDR         0x4
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f008_OFFSET_ADDR         0x8
 
 /************************************************************************************/
 /* Base: INFRACFG_AO_REG_BASE (0x1000_1000)                                         */
