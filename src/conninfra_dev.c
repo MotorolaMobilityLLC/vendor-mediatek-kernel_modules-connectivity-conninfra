@@ -180,9 +180,12 @@ struct wmt_platform_bridge g_plat_bridge = {
 	.conninfra_reg_readable_cb = conninfra_conn_reg_readable,
 #ifdef SSPM_DEBUG_DUMP
 	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang,
-	.conninfra_reg_is_bus_hang_no_lock_cb = conninfra_conn_bus_dump
+	.conninfra_reg_is_bus_hang_no_lock_cb = conninfra_conn_bus_dump,
 #else
-	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang
+	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang,
+#endif
+#if CONNINFRA_DBG_SUPPORT
+	.debug_cb = conninfra_dbg_write,
 #endif
 };
 
@@ -568,6 +571,7 @@ static void conninfra_register_devapc_callback(void)
 static int conninfra_dev_suspend_cb(void)
 {
 	connsys_dedicated_log_set_ap_state(0);
+	conninfra_core_reset_power_state();
 	return 0;
 }
 
