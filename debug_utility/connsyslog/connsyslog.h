@@ -48,6 +48,7 @@ int connsys_dedicated_log_get_log_mode(void);
 int connsys_dedicated_log_path_alarm_enable(unsigned int sec);
 int connsys_dedicated_log_path_alarm_disable(void);
 int connsys_dedicated_log_path_blank_state_changed(int blank_state);
+int connsys_dedicated_log_set_ap_state(int state);
 
 /* For subsys */
 int connsys_log_init(int conn_type);
