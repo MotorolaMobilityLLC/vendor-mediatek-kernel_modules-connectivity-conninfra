@@ -85,6 +85,8 @@ static void consys_plt_pmic_raise_voltage_timer_handler_mt6879(timer_handler_arg
 static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_vrfio18_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_plt_pmic_event_notifier_mt6879(unsigned int, unsigned int);
+static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int address,
+						unsigned int mask, unsigned int value);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6879 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6879,
@@ -169,6 +171,10 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		if (ret)
 			pr_err("Enable VRFIO18 fail. ret=%d\n", ret);
 
+		/* request VS2 to 1.45V by VS2 VOTER (use bit 4) */
+		consys_pmic_regmap_set_value(g_regmap_mt6363,
+			MT6363_BUCK_VS2_VOTER_CON0_SET_ADDR, 1 << 4, 1 << 4);
+
 		/* set PMIC VCN13 LDO 1.35V @Normal mode; 0.95V @LPM */
 		/* no need for LPM because 0.95V is default setting. */
 		regulator_set_voltage(reg_VCN13, 1350000, 1350000);
@@ -183,9 +189,15 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 
 		/* Add 1ms sleep to delay make sure that VCN13/18 would be turned off later then VCN33. */
 		msleep(1);
+
 		/* set PMIC VCN13 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL);
 		regulator_disable(reg_VCN13);
+
+		/* clear bit 4 of VS2 VOTER then VS2 can restore to 1.35V */
+		consys_pmic_regmap_set_value(g_regmap_mt6363,
+			MT6363_BUCK_VS2_VOTER_CON0_CLR_ADDR, 1 << 4, 1 << 4);
+
 		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
 		sleep_mode = consys_get_sleep_mode_mt6879();
