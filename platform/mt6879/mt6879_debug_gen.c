@@ -12,7 +12,7 @@
  *
  * Reference debug file,
  * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-18)
- * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-09-27)
+ * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-10-06)
  */
 
 
@@ -33,7 +33,6 @@ void __iomem *vir_addr_consys_dbg_gen_topckgen_base_mt6879 = NULL;
 void __iomem *vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6879 = NULL;
 void __iomem *vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6879 = NULL;
 void __iomem *vir_addr_0x1804c000_mt6879 = NULL;
-void __iomem *vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 = NULL;
 
 void consys_debug_init_mt6879_debug_gen(void)
 {
@@ -42,7 +41,6 @@ void consys_debug_init_mt6879_debug_gen(void)
 	vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6879 = ioremap(CONSYS_DBG_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR, 0xBA4);
 	vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6879 = ioremap(CONSYS_DBG_GEN_CONN_DBG_CTL_BASE_ADDR, 0x41c);
 	vir_addr_0x1804c000_mt6879 = ioremap(0x1804c000, 0xc);
-	vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 = ioremap(CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_BASE_ADDR, 0x414);
 }
 
 void consys_debug_deinit_mt6879_debug_gen(void)
@@ -61,9 +59,6 @@ void consys_debug_deinit_mt6879_debug_gen(void)
 
 	if (vir_addr_0x1804c000_mt6879)
 		iounmap(vir_addr_0x1804c000_mt6879);
-
-	if (vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879)
-		iounmap(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879);
 }
 
 void update_debug_read_info_mt6879_debug_gen(
@@ -1094,14 +1089,13 @@ void consys_print_bus_debug_dbg_level_2_mt6879_debug_gen(
 		return;
 	}
 
-	if (!vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879) {
-		pr_notice("vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879(%x) ioremap fail\n",
-				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_BASE_ADDR);
+	if (CONN_BUS_CR_ON_BASE == 0) {
+		pr_notice("CONN_BUS_CR_ON_BASE is not defined\n");
 		return;
 	}
 
-	if (CONN_BUS_CR_ON_BASE == 0) {
-		pr_notice("CONN_BUS_CR_ON_BASE is not defined\n");
+	if (CONN_OFF_DEBUG_CTRL_AO_BASE == 0) {
+		pr_notice("CONN_OFF_DEBUG_CTRL_AO_BASE is not defined\n");
 		return;
 	}
 
@@ -1135,51 +1129,57 @@ void consys_print_bus_debug_dbg_level_2_mt6879_debug_gen(
 
 	/* 39 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"39", 0x1804f000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f000_OFFSET_ADDR,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 +
-				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f000_OFFSET_ADDR));
+			"39", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d000_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d000_OFFSET_ADDR));
 
 	/* 40 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"40", 0x1804f000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f004_OFFSET_ADDR,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 +
-				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f004_OFFSET_ADDR));
+			"40", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d004_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d004_OFFSET_ADDR));
 
 	/* 41 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"41", 0x1804f000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f008_OFFSET_ADDR,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 +
-				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_BCRM_1804f008_OFFSET_ADDR));
+			"41", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d008_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d008_OFFSET_ADDR));
 
 	/* 42 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"42", 0x1804f000 + 0x400,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x400));
+			"42", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d400_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d400_OFFSET_ADDR));
 
 	/* 43 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"43", 0x1804f000 + 0x404,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x404));
+			"43", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d404_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d404_OFFSET_ADDR));
 
 	/* 44 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"44", 0x1804f000 + 0x408,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x408));
+			"44", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d408_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d408_OFFSET_ADDR));
 
 	/* 45 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"45", 0x1804f000 + 0x40c,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x40c));
+			"45", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d40c_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d40c_OFFSET_ADDR));
 
 	/* 46 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"46", 0x1804f000 + 0x410,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x410));
+			"46", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d410_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d410_OFFSET_ADDR));
 
 	/* 47 */
 	update_debug_read_info_mt6879_debug_gen(pdbg_level_2_info,
-			"47", 0x1804f000 + 0x414,
-			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_off_bus_bcrm_base_mt6879 + 0x414));
+			"47", 0x1804d000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d414_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_OFF_DEBUG_CTRL_AO_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d414_OFFSET_ADDR));
 }
 
 void consys_print_bus_slpprot_debug_dbg_level_2_mt6879_debug_gen(
