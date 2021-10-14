@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210902.xlsx
+ * - Lxxxn_power_on_sequence_20211007.xlsx
  * - Lxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210902.txt
  */
@@ -2668,7 +2668,7 @@ int connsys_low_power_setting_mt6983_gen(void)
 		/* unmask osc_en for osc_en_rc */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
 			CONSYS_REG_WRITE_MASK(CONN_CFG_ON_BASE +
-				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_1_OFFSET_ADDR, 0xD0, 0xF0);
+				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_1_OFFSET_ADDR, 0xC0, 0xF0);
 		#endif
 
 		/* enable conn_emi_bt_only_rc_en => conn_srcclkena = conn_srcclkena_cfg || conn_srcclkena_emi */
