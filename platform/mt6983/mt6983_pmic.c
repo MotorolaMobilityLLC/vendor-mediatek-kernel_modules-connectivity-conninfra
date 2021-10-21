@@ -84,6 +84,8 @@ static void consys_plt_pmic_raise_voltage_timer_handler_mt6983(timer_handler_arg
 static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_vrfio18_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_plt_pmic_event_notifier_mt6983(unsigned int, unsigned int);
+static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int address,
+						unsigned int mask, unsigned int value);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6983,
@@ -184,6 +186,7 @@ int consys_plt_pmic_common_power_ctrl_mt6983(unsigned int enable)
 		/* set PMIC VCN13 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL);
 		regulator_disable(reg_VCN13);
+
 		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
 		sleep_mode = consys_get_sleep_mode_mt6983();

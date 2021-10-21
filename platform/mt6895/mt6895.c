@@ -118,7 +118,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6895 = {
 
 	.consys_plt_thermal_query = consys_thermal_query_mt6895,
 	.consys_plt_enable_power_dump = consys_enable_power_dump_mt6895,
-	.consys_plt_reset_power_state = consys_reset_power_state_mt6895,
+	.consys_plt_reset_power_state = consys_power_state_dump_mt6895,
 	.consys_plt_power_state = consys_power_state_dump_mt6895,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6895,
 	.consys_plt_adie_detection = consys_adie_detection_mt6895,
@@ -359,6 +359,11 @@ static void consys_power_state(void)
 
 int consys_power_state_dump_mt6895(void)
 {
+	static u64 round = 0;
+	static u64 t_conninfra_sleep_cnt = 0, t_conninfra_sleep_time = 0;
+	static u64 t_wf_sleep_cnt = 0, t_wf_sleep_time = 0;
+	static u64 t_bt_sleep_cnt = 0, t_bt_sleep_time = 0;
+	static u64 t_gps_sleep_cnt = 0, t_gps_sleep_time = 0;
 	unsigned int conninfra_sleep_cnt, conninfra_sleep_time;
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
@@ -382,6 +387,8 @@ int consys_power_state_dump_mt6895(void)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	conninfra_sleep_cnt = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
+	t_conninfra_sleep_time += conninfra_sleep_time;
+	t_conninfra_sleep_cnt += conninfra_sleep_cnt;
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -391,6 +398,8 @@ int consys_power_state_dump_mt6895(void)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	wf_sleep_cnt = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
+	t_wf_sleep_time += wf_sleep_time;
+	t_wf_sleep_cnt += wf_sleep_cnt;
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -400,6 +409,8 @@ int consys_power_state_dump_mt6895(void)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	bt_sleep_cnt = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
+	t_bt_sleep_time += bt_sleep_time;
+	t_bt_sleep_cnt += bt_sleep_cnt;
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -409,14 +420,28 @@ int consys_power_state_dump_mt6895(void)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	gps_sleep_cnt = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
-	pr_info("[consys_power_state]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;",
+	t_gps_sleep_time += gps_sleep_time;
+	t_gps_sleep_cnt += gps_sleep_cnt;
+
+	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;",
+		round,
 		conninfra_sleep_time, conninfra_sleep_cnt,
 		wf_sleep_time, wf_sleep_cnt,
 		bt_sleep_time, bt_sleep_cnt,
 		gps_sleep_time, gps_sleep_cnt);
+	pr_info("[consys_power_state][total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
+		t_conninfra_sleep_time, t_conninfra_sleep_cnt,
+		t_wf_sleep_time, t_wf_sleep_cnt,
+		t_bt_sleep_time, t_bt_sleep_cnt,
+		t_gps_sleep_time, t_gps_sleep_cnt);
 
 	/* Power state */
 	consys_power_state();
+
+	round++;
+
+	/* reset after sleep time is accumulated. */
+	consys_reset_power_state_mt6895();
 	return 0;
 }
 

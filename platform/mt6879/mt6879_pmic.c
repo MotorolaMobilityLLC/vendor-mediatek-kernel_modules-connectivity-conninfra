@@ -85,6 +85,8 @@ static void consys_plt_pmic_raise_voltage_timer_handler_mt6879(timer_handler_arg
 static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_vrfio18_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_plt_pmic_event_notifier_mt6879(unsigned int, unsigned int);
+static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int address,
+						unsigned int mask, unsigned int value);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6879 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6879,
@@ -169,6 +171,10 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		if (ret)
 			pr_err("Enable VRFIO18 fail. ret=%d\n", ret);
 
+		/* request VS2 to 1.45V by VS2 VOTER (use bit 4) */
+		consys_pmic_regmap_set_value(g_regmap_mt6363,
+			MT6363_BUCK_VS2_VOTER_CON0_SET_ADDR, 1 << 4, 1 << 4);
+
 		/* set PMIC VCN13 LDO 1.35V @Normal mode; 0.95V @LPM */
 		/* no need for LPM because 0.95V is default setting. */
 		regulator_set_voltage(reg_VCN13, 1350000, 1350000);
@@ -183,9 +189,15 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 
 		/* Add 1ms sleep to delay make sure that VCN13/18 would be turned off later then VCN33. */
 		msleep(1);
+
 		/* set PMIC VCN13 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL);
 		regulator_disable(reg_VCN13);
+
+		/* clear bit 4 of VS2 VOTER then VS2 can restore to 1.35V */
+		consys_pmic_regmap_set_value(g_regmap_mt6363,
+			MT6363_BUCK_VS2_VOTER_CON0_CLR_ADDR, 1 << 4, 1 << 4);
+
 		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
 		sleep_mode = consys_get_sleep_mode_mt6879();
@@ -508,19 +520,37 @@ static int consys_pmic_vant18_power_ctl_mt6879(bool enable)
 	return 0;
 }
 
-static int consys_plt_pmic_event_notifier_mt6879(unsigned int id, unsigned int event)
+static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *adie_cr, int num, char *title)
 {
 #define LOG_TMP_BUF_SZ 256
-#define ATOP_DUMP_NUM 10
 	unsigned int adie_value;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
-	int ret, i;
-	const unsigned int adie_cr_list[ATOP_DUMP_NUM] = {
+	int i;
+
+	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
+	for (i = 0; i < num; i++) {
+		consys_spi_read_mt6879(subsystem, adie_cr[i], &adie_value);
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%04x: 0x%08x]", adie_cr[i], adie_value) >= 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+	}
+	pr_info("%s:%s\n", title, tmp_buf);
+}
+
+static int consys_plt_pmic_event_notifier_mt6879(unsigned int id, unsigned int event)
+{
+#define ATOP_DUMP_NUM 12
+#define AWF_DUMP_NUM 3
+	int ret;
+	const unsigned int adie_top_cr_list[ATOP_DUMP_NUM] = {
 		0x03C, 0x090, 0x094, 0x0A0,
 		0x0C8, 0x0FC, 0xA10, 0xB00,
-		0xAFC, 0x160
+		0xAFC, 0x160, 0xC54, 0xC58,
 	};
+	const unsigned int adie_wf_cr_list[AWF_DUMP_NUM] = {
+		0xFFF, 0x81, 0x80,
+	};
+
 
 	consys_pmic_debug_log_mt6879();
 
@@ -534,13 +564,9 @@ static int consys_plt_pmic_event_notifier_mt6879(unsigned int id, unsigned int e
 	consys_hw_is_bus_hang();
 
 	/* dump a-die cr */
-	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
-	for (i = 0; i < ATOP_DUMP_NUM; i++) {
-		consys_spi_read_mt6879(SYS_SPI_TOP, adie_cr_list[i], &adie_value);
-		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[i], adie_value) >= 0)
-			strncat(tmp_buf, tmp, strlen(tmp));
-	}
-	pr_info("ATOP:%s\n", tmp_buf);
+	dump_adie_cr(SYS_SPI_TOP, adie_top_cr_list, ATOP_DUMP_NUM, "A-die TOP");
+	dump_adie_cr(SYS_SPI_WF, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF0");
+	dump_adie_cr(SYS_SPI_WF1, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF1");
 
 	consys_hw_force_conninfra_sleep();
 
