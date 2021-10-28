@@ -12,7 +12,7 @@
  *
  * Reference debug file,
  * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-18)
- * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-10-06)
+ * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-10-14)
  */
 
 
@@ -209,6 +209,7 @@ void consys_print_bus_slpprot_debug_dbg_level_0_mt6895_debug_gen(
 #define CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d40c_OFFSET_ADDR     0x40c
 #define CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d410_OFFSET_ADDR     0x410
 #define CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d414_OFFSET_ADDR     0x414
+#define CONSYS_DBG_GEN_CONN_INFRA_OFF_DEBUG_CTRL_AO_1804d418_OFFSET_ADDR     0x418
 
 /*************************************************************************************/
 /* Base: INFRACFG_AO_REG_BASE (0x1000_1000)                                          */
