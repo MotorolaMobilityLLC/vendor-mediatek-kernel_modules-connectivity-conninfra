@@ -86,9 +86,16 @@ static void consys_print_log(const char *title, struct conn_debug_info_mt6879 *i
 	int i;
 
 	temp[0] = '\0';
-	snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title);
+	if (snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title) < 0) {
+		pr_notice("%s snprintf failed\n", __func__);
+		return;
+	}
+
 	for (i = 0; i < info->length; i++) {
-		snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]);
+		if (snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]) < 0) {
+			pr_notice("%s snprintf failed\n", __func__);
+			return;
+		}
 		strncat(buf, temp, strlen(temp) + 1);
 	}
 	pr_info("%s\n", buf);
