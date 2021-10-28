@@ -19,6 +19,8 @@
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 static int consys_check_reg_readable(void);
+static int __consys_check_reg_readable(void);
+static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 
@@ -28,6 +30,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6877 = {
 	.consys_reg_mng_init = consys_reg_init,
 	.consys_reg_mng_deinit = consys_reg_deinit,
 	.consys_reg_mng_check_reable = consys_check_reg_readable,
+	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
 	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
 
@@ -537,7 +540,7 @@ static int consys_is_bus_hang(void)
 	return ret;
 }
 
-int consys_check_reg_readable(void)
+int __consys_check_reg_readable(void)
 {
 	unsigned int r, r1, r2;
 
@@ -550,6 +553,7 @@ int consys_check_reg_readable(void)
 	r1 = CONSYS_REG_READ_BIT(INFRACFG_AO_INFRA_TOPAXI_PROTECTEN_STA1, (0x1 << 19));
 	r2 = CONSYS_REG_READ_BIT(INFRACFG_AO_INFRA_TOPAXI_PROTECTEN_STA1, (0x1 << 13));
 	if (r1 || r2) {
+		pr_info("[%s] AP2CONN_INFRA ON fail: rx=0x%x tx=0x%x", __func__, r1, r2);
 		return 0;
 	}
 
@@ -565,14 +569,49 @@ int consys_check_reg_readable(void)
 	 * 	- 0x1806_02D4[0], should be 1'b1, or means conn_infra off bus might hang (conn_infra_bus_timeout_irq_b)
 	 */
 	r = __consys_bus_hang_clock_detect();
-	if (r != 0x6)
+	if (r != 0x6) {
+		pr_info("[%s] Clock detect fail, r=[0x%x]", __func__, r);
 		return 0;
+	}
 	r = CONSYS_REG_READ(CONN_CFG_IP_VERSION_ADDR);
-	if (r != CONN_HW_VER)
+	if (r != CONN_HW_VER) {
+		pr_info("[%s] Check ip version fail, r=[0x%x]", __func__, r);
 		return 0;
+	}
+
+	return 1;
+}
+
+int consys_check_reg_readable(void)
+{
+	unsigned int r;
+
+	if (__consys_check_reg_readable() == 0)
+		return 0;
+
 	r = CONSYS_REG_READ_BIT(CONN_HOST_CSR_TOP_DBG_DUMMY_5_ADDR, (0x1 << 0));
-	if (r != 0x1)
+	if (r != 0x1) {
+		pr_info("[%s] conn_infra off domain bus timeout irq, r=[0x%x]", __func__, r);
 		return 0;
+	}
+
+	return 1;
+}
+
+int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
+{
+	unsigned int r;
+
+	if (__consys_check_reg_readable() == 0)
+		return 0;
+
+	r = CONSYS_REG_READ_BIT(CONN_HOST_CSR_TOP_DBG_DUMMY_5_ADDR, (0x1 << 0));
+	if (r != 0x1) {
+		pr_info("[%s] conn_infra off domain bus timeout irq, r=[0x%x], drv_type=[%d]\n",
+			__func__, r, drv_type);
+		return 1; // can ignore bus timeout irq status for coredump
+	}
+
 	return 1;
 }
 
