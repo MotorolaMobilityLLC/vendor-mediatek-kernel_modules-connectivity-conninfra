@@ -115,17 +115,21 @@ static void consys_bus_hang_dump_a_rc(void)
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
 
 	for (i = 0xE50; i <= 0xE94; i += 4) {
-		snprintf(tmp, LOG_TMP_BUF_SZ, "[%x]",
-			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + i));
-		strncat(tmp_buf, tmp, strlen(tmp));
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[%x]",
+			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + i)) > 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+		else
+			pr_notice("%s snprintf failed\n", __func__);
 	}
 	pr_info("[rc_trace] %s", tmp_buf);
 
 	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 	for (i = 0xE98; i <= 0xED4; i += 4) {
-		snprintf(tmp, LOG_TMP_BUF_SZ, "[%x]",
-			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + i));
-		strncat(tmp_buf, tmp, strlen(tmp));
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[%x]",
+			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + i)) > 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+		else
+			pr_notice("%s snprintf failed\n", __func__);
 	}
 	pr_info("[rc_timer] %s", tmp_buf);
 }
@@ -141,10 +145,11 @@ static void consys_bus_hang_dump_a(void)
 	 * r1 : 0x1000_6110
 	 * r2 : 0x1000_6114
 	 */
-	snprintf(tmp_buf, LOG_TMP_BUF_SZ, "[%s] [0x%x][0x%x]",
+	if (snprintf(tmp_buf, LOG_TMP_BUF_SZ, "[%s] [0x%x][0x%x]",
 		(conn_hw_env.is_rc_mode ? CONSYS_POWER_MODE_RC : CONSYS_POWER_MODE_LEGACY),
 		CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_PCM_REG13_DATA),
-		CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_SRC_REQ_STA_0));
+		CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_SRC_REQ_STA_0)) < 0)
+		pr_notice("%s tmp_buf snprintf fail", __func__);
 
 	/* RC REQ STA
 	 * r3 : 0x1000_6E28
@@ -152,11 +157,13 @@ static void consys_bus_hang_dump_a(void)
 	 * r5 : 0x1000_6E30
 	 * r6 : 0x1000_6E34
 	 */
-	snprintf(rc_buf, LOG_TMP_BUF_SZ, "[%x][%x][%x][%x]",
+	if (snprintf(rc_buf, LOG_TMP_BUF_SZ, "[%x][%x][%x][%x]",
 			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_RC_RC_M04_REQ_STA_0),
 			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_RC_RC_M05_REQ_STA_0),
 			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_RC_RC_M06_REQ_STA_0),
-			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_RC_RC_M07_REQ_STA_0));
+			CONSYS_REG_READ(CON_REG_SPM_BASE_ADDR + SPM_RC_RC_M07_REQ_STA_0)) < 0)
+		pr_notice("%s rc_buf snprintf fail", __func__);
+
 
 	/*
 	 * 0x1000684C [28] DEBUG_IDX_VTCXO_STATE
@@ -253,9 +260,10 @@ static void consys_bus_hang_dump_b(void)
 	 * 			[7]: conn_ddr_en_ack
 	 * cr1 : 0x1806_02c0
 	 */
-	snprintf(tmp_buf, LOG_TMP_BUF_SZ, "[%s] [%x]",
+	if (snprintf(tmp_buf, LOG_TMP_BUF_SZ, "[%s] [%x]",
 			(conn_hw_env.is_rc_mode ? CONSYS_POWER_MODE_RC : CONSYS_POWER_MODE_LEGACY),
-			CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_DBG_DUMMY_0));
+			CONSYS_REG_READ(CON_REG_HOST_CSR_ADDR + CONN_HOST_CSR_DBG_DUMMY_0)) < 0)
+		pr_notice("%s tmp_buf snprintf failed\n", __func__);
 
 	/* RC Mode */
 	/*
