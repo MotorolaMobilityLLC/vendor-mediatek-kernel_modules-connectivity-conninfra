@@ -25,7 +25,7 @@
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 static int consys_check_reg_readable(void);
-static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type);
+static int consys_check_reg_readable_for_coredump(void);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 static int consys_dump_bus_status(void);
@@ -615,7 +615,7 @@ int consys_check_reg_readable(void)
 	return 1;
 }
 
-int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
+int consys_check_reg_readable_for_coredump(void)
 {
 	return consys_check_reg_readable();
 }
