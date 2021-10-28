@@ -1363,6 +1363,34 @@ int conninfra_core_reg_readable_no_lock(void)
 	return consys_hw_reg_readable();
 }
 
+int conninfra_core_reg_readable_for_coredump(enum consys_drv_type drv_type)
+{
+	int ret = 0, rst_status;
+	unsigned long flag;
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+	/* check if in reseting, can not read */
+	spin_lock_irqsave(&g_conninfra_ctx.rst_lock, flag);
+	rst_status = g_conninfra_ctx.rst_status;
+	spin_unlock_irqrestore(&g_conninfra_ctx.rst_lock, flag);
+
+	if (rst_status >= CHIP_RST_RESET &&
+		rst_status < CHIP_RST_POST_CB)
+		return 0;
+
+	ret = osal_lock_sleepable_lock(&infra_ctx->core_lock);
+	if (ret) {
+		pr_notice("core_lock fail!!");
+		return 0;
+	}
+
+	if (infra_ctx->infra_drv_status == DRV_STS_POWER_ON)
+		ret = consys_hw_reg_readable_for_coredump(drv_type);
+	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
+
+	return ret;
+}
+
 int conninfra_core_is_bus_hang(void)
 {
 	int ret = 0;

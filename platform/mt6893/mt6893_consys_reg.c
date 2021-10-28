@@ -25,6 +25,7 @@
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 static int consys_check_reg_readable(void);
+static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 static int consys_dump_bus_status(void);
@@ -37,6 +38,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6893 = {
 	.consys_reg_mng_deinit = consys_reg_deinit,
 
 	.consys_reg_mng_check_reable = consys_check_reg_readable,
+	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
 	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
 	.consys_reg_mng_dump_bus_status = consys_dump_bus_status,
@@ -605,6 +607,10 @@ int consys_check_reg_readable(void)
 	return 1;
 }
 
+int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
+{
+	return consys_check_reg_readable();
+}
 
 int consys_is_consys_reg(unsigned int addr)
 {
