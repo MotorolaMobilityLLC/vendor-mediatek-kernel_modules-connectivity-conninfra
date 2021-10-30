@@ -398,10 +398,10 @@ int consys_thermal_query(void)
 	efuse2 = CONSYS_REG_READ(CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_2);
 	efuse3 = CONSYS_REG_READ(CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_3);
 	for (i = 0; i < THERMAL_DUMP_NUM; i++) {
-		snprintf(
+		if (snprintf(
 			tmp, TEMP_SIZE, "[0x%08x]",
-			CONSYS_REG_READ(CONN_TOP_THERM_CTL_ADDR + thermal_dump_crs[i]));
-		strncat(tmp_buf, tmp, strlen(tmp));
+			CONSYS_REG_READ(CONN_TOP_THERM_CTL_ADDR + thermal_dump_crs[i])) > 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
 	}
 	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
 		__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);

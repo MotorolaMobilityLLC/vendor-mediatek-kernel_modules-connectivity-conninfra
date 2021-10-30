@@ -182,6 +182,12 @@ int conninfra_reg_readable_no_lock(void)
 }
 EXPORT_SYMBOL(conninfra_reg_readable_no_lock);
 
+int conninfra_reg_readable_for_coredump(void)
+{
+	return conninfra_core_reg_readable_for_coredump();
+}
+EXPORT_SYMBOL(conninfra_reg_readable_for_coredump);
+
 int conninfra_is_bus_hang(void)
 {
 	if (conninfra_core_is_rst_locking()) {

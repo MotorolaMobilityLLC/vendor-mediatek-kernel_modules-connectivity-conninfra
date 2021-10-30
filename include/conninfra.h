@@ -210,6 +210,8 @@ int conninfra_reg_readable(void);
 /* IF YOU NEED THIS, PLEASE DISCUSS WITH OWNER   */
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 int conninfra_reg_readable_no_lock(void);
+
+int conninfra_reg_readable_for_coredump(void);
 /*
  * 0 : NO hang
  * > 0 : HANG!!

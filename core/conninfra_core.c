@@ -1363,6 +1363,34 @@ int conninfra_core_reg_readable_no_lock(void)
 	return consys_hw_reg_readable();
 }
 
+int conninfra_core_reg_readable_for_coredump(void)
+{
+	int ret = 0, rst_status;
+	unsigned long flag;
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+	/* check if in reseting, can not read */
+	spin_lock_irqsave(&g_conninfra_ctx.rst_lock, flag);
+	rst_status = g_conninfra_ctx.rst_status;
+	spin_unlock_irqrestore(&g_conninfra_ctx.rst_lock, flag);
+
+	if (rst_status >= CHIP_RST_RESET &&
+		rst_status < CHIP_RST_POST_CB)
+		return 0;
+
+	ret = osal_lock_sleepable_lock(&infra_ctx->core_lock);
+	if (ret) {
+		pr_notice("core_lock fail!!");
+		return 0;
+	}
+
+	if (infra_ctx->infra_drv_status == DRV_STS_POWER_ON)
+		ret = consys_hw_reg_readable_for_coredump();
+	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
+
+	return ret;
+}
+
 int conninfra_core_is_bus_hang(void)
 {
 	int ret = 0;
@@ -1762,13 +1790,14 @@ static int conninfra_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *
 			pr_notice("%s [pre_cal][timeout!!] bt=[%p] wf=[%p]\n", __func__, bt_cb, wifi_cb);
 #if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 			exception_title_index = (bt_cb == NULL ? 0 : 1);
-			snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
-				exception_title[exception_title_index]);
+			if (snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
+				exception_title[exception_title_index]) > 0) {
 				aed_common_exception_api(
-				exception_title[exception_title_index],
-				NULL, 0,
-				(const int*)exception_log, strlen(exception_log),
-				exception_log, 0);
+					exception_title[exception_title_index],
+					NULL, 0,
+					(const int*)exception_log, strlen(exception_log),
+					exception_log, 0);
+			}
 #endif
 			return 1;
 		}

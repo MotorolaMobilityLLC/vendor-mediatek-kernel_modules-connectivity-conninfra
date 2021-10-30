@@ -173,8 +173,10 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 
 	for (index = 0; index < ATOP_DUMP_NUM; index++) {
 		consys_spi_read_mt6893(SYS_SPI_TOP, adie_cr_list[index], &adie_value);
-		snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[index], adie_value);
-		strncat(tmp_buf, tmp, strlen(tmp));
+		if (snprintf(tmp, LOG_TMP_BUF_SZ, " [0x%04x: 0x%08x]", adie_cr_list[index], adie_value) > 0)
+			strncat(tmp_buf, tmp, strlen(tmp));
+		else
+			pr_notice("%s snprintf failed\n", __func__);
 	}
 	pr_info("[VCN13 OC] ATOP:%s\n", tmp_buf);
 	consys_hw_force_conninfra_sleep();

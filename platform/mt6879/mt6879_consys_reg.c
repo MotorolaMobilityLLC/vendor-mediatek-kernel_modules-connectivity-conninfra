@@ -24,7 +24,8 @@ static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static int consys_check_reg_readable(void);
-static int __consys_check_reg_readable(int print_if_no_err);
+static int consys_check_reg_readable_for_coredump(void);
+static int __consys_check_reg_readable(int check_type);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 #endif
@@ -36,6 +37,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6879 = {
 	.consys_reg_mng_deinit = consys_reg_deinit,
 #ifndef CONFIG_FPGA_EARLY_PORTING
 	.consys_reg_mng_check_reable = consys_check_reg_readable,
+	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
 	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
 #endif
@@ -84,9 +86,16 @@ static void consys_print_log(const char *title, struct conn_debug_info_mt6879 *i
 	int i;
 
 	temp[0] = '\0';
-	snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title);
+	if (snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title) < 0) {
+		pr_notice("%s snprintf failed\n", __func__);
+		return;
+	}
+
 	for (i = 0; i < info->length; i++) {
-		snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]);
+		if (snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]) < 0) {
+			pr_notice("%s snprintf failed\n", __func__);
+			return;
+		}
 		strncat(buf, temp, strlen(temp) + 1);
 	}
 	pr_info("%s\n", buf);
@@ -213,8 +222,12 @@ static int consys_check_conninfra_off_domain(void)
 	return 1;
 }
 
-static int __consys_check_reg_readable(int print_if_no_err)
+static int __consys_check_reg_readable(int check_type)
 {
+	// check_type includes:
+	// 0: error
+	// 1: print if no err
+	// 2: coredump (can ignore bus timeout irq status)
 	unsigned int r;
 	int wakeup_conninfra = 0;
 	int ret = 1;
@@ -227,7 +240,7 @@ static int __consys_check_reg_readable(int print_if_no_err)
 	if (consys_check_conninfra_off_domain() == 0) {
 		pr_info("%s: check conninfra off failed\n", __func__);
 		consys_print_debug_mt6879(1);
-		if (print_if_no_err == 0)
+		if (check_type == 0 || check_type == 2)
 			return 0;
 
 		/* wake up conninfra to read off register */
@@ -243,8 +256,12 @@ static int __consys_check_reg_readable(int print_if_no_err)
 	if (r != 0) {
 		pr_info("%s bus timeout 0x1802_3400[2:0] = 0x%x\n", __func__, r);
 		consys_print_debug_mt6879(2);
+
+		if (check_type == 2)
+			return ret;
+
 		ret = 0;
-	} else if (print_if_no_err)
+	} else if (check_type == 1)
 		consys_print_debug_mt6879(2);
 
 	if (wakeup_conninfra)
@@ -280,6 +297,11 @@ static void consys_debug_deinit_mt6879(void)
 static int consys_check_reg_readable(void)
 {
 	return __consys_check_reg_readable(0);
+}
+
+static int consys_check_reg_readable_for_coredump(void)
+{
+	return __consys_check_reg_readable(2);
 }
 
 int consys_reg_init(struct platform_device *pdev)

@@ -2131,6 +2131,11 @@ static void consys_spi_write_offset_range_nolock(
 	unsigned int reg_mask;
 	int ret;
 
+	if (subsystem < 0 || subsystem >= SYS_SPI_MAX) {
+		pr_notice("%s subsystem %d is invalid\n", __func__, subsystem);
+		return;
+	}
+
 	pr_info("[%s][%s] addr=0x%04x value=0x%08x reg_offset=%d value_offset=%d size=%d",
 		__func__, g_spi_system_name[subsystem], addr, value, reg_offset, value_offset, size);
 	value = (value >> value_offset);

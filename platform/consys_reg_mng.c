@@ -33,6 +33,15 @@ int consys_reg_mng_reg_readable(void)
 	return -1;
 }
 
+int consys_reg_mng_reg_readable_for_coredump(void)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_check_reable_for_coredump)
+		return g_consys_reg_ops->consys_reg_mng_check_reable_for_coredump();
+	pr_notice("%s not implement", __func__);
+	return -1;
+}
+
 int consys_reg_mng_is_connsys_reg(phys_addr_t addr)
 {
 	if (g_consys_reg_ops &&
