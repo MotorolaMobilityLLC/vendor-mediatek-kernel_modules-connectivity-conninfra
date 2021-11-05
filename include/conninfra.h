@@ -211,7 +211,7 @@ int conninfra_reg_readable(void);
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 int conninfra_reg_readable_no_lock(void);
 
-int conninfra_reg_readable_for_coredump(enum consys_drv_type drv_type);
+int conninfra_reg_readable_for_coredump(void);
 /*
  * 0 : NO hang
  * > 0 : HANG!!
