@@ -24,6 +24,9 @@
 #include "consys_reg_mng.h"
 #include "conninfra_conf.h"
 #include "connectivity_build_in_adapter.h"
+#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
+#include <aee.h>
+#endif
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -38,6 +41,7 @@
 #define CONNINFRA_RESET_TIMEOUT 500
 #define CONNINFRA_PRE_CAL_TIMEOUT 500
 #define CONNINFRA_MAX_TEMP 120
+#define CONNINFRA_MAX_PRE_CAL_BLOCKING_TIME 60000
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -916,7 +920,7 @@ static int opfunc_clock_fail_dump(struct msg_op_data *op)
 
 static int opfunc_pre_cal_prepare(struct msg_op_data *op)
 {
-	int ret, rst_status;
+	int ret = 0, rst_status, num = 0;
 	unsigned long flag;
 	struct pre_cal_info *cal_info = &g_conninfra_ctx.cal_info;
 	struct subsys_drv_inst *bt_drv = &g_conninfra_ctx.drv_inst[CONNDRV_TYPE_BT];
@@ -945,9 +949,23 @@ static int opfunc_pre_cal_prepare(struct msg_op_data *op)
 	}
 
 	/* non-zero means lock got, zero means not */
-	ret = osal_trylock_sleepable_lock(&cal_info->pre_cal_lock);
 
-	if (ret) {
+	while (!ret) {
+		ret = osal_trylock_sleepable_lock(&cal_info->pre_cal_lock);
+		if (ret == 0) {
+			if (num >= 10) {
+				/* Another pre-cal should be on progress */
+				/* Skip to prevent block core thread */
+				pr_notice("[%s] fail to get pre_cal_lock\n", __func__);
+				break;
+			}
+			/* sleep time is short to make sure get lock easier than */
+			/* conninfra_core_pre_cal_blocking */
+			osal_sleep_ms(10);
+			num++;
+			continue;
+		}
+
 		cur_status = cal_info->status;
 
 		if ((cur_status == PRE_CAL_NOT_INIT || cur_status == PRE_CAL_NEED_RESCHEDULE) &&
@@ -1764,6 +1782,43 @@ int conninfra_core_subsys_ops_unreg(enum consys_drv_type type)
 }
 
 #if ENABLE_PRE_CAL_BLOCKING_CHECK
+static int conninfra_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *start)
+{
+	struct timespec64 now;
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	void *bt_cb;
+	void *wifi_cb;
+	unsigned long diff;
+#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
+	const char *exception_title[2] = {"combo_bt", "combo_wifi"};
+	int exception_title_index;
+	char exception_log[70];
+#endif
+	osal_gettimeofday(&now);
+	diff = timespec64_to_ms(start, &now);
+
+	if (diff > CONNINFRA_MAX_PRE_CAL_BLOCKING_TIME) {
+		bt_cb = (void *)infra_ctx->drv_inst[CONNDRV_TYPE_BT].ops_cb.pre_cal_cb.do_cal_cb;
+		wifi_cb = (void *)infra_ctx->drv_inst[CONNDRV_TYPE_WIFI].ops_cb.pre_cal_cb.do_cal_cb;
+		if (bt_cb == NULL || wifi_cb == NULL) {
+			pr_notice("%s [pre_cal][timeout!!] bt=[%p] wf=[%p]\n", __func__, bt_cb, wifi_cb);
+#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
+			exception_title_index = (bt_cb == NULL ? 0 : 1);
+			if (snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
+				exception_title[exception_title_index]) > 0) {
+				aed_common_exception_api(
+					exception_title[exception_title_index],
+					NULL, 0,
+					(const int*)exception_log, strlen(exception_log),
+					exception_log, 0);
+			}
+#endif
+			return 1;
+		}
+	}
+	return 0;
+}
+
 void conninfra_core_pre_cal_blocking(void)
 {
 #define BLOCKING_CHECK_MONITOR_THREAD 100
@@ -1797,10 +1852,11 @@ void conninfra_core_pre_cal_blocking(void)
 
 		ret = osal_trylock_sleepable_lock(&cal_info->pre_cal_lock);
 		if (ret) {
-			if (cal_info->status == PRE_CAL_NOT_INIT ||
-					cal_info->status == PRE_CAL_SCHEDULED) {
+			if (cal_info->status == PRE_CAL_NOT_INIT || cal_info->status == PRE_CAL_SCHEDULED) {
 				pr_info("[%s] [pre_cal] ret=[%d] status=[%d]", __func__, ret, cal_info->status);
 				osal_unlock_sleepable_lock(&cal_info->pre_cal_lock);
+				if (conninfra_is_pre_cal_timeout_by_cb_not_registered(&start) == 1)
+					break;
 				osal_sleep_ms(100);
 				continue;
 			}

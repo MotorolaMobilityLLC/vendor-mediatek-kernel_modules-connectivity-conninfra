@@ -415,13 +415,13 @@ int consys_power_state_dump_mt6879(void)
 	t_gps_sleep_time += gps_sleep_time;
 	t_gps_sleep_cnt += gps_sleep_cnt;
 
-	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;",
+	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;"
+		"[total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
 		round,
 		conninfra_sleep_time, conninfra_sleep_cnt,
 		wf_sleep_time, wf_sleep_cnt,
 		bt_sleep_time, bt_sleep_cnt,
-		gps_sleep_time, gps_sleep_cnt);
-	pr_info("[consys_power_state][total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
+		gps_sleep_time, gps_sleep_cnt,
 		t_conninfra_sleep_time, t_conninfra_sleep_cnt,
 		t_wf_sleep_time, t_wf_sleep_cnt,
 		t_bt_sleep_time, t_bt_sleep_cnt,
