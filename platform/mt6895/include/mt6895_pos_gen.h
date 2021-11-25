@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Pxxxxn_power_on_sequence_20211108.xlsx
+ * - Pxxxxn_power_on_sequence_20211027.xlsx
  * - Pxxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20211025.txt
  */
@@ -73,7 +73,6 @@ int connsys_a_die_cfg_PART2_mt6895_gen(unsigned int hw_ver_id);
 int connsys_a_die_switch_to_conn_mode_mt6895_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_1_mt6895_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_2_mt6895_gen(void);
-void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6895_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(
 		unsigned int hw_version,
 		unsigned int sleep_mode);
