@@ -156,10 +156,10 @@ int consys_plt_pmic_get_from_dts_mt6879(struct platform_device *pdev, struct con
 
 int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 {
+	int ret = 0;
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
 #else
-	int ret;
 	int sleep_mode;
 
 	if (enable) {
@@ -192,7 +192,9 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 
 		/* set PMIC VCN13 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VCN13, REGULATOR_MODE_NORMAL);
-		regulator_disable(reg_VCN13);
+		ret = regulator_disable(reg_VCN13);
+		if (ret)
+			pr_notice("%s regulator_disable err: %d", __func__, ret);
 
 		/* clear bit 4 of VS2 VOTER then VS2 can restore to 1.35V */
 		consys_pmic_regmap_set_value(g_regmap_mt6363,
@@ -201,8 +203,11 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
 		sleep_mode = consys_get_sleep_mode_mt6879();
-		if (sleep_mode == 1)
-			regulator_disable(reg_VRFIO18);
+		if (sleep_mode == 1) {
+			ret = regulator_disable(reg_VRFIO18);
+			if (ret)
+				pr_notice("%s regulator_disable err: %d", __func__, ret);
+		}
 
 		/* Set buckboost to 3.45V (for VCN33_1 & VCN33_2) */
 		if (reg_buckboost) {
@@ -211,7 +216,7 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		}
 	}
 #endif
-	return 0;
+	return ret;
 }
 
 static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int address,
@@ -232,6 +237,7 @@ static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int addre
 
 int consys_plt_pmic_common_power_low_power_mode_mt6879(unsigned int enable)
 {
+	int ret = 0;
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
 #else
@@ -271,7 +277,9 @@ int consys_plt_pmic_common_power_low_power_mode_mt6879(unsigned int enable)
 			regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_IDLE);
 		} else {
 			/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 */
-			regulator_disable(reg_VRFIO18);
+			ret = regulator_disable(reg_VRFIO18);
+			if (ret)
+				pr_notice("%s regulator_disable err: %d", __func__, ret);
 			regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
 		}
 
@@ -334,7 +342,7 @@ int consys_plt_pmic_common_power_low_power_mode_mt6879(unsigned int enable)
 	consys_pmic_vant18_power_ctl_mt6879(enable);
 
 #endif
-	return 0;
+	return ret;
 }
 
 int consys_plt_pmic_wifi_power_ctrl_mt6879(unsigned int enable)
@@ -401,6 +409,7 @@ static int consys_pmic_vcn33_1_power_ctl_mt6879_lg(bool enable)
 {
 	struct regmap *r = g_regmap_mt6368;
 	static int enable_count = 0;
+	int ret = 0;
 
 	/* In legacy mode, VCN33_1 should be turned on either WIFI or BT is on */
 	/* we use a counter to record the usage. */
@@ -416,8 +425,10 @@ static int consys_pmic_vcn33_1_power_ctl_mt6879_lg(bool enable)
 	}
 
 	if (enable_count == 0) {
-		regulator_disable(reg_VCN33_1);
-		return 0;
+		ret = regulator_disable(reg_VCN33_1);
+		if (ret)
+			pr_notice("%s regulator_disable err: %d", __func__, ret);
+		return ret;
 	}
 
 	/* vcn33_1 is already on in these two cases */
@@ -434,19 +445,24 @@ static int consys_pmic_vcn33_1_power_ctl_mt6879_lg(bool enable)
 
 	/* 2. set PMIC VCN33_1 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 	regulator_set_mode(reg_VCN33_1, REGULATOR_MODE_NORMAL);
-	regulator_enable(reg_VCN33_1);
+	ret = regulator_enable(reg_VCN33_1);
+	if (ret)
+		pr_notice("%s regulator_enable err: %d", __func__, ret);
 
-	return 0;
+	return ret;
 }
 
 
 static int consys_pmic_vcn33_2_power_ctl_mt6879_lg(bool enable)
 {
 	struct regmap *r = g_regmap_mt6368;
+	int ret = 0;
 
-	if (!enable)
-		regulator_disable(reg_VCN33_2);
-	else {
+	if (!enable) {
+		ret = regulator_disable(reg_VCN33_2);
+		if (ret)
+			pr_notice("%s regulator_disable err: %d", __func__, ret);
+        } else {
 		/* 1. set PMIC VCN33_2 LDO PMIC HW mode control by SRCCLKENA0 */
 		/* 1.1. set PMIC VCN33_2 LDO op_mode = 1 */
 		/* 1.2. set PMIC VCN33_2 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
@@ -456,10 +472,12 @@ static int consys_pmic_vcn33_2_power_ctl_mt6879_lg(bool enable)
 
 		/* 2. set PMIC VCN33_2 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VCN33_2, REGULATOR_MODE_NORMAL);
-		regulator_enable(reg_VCN33_2);
+		ret = regulator_enable(reg_VCN33_2);
+		if (ret)
+			pr_notice("%s regulator_enable err: %d", __func__, ret);
 	}
 
-	return 0;
+	return ret;
 }
 
 static int consys_pmic_vcn33_2_power_ctl_mt6879_rc(bool enable)
@@ -485,12 +503,16 @@ static int consys_pmic_vcn33_2_power_ctl_mt6879_rc(bool enable)
 static int consys_pmic_vant18_power_ctl_mt6879(bool enable)
 {
 	struct regmap *r = g_regmap_mt6368;
+	int ret = 0;
 
 	if (!enable) {
 		/* 1. VANT18 will be set to SW_EN=1 only in legacy momde. */
 		/* 2. VANT18 might not be enabled because power on fail before low power control is executed. */
-		if (consys_is_rc_mode_enable_mt6879() == 0 && regulator_is_enabled(reg_VANT18))
-			regulator_disable(reg_VANT18);
+		if (consys_is_rc_mode_enable_mt6879() == 0 && regulator_is_enabled(reg_VANT18)) {
+			ret = regulator_disable(reg_VANT18);
+			if (ret)
+				pr_notice("%s regulator_disable err: %d", __func__, ret);
+		}
 		return 0;
 	}
 
@@ -514,10 +536,12 @@ static int consys_pmic_vant18_power_ctl_mt6879(bool enable)
 
 		/* 2. set PMIC VANT18 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VANT18, REGULATOR_MODE_NORMAL);
-		regulator_enable(reg_VANT18);
+		ret = regulator_enable(reg_VANT18);
+		if (ret)
+			pr_notice("%s regulator_enable err: %d", __func__, ret);
 	}
 
-	return 0;
+	return ret;
 }
 
 static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *adie_cr, int num, char *title)
