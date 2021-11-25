@@ -552,6 +552,8 @@ static void connlog_ring_emi_to_cache(struct connlog_dev* handler)
 	unsigned int cache_max_size = 0;
 #ifndef DEBUG_LOG_ON
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 #endif
 	if (handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_notice("%s conn_type %d is invalid\n", __func__, handler->conn_type);
@@ -730,6 +732,9 @@ static void connlog_log_data_handler(struct work_struct *work)
 #ifndef DEBUG_LOG_ON
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 	static DEFINE_RATELIMIT_STATE(_rs2, 2 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
+	ratelimit_set_flags(&_rs2, RATELIMIT_MSG_ON_RELEASE);
 #endif
 
 	if (handler == NULL) {
@@ -839,6 +844,8 @@ static ssize_t connlog_read_internal(
 	int retval;
 #ifndef DEBUG_LOG_ON
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 #endif
 
 	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
