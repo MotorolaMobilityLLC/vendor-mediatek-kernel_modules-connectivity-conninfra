@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Pxxxxn_power_on_sequence_20211108.xlsx
+ * - Pxxxxn_power_on_sequence_20211027.xlsx
  * - Pxxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20211025.txt
  */
@@ -1432,54 +1432,6 @@ void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_2_mt6895_gen(void)
 		CONSYS_GEN_WB_BG_OFF6_OFFSET_ADDR, 0x1);
 }
 
-void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6895_gen(void)
-{
-	if (CONN_WT_SLP_CTL_REG_BASE == 0) {
-		pr_notice("CONN_WT_SLP_CTL_REG_BASE is not defined\n");
-		return;
-	}
-
-	/* set wt_slp CR for A-die power saving  (ref. A-die power control) */
-	CONSYS_REG_WRITE_MASK(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_SLP_CTL_OFFSET_ADDR, 0x6, 0x1F);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR1_OFFSET_ADDR, 0xA03C);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR2_OFFSET_ADDR, 0xA03C);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR3_OFFSET_ADDR, 0xAB00);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR4_OFFSET_ADDR, 0xAB00);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR5_OFFSET_ADDR, 0xAB00);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ADDR6_OFFSET_ADDR, 0xA0C8);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON1_OFFSET_ADDR, 0x0);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON2_OFFSET_ADDR, 0x0);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON3_OFFSET_ADDR, 0xC0000000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON4_OFFSET_ADDR, 0xF8000000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON5_OFFSET_ADDR, 0xFC000000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_ON6_OFFSET_ADDR, 0x0);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF1_OFFSET_ADDR, 0x57400000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF2_OFFSET_ADDR, 0x57400000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF3_OFFSET_ADDR, 0x0);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF4_OFFSET_ADDR, 0x0);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF5_OFFSET_ADDR, 0xC4000000);
-	CONSYS_REG_WRITE(CONN_WT_SLP_CTL_REG_BASE +
-		CONSYS_GEN_WB_BG_OFF6_OFFSET_ADDR, 0x1);
-}
-
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(
 		unsigned int hw_version,
 		unsigned int sleep_mode)
@@ -1488,8 +1440,6 @@ void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(
 		connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_1_mt6895_gen();
 	else if (sleep_mode == 2)
 		connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_2_mt6895_gen();
-	else if (sleep_mode == 3)
-		connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6895_gen();
 	else {
 		if (hw_version == 0x66378A00)
 			connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_1_mt6895_gen();
@@ -1913,7 +1863,7 @@ int connsys_low_power_setting_mt6895_gen(void)
 		/* unmask osc_en for osc_en_rc */
 		#ifndef CONFIG_FPGA_EARLY_PORTING
 			CONSYS_REG_WRITE_MASK(CONN_CFG_ON_BASE +
-				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_1_OFFSET_ADDR, 0xC0, 0xF0);
+				CONSYS_GEN_CONN_INFRA_CFG_RC_CTL_1_OFFSET_ADDR, 0xD0, 0xF0);
 		#endif
 
 		/* enable conn_emi_bt_only_rc_en => conn_srcclkena = conn_srcclkena_cfg || conn_srcclkena_emi */
