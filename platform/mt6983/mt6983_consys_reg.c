@@ -28,6 +28,7 @@ static int consys_check_reg_readable_for_coredump(void);
 static int __consys_check_reg_readable(int check_type);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
+static void consys_print_platform_debug(void);
 #endif
 
 struct consys_base_addr conn_reg_mt6983;
@@ -146,11 +147,12 @@ int consys_print_debug_mt6983(int level)
 		return 0;
 	}
 
+	consys_print_platform_debug();
+
 	if (debug_info == NULL) {
 		pr_notice("%s debug_info is NULL\n", __func__);
 		return -1;
 	}
-
 	consys_print_power_debug(level);
 	consys_print_bus_debug(level);
 	consys_pmic_debug_log_mt6983();
@@ -221,6 +223,37 @@ static int consys_check_conninfra_off_domain(void)
 		return 0;
 
 	return 1;
+}
+
+static void consys_print_platform_debug(void)
+{
+	void __iomem *addr = NULL;
+	unsigned int val[4];
+
+	/* gals dbg: 0x1020E804 */
+	/* slpport: 0x1021515C */
+	/* SI3: 0x10215160 */
+	/* ASL8: 0x10215168 */
+	addr = ioremap(0x1020E804, 0x4);
+	if (!addr) {
+		pr_notice("%s remap failed");
+		return;
+	}
+	val[0] = CONSYS_REG_READ(addr);
+	iounmap(addr);
+
+	addr = ioremap(0x10215150, 0x20);
+	if (!addr) {
+		pr_notice("%s remap failed");
+		return;
+	}
+	val[1] = CONSYS_REG_READ(addr + 0x0c);
+	val[2] = CONSYS_REG_READ(addr + 0x10);
+	val[3] = CONSYS_REG_READ(addr + 0x18);
+	iounmap(addr);
+
+	pr_info("%s 0x1020E804=0x%x,0x1021515C=0x%x,0x10215160=0x%x,0x10215168=0x%x",
+		__func__, val[0], val[1],val[2],val[3]);
 }
 
 static int __consys_check_reg_readable(int check_type)
