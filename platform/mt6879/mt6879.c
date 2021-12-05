@@ -69,7 +69,8 @@ static int consys_thermal_query_mt6879(void);
 /* Power state relative */
 static int consys_enable_power_dump_mt6879(void);
 static int consys_reset_power_state_mt6879(void);
-static int consys_power_state_dump_mt6879(void);
+static int consys_reset_power_state(void);
+static int consys_power_state_dump_mt6879(char *buf, unsigned int size);
 
 static unsigned long long consys_soc_timestamp_get_mt6879(void);
 
@@ -117,7 +118,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6879 = {
 
 	.consys_plt_thermal_query = consys_thermal_query_mt6879,
 	.consys_plt_enable_power_dump = consys_enable_power_dump_mt6879,
-	.consys_plt_reset_power_state = consys_power_state_dump_mt6879,
+	.consys_plt_reset_power_state = consys_reset_power_state_mt6879,
 	.consys_plt_power_state = consys_power_state_dump_mt6879,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6879,
 	.consys_plt_adie_detection = consys_adie_detection_mt6879,
@@ -251,7 +252,7 @@ int consys_enable_power_dump_mt6879(void)
 	return 0;
 }
 
-int consys_reset_power_state_mt6879(void)
+int consys_reset_power_state(void)
 {
 	/* Clear data and disable stop */
 	/* I. Clear
@@ -348,8 +349,11 @@ static void consys_power_state(void)
 #endif
 }
 
-int consys_power_state_dump_mt6879(void)
+static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 {
+#define POWER_STATE_BUF_SIZE 256
+#define CONN_32K_TICKS_PER_SEC (32768)
+#define CONN_TICK_TO_SEC(TICK) (TICK / CONN_32K_TICKS_PER_SEC)
 	static u64 round = 0;
 	static u64 t_conninfra_sleep_cnt = 0, t_conninfra_sleep_time = 0;
 	static u64 t_wf_sleep_cnt = 0, t_wf_sleep_time = 0;
@@ -359,6 +363,9 @@ int consys_power_state_dump_mt6879(void)
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
 	unsigned int gps_sleep_cnt, gps_sleep_time;
+	char temp_buf[POWER_STATE_BUF_SIZE];
+	char *buf_p = temp_buf;
+	int buf_sz = POWER_STATE_BUF_SIZE;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
@@ -415,26 +422,61 @@ int consys_power_state_dump_mt6879(void)
 	t_gps_sleep_time += gps_sleep_time;
 	t_gps_sleep_cnt += gps_sleep_cnt;
 
-	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;"
-		"[total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
+	if (print_log > 0 && buf != NULL && size > 0) {
+		buf_p = buf;
+		buf_sz = size;
+	}
+
+	if (print_log > 0 && snprintf(buf_p, buf_sz,"[consys_power_state][round:%llu]"
+		"conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;"
+		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
+		"bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
 		round,
-		conninfra_sleep_time, conninfra_sleep_cnt,
-		wf_sleep_time, wf_sleep_cnt,
-		bt_sleep_time, bt_sleep_cnt,
-		gps_sleep_time, gps_sleep_cnt,
-		t_conninfra_sleep_time, t_conninfra_sleep_cnt,
-		t_wf_sleep_time, t_wf_sleep_cnt,
-		t_bt_sleep_time, t_bt_sleep_cnt,
-		t_gps_sleep_time, t_gps_sleep_cnt);
+		CONN_TICK_TO_SEC(conninfra_sleep_time),
+		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		conninfra_sleep_cnt,
+		CONN_TICK_TO_SEC(wf_sleep_time),
+		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		wf_sleep_cnt,
+		CONN_TICK_TO_SEC(bt_sleep_time),
+		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		bt_sleep_cnt,
+		CONN_TICK_TO_SEC(gps_sleep_time),
+		CONN_TICK_TO_SEC((gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		gps_sleep_cnt,
+		CONN_TICK_TO_SEC(t_conninfra_sleep_time),
+		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_conninfra_sleep_cnt,
+		CONN_TICK_TO_SEC(t_wf_sleep_time),
+		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_wf_sleep_cnt,
+		CONN_TICK_TO_SEC(t_bt_sleep_time),
+		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_bt_sleep_cnt,
+		CONN_TICK_TO_SEC(t_gps_sleep_time),
+		CONN_TICK_TO_SEC((t_gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_gps_sleep_cnt) > 0) {
+			pr_info("%s", buf_p);
+	}
 
 	/* Power state */
 	consys_power_state();
 	round++;
 
 	/* reset after sleep time is accumulated. */
-	consys_reset_power_state_mt6879();
+	consys_reset_power_state();
 
 	return 0;
+}
+
+int consys_reset_power_state_mt6879(void)
+{
+	return consys_power_state_dump(NULL, 0, 0);
+}
+
+int consys_power_state_dump_mt6879(char *buf, unsigned int size)
+{
+	return consys_power_state_dump(buf, size, 1);
 }
 
 unsigned int consys_get_hw_ver_mt6879(void)
