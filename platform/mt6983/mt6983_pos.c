@@ -564,6 +564,7 @@ int consys_spi_write_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned in
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 #endif
+
 	return 0;
 }
 
@@ -696,6 +697,12 @@ int consys_subsys_status_update_mt6983(bool on, int radio)
 	}
 
 	consys_sema_release_mt6983(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
+
+	/* BT is on but wifi is not on */
+	if (on && (radio == CONNDRV_TYPE_BT) &&
+	    (CONSYS_REG_READ_BIT(CONN_INFRA_SYSRAM_SW_CR_RADIO_STATUS, (0x1 << CONNDRV_TYPE_WIFI)) == 0x0))
+		consys_pre_cal_restore_mt6983();
+
 	return 0;
 }
 
