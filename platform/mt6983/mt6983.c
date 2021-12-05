@@ -499,6 +499,7 @@ void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983* input)
 	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data_mt6983));
 }
 
+#define PRINT_THERMAL_LOG 0
 static int calculate_thermal_temperature(int y)
 {
 	struct consys_plat_thermal_data_mt6983 *data = &g_consys_plat_therm_data;
@@ -510,10 +511,11 @@ static int calculate_thermal_temperature(int y)
 	t = (y - (data->thermal_b == 0 ? 0x38 : data->thermal_b)) *
 			(data->slop_molecule + 1866) / 1000 + const_offset;
 
+#if PRINT_THERMAL_LOG
 	pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
 			y, data->thermal_b, const_offset, data->slop_molecule, data->offset,
 			t);
-
+#endif
 	return t;
 }
 
@@ -578,9 +580,10 @@ int consys_thermal_query_mt6983(void)
 			CONSYS_REG_READ(CONN_REG_CONN_THERM_CTL_ADDR + thermal_dump_crs[i])) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}
+#if PRINT_THERMAL_LOG
 	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
 		__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
-
+#endif
 	res = calculate_thermal_temperature(cal_val);
 
 	/* GPT2 disable */

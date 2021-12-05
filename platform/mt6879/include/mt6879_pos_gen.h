@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Fxxxxc_power_on_sequence_20211027.xlsx
- * - Fxxxxc_conn_infra_sub_task_210811.xlsx
+ * - Fxxxxc_power_on_sequence_20211124.xlsx
+ * - Fxxxxc_conn_infra_sub_task_211117.xlsx
  * - conn_infra_cmdbt_instr_autogen_20211025.txt
  */
 
@@ -28,6 +28,7 @@ int consys_polling_chipid_mt6879_gen(unsigned int *pconsys_ver_id);
 unsigned int consys_emi_set_remapping_reg_mt6879_gen(
 		phys_addr_t con_emi_base_addr,
 		phys_addr_t md_shared_emi_base_addr,
+		phys_addr_t gps_emi_base_addr,
 		unsigned int emi_base_addr_offset);
 void consys_init_conninfra_sysram_mt6879_gen(void);
 void connsys_get_d_die_efuse_mt6879_gen(unsigned int *p_d_die_efuse);
@@ -73,6 +74,7 @@ int connsys_a_die_cfg_PART2_mt6879_gen(unsigned int hw_ver_id);
 int connsys_a_die_switch_to_conn_mode_mt6879_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_1_mt6879_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_2_mt6879_gen(void);
+void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6879_gen(void);
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6879_gen(
 		unsigned int hw_version,
 		unsigned int sleep_mode);
@@ -152,6 +154,7 @@ int consys_conninfra_sleep_mt6879_gen(void);
 #define CONSYS_GEN_CONN_INFRA_CONN2AP_EMI_PATH_ADDR_END_OFFSET_ADDR                         0x74
 #define CONSYS_GEN_CONN2AP_REMAP_MCU_EMI_BASE_ADDR_OFFSET_ADDR                              0x354
 #define CONSYS_GEN_CONN2AP_REMAP_MD_SHARE_EMI_BASE_ADDR_OFFSET_ADDR                         0x35C
+#define CONSYS_GEN_CONN2AP_REMAP_GPS_EMI_BASE_ADDR_OFFSET_ADDR                              0x360
 #define CONSYS_GEN_CONN2AP_REMAP_WF_PERI_BASE_ADDR_OFFSET_ADDR                              0x364
 #define CONSYS_GEN_CONN2AP_REMAP_BT_PERI_BASE_ADDR_OFFSET_ADDR                              0x368
 #define CONSYS_GEN_CONN2AP_REMAP_GPS_PERI_BASE_ADDR_OFFSET_ADDR                             0x36C

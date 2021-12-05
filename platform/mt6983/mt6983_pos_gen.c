@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20211027.xlsx
- * - Lxxxn_conn_infra_sub_task_210811.xlsx
+ * - Lxxxn_power_on_sequence_20211124.xlsx
+ * - Lxxxn_conn_infra_sub_task_211117.xlsx
  * - conn_infra_cmdbt_instr_autogen_20211025.txt
  */
 
@@ -517,6 +517,7 @@ int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id)
 unsigned int consys_emi_set_remapping_reg_mt6983_gen(
 		phys_addr_t con_emi_base_addr,
 		phys_addr_t md_shared_emi_base_addr,
+		phys_addr_t gps_emi_base_addr,
 		unsigned int emi_base_addr_offset)
 {
 	if (CONN_BUS_CR_BASE == 0) {
@@ -546,6 +547,17 @@ unsigned int consys_emi_set_remapping_reg_mt6983_gen(
 		md_shared_emi_base_addr,
 		CONSYS_REG_READ(CONN_BUS_CR_BASE +
 			CONSYS_GEN_CONN2AP_REMAP_MD_SHARE_EMI_BASE_ADDR_OFFSET_ADDR));
+
+	if (gps_emi_base_addr) {
+		CONSYS_REG_WRITE_OFFSET_RANGE(CONN_BUS_CR_BASE +
+			CONSYS_GEN_CONN2AP_REMAP_GPS_EMI_BASE_ADDR_OFFSET_ADDR,
+			gps_emi_base_addr, 0, emi_base_addr_offset, 20);
+	}
+
+	pr_info("gps_emi_base=[0x%llx] remap cr: gps=[0x%08x]\n",
+		gps_emi_base_addr,
+		CONSYS_REG_READ(CONN_BUS_CR_BASE +
+			CONSYS_GEN_CONN2AP_REMAP_GPS_EMI_BASE_ADDR_OFFSET_ADDR));
 
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
 		CONSYS_GEN_CONN2AP_REMAP_WF_PERI_BASE_ADDR_OFFSET_ADDR, 0x1000, 0xFFFFF);
@@ -2734,7 +2746,7 @@ int connsys_low_power_setting_mt6983_gen(void)
 
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 1 set timing */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
-		CONSYS_GEN_CONN_INFRA_OFF_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x188, 0x7F8);
+		CONSYS_GEN_CONN_INFRA_OFF_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x110, 0x7F8);
 
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 2 enable function */
 	CONSYS_SET_BIT(CONN_BUS_CR_BASE +
@@ -2886,6 +2898,8 @@ int consys_conninfra_wakeup_mt6983_gen(void)
 	/* wake up conn_infra */
 	CONSYS_REG_WRITE(CONN_HOST_CSR_TOP_BASE +
 		CONSYS_GEN_CONN_INFRA_WAKEPU_TOP_OFFSET_ADDR, 0x1);
+
+	udelay(200);
 
 	/* check CONN_INFRA IP versionn */
 	/* (polling "10 times" for specific project code and each polling interval is "1ms") */

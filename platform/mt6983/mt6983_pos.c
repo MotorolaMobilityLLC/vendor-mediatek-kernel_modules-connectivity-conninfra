@@ -62,9 +62,11 @@ static int connsys_adie_clock_buffer_setting(unsigned int curr_status, unsigned 
 
 unsigned int consys_emi_set_remapping_reg_mt6983(
 	phys_addr_t con_emi_base_addr,
-	phys_addr_t md_shared_emi_base_addr)
+	phys_addr_t md_shared_emi_base_addr,
+	phys_addr_t gps_emi_base_addr)
 {
-	return consys_emi_set_remapping_reg_mt6983_gen(con_emi_base_addr, md_shared_emi_base_addr, 16);
+	return consys_emi_set_remapping_reg_mt6983_gen(con_emi_base_addr, md_shared_emi_base_addr,
+							gps_emi_base_addr, 16);
 }
 
 int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable)

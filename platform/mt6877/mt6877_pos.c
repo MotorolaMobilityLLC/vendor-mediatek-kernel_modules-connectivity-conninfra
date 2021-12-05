@@ -61,7 +61,8 @@ static int connsys_adie_clock_buffer_setting(bool bt_only);
 
 unsigned int consys_emi_set_remapping_reg_mt6877(
 	phys_addr_t con_emi_base_addr,
-	phys_addr_t md_shared_emi_base_addr)
+	phys_addr_t md_shared_emi_base_addr,
+	phys_addr_t gps_emi_base_addr)
 {
 	CONSYS_REG_WRITE_OFFSET_RANGE(
 		CONN_HOST_CSR_TOP_CONN2AP_REMAP_MCU_EMI_BASE_ADDR_ADDR,
