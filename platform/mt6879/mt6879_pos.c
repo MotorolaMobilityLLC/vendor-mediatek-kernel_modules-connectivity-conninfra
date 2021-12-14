@@ -687,6 +687,12 @@ int consys_subsys_status_update_mt6879(bool on, int radio)
 	}
 
 	consys_sema_release_mt6879(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
+
+	/* BT is on but wifi is not on */
+	if (on && (radio == CONNDRV_TYPE_BT) &&
+	    (CONSYS_REG_READ_BIT(CONN_INFRA_SYSRAM_SW_CR_RADIO_STATUS, (0x1 << CONNDRV_TYPE_WIFI)) == 0x0))
+		consys_pre_cal_restore_mt6879();
+
 	return 0;
 }
 

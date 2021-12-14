@@ -671,6 +671,20 @@ u64 consys_hw_soc_timestamp_get(void)
 	return 0;
 }
 
+int consys_hw_pre_cal_backup(unsigned int offset, unsigned int size)
+{
+	if (consys_hw_ops->consys_plt_pre_cal_backup)
+		return consys_hw_ops->consys_plt_pre_cal_backup(offset, size);
+	return 0;
+}
+
+int consys_hw_pre_cal_clean_data(void)
+{
+	if (consys_hw_ops->consys_plt_pre_cal_clean_data)
+		return consys_hw_ops->consys_plt_pre_cal_clean_data();
+	return 0;
+}
+
 int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
