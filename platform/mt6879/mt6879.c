@@ -40,6 +40,7 @@
 ********************************************************************************
 */
 #define PLATFORM_SOC_CHIP 0x6879
+#define PRINT_THERMAL_LOG_THRESHOLD 60
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -75,7 +76,8 @@ static int consys_thermal_query_mt6879(void);
 /* Power state relative */
 static int consys_enable_power_dump_mt6879(void);
 static int consys_reset_power_state_mt6879(void);
-static int consys_power_state_dump_mt6879(void);
+static int consys_reset_power_state(void);
+static int consys_power_state_dump_mt6879(char *buf, unsigned int size);
 
 static unsigned long long consys_soc_timestamp_get_mt6879(void);
 
@@ -127,7 +129,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6879 = {
 
 	.consys_plt_thermal_query = consys_thermal_query_mt6879,
 	.consys_plt_enable_power_dump = consys_enable_power_dump_mt6879,
-	.consys_plt_reset_power_state = consys_power_state_dump_mt6879,
+	.consys_plt_reset_power_state = consys_reset_power_state_mt6879,
 	.consys_plt_power_state = consys_power_state_dump_mt6879,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6879,
 	.consys_plt_adie_detection = consys_adie_detection_mt6879,
@@ -268,7 +270,7 @@ int consys_enable_power_dump_mt6879(void)
 	return 0;
 }
 
-int consys_reset_power_state_mt6879(void)
+int consys_reset_power_state(void)
 {
 	/* Clear data and disable stop */
 	/* I. Clear
@@ -342,31 +344,36 @@ static inline void __sleep_count_trigger_read(void)
 
 static void consys_power_state(void)
 {
-#if 0
 	unsigned int i, str_len;
 	unsigned int buf_len = 0;
 	unsigned int r;
 	const char* osc_str[] = {
-		  "fm ", "gps ", "bgf ", "wf ", "ap2conn ", "conn_thm ", "conn_pta ", "conn_infra_bus "};
+		"fm ", "gps ", "bgf ", "wf ", "conn_infra_bus ", " ", "ap2conn "," ",
+		" "," "," ", "conn_pta ", "conn_spi ", " ", "conn_thm "};
 	char buf[256] = {'\0'};
 
-	CONSYS_REG_WRITE_HW_ENTRY(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL,
-								  0x0);
-	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL,
+		0x0);
+	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR);
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 15; i++) {
 		str_len = strlen(osc_str[i]);
-		if ((r & (0x1 << (18 + i))) > 0 && (buf_len + str_len < 256)) {
+
+		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < 256)) {
 			strncat(buf, osc_str[i], str_len);
 			buf_len += str_len;
 		}
 	}
-	pr_info("[%s] [0x%x] %s", __func__, r, buf);
-#endif
+	if (r & 0xFFFF)
+		pr_info("[%s] [0x%x] %s", __func__, r, buf);
 }
 
-int consys_power_state_dump_mt6879(void)
+static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 {
+#define POWER_STATE_BUF_SIZE 256
+#define CONN_32K_TICKS_PER_SEC (32768)
+#define CONN_TICK_TO_SEC(TICK) (TICK / CONN_32K_TICKS_PER_SEC)
 	static u64 round = 0;
 	static u64 t_conninfra_sleep_cnt = 0, t_conninfra_sleep_time = 0;
 	static u64 t_wf_sleep_cnt = 0, t_wf_sleep_time = 0;
@@ -376,6 +383,9 @@ int consys_power_state_dump_mt6879(void)
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
 	unsigned int gps_sleep_cnt, gps_sleep_time;
+	char temp_buf[POWER_STATE_BUF_SIZE];
+	char *buf_p = temp_buf;
+	int buf_sz = POWER_STATE_BUF_SIZE;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
@@ -432,26 +442,62 @@ int consys_power_state_dump_mt6879(void)
 	t_gps_sleep_time += gps_sleep_time;
 	t_gps_sleep_cnt += gps_sleep_cnt;
 
-	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;"
-		"[total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
+	if (print_log > 0 && buf != NULL && size > 0) {
+		buf_p = buf;
+		buf_sz = size;
+	}
+
+	if (print_log > 0 && snprintf(buf_p, buf_sz,"[consys_power_state][round:%llu]"
+		"conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;"
+		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
+		"bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
 		round,
-		conninfra_sleep_time, conninfra_sleep_cnt,
-		wf_sleep_time, wf_sleep_cnt,
-		bt_sleep_time, bt_sleep_cnt,
-		gps_sleep_time, gps_sleep_cnt,
-		t_conninfra_sleep_time, t_conninfra_sleep_cnt,
-		t_wf_sleep_time, t_wf_sleep_cnt,
-		t_bt_sleep_time, t_bt_sleep_cnt,
-		t_gps_sleep_time, t_gps_sleep_cnt);
+		CONN_TICK_TO_SEC(conninfra_sleep_time),
+		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		conninfra_sleep_cnt,
+		CONN_TICK_TO_SEC(wf_sleep_time),
+		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		wf_sleep_cnt,
+		CONN_TICK_TO_SEC(bt_sleep_time),
+		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		bt_sleep_cnt,
+		CONN_TICK_TO_SEC(gps_sleep_time),
+		CONN_TICK_TO_SEC((gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		gps_sleep_cnt,
+		CONN_TICK_TO_SEC(t_conninfra_sleep_time),
+		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_conninfra_sleep_cnt,
+		CONN_TICK_TO_SEC(t_wf_sleep_time),
+		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_wf_sleep_cnt,
+		CONN_TICK_TO_SEC(t_bt_sleep_time),
+		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_bt_sleep_cnt,
+		CONN_TICK_TO_SEC(t_gps_sleep_time),
+		CONN_TICK_TO_SEC((t_gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		t_gps_sleep_cnt) > 0) {
+			pr_info("%s", buf_p);
+	}
 
 	/* Power state */
-	consys_power_state();
+	if (print_log > 0)
+		consys_power_state();
 	round++;
 
 	/* reset after sleep time is accumulated. */
-	consys_reset_power_state_mt6879();
+	consys_reset_power_state();
 
 	return 0;
+}
+
+int consys_reset_power_state_mt6879(void)
+{
+	return consys_power_state_dump(NULL, 0, 0);
+}
+
+int consys_power_state_dump_mt6879(char *buf, unsigned int size)
+{
+	return consys_power_state_dump(buf, size, 1);
 }
 
 unsigned int consys_get_hw_ver_mt6879(void)
@@ -475,10 +521,10 @@ static int calculate_thermal_temperature(int y)
 	t = (y - (data->thermal_b == 0 ? 0x38 : data->thermal_b)) *
 			(data->slop_molecule + 1866) / 1000 + const_offset;
 
-	pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
+	if (t > PRINT_THERMAL_LOG_THRESHOLD)
+		pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
 			y, data->thermal_b, const_offset, data->slop_molecule, data->offset,
 			t);
-
 	return t;
 }
 
@@ -543,10 +589,11 @@ int consys_thermal_query_mt6879(void)
 			CONSYS_REG_READ(CONN_REG_CONN_THERM_CTL_ADDR + thermal_dump_crs[i])) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}
-	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
-		__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
-
 	res = calculate_thermal_temperature(cal_val);
+
+	if (res > PRINT_THERMAL_LOG_THRESHOLD)
+		pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
+			__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
 
 	/* GPT2 disable */
 	CONSYS_REG_WRITE(addr + CONN_GPT2_CTRL_AP_EN, 0);

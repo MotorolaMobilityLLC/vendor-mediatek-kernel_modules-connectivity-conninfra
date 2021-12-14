@@ -1154,7 +1154,7 @@ static int opfunc_dump_power_state(struct msg_op_data *op)
 	}
 
 	spin_lock_irqsave(&infra_ctx->power_dump_lock, flag);
-	ret = consys_hw_dump_power_state();
+	ret = consys_hw_dump_power_state((char *)op->op_data[0], op->op_data[1]);
 	if (ret)
 		pr_err("[%s] dump power state fail, ret=%d", __func__, ret);
 
@@ -1650,8 +1650,10 @@ int conninfra_core_trg_chip_rst(enum consys_drv_type drv, char *reason)
 
 int conninfra_core_thermal_query(int *temp_val)
 {
+#define PRINT_TEMP_THRESHOLD 60
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 
 	if (temp_val == NULL)
 		return -1;
@@ -1663,7 +1665,10 @@ int conninfra_core_thermal_query(int *temp_val)
 		pr_info("thermal query fail ret=%d\n", ret);
 		return ret;
 	}
-	pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
+	if (__ratelimit(&_rs) || *temp_val > PRINT_TEMP_THRESHOLD)
+		pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
 
 	if (*temp_val >= CONNINFRA_MAX_TEMP)
 		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "thermal is too high");
@@ -2023,7 +2028,7 @@ int conninfra_core_reset_power_state(void)
 }
 
 
-int conninfra_core_dump_power_state(void)
+int conninfra_core_dump_power_state(char *buf, unsigned int size)
 {
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
@@ -2032,7 +2037,12 @@ int conninfra_core_dump_power_state(void)
 	 * 1. Power state
 	 * 2. Sleep count (if supported)
 	 */
-	ret = msg_thread_send(&infra_ctx->msg_ctx,
+	if (buf && size > 0)
+		ret = msg_thread_send_wait_2(&infra_ctx->msg_ctx,
+				CONNINFRA_OPID_DUMP_POWER_STATE,
+				0, (size_t)buf, size);
+	else
+		ret = msg_thread_send(&infra_ctx->msg_ctx,
 				CONNINFRA_OPID_DUMP_POWER_STATE);
 	if (ret) {
 		pr_err("[%s] fail, ret = %d\n", __func__, ret);

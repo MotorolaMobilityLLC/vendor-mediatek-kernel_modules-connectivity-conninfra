@@ -48,6 +48,7 @@
 #endif
 
 #include <linux/thermal.h>
+#include "conn_power_throttling.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -184,9 +185,8 @@ struct wmt_platform_bridge g_plat_bridge = {
 #else
 	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang,
 #endif
-#if CONNINFRA_DBG_SUPPORT
-	.debug_cb = conninfra_dbg_write,
-#endif
+	.debug_write_cb = conninfra_dbg_write,
+	.debug_read_cb = conninfra_dbg_read,
 };
 
 
@@ -576,7 +576,7 @@ static int conninfra_dev_suspend_cb(void)
 
 static int conninfra_dev_resume_cb(void)
 {
-	conninfra_core_dump_power_state();
+	conninfra_core_dump_power_state(NULL, 0);
 	connsys_dedicated_log_set_ap_state(1);
 	return 0;
 }
@@ -610,6 +610,18 @@ static void conninfra_register_pmic_callback(void)
 	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);
 }
 
+static void conninfra_register_power_throttling_callback(void)
+{
+	struct conn_pwr_plat_info pwr_info;
+	int ret;
+
+	pwr_info.chip_id = consys_hw_chipid_get();
+	pwr_info.adie_id = consys_hw_detect_adie_chipid();
+	pwr_info.get_temp = conninfra_core_thermal_query;
+	ret = conn_pwr_init(&pwr_info);
+	if (ret < 0)
+		pr_info("conn_pwr_init is failed %d.", ret);
+}
 
 /************************************************************************/
 static int conninfra_dev_do_drv_init()
@@ -657,7 +669,9 @@ static int conninfra_dev_do_drv_init()
 				= conninfra_dev_fb_notifier_callback;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	iret = mtk_disp_notifier_register("conninfra_driver", &conninfra_fb_notifier);
+#endif
 #else
 	iret = fb_register_client(&conninfra_fb_notifier);
 #endif
@@ -671,6 +685,7 @@ static int conninfra_dev_do_drv_init()
 #endif
 	conninfra_register_pmic_callback();
 	conninfra_register_thermal_callback();
+	conninfra_register_power_throttling_callback();
 
 	pr_info("ConnInfra Dev: init (%d)\n", iret);
 	g_conninfra_init_status = CONNINFRA_INIT_DONE;
@@ -763,8 +778,11 @@ static void conninfra_dev_deinit(void)
 
 	g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
 
+	conn_pwr_deinit();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	mtk_disp_notifier_unregister(&conninfra_fb_notifier);
+#endif
 #else
 	fb_unregister_client(&conninfra_fb_notifier);
 #endif

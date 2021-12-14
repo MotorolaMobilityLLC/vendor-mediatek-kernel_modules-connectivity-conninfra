@@ -188,7 +188,7 @@ int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 /* EMI */
-void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size);
+void conninfra_get_phy_addr(phys_addr_t *addr, unsigned int *size);
 void conninfra_get_emi_phy_addr(enum connsys_emi_type type, phys_addr_t* base, unsigned int *size);
 
 /* power on/off */
