@@ -40,6 +40,7 @@
 ********************************************************************************
 */
 #define PLATFORM_SOC_CHIP 0x6879
+#define PRINT_THERMAL_LOG_THRESHOLD 60
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -343,27 +344,29 @@ static inline void __sleep_count_trigger_read(void)
 
 static void consys_power_state(void)
 {
-#if 0
 	unsigned int i, str_len;
 	unsigned int buf_len = 0;
 	unsigned int r;
 	const char* osc_str[] = {
-		  "fm ", "gps ", "bgf ", "wf ", "ap2conn ", "conn_thm ", "conn_pta ", "conn_infra_bus "};
+		"fm ", "gps ", "bgf ", "wf ", "conn_infra_bus ", " ", "ap2conn "," ",
+		" "," "," ", "conn_pta ", "conn_spi ", " ", "conn_thm "};
 	char buf[256] = {'\0'};
 
-	CONSYS_REG_WRITE_HW_ENTRY(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL,
-								  0x0);
-	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL,
+		0x0);
+	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR);
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 15; i++) {
 		str_len = strlen(osc_str[i]);
-		if ((r & (0x1 << (18 + i))) > 0 && (buf_len + str_len < 256)) {
+
+		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < 256)) {
 			strncat(buf, osc_str[i], str_len);
 			buf_len += str_len;
 		}
 	}
-	pr_info("[%s] [0x%x] %s", __func__, r, buf);
-#endif
+	if (r & 0xFFFF)
+		pr_info("[%s] [0x%x] %s", __func__, r, buf);
 }
 
 static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
@@ -477,7 +480,8 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 	}
 
 	/* Power state */
-	consys_power_state();
+	if (print_log > 0)
+		consys_power_state();
 	round++;
 
 	/* reset after sleep time is accumulated. */
@@ -506,7 +510,6 @@ void update_thermal_data_mt6879(struct consys_plat_thermal_data_mt6879* input)
 	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data_mt6879));
 }
 
-#define PRINT_THERMAL_LOG 0
 static int calculate_thermal_temperature(int y)
 {
 	struct consys_plat_thermal_data_mt6879 *data = &g_consys_plat_therm_data;
@@ -518,11 +521,10 @@ static int calculate_thermal_temperature(int y)
 	t = (y - (data->thermal_b == 0 ? 0x38 : data->thermal_b)) *
 			(data->slop_molecule + 1866) / 1000 + const_offset;
 
-#if PRINT_THERMAL_LOG
-	pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
+	if (t > PRINT_THERMAL_LOG_THRESHOLD)
+		pr_info("y=[%d] b=[%d] constOffset=[%d] [%d] [%d] => t=[%d]\n",
 			y, data->thermal_b, const_offset, data->slop_molecule, data->offset,
 			t);
-#endif
 	return t;
 }
 
@@ -587,11 +589,11 @@ int consys_thermal_query_mt6879(void)
 			CONSYS_REG_READ(CONN_REG_CONN_THERM_CTL_ADDR + thermal_dump_crs[i])) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}
-#if PRINT_THERMAL_LOG
-	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
-		__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
-#endif
 	res = calculate_thermal_temperature(cal_val);
+
+	if (res > PRINT_THERMAL_LOG_THRESHOLD)
+		pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
+			__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
 
 	/* GPT2 disable */
 	CONSYS_REG_WRITE(addr + CONN_GPT2_CTRL_AP_EN, 0);
