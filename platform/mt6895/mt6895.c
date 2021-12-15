@@ -55,6 +55,11 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+struct rf_cr_backup_data {
+	unsigned int addr;
+	unsigned int value1;
+	unsigned int value2;
+};
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -76,6 +81,9 @@ static unsigned long long consys_soc_timestamp_get_mt6895(void);
 
 static unsigned int consys_adie_detection_mt6895(void);
 static void consys_set_mcu_control_mt6895(int type, bool onoff);
+
+static int consys_pre_cal_backup_mt6895(unsigned int offset, unsigned int size);
+static int consys_pre_cal_clean_data_mt6895(void);
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -124,6 +132,9 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6895 = {
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6895,
 	.consys_plt_adie_detection = consys_adie_detection_mt6895,
 	.consys_plt_set_mcu_control = consys_set_mcu_control_mt6895,
+
+	.consys_plt_pre_cal_backup = consys_pre_cal_backup_mt6895,
+	.consys_plt_pre_cal_clean_data = consys_pre_cal_clean_data_mt6895,
 };
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6895;
@@ -144,6 +155,10 @@ const struct conninfra_plat_data mt6895_plat_data = {
 };
 
 static struct consys_plat_thermal_data_mt6895 g_consys_plat_therm_data;
+/* For calibration backup/restore */
+static struct rf_cr_backup_data *mt6637_backup_data = NULL;
+static unsigned int mt6637_backup_cr_number = 0;
+extern phys_addr_t gConEmiPhyBase;
 
 int consys_co_clock_type_mt6895(void)
 {
@@ -647,3 +662,124 @@ static void consys_set_mcu_control_mt6895(int type, bool onoff)
 		CONSYS_CLR_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
 	}
 }
+
+static int consys_pre_cal_backup_mt6895(unsigned int offset, unsigned int size)
+{
+	void __iomem* vir_addr = 0;
+	unsigned int expected_size = 0;
+
+	pr_info("[%s] emi base=0x%x offset=0x%x size=%d", __func__, gConEmiPhyBase, offset, size);
+	if ((size == 0) || ((offset & 0x3) != 0x0))
+		return 1;
+	if (mt6637_backup_data != NULL) {
+		kfree(mt6637_backup_data);
+		mt6637_backup_data = NULL;
+	}
+
+	/* Read CR number from EMI */
+	vir_addr = ioremap(gConEmiPhyBase + offset, 4);
+	if (vir_addr == NULL) {
+		pr_err("[%s] ioremap CR number fail", __func__);
+		return -ENOMEM;
+	}
+	mt6637_backup_cr_number = readl(vir_addr);
+	iounmap(vir_addr);
+	expected_size = sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number + 4;
+	if (size < expected_size) {
+		pr_err("[%s] cr number=%d, expected_size=0x%x size=0x%x", __func__, mt6637_backup_cr_number, expected_size, size);
+		mt6637_backup_cr_number = 0;
+		return 1;
+	}
+
+	mt6637_backup_data =
+		kmalloc(
+			sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number,
+			GFP_KERNEL);
+	if (mt6637_backup_data == NULL) {
+		pr_err("[%s] allocate fail");
+		return -ENOMEM;
+	}
+	vir_addr = ioremap(gConEmiPhyBase + offset + 4,
+			sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number);
+	if (vir_addr == NULL) {
+		pr_err("[%s] ioremap data fail", __func__);
+		return -ENOMEM;
+	}
+	memcpy_fromio(mt6637_backup_data, vir_addr,
+		sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number);
+	iounmap(vir_addr);
+
+	return 0;
+}
+
+int consys_pre_cal_restore_mt6895(void)
+{
+	int i;
+
+	if (mt6637_backup_cr_number == 0 || mt6637_backup_data == NULL) {
+		pr_info("[%s] mt6637_backup_cr_number=%d mt6637_backup_data=%x",
+			__func__, mt6637_backup_cr_number, mt6637_backup_data);
+		return 1;
+	}
+	pr_info("[%s] mt6637_backup_cr_number=%d mt6637_backup_data=%x",
+		__func__, mt6637_backup_cr_number, mt6637_backup_data);
+	/* Acquire semaphore */
+	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+		pr_err("[%s] Require semaphore fail\n", __func__);
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+	/* Enable a-die top_ck en */
+	connsys_adie_top_ck_en_ctl_mt6895(true);
+	/* Enable WF clock
+	 * ATOP 0xb04 0xfe000000
+	 * ATOP 0xb08 0xe0000000
+	 * ATOP 0xa04 0xffffffff
+	 * ATOP 0xaf4 0xffffffff
+	 */
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xb04, 0xfe000000);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xb08, 0xe0000000);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xa04, 0xffffffff);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xaf4, 0xffffffff);
+	/* Write CR back, SYS_SPI_WF & SYS_SPI_WF1 */
+	for (i = 0; i < mt6637_backup_cr_number; i++) {
+		consys_spi_write_nolock_mt6895(
+			SYS_SPI_WF,
+			mt6637_backup_data[i].addr,
+			mt6637_backup_data[i].value1);
+	}
+	for (i = 0; i < mt6637_backup_cr_number; i++) {
+		consys_spi_write_nolock_mt6895(
+			SYS_SPI_WF1,
+			mt6637_backup_data[i].addr,
+			mt6637_backup_data[i].value2);
+	}
+	/* Disable WF clock
+	 * ATOP 0xb04 0x88000000
+	 * ATOP 0xb08 0x00000000
+	 * ATOP 0xa04 0x00000000
+	 * ATOP 0xaf4 0x00000000
+	 */
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xb04, 0x88000000);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xb08, 0x00000000);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xa04, 0x00000000);
+	consys_spi_write_nolock_mt6895(SYS_SPI_TOP, 0xaf4, 0x00000000);
+	/* Release semaphore */
+	consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
+	/* Disable a-die top ck en */
+	connsys_adie_top_ck_en_ctl_mt6895(false);
+	return 0;
+}
+
+static int consys_pre_cal_clean_data_mt6895(void)
+{
+
+	pr_info("[%s]", __func__);
+	if (mt6637_backup_data != NULL) {
+		kfree(mt6637_backup_data);
+		mt6637_backup_data = NULL;
+	}
+	mt6637_backup_cr_number = 0;
+
+	return 0;
+}
+
