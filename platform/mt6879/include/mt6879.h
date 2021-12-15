@@ -48,5 +48,6 @@ int consys_platform_spm_conn_ctrl_mt6879(unsigned int enable);
 int consys_co_clock_type_mt6879(void);
 void update_thermal_data_mt6879(struct consys_plat_thermal_data_mt6879* input);
 unsigned int consys_get_adie_chipid_mt6879(void);
+int consys_pre_cal_restore_mt6879(void);
 
 #endif /* _PLATFORM_MT6879_H_ */
