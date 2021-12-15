@@ -412,8 +412,6 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		if (bus_clock & CONNINFRA_BUS_CLOCK_BPLL) {
 
 			if (conninfra_bus_clock_bpll_state == 0) {
-				CONSYS_SET_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
-				udelay(30);
 				bpll_switch = true;
 			}
 			conninfra_bus_clock_bpll_state |= (0x1 << drv_type);
@@ -421,12 +419,27 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		/* Enable WPLL */
 		if (bus_clock & CONNINFRA_BUS_CLOCK_WPLL) {
 			if (conninfra_bus_clock_wpll_state == 0) {
-				CONSYS_SET_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 20));
-				udelay(50);
 				wpll_switch = true;
 			}
 			conninfra_bus_clock_wpll_state |= (0x1 << drv_type);
 		}
+
+		if (bpll_switch || wpll_switch) {
+			while (consys_sema_acquire_timeout_mt6885(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
+
+			if (bpll_switch) {
+				CONSYS_SET_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
+				udelay(30);
+			}
+
+			if (wpll_switch) {
+				CONSYS_SET_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 20));
+				udelay(50);
+			}
+
+			consys_sema_release_mt6885(CONN_SEMA_BUS_CONTROL);
+		}
+
 		pr_info("drv=[%d] conninfra_bus_clock_wpll=[%u]->[%u] %s conninfra_bus_clock_bpll=[%u]->[%u] %s",
 			drv_type,
 			wpll_state, conninfra_bus_clock_wpll_state, (wpll_switch ? "enable" : ""),
@@ -437,7 +450,6 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		if (bus_clock & CONNINFRA_BUS_CLOCK_WPLL) {
 			conninfra_bus_clock_wpll_state &= ~(0x1<<drv_type);
 			if (conninfra_bus_clock_wpll_state == 0) {
-				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 20));
 				wpll_switch = true;
 			}
 		}
@@ -445,10 +457,24 @@ int consys_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock,
 		if (bus_clock & CONNINFRA_BUS_CLOCK_BPLL) {
 			conninfra_bus_clock_bpll_state &= ~(0x1<<drv_type);
 			if (conninfra_bus_clock_bpll_state == 0) {
-				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
 				bpll_switch = true;
 			}
 		}
+
+		if (bpll_switch || wpll_switch) {
+			while (consys_sema_acquire_timeout_mt6885(CONN_SEMA_BUS_CONTROL, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL);
+
+			if (wpll_switch) {
+				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 20));
+			}
+
+			if (bpll_switch) {
+				CONSYS_CLR_BIT(CONN_AFE_CTL_BASE_ADDR + CONN_AFE_CTL_RG_DIG_EN_03, (0x1 << 21));
+			}
+
+			consys_sema_release_mt6885(CONN_SEMA_BUS_CONTROL);
+		}
+
 		pr_info("drv=[%d] conninfra_bus_clock_wpll=[%u]->[%u] %s conninfra_bus_clock_bpll=[%u]->[%u] %s",
 			drv_type,
 			wpll_state, conninfra_bus_clock_wpll_state, (wpll_switch ? "disable" : ""),
