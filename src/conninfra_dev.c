@@ -48,6 +48,7 @@
 #endif
 
 #include <linux/thermal.h>
+#include "conn_power_throttling.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -609,6 +610,18 @@ static void conninfra_register_pmic_callback(void)
 	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);
 }
 
+static void conninfra_register_power_throttling_callback(void)
+{
+	struct conn_pwr_plat_info pwr_info;
+	int ret;
+
+	pwr_info.chip_id = consys_hw_chipid_get();
+	pwr_info.adie_id = consys_hw_detect_adie_chipid();
+	pwr_info.get_temp = conninfra_core_thermal_query;
+	ret = conn_pwr_init(&pwr_info);
+	if (ret < 0)
+		pr_info("conn_pwr_init is failed %d.", ret);
+}
 
 /************************************************************************/
 static int conninfra_dev_do_drv_init()
@@ -672,6 +685,7 @@ static int conninfra_dev_do_drv_init()
 #endif
 	conninfra_register_pmic_callback();
 	conninfra_register_thermal_callback();
+	conninfra_register_power_throttling_callback();
 
 	pr_info("ConnInfra Dev: init (%d)\n", iret);
 	g_conninfra_init_status = CONNINFRA_INIT_DONE;
@@ -764,6 +778,7 @@ static void conninfra_dev_deinit(void)
 
 	g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
 
+	conn_pwr_deinit();
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	mtk_disp_notifier_unregister(&conninfra_fb_notifier);
