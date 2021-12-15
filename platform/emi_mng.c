@@ -179,7 +179,7 @@ static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 static int emi_mng_get_emi_allocated_by_lk2(struct platform_device *pdev)
 {
 	struct device_node *node;
-	unsigned int phy_addr = 0;
+	u64 phy_addr = 0;
 	unsigned int phy_size = 0;
 
 	node = pdev->dev.of_node;
@@ -188,7 +188,7 @@ static int emi_mng_get_emi_allocated_by_lk2(struct platform_device *pdev)
 		return -1;
 	}
 
-	if (of_property_read_u32(node, "emi-addr", &phy_addr)) {
+	if (of_property_read_u64(node, "emi-addr", &phy_addr)) {
 		pr_info("%s: unable to get emi_addr\n", __func__);
 		return -1;
 	}
