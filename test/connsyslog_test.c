@@ -72,7 +72,7 @@ static void connlog_test_event_handler(void)
 
 int connlog_test_init(void)
 {
-	unsigned int emi_addr = 0;
+	phys_addr_t emi_addr = 0;
 	unsigned int emi_size = 0;
 	int ret;
 
