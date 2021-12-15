@@ -689,7 +689,6 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
 	struct consys_emi_addr_info* emi_info = NULL;
-	struct conn_pwr_plat_info pwr_info;
 
 	if (pdev == NULL) {
 		pr_err("[%s] invalid input", __func__);
@@ -743,12 +742,6 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	g_pdev = pdev;
 
 	osal_sleepable_lock_init(&g_adie_chipid_lock);
-	pwr_info.chip_id = consys_hw_chipid_get();
-	pwr_info.adie_id = consys_hw_detect_adie_chipid();
-	pwr_info.get_temp = consys_hw_therm_query;
-	ret = conn_pwr_init(&pwr_info);
-	if (ret < 0)
-		pr_info("conn_pwr_init is failed %d.", ret);
 
 	atomic_set(&g_hw_init_done, 1);
 	return 0;
@@ -756,8 +749,6 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 
 int mtk_conninfra_remove(struct platform_device *pdev)
 {
-	conn_pwr_deinit();
-
 	if (consys_hw_ops->consys_plt_clk_detach)
 		consys_hw_ops->consys_plt_clk_detach();
 	else
