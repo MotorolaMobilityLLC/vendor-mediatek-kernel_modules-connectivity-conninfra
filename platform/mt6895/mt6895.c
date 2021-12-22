@@ -412,6 +412,10 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_conninfra_sleep_time += conninfra_sleep_time;
 	t_conninfra_sleep_cnt += conninfra_sleep_cnt;
+	/* Wait 60 us to make sure the duration to next write to SLP_COUNTER_RD_TRIGGER is
+	 * long enough.
+	 */
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -423,6 +427,7 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_wf_sleep_time += wf_sleep_time;
 	t_wf_sleep_cnt += wf_sleep_cnt;
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -434,6 +439,7 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_bt_sleep_time += bt_sleep_time;
 	t_bt_sleep_cnt += bt_sleep_cnt;
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,

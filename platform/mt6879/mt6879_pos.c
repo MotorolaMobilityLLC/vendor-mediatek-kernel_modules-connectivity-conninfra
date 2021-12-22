@@ -98,38 +98,17 @@ int consys_conninfra_sleep_mt6879(void)
 static void print_pmif_reg(void)
 {
 	void __iomem *addr = NULL;
-	unsigned int v[8];
+	unsigned int v;
 
-	/* clk cg */
-	addr = ioremap(0x1C00C004, 0x4);
+	/* DEBUGTOP_MON 0x0d0a0088 */
+	addr = ioremap(0x0d0a0088, 0x4);
 	if (!addr) {
 		pr_notice("%s clk cg ioremap failed\n", __func__);
 		return;
 	}
-	v[0] = CONSYS_REG_READ(addr);
+	v = CONSYS_REG_READ(addr);
 	iounmap(addr);
-	pr_info("[consys]clk_cg:%x\n", v[0]);
-
-	/* PMIF cg */
-	addr = ioremap(0x1C804000, 0x3C4);
-	if (!addr) {
-		pr_notice("%s pmif ioremap failed\n", __func__);
-		return;
-	}
-	v[0] = CONSYS_REG_READ(addr + 0x18);
-	v[1] = CONSYS_REG_READ(addr + 0x24);
-	v[2] = CONSYS_REG_READ(addr + 0x150);
-	v[3] = CONSYS_REG_READ(addr + 0x374);
-	v[4] = CONSYS_REG_READ(addr + 0x398);
-	v[5] = CONSYS_REG_READ(addr + 0x3B8);
-	v[6] = CONSYS_REG_READ(addr + 0x3BC);
-	v[7] = CONSYS_REG_READ(addr + 0x3C0);
-	iounmap(addr);
-
-	pr_info("[consys]pmif:0x18=%x,0x24=%x,0x150=%x,"
-		"0x374=%x, 0x398=%x, 0x3B8=%x, 0x3BC=%x, 0x3C0=%x\n",
-		v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]
-	);
+	pr_info("[consys]DEBUGTOP_MON:%x\n", v);
 }
 
 void consys_set_if_pinmux_mt6879(unsigned int enable)
