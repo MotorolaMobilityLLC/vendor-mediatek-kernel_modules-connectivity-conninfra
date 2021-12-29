@@ -165,9 +165,8 @@ extern phys_addr_t gConEmiPhyBase;
 int consys_co_clock_type_mt6879(void)
 {
 	const struct conninfra_conf *conf;
-
 	struct regmap *map = consys_clock_mng_get_regmap();
-	int value;
+	int value, clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();
@@ -177,18 +176,22 @@ int consys_co_clock_type_mt6879(void)
 	}
 	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d",
 		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support);
-	/* TODO: for co-clock mode, there are two case: 26M and 52M. Need something to distinguish it. */
-	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support)
-		return CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
 
-	if (!map)
-		pr_err("%s, failed to get regmap.\n", __func__);
-	else {
-		regmap_read(map, DCXO_DIGCLK_ELR, &value);
-		if (value & 0x1)
-			return CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
+		if (conf->co_clock_flag == 3)
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
+		else
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
+	} else {
+		if (!map)
+			pr_notice("%s, failed to get regmap.\n", __func__);
+		else {
+			regmap_read(map, DCXO_DIGCLK_ELR, &value);
+			if (value & 0x1)
+				clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+		}
 	}
-	return CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
+	return clock_type;
 }
 
 int consys_clk_get_from_dts_mt6879(struct platform_device *pdev)
@@ -407,7 +410,10 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_conninfra_sleep_time += conninfra_sleep_time;
 	t_conninfra_sleep_cnt += conninfra_sleep_cnt;
-
+	/* Wait 60 us to make sure the duration to next write to SLP_COUNTER_RD_TRIGGER is
+	 * long enough.
+	 */
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -419,6 +425,7 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_wf_sleep_time += wf_sleep_time;
 	t_wf_sleep_cnt += wf_sleep_cnt;
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -430,6 +437,7 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
 	t_bt_sleep_time += bt_sleep_time;
 	t_bt_sleep_cnt += bt_sleep_cnt;
+	udelay(60);
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
