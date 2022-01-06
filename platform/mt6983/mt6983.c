@@ -189,9 +189,10 @@ int consys_co_clock_type_mt6983(void)
 		else
 			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
 	} else {
-		if (!map)
+		if (!map) {
 			pr_notice("%s, failed to get regmap.\n", __func__);
-		else {
+			return -1;
+		} else {
 			regmap_read(map, DCXO_DIGCLK_ELR, &value);
 			if (value & 0x1)
 				clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
