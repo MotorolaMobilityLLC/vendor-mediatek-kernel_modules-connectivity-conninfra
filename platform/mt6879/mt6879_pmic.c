@@ -171,10 +171,6 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		if (ret)
 			pr_err("Enable VRFIO18 fail. ret=%d\n", ret);
 
-		/* request VS2 to 1.45V by VS2 VOTER (use bit 4) */
-		consys_pmic_regmap_set_value(g_regmap_mt6363,
-			MT6363_BUCK_VS2_VOTER_CON0_SET_ADDR, 1 << 4, 1 << 4);
-
 		/* set PMIC VCN13 LDO 1.35V @Normal mode; 0.95V @LPM */
 		/* no need for LPM because 0.95V is default setting. */
 		regulator_set_voltage(reg_VCN13, 1350000, 1350000);
@@ -195,10 +191,6 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		ret = regulator_disable(reg_VCN13);
 		if (ret)
 			pr_notice("%s regulator_disable err: %d", __func__, ret);
-
-		/* clear bit 4 of VS2 VOTER then VS2 can restore to 1.35V */
-		consys_pmic_regmap_set_value(g_regmap_mt6363,
-			MT6363_BUCK_VS2_VOTER_CON0_CLR_ADDR, 1 << 4, 1 << 4);
 
 		/* set PMIC VRFIO18 LDO SW_EN = 0, SW_LP =0 (sw disable) */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
