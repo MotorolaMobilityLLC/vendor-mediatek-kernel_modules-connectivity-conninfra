@@ -18,7 +18,7 @@
 #include "osal.h"
 #include "mt6895_pmic.h"
 
-#define CONSYS_DUMP_BUF_SIZE 512
+#define CONSYS_DUMP_BUF_SIZE 800
 
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
@@ -95,7 +95,10 @@ static void consys_print_log(const char *title, struct conn_debug_info_mt6895 *i
 			pr_notice("%s snprintf failed\n", __func__);
 			return;
 		}
-		strncat(debug_buf, temp, strlen(temp) + 1);
+		if (strlen(debug_buf) + strlen(temp) < CONSYS_DUMP_BUF_SIZE)
+			strncat(debug_buf, temp, strlen(temp) + 1);
+		else
+			pr_notice("%s debug_buf len is not enough\n", __func__);
 	}
 	pr_info("%s\n",debug_buf);
 }
