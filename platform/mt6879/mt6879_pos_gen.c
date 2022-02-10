@@ -30,7 +30,7 @@
 #include "mt6879_pos.h"
 #include "mt6879_pos_gen.h"
 #include "conninfra.h"
-
+#include "mt6879_consys_reg.h"
 
 const unsigned int g_cmdbt_dwn_value_ary_mt6879[1024] = {
 	0x16000400, 0x16011805, 0x16100A00, 0x16111805, 0x1620006F, 0x16210000, 0xCCCCCCCC, 0x16002060,
@@ -875,6 +875,7 @@ int connsys_a_die_efuse_read_adie6637_check_efuse_valid_mt6879_gen(bool *pefuse_
 	unsigned int ret = 0;
 	int retry = 0;
 	bool efuse_valid = false;
+	unsigned int ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, ret9;
 	#endif
 
 	if (SYS_SPI_TOP == 0) {
@@ -919,8 +920,25 @@ int connsys_a_die_efuse_read_adie6637_check_efuse_valid_mt6879_gen(bool *pefuse_
 		consys_spi_read_nolock_mt6879(SYS_SPI_TOP, CONSYS_GEN_ADIE6637_ATOP_EFUSE_CTRL, &efuse_ctrl);
 		if (((efuse_ctrl & (0x1 << 29)) >> 29) == 1)
 			efuse_valid = true;
-		else
+		else {
 			pr_notice("EFUSE is invalid\n");
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xa10, &ret1);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb00, &ret2);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb04, &ret3);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb08, &ret4);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb0c, &ret5);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb10, &ret6);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0xb14, &ret7);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0x0c8, &ret8);
+			consys_spi_read_nolock_mt6879(SYS_SPI_TOP, 0x03c, &ret9);
+			pr_info("[%s] ATOP READ 0xa10=[0x%08x], 0xb00=[0x%08x], 0xb04=[0x%08x], 0xb08=[0x%08x], 0xb0c=[0x%08x], 0xb10=[0x%08x], 0xb14=[0x%08x], 0x0c8=[0x%08x], 0x03c=[0x%08x]\n",
+				__func__, ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, ret9);
+
+			if (consys_check_conninfra_on_domain_mt6879() == 0)
+				consys_print_debug_mt6879(0);
+			else
+				consys_print_debug_mt6879(1);
+		}
 		if (pefuse_valid != NULL)
 			*pefuse_valid = efuse_valid;
 	#endif

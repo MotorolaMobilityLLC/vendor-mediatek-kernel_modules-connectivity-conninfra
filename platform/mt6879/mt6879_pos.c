@@ -573,6 +573,12 @@ int consys_spi_write_nolock_mt6879(enum sys_spi_subsystem subsystem, unsigned in
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 #endif
+
+	if (subsystem == SYS_SPI_TOP && addr == 0xa00) {
+		pr_info("[%s] Someone is trying to write ATOP 0xa00\n", __func__);
+		return CONNINFRA_SPI_ADDR_INVALID;
+	}
+
 	return 0;
 }
 
