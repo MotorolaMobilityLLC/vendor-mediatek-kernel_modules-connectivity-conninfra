@@ -227,26 +227,18 @@ int consys_platform_spm_conn_ctrl_mt6895(unsigned int enable)
 		ret = pm_runtime_get_sync(&(pdev->dev));
 		if (ret)
 			pr_info("pm_runtime_get_sync() fail(%d)\n", ret);
-		else
-			pr_info("pm_runtime_get_sync() CONSYS ok\n");
 
 		ret = device_init_wakeup(&(pdev->dev), true);
 		if (ret)
 			pr_info("device_init_wakeup(true) fail.\n");
-		else
-			pr_info("device_init_wakeup(true) CONSYS ok\n");
 	} else {
 		ret = device_init_wakeup(&(pdev->dev), false);
 		if (ret)
 			pr_info("device_init_wakeup(false) fail.\n");
-		else
-			pr_info("device_init_wakeup(false) CONSYS ok\n");
 
 		ret = pm_runtime_put_sync(&(pdev->dev));
 		if (ret)
 			pr_info("pm_runtime_put_sync() fail.\n");
-		else
-			pr_info("pm_runtime_put_sync() CONSYS ok\n");
 	}
 	return ret;
 }
@@ -826,7 +818,6 @@ int consys_pre_cal_restore_mt6895(void)
 static int consys_pre_cal_clean_data_mt6895(void)
 {
 
-	pr_info("[%s]", __func__);
 	if (mt6637_backup_data != NULL) {
 		kfree(mt6637_backup_data);
 		mt6637_backup_data = NULL;
