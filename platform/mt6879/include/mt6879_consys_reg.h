@@ -68,5 +68,6 @@ extern struct consys_base_addr conn_reg_mt6879;
 struct consys_base_addr* get_conn_reg_base_addr_mt6879(void);
 
 int consys_check_conninfra_on_domain_mt6879(void);
+int consys_print_debug_mt6879(int level);
 
 #endif /* _PLATFORM_MT6879_CONSYS_REG_H_ */

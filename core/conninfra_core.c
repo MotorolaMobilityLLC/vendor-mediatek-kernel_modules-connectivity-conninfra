@@ -1731,8 +1731,12 @@ int conninfra_core_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr
 	ret = msg_thread_send_wait_3(&(g_conninfra_ctx.msg_ctx), CONNINFRA_OPID_RFSPI_WRITE, 0,
 		subsystem, addr, data);
 	if (ret) {
-		pr_err("[%s] failed (ret = %d). subsystem=%s addr=0x%x data=%d\n",
+		pr_err("[%s] failed (ret = %d). subsystem=%s addr=0x%x data=0x%x\n",
 			__func__, ret, conninfra_core_spi_subsys_string(subsystem), addr, data);
+
+		if (ret == CONNINFRA_SPI_ADDR_INVALID)
+			return CONNINFRA_SPI_ADDR_INVALID;
+
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 	return 0;
