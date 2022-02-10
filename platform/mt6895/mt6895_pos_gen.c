@@ -170,9 +170,9 @@ void consys_set_if_pinmux_mt6895_gen(unsigned int enable)
 			CONSYS_REG_WRITE_MASK(IOCFG_RTT_REG_BASE +
 				CONSYS_GEN_DRV_CFG0_OFFSET_ADDR, 0x8, 0x38);
 			CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_tr_base +
-				CONSYS_GEN_DRV_CFG1_OFFSET_ADDR, 0xE00, 0xE00);
+				CONSYS_GEN_DRV_CFG1_OFFSET_ADDR, 0x200, 0xE00);
 			CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_tr_base +
-				CONSYS_GEN_IOCFG_TR_DRV_CFG0_OFFSET_ADDR, 0x3FFC0, 0x3FFC0);
+				CONSYS_GEN_IOCFG_TR_DRV_CFG0_OFFSET_ADDR, 0x9240, 0x3FFC0);
 		#endif
 
 		/* set pinmux PUPD setting */
