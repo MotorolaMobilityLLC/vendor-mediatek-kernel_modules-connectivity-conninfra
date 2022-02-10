@@ -199,8 +199,7 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret = 0;
 
 	if (next_status == 0) {
-		pr_info("Last power off: %d\n", off_radio);
-		pr_info("Power off CONNSYS PART 1\n");
+		pr_info("Last power off: %d, Power off CONNSYS PART 1\n", off_radio);
 		consys_hw_raise_voltage(off_radio, false, true);
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
 			consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);

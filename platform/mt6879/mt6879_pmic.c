@@ -202,10 +202,8 @@ int consys_plt_pmic_common_power_ctrl_mt6879(unsigned int enable)
 		}
 
 		/* Set buckboost to 3.45V (for VCN33_1 & VCN33_2) */
-		if (reg_buckboost) {
+		if (reg_buckboost)
 			regulator_set_voltage(reg_buckboost, 3450000, 3450000);
-			pr_info("Set buckboost to 3.45V\n");
-		}
 	}
 #endif
 	return ret;
