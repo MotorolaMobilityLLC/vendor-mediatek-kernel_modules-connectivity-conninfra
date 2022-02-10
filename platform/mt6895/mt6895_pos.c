@@ -283,7 +283,6 @@ int connsys_a_die_cfg_mt6895(void)
 		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 		return -1;
 	}
-	pr_info("[%s] A-die chip id: 0x%08x\n", __func__, adie_id);
 
 	conn_hw_env.adie_hw_version = adie_id;
 	/* Write to conninfra sysram */
@@ -307,7 +306,6 @@ int connsys_a_die_cfg_mt6895(void)
 	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6895();
 
 	sleep_mode = consys_get_sleep_mode_mt6895();
-	pr_info("sleep_mode = %d\n", sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(adie_id, sleep_mode);
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 	return 0;
