@@ -245,15 +245,15 @@ int connsys_a_die_cfg_mt6879(void)
 	unsigned int sysram_clock_type = 0;
 
 	clock_type = consys_co_clock_type_mt6879();
-	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS) {
-		pr_info("A-die co-clock 52M\n");
+	/* FW only cares 26M or 52M */
+	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS ||
+		clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
 		sysram_clock_type = 2;
-	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS) {
-		pr_info("A-die co-clock 26M\n");
+	} else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS ||
+		clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO) {
 		sysram_clock_type = 1;
 	} else {
-		pr_info("A-die tcxo 26M\n");
-		sysram_clock_type = 3;
+		pr_notice("unexpected value\n");
 	}
 
 	// Write clock type to conninfra sysram
