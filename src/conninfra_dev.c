@@ -567,12 +567,14 @@ static void conninfra_register_devapc_callback(void)
 
 static int conninfra_dev_suspend_cb(void)
 {
+	connsys_dedicated_log_set_ap_state(0);
 	return 0;
 }
 
 static int conninfra_dev_resume_cb(void)
 {
 	conninfra_core_dump_power_state();
+	connsys_dedicated_log_set_ap_state(1);
 	return 0;
 }
 
