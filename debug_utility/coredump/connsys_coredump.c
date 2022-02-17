@@ -528,8 +528,6 @@ static void conndump_info_analysis(
 
 			len = pTemp - pDtr;
 			sec_len = (len < remain_array_len ? len : remain_array_len);
-			if (sec_len > remain_array_len)
-				goto check_task_id;
 			memcpy(&ctx->info.assert_info[idx], pDtr, sec_len);
 			remain_array_len -= sec_len;
 			idx += sec_len;
