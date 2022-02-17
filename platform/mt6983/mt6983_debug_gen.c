@@ -115,13 +115,13 @@ void consys_print_power_debug_dbg_level_0_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_0_info)
 {
-	if (level < 0)
-		return;
-
 	if (pdbg_level_0_info == NULL)
 		return;
 
 	memset(pdbg_level_0_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 0)
+		return;
 
 	if (!vir_addr_consys_dbg_gen_srclkenrc_base_mt6983) {
 		pr_notice("vir_addr_consys_dbg_gen_srclkenrc_base_mt6983(%x) ioremap fail\n",
@@ -390,13 +390,13 @@ void consys_print_power_debug_dbg_level_1_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_1_info)
 {
-	if (level < 1)
-		return;
-
 	if (pdbg_level_1_info == NULL)
 		return;
 
 	memset(pdbg_level_1_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 1)
+		return;
 
 	if (CONN_HOST_CSR_TOP_BASE == 0) {
 		pr_notice("CONN_HOST_CSR_TOP_BASE is not defined\n");
@@ -449,13 +449,13 @@ void consys_print_power_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info)
 {
-	if (level < 2)
-		return;
-
 	if (pdbg_level_2_info == NULL)
 		return;
 
 	memset(pdbg_level_2_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 2)
+		return;
 
 	if (CONN_CFG_BASE == 0) {
 		pr_notice("CONN_CFG_BASE is not defined\n");
@@ -603,35 +603,17 @@ void consys_print_power_debug_dbg_level_2_mt6983_debug_gen(
 				CONSYS_DBG_GEN_EMI_PROBE_1_OFFSET_ADDR));
 }
 
-int consys_print_power_debug_mt6983_debug_gen(
-		int level,
-		struct conn_debug_info_mt6983 *pdbg_level_0_info,
-		struct conn_debug_info_mt6983 *pdbg_level_1_info,
-		struct conn_debug_info_mt6983 *pdbg_level_2_info)
-{
-	if (level < 0 || level > 2) {
-		pr_info("[%s] level[%d] unexpected value.", __func__, level);
-		return 0;
-	}
-
-	consys_print_power_debug_dbg_level_0_mt6983_debug_gen(level, pdbg_level_0_info);
-	consys_print_power_debug_dbg_level_1_mt6983_debug_gen(level, pdbg_level_1_info);
-	consys_print_power_debug_dbg_level_2_mt6983_debug_gen(level, pdbg_level_2_info);
-
-	return 0;
-}
-
 void consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_1_info)
 {
-	if (level < 1)
-		return;
-
 	if (pdbg_level_1_info == NULL)
 		return;
 
 	memset(pdbg_level_1_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 1)
+		return;
 
 	if (!vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983) {
 		pr_notice("vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983(%x) ioremap fail\n",
@@ -1045,13 +1027,13 @@ void consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info)
 {
-	if (level < 2)
-		return;
-
 	if (pdbg_level_2_info == NULL)
 		return;
 
 	memset(pdbg_level_2_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 2)
+		return;
 
 	if (!vir_addr_0x1804c000_mt6983) {
 		pr_notice("vir_addr_0x1804c000_mt6983(%x) ioremap fail\n",
@@ -1093,18 +1075,98 @@ void consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(
 			CONSYS_REG_READ(vir_addr_0x1804c000_mt6983 + 0xc));
 }
 
-int consys_print_bus_debug_mt6983_debug_gen(
+void consys_print_bus_slpprot_debug_dbg_level_2_mt6983_debug_gen(
 		int level,
-		struct conn_debug_info_mt6983 *pdbg_level_1_info,
 		struct conn_debug_info_mt6983 *pdbg_level_2_info)
 {
-	if (level < 0 || level > 2) {
-		pr_info("[%s] level[%d] unexpected value.", __func__, level);
-		return 0;
+	if (pdbg_level_2_info == NULL)
+		return;
+
+	memset(pdbg_level_2_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 2)
+		return;
+
+	if (CONN_CFG_ON_BASE == 0) {
+		pr_notice("CONN_CFG_ON_BASE is not defined\n");
+		return;
 	}
 
-	consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(level, pdbg_level_1_info);
-	consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(level, pdbg_level_2_info);
+	/* 1 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"1", 0x18001000 + CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_SLP_STATUS_OFFSET_ADDR));
 
-	return 0;
+	/* 2 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"2", 0x18001000 + CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_EMI_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_CONN2AP_EMI_SLP_STATUS_OFFSET_ADDR));
+
+	/* 3 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"3", 0x18001000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_SLP_STATUS_OFFSET_ADDR));
+
+	/* 4 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"4", 0x18001000 + CONSYS_DBG_GEN_CONN_INFRA_WF_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_WF_SLP_STATUS_OFFSET_ADDR));
+
+	/* 5 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"5", 0x18001000 + CONSYS_DBG_GEN_GALS_CONN2BT_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_GALS_CONN2BT_SLP_STATUS_OFFSET_ADDR));
+
+	/* 6 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"6", 0x18001000 + CONSYS_DBG_GEN_GALS_BT2CONN_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_GALS_BT2CONN_SLP_STATUS_OFFSET_ADDR));
+
+	/* 7 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"7", 0x18001000 + CONSYS_DBG_GEN_GALS_CONN2GPS_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_GALS_CONN2GPS_SLP_STATUS_OFFSET_ADDR));
+
+	/* 8 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"8", 0x18001000 + CONSYS_DBG_GEN_GALS_GPS2CONN_SLP_STATUS_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_CFG_ON_BASE +
+				CONSYS_DBG_GEN_GALS_GPS2CONN_SLP_STATUS_OFFSET_ADDR));
+}
+
+void consys_print_bus_slpprot_debug_dbg_level_0_mt6983_debug_gen(
+		int level,
+		struct conn_debug_info_mt6983 *pdbg_level_0_info)
+{
+	if (pdbg_level_0_info == NULL)
+		return;
+
+	memset(pdbg_level_0_info, 0, sizeof(struct conn_debug_info_mt6983));
+
+	if (level < 0)
+		return;
+
+	if (INFRACFG_AO_REG_BASE == 0) {
+		pr_notice("INFRACFG_AO_REG_BASE is not defined\n");
+		return;
+	}
+
+	/* 9 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_0_info,
+			"9", 0x10001000 + CONSYS_DBG_GEN_MCU_CONNSYS_PROTECT_RDY_STA_0_OFFSET_ADDR,
+			CONSYS_REG_READ(INFRACFG_AO_REG_BASE +
+				CONSYS_DBG_GEN_MCU_CONNSYS_PROTECT_RDY_STA_0_OFFSET_ADDR));
+
+	/* 10 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_0_info,
+			"10", 0x10001000 + CONSYS_DBG_GEN_INFRASYS_PROTECT_RDY_STA_1_OFFSET_ADDR,
+			CONSYS_REG_READ(INFRACFG_AO_REG_BASE +
+				CONSYS_DBG_GEN_INFRASYS_PROTECT_RDY_STA_1_OFFSET_ADDR));
 }
