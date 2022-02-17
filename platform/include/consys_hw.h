@@ -241,6 +241,7 @@ unsigned int consys_hw_get_hw_ver(void);
  * -1: not consys register
  */
 int consys_hw_reg_readable(void);
+int consys_hw_reg_readable_for_coredump(enum consys_drv_type drv_type);
 int consys_hw_is_connsys_reg(phys_addr_t addr);
 /*
  * 0 means NO hang
