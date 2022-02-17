@@ -433,11 +433,18 @@ ssize_t conninfra_test_write(struct file *filp, const char __user *buffer, size_
 
 int conninfra_test_setup(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
+	static const struct proc_ops conninfra_test_fops = {
+		.proc_read = conninfra_test_read,
+		.proc_write = conninfra_test_write,
+	};
+#else
 	static const struct file_operations conninfra_test_fops = {
 		.owner = THIS_MODULE,
 		.read = conninfra_test_read,
 		.write = conninfra_test_write,
 	};
+#endif
 	int i_ret = 0;
 
 	gConninfraTestEntry = proc_create(CONNINFRA_TEST_PROCNAME,
