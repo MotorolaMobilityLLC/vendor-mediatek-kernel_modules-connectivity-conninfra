@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference debug file,
- * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-15)
+ * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-18)
  * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-07-01)
  */
 
@@ -30,6 +30,7 @@
 
 void __iomem *vir_addr_consys_dbg_gen_srclkenrc_base_mt6983 = NULL;
 void __iomem *vir_addr_consys_dbg_gen_topckgen_base_mt6983 = NULL;
+void __iomem *vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 = NULL;
 void __iomem *vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983 = NULL;
 void __iomem *vir_addr_0x1804c000_mt6983 = NULL;
 
@@ -37,6 +38,7 @@ void consys_debug_init_mt6983_debug_gen(void)
 {
 	vir_addr_consys_dbg_gen_srclkenrc_base_mt6983 = ioremap(CONSYS_DBG_GEN_SRCLKENRC_BASE_ADDR, 0x77C);
 	vir_addr_consys_dbg_gen_topckgen_base_mt6983 = ioremap(CONSYS_DBG_GEN_TOPCKGEN_BASE_ADDR, 0x180);
+	vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 = ioremap(CONSYS_DBG_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR, 0xBA4);
 	vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983 = ioremap(CONSYS_DBG_GEN_CONN_DBG_CTL_BASE_ADDR, 0x41c);
 	vir_addr_0x1804c000_mt6983 = ioremap(0x1804c000, 0xc);
 }
@@ -48,6 +50,9 @@ void consys_debug_deinit_mt6983_debug_gen(void)
 
 	if (vir_addr_consys_dbg_gen_topckgen_base_mt6983)
 		iounmap(vir_addr_consys_dbg_gen_topckgen_base_mt6983);
+
+	if (vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983)
+		iounmap(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983);
 
 	if (vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983)
 		iounmap(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6983);
@@ -458,6 +463,12 @@ void consys_print_power_debug_dbg_level_2_mt6983_debug_gen(
 	if (level < 2)
 		return;
 
+	if (!vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983) {
+		pr_notice("vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983(%x) ioremap fail\n",
+				CONSYS_DBG_GEN_CONN_INFRA_SYSRAM_BASE_OFFSET_ADDR);
+		return;
+	}
+
 	if (CONN_CFG_BASE == 0) {
 		pr_notice("CONN_CFG_BASE is not defined\n");
 		return;
@@ -602,6 +613,41 @@ void consys_print_power_debug_dbg_level_2_mt6983_debug_gen(
 			NULL, 0x18011000 + CONSYS_DBG_GEN_EMI_PROBE_1_OFFSET_ADDR,
 			CONSYS_REG_READ(CONN_CFG_BASE +
 				CONSYS_DBG_GEN_EMI_PROBE_1_OFFSET_ADDR));
+
+	/* C16 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C16", 0x18050000 + 0xB8C,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xB8C));
+
+	/* C17 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C17", 0x18050000 + 0xB90,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xB90));
+
+	/* C18 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C18", 0x18050000 + 0xB94,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xB94));
+
+	/* C19 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C19", 0x18050000 + 0xB98,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xB98));
+
+	/* C20 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C20", 0x18050000 + 0xB9C,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xB9C));
+
+	/* C21 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C21", 0x18050000 + 0xBA0,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xBA0));
+
+	/* C22 */
+	update_debug_read_info_mt6983_debug_gen(pdbg_level_2_info,
+			"C22", 0x18050000 + 0xBA4,
+			CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_infra_sysram_base_offset_mt6983 + 0xBA4));
 }
 
 void consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(
