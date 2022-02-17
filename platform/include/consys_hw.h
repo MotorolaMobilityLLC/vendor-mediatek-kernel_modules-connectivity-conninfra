@@ -190,6 +190,8 @@ struct conninfra_plat_data {
 	const void* reg_ops;
 	const void* platform_emi_ops;
 	const void* platform_pmic_ops;
+	const void* platform_coredump_ops;
+	const void* connsyslog_config;
 };
 
 extern struct consys_hw_env conn_hw_env;
