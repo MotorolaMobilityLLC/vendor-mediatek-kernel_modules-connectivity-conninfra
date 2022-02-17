@@ -558,7 +558,7 @@ int conninfra_conf_init(void)
 	const osal_firmware *conf_inst;
 
 	osal_memset(&g_conninfra_conf, 0, osal_sizeof(struct conninfra_conf));
-	osal_strcpy(&(g_conninfra_conf.conf_name[0]), "WMT_SOC.cfg");
+	osal_strcpy(&(g_conninfra_conf.conf_name[0]), "conninfra.cfg");
 
 	pr_debug("config file:%s\n", &(g_conninfra_conf.conf_name[0]));
 	if (0 ==

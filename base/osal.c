@@ -303,7 +303,7 @@ int osal_thread_stop(P_OSAL_THREAD pThread)
 
 	if ((pThread) && (pThread->pThread)) {
 		iRet = kthread_stop(pThread->pThread);
-		/* pThread->pThread = NULL; */
+		pThread->pThread = NULL;
 		return iRet;
 	}
 	return -1;
