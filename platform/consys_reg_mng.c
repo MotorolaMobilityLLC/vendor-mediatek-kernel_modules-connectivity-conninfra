@@ -18,6 +18,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
+#include <linux/io.h>
 #include "consys_reg_mng.h"
 #include "consys_reg_util.h"
 
@@ -107,7 +108,7 @@ int consys_reg_mng_reg_read(unsigned long addr, unsigned int *value, unsigned in
 {
 	void __iomem *vir_addr = NULL;
 
-	vir_addr = ioremap_nocache(addr, 0x100);
+	vir_addr = ioremap(addr, 0x100);
 	if (!vir_addr) {
 		pr_err("ioremap fail");
 		return -1;
@@ -125,7 +126,7 @@ int consys_reg_mng_reg_write(unsigned long addr, unsigned int value, unsigned in
 {
 	void __iomem *vir_addr = NULL;
 
-	vir_addr = ioremap_nocache(addr, 0x100);
+	vir_addr = ioremap(addr, 0x100);
 	if (!vir_addr) {
 		pr_err("ioremap fail");
 		return -1;

@@ -13,7 +13,9 @@
 #include <linux/ratelimit.h>
 #include <linux/alarmtimer.h>
 #include <linux/suspend.h>
+#include <linux/rtc.h>
 
+#include "osal.h"
 #include "connsyslog.h"
 #include "connsyslog_emi.h"
 #include "connsyslog_hw_config.h"
@@ -82,7 +84,7 @@ struct connlog_dev {
 	spinlock_t irq_lock;
 	unsigned long flags;
 	unsigned int irq_counter;
-	struct timer_list workTimer;
+	OSAL_TIMER workTimer;
 	struct work_struct logDataWorker;
 	void *log_data;
 	char log_line[LOG_MAX_LEN];
@@ -111,7 +113,7 @@ struct connlog_alarm gLogAlarm;
 ********************************************************************************
 */
 static void connlog_do_schedule_work(struct connlog_dev* handler, bool count);
-static void work_timer_handler(unsigned long data);
+static void work_timer_handler(timer_handler_arg data);
 static void connlog_event_set(struct connlog_dev* handler);
 static struct connlog_dev* connlog_subsys_init(
 	int conn_type,
@@ -355,9 +357,13 @@ static void connlog_ring_buffer_deinit(struct connlog_dev* handler)
 * RETURNS
 *  void
 *****************************************************************************/
-static void work_timer_handler(unsigned long data)
+static void work_timer_handler(timer_handler_arg arg)
 {
-	struct connlog_dev* handler = (struct connlog_dev*)data;
+	unsigned long data;
+	struct connlog_dev* handler;
+
+	GET_HANDLER_DATA(arg, data);
+	handler = (struct connlog_dev*)data;
 	connlog_do_schedule_work(handler, false);
 }
 
@@ -679,7 +685,7 @@ static void connlog_log_data_handler(struct work_struct *work)
 
 	spin_lock_irqsave(&handler->irq_lock, handler->flags);
 	if (handler->eirqOn)
-		mod_timer(&handler->workTimer, jiffies + 1);
+		osal_timer_modify(&handler->workTimer, jiffies + 1);
 	spin_unlock_irqrestore(&handler->irq_lock, handler->flags);
 }
 
@@ -957,9 +963,9 @@ static struct connlog_dev* connlog_subsys_init(
 		goto error_exit;
 	}
 
-	init_timer(&handler->workTimer);
-	handler->workTimer.data = (unsigned long)handler;
-	handler->workTimer.function = work_timer_handler;
+	handler->workTimer.timeroutHandlerData = (unsigned long)handler;
+	handler->workTimer.timeoutHandler = work_timer_handler;
+	osal_timer_create(&handler->workTimer);
 	handler->irq_counter = 0;
 	spin_lock_init(&handler->irq_lock);
 	INIT_WORK(&handler->logDataWorker, connlog_log_data_handler);
@@ -1086,7 +1092,7 @@ void connsys_log_get_utc_time(
 {
 	struct timeval time;
 
-	do_gettimeofday(&time);
+	osal_gettimeofday(&time);
 	*second = (unsigned int)time.tv_sec; /* UTC time second unit */
 	*usecond = (unsigned int)time.tv_usec; /* UTC time microsecond unit */
 }

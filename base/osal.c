@@ -30,6 +30,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include <linux/version.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
 #include <linux/kallsyms.h>
@@ -743,9 +744,13 @@ int osal_timer_create(P_OSAL_TIMER pTimer)
 {
 	struct timer_list *timer = &pTimer->timer;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	timer_setup(timer, pTimer->timeoutHandler, 0);
+#else
 	init_timer(timer);
 	timer->function = pTimer->timeoutHandler;
 	timer->data = (unsigned long)pTimer->timeroutHandlerData;
+#endif
 	return 0;
 }
 
@@ -1241,24 +1246,18 @@ int osal_usleep_range(unsigned long min, unsigned long max)
 	return 0;
 }
 
-int osal_gettimeofday(int *sec, int *usec)
+int osal_gettimeofday(struct timeval *tv)
 {
-	int ret = 0;
-	struct timeval now;
+	struct timespec64 now;
 
-	do_gettimeofday(&now);
+	if (tv == NULL)
+		return -1;
 
-	if (sec != NULL)
-		*sec = now.tv_sec;
-	else
-		ret = -1;
+	ktime_get_real_ts64(&now);
+	tv->tv_sec = now.tv_sec;
+	tv->tv_usec = now.tv_nsec / NSEC_PER_USEC;
 
-	if (usec != NULL)
-		*usec = now.tv_usec;
-	else
-		ret = -1;
-
-	return ret;
+	return 0;
 }
 
 void osal_get_local_time(unsigned long long *sec, unsigned long *nsec)
@@ -1554,8 +1553,10 @@ void osal_op_history_save(struct osal_op_history *log_history, P_OSAL_OP pOp)
 
 static inline void osal_systrace_prepare(void)
 {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0))
 	if (unlikely(mark_addr == 0))
 		mark_addr = kallsyms_lookup_name("tracing_mark_write");
+#endif
 	if (unlikely(g_pid == 0))
 		g_pid = task_pid_nr(current);
 }

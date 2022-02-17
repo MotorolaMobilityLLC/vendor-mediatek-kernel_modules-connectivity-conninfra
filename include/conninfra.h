@@ -133,6 +133,7 @@ enum connsys_emi_type
 
 #define CONNINFRA_ERR_RST_ONGOING			-0x7788
 #define CONNINFRA_ERR_WAKEUP_FAIL			-0x5566
+#define CONNINFRA_ERR_POWER_OFF				-0x3344
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
