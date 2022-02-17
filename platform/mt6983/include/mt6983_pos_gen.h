@@ -11,9 +11,9 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210726.xlsx
+ * - Lxxxn_power_on_sequence_20210730.xlsx
  * - Lxxxn_conn_infra_sub_task_210721.xlsx
- * - conn_infra_cmdbt_instr_autogen_20210721_1.txt
+ * - conn_infra_cmdbt_instr_autogen_20210730.txt
  */
 
 
@@ -23,6 +23,7 @@
 void consys_set_if_pinmux_mt6983_gen(unsigned int enable);
 void consys_set_gpio_tcxo_mode_mt6983_gen(unsigned int tcxo_mode, unsigned int enable);
 int consys_conninfra_on_power_ctrl_mt6983_gen(unsigned int enable);
+void consys_update_ap2conn_hclk_mt6983_gen(void);
 int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id);
 unsigned int consys_emi_set_remapping_reg_mt6983_gen(
 		phys_addr_t con_emi_base_addr,
@@ -105,6 +106,7 @@ void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_2_mt6983_gen(void)
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6983_gen(
 		unsigned int hw_version,
 		unsigned int sleep_mode);
+void connsys_afe_sw_patch_mt6983_gen(void);
 int connsys_afe_wbg_cal_mt6983_gen(
 		unsigned int spi_semaphore_index,
 		unsigned int spi_semaphore_timeout_usec);
@@ -159,6 +161,14 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_INFRASYS_PROTECT_RDY_STA_1_OFFSET_ADDR                                   0xC5C
 #define CONSYS_GEN_MCU_CONNSYS_PROTECT_EN_STA_0_OFFSET_ADDR                                 0xC90
 #define CONSYS_GEN_MCU_CONNSYS_PROTECT_RDY_STA_0_OFFSET_ADDR                                0xC9C
+
+/****************************************************************************************************/
+/* Base: CONSYS_GEN_TOPCKGEN_BASE_ADDR (0x1000_0000)                                                */
+/****************************************************************************************************/
+#define CONSYS_GEN_TOPCKGEN_BASE_ADDR                                                       0x10000000
+#define CONSYS_GEN_CLK_CFG_UPDATE2_OFFSET_ADDR                                              0xc
+#define CONSYS_GEN_CLK_CFG_20_SET_OFFSET_ADDR                                               0x154
+#define CONSYS_GEN_CLK_CFG_20_CLR_OFFSET_ADDR                                               0x158
 
 /****************************************************************************************************/
 /* Base: CONN_CFG_BASE (0x1801_1000)                                                                */
@@ -334,7 +344,10 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_RG_DIG_EN_02_OFFSET_ADDR                                                 0x4
 #define CONSYS_GEN_RG_DIG_EN_03_OFFSET_ADDR                                                 0x8
 #define CONSYS_GEN_RG_DIG_TOP_01_OFFSET_ADDR                                                0xC
+#define CONSYS_GEN_RG_WBG_GL1_01_OFFSET_ADDR                                                0x40
+#define CONSYS_GEN_RG_WBG_GL1_02_OFFSET_ADDR                                                0x44
 #define CONSYS_GEN_RG_PLL_STB_TIME_OFFSET_ADDR                                              0xF4
+#define CONSYS_GEN_RG_WBG_GL5_01_OFFSET_ADDR                                                0x100
 
 /****************************************************************************************************/
 /* Base: CONN_BUS_CR_ON_BASE (0x1800_E000)                                                          */
@@ -342,7 +355,6 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_CONN_INFRA_ON_BUS_TIMEOUT_CTRL_OFFSET_ADDR                               0x38
 #define CONSYS_GEN_CONN_VON_BUS_DCM_CTL_1_OFFSET_ADDR                                       0x104
 #define CONSYS_GEN_CONN_OFF_BUS_DCM_CTL_1_OFFSET_ADDR                                       0x110
-#define CONSYS_GEN_CONN_INFRA_CKSYS_CTRL_OFFSET_ADDR                                        0x120
 
 /****************************************************************************************************/
 /* Base: CONN_OFF_DEBUG_CTRL_AO_BASE (0x1804_D000)                                                  */
