@@ -190,6 +190,8 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 		pr_info("Power off CONNSYS PART 2\n");
 		if (consys_hw_ops->consys_plt_set_if_pinmux)
 			consys_hw_ops->consys_plt_set_if_pinmux(0);
+		if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
+			consys_hw_ops->consys_plt_clock_buffer_ctrl(0);
 		ret = pmic_mng_common_power_ctrl(0);
 		pr_info("Power off a-die power, ret=%d\n", ret);
 	} else {
