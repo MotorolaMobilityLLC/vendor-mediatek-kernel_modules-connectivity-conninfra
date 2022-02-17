@@ -70,6 +70,13 @@ enum pre_cal_status {
 	PRE_CAL_DONE = 4
 };
 
+enum pre_cal_caller {
+	PRE_CAL_BY_NONE = 0,
+	PRE_CAL_BY_SUBDRV_REGISTER = 1,
+	PRE_CAL_BY_SUBDRV_PWR_ON = 2,
+	PRE_CAL_BY_SCREEN_ON = 3
+};
+
 enum chip_rst_status {
 	CHIP_RST_NONE = 0,
 	CHIP_RST_START = 1,
@@ -88,6 +95,7 @@ struct subsys_drv_inst {
 
 struct pre_cal_info {
 	enum pre_cal_status status;
+	enum pre_cal_caller caller;
 	struct work_struct pre_cal_work;
 	OSAL_SLEEPABLE_LOCK pre_cal_lock;
 };
