@@ -172,7 +172,7 @@ $(MODULE_NAME)-objs += platform/mt6983/mt6983_consys_reg.o
 $(MODULE_NAME)-objs += platform/mt6983/mt6983_pos.o
 $(MODULE_NAME)-objs += platform/mt6983/mt6983_pos_gen.o
 $(MODULE_NAME)-objs += platform/mt6983/mt6983_coredump.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_debug.o
+$(MODULE_NAME)-objs += platform/mt6983/mt6983_debug_gen.o
 endif
 endif
 
