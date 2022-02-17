@@ -1329,7 +1329,8 @@ int conninfra_core_trg_chip_rst(enum consys_drv_type drv, char *reason)
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
 	infra_ctx->trg_drv = drv;
-	snprintf(infra_ctx->trg_reason, CHIP_RST_REASON_MAX_LEN, "%s", reason);
+	if (snprintf(infra_ctx->trg_reason, CHIP_RST_REASON_MAX_LEN, "%s", reason) < 0)
+		pr_warn("[%s::%d] snprintf error\n", __func__, __LINE__);
 	ret = msg_thread_send_1(&infra_ctx->cb_ctx,
 				CONNINFRA_CB_OPID_CHIP_RST, drv);
 	if (ret) {
@@ -1380,6 +1381,10 @@ static inline char* conninfra_core_spi_subsys_string(enum sys_spi_subsystem subs
 		"SYS_SPI_WF3",
 		"SYS_SPI_MAX"
 	};
+
+	if (subsystem < 0 || subsystem > SYS_SPI_MAX)
+		return "UNKNOWN";
+
 	return subsys_name[subsystem];
 }
 
@@ -1499,6 +1504,8 @@ int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 	int ret, trigger_pre_cal = 0;
 
+	if (type < CONNDRV_TYPE_BT || type >= CONNDRV_TYPE_MAX)
+		return -1;
 
 	spin_lock_irqsave(&g_conninfra_ctx.infra_lock, flag);
 	drv_inst = &g_conninfra_ctx.drv_inst[type];
@@ -1536,6 +1543,8 @@ int conninfra_core_subsys_ops_unreg(enum consys_drv_type type)
 {
 	unsigned long flag;
 
+	if (type < CONNDRV_TYPE_BT || type >= CONNDRV_TYPE_MAX)
+		return -1;
 	spin_lock_irqsave(&g_conninfra_ctx.infra_lock, flag);
 	memset(&g_conninfra_ctx.drv_inst[type].ops_cb, 0,
 					sizeof(struct sub_drv_ops_cb));
