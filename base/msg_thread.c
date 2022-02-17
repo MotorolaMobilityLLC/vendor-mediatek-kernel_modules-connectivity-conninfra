@@ -231,7 +231,7 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 {
 	P_OSAL_SIGNAL signal = NULL;
 	int wait_ret = -1;
-	int ret;
+	int ret = 0;
 
 	do {
 		if (!ctx || !op) {
@@ -288,7 +288,7 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 		ret = op->result;
 	} while (0);
 
-	if (op && signal->timeoutValue &&
+	if (op != NULL && signal != NULL && signal->timeoutValue &&
 		atomic_dec_and_test(&op->ref_count)) {
 		/* put Op back to freeQ */
 		msg_evt_put_op_to_free_queue(ctx, op);

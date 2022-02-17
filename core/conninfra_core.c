@@ -127,7 +127,7 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	int ret;
 
 	/* Check abnormal type */
-	if (drv_type > CONNDRV_TYPE_MAX) {
+	if (drv_type >= CONNDRV_TYPE_MAX) {
 		pr_err("abnormal Fun(%d)\n", drv_type);
 		return -1;
 	}
@@ -193,7 +193,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 	bool try_power_off = true;
 
 	/* Check abnormal type */
-	if (drv_type > CONNDRV_TYPE_MAX) {
+	if (drv_type >= CONNDRV_TYPE_MAX) {
 		pr_err("abnormal Fun(%d)\n", drv_type);
 		return -1;
 	}
@@ -281,7 +281,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 				INFRA_SUBDRV_OPID_PRE_RESET, i);
 	}
 	while (atomic_read(&g_conninfra_ctx.rst_state) < CONNDRV_TYPE_MAX)
-		down_interruptible(&g_conninfra_ctx.rst_sema);
+		ret = down_interruptible(&g_conninfra_ctx.rst_sema);
 
 	/*******************************************************/
 	/* reset */
@@ -313,7 +313,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 				INFRA_SUBDRV_OPID_POST_RESET, i);
 	}
 	while (atomic_read(&g_conninfra_ctx.rst_state) < CONNDRV_TYPE_MAX)
-		down_interruptible(&g_conninfra_ctx.rst_sema);
+		ret = down_interruptible(&g_conninfra_ctx.rst_sema);
 
 	return 0;
 }
