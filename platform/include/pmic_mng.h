@@ -90,6 +90,8 @@ struct consys_platform_pmic_ops {
 */
 #if COMMON_KERNEL_PMIC_SUPPORT
 extern struct regmap *g_regmap;
+extern struct regmap *g_regmap_mt6363;
+extern struct regmap *g_regmap_mt6373;
 #endif
 
 /*******************************************************************************
@@ -104,6 +106,7 @@ extern struct regmap *g_regmap;
 
 int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb, const struct conninfra_plat_data* plat_data);
 int pmic_mng_deinit(void);
+int pmic_mng_register_device(void);
 
 int pmic_mng_common_power_ctrl(unsigned int enable);
 int pmic_mng_common_power_low_power_mode(unsigned int enable);
