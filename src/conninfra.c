@@ -102,7 +102,7 @@ void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size)
 {
 	phys_addr_t base;
 
-	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW_WFDMA, &base, size);
+	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, &base, size);
 	if (addr)
 		*addr = (unsigned int)base;
 	return;
@@ -114,23 +114,11 @@ void conninfra_get_emi_phy_addr(enum connsys_emi_type type, phys_addr_t* base, u
 	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
 
 	switch (type) {
-		case CONNSYS_EMI_FW_WFDMA:
-			if (base)
-				*base = addr_info->emi_ap_phy_addr;
-			if (size)
-				*size = addr_info->emi_size;
-			break;
 		case CONNSYS_EMI_FW:
 			if (base)
 				*base = addr_info->emi_ap_phy_addr;
 			if (size)
-				*size = addr_info->fw_emi_size;
-			break;
-		case CONNSYS_EMI_WFDMA:
-			if (base)
-				*base = addr_info->emi_ap_phy_addr + addr_info->fw_emi_size;
-			if (size)
-				*size = addr_info->wfdma_emi_size;
+				*size = addr_info->emi_size;
 			break;
 		case CONNSYS_EMI_MCIF:
 			if (base)
