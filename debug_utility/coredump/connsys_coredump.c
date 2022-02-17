@@ -1399,6 +1399,12 @@ int connsys_coredump_setup_dump_region(void* handler)
 		curr_region->length = conndump_get_dmp_info(ctx, offset + 8, false);
 	}
 
+	offset = CONNSYS_DUMP_CR_REGION_OFFSET;
+	for (i = 0; i < cr_regions_idx && idx < total_count; i++, idx++, offset+=8) {
+		ctx->dump_regions[idx].base = conndump_get_dmp_info(ctx, offset, false);
+		ctx->dump_regions[idx].length = conndump_get_dmp_info(ctx, offset + 4, false);
+	}
+
 	return ctx->dump_regions_num;
 }
 EXPORT_SYMBOL(connsys_coredump_setup_dump_region);
