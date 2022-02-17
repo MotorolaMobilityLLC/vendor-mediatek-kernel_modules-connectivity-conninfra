@@ -37,9 +37,9 @@
 
 static struct proc_dir_entry *g_conninfra_dbg_entry;
 
-#if CONNINFRA_DBG_SUPPORT
-static ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
+ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
+#if CONNINFRA_DBG_SUPPORT
 static int conninfra_dbg_hwver_get(int par1, int par2, int par3);
 
 static int conninfra_dbg_chip_rst(int par1, int par2, int par3);
@@ -180,9 +180,9 @@ int conninfra_dbg_reg_read(int par1, int par2, int par3)
 	if (ret < 0) {
 		pr_info("read chip register (0x%08x) with mask (0x%08x) error(%d)\n",
 			par2, par3, ret);
+		return -1;
 	} else
 		pr_info("%s", buf);
-
 
 	ret = osal_lock_sleepable_lock(&g_dump_lock);
 	if (ret) {
@@ -602,8 +602,27 @@ static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3)
 
 static int conninfra_dbg_dump_power_state(int par1, int par2, int par3)
 {
-	consys_hw_dump_power_state();
+	int ret = 0, len;
 
+	ret = osal_lock_sleepable_lock(&g_dump_lock);
+	if (ret) {
+		pr_notice("dump_lock fail!!");
+		return ret;
+	}
+
+	ret = conninfra_core_dump_power_state(g_dump_buf, CONNINFRA_DBG_DUMP_BUF_SIZE);
+	if (ret) {
+		osal_unlock_sleepable_lock(&g_dump_lock);
+		return ret;
+	}
+
+	len = strlen(g_dump_buf);
+	if (len > 0 && len < CONNINFRA_DBG_DUMP_BUF_SIZE) {
+		g_dump_buf_ptr = g_dump_buf;
+		g_dump_buf_len = len + 1;
+	}
+
+	osal_unlock_sleepable_lock(&g_dump_lock);
 	return 0;
 }
 
@@ -711,9 +730,9 @@ ssize_t conninfra_dbg_write(struct file *filp, const char __user *buffer, size_t
 		return len;
 	}
 #endif
-	/* For user load, only 0x13 is allowed to execute */
+	/* For user load, only 0x13, 0x14 and 0x40 is allowed to execute */
 	/* allow command 0x2e to enable catch connsys log on userload  */
-	if (0 == dbg_enabled && (x != 0x13) && (x != 0x14)) {
+	if (0 == dbg_enabled && (x != 0x13) && (x != 0x14) && (x != 0x40)) {
 		pr_info("please enable conninfra debug first\n\r");
 		return len;
 	}
