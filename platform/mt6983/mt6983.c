@@ -158,8 +158,6 @@ int consys_co_clock_type_mt6983(void)
 		pr_err("[%s] Get conf fail", __func__);
 		return -1;
 	}
-	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d",
-		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support);
 
 	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
 		if (conf->co_clock_flag == 3)
@@ -175,7 +173,8 @@ int consys_co_clock_type_mt6983(void)
 				clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
 		}
 	}
-	pr_info("%s: %s\n", __func__, clock_name[clock_type]);
+	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d, %s",
+		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support, clock_name[clock_type]);
 
 	return clock_type;
 }
@@ -426,13 +425,13 @@ int consys_power_state_dump_mt6983(void)
 	t_gps_sleep_time += gps_sleep_time;
 	t_gps_sleep_cnt += gps_sleep_cnt;
 
-	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;",
+	pr_info("[consys_power_state][round:%llu]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;"
+		"[total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
 		round,
 		conninfra_sleep_time, conninfra_sleep_cnt,
 		wf_sleep_time, wf_sleep_cnt,
 		bt_sleep_time, bt_sleep_cnt,
-		gps_sleep_time, gps_sleep_cnt);
-	pr_info("[consys_power_state][total]conninfra:%llu,%llu;wf:%llu,%llu;bt:%llu,%llu;gps:%llu,%llu;",
+		gps_sleep_time, gps_sleep_cnt,
 		t_conninfra_sleep_time, t_conninfra_sleep_cnt,
 		t_wf_sleep_time, t_wf_sleep_cnt,
 		t_bt_sleep_time, t_bt_sleep_cnt,
