@@ -62,6 +62,9 @@ static int conninfra_dbg_ap_reg_write(int par1, int par2, int par3);
 static int conninfra_dbg_clk_reg_read(int par1, int par2, int par3);
 static int conninfra_dbg_clk_reg_write(int par1, int par2, int par3);
 
+static int conninfra_dbg_spi_read(int par1, int par2, int par3);
+static int conninfra_dbg_spi_write(int par1, int par2, int par3);
+static int conninfra_dbg_set_spi_write_subsys(int par1, int par2, int par3);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 /* consys log, need this ?? */
@@ -117,6 +120,9 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0x15] = conninfra_dbg_set_platform_config,
 	[0x16] = conninfra_dbg_clk_reg_read,
 	[0x17] = conninfra_dbg_clk_reg_write,
+	[0x18] = conninfra_dbg_spi_read,
+	[0x19] = conninfra_dbg_spi_write,
+	[0x20] = conninfra_dbg_set_spi_write_subsys,
 #endif
 };
 
@@ -127,6 +133,8 @@ int g_dump_buf_len;
 static OSAL_SLEEPABLE_LOCK g_dump_lock;
 
 #if CONNINFRA_DBG_SUPPORT
+static int spi_write_subsys = SYS_SPI_TOP;
+
 int conninfra_dbg_hwver_get(int par1, int par2, int par3)
 {
 	pr_info("query chip version\n");
@@ -466,6 +474,77 @@ static int conninfra_dbg_clk_reg_write(int par1, int par2, int par3)
 
 	return 0;
 }
+
+static inline char* conninfra_dbg_spi_subsys_string(enum sys_spi_subsystem subsystem)
+{
+	static char* subsys_name[] = {
+		"SYS_SPI_WF1",
+		"SYS_SPI_WF",
+		"SYS_SPI_BT",
+		"SYS_SPI_FM",
+		"SYS_SPI_GPS",
+		"SYS_SPI_TOP",
+		"SYS_SPI_WF2",
+		"SYS_SPI_WF3",
+		"SYS_SPI_MAX"
+	};
+
+	if (subsystem < 0 || subsystem > SYS_SPI_MAX)
+		return "UNKNOWN";
+
+	return subsys_name[subsystem];
+}
+
+static int conninfra_dbg_spi_read(int par1, int par2, int par3)
+{
+	unsigned int data;
+	int ret;
+
+	if (par2 < 0 || par2 >= SYS_SPI_MAX) {
+		pr_notice("%s par2 is out of range\n", __func__);
+		return 0;
+	}
+
+	ret = conninfra_spi_read(par2, par3, &data);
+	if (ret == 0)
+		pr_info("%s read[%s]addr[0x%x]val[0x%x] ok\n",
+			__func__, conninfra_dbg_spi_subsys_string(par2), par3, data);
+	else
+		pr_notice("%s read[%s]addr[0x%x] failed(%d)\n",
+			__func__, conninfra_dbg_spi_subsys_string(par2), par3, ret);
+	return 0;
+}
+
+static int conninfra_dbg_set_spi_write_subsys(int par1, int par2, int par3)
+{
+	if (par2 < 0 || par2 >= SYS_SPI_MAX) {
+		pr_notice("%s par2 is out of range\n", __func__);
+		return 0;
+	}
+	spi_write_subsys = par2;
+	pr_info("%s:%s\n", __func__, conninfra_dbg_spi_subsys_string(par2));
+	return 0;
+}
+
+static int conninfra_dbg_spi_write(int par1, int par2, int par3)
+{
+	int ret;
+
+	if (spi_write_subsys < 0 || spi_write_subsys >= SYS_SPI_MAX) {
+		pr_notice("%s spi_write_subsys %d is out of range\n", __func__, spi_write_subsys);
+		return 0;
+	}
+
+	ret = conninfra_spi_write(spi_write_subsys, par2, par3);
+	if (ret == 0)
+		pr_info("%s write[%s]addr[0x%x]val[0x%x] ok\n",
+			__func__, conninfra_dbg_spi_subsys_string(spi_write_subsys), par2, par3);
+	else
+		pr_notice("%s write[%s]addr[0x%x]val[0x%x] failed(%d)\n",
+			__func__, conninfra_dbg_spi_subsys_string(spi_write_subsys), par2, par3, ret);
+	return 0;
+}
+
 #endif /* CONNINFRA_DBG_SUPPORT */
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3)
