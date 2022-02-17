@@ -89,6 +89,9 @@ static int opfunc_subdrv_time_change(struct msg_op_data *op);
 
 static void _conninfra_core_update_rst_status(enum chip_rst_status status);
 
+static void conninfra_core_wake_lock_get(void);
+static void conninfra_core_wake_lock_put(void);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -96,6 +99,7 @@ static void _conninfra_core_update_rst_status(enum chip_rst_status status);
 
 struct conninfra_ctx g_conninfra_ctx;
 extern phys_addr_t gConEmiPhyBase;
+static struct osal_wake_lock conninfra_wake_lock;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -282,7 +286,10 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	}
 
 	/* POWER ON SEQUENCE */
+	conninfra_core_wake_lock_get();
 	ret = consys_hw_pwr_on(opfunc_get_current_status(), drv_type);
+	conninfra_core_wake_lock_put();
+
 	if (ret) {
 		pr_err("Conninfra power on fail. drv(%d) ret=(%d)\n",
 			drv_type, ret);
@@ -363,8 +370,12 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 				g_conninfra_ctx.drv_inst[i].drv_status = DRV_STS_POWER_OFF;
 			}
 		}
+
 		/* POWER OFF SEQUENCE */
+		conninfra_core_wake_lock_get();
 		ret = consys_hw_pwr_off(0, drv_type);
+		conninfra_core_wake_lock_put();
+
 		/* For force power off operation, ignore err code */
 		if (ret)
 			pr_err("Force power off fail. ret=%d\n", ret);
@@ -389,7 +400,11 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 		/* POWER OFF SEQUENCE */
 		/* VCNx disable */
 		opfunc_vcn_control_internal(drv_type, false);
+
+		conninfra_core_wake_lock_get();
 		ret = consys_hw_pwr_off(curr_status, drv_type);
+		conninfra_core_wake_lock_put();
+
 		if (ret) {
 			pr_err("Conninfra power on fail. drv(%d) ret=(%d)\n",
 				drv_type, ret);
@@ -409,6 +424,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 			infra_ctx->drv_inst[CONNDRV_TYPE_WIFI].drv_status);
 
 	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
+
 	return 0;
 }
 
@@ -1903,6 +1919,24 @@ int conninfra_core_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bu
 	return ret;
 }
 
+static void conninfra_core_wake_lock_get(void)
+{
+	osal_wake_lock(&conninfra_wake_lock);
+	pr_info("[%s] after wake_lock(%d)\n", __func__, osal_wake_lock_count(&conninfra_wake_lock));
+}
+
+static void conninfra_core_wake_lock_put(void)
+{
+	int count = 0;
+	osal_wake_unlock(&conninfra_wake_lock);
+
+	count = osal_wake_lock_count(&conninfra_wake_lock);
+
+	if (count != 0) {
+		pr_notice("[%s] osal_wake_lock_count(%d) is unexpected\n", __func__, count);
+	}
+}
+
 int conninfra_core_init(void)
 {
 	int ret = 0, i;
@@ -1954,6 +1988,10 @@ int conninfra_core_init(void)
 	INIT_WORK(&infra_ctx->cal_info.pre_cal_work, conninfra_core_pre_cal_work_handler);
 	osal_sleepable_lock_init(&infra_ctx->cal_info.pre_cal_lock);
 
+	osal_strcpy(conninfra_wake_lock.name, "conninfraFuncCtrl");
+	conninfra_wake_lock.init_flag = 0;
+	osal_wake_lock_init(&conninfra_wake_lock);
+
 	connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID), gConEmiPhyBase);
 	return ret;
 }
@@ -1980,7 +2018,8 @@ int conninfra_core_deinit(void)
 	}
 
 	osal_sleepable_lock_deinit(&infra_ctx->core_lock);
-	//osal_sleepable_lock_deinit(&infra_ctx->rst_lock);
+	osal_wake_lock_deinit(&conninfra_wake_lock);
+
 	connectivity_export_conap_scp_deinit();
 
 	return 0;
