@@ -429,7 +429,7 @@ static int conninfra_thermal_get_temp_cb(void *data, int *temp)
 	else if (ret == CONNINFRA_ERR_WAKEUP_FAIL) {
 		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "Query thermal wakeup fail");
 		*temp = THERMAL_TEMP_INVALID;
-	} else if (ret == CONNINFRA_ERR_POWER_OFF)
+	} else
 		*temp = THERMAL_TEMP_INVALID;
 
 	return 0;

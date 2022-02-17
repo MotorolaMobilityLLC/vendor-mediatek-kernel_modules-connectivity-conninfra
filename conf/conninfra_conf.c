@@ -564,6 +564,11 @@ int conninfra_conf_init(void)
 	osal_strcpy(&(g_conninfra_conf.conf_name[0]), "conninfra.cfg");
 
 	pr_debug("config file:%s\n", &(g_conninfra_conf.conf_name[0]));
+#ifdef CONFIG_FPGA_EARLY_PORTING
+	pr_info("For FPGA, skip %s\n", __func__);
+	g_conninfra_conf.cfg_exist = 0;
+	return 0;
+#endif
 	if (0 ==
 	    platform_request_firmware(&g_conninfra_conf.conf_name[0],
 					(osal_firmware **) &conf_inst)) {

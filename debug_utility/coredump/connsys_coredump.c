@@ -1336,6 +1336,12 @@ int connsys_coredump_setup_dump_region(void* handler)
 	int i, idx = 0, offset;
 	struct connsys_dump_ctx* ctx = (struct connsys_dump_ctx*)handler;
 	struct dump_region* curr_region = 0;
+	const unsigned int BUF_SIZE = 1024;
+	const unsigned int MAX_IN_LINE = 10;
+	char buf[BUF_SIZE];
+	int wsize = 0;
+	unsigned int accum_size = 0;
+	unsigned int cr_count = 1;
 
 	total_mem_region = conndump_get_dmp_info(
 		ctx, CONNSYS_DUMP_CTRL_BLOCK_OFFSET + EXP_CTRL_TOTAL_MEM_REGION, false);
@@ -1378,13 +1384,33 @@ int connsys_coredump_setup_dump_region(void* handler)
 			curr_region->length);
 	}
 
+	memset(buf, '\0', sizeof(buf));
+	wsize = snprintf(buf, BUF_SIZE, "[CR region](base,length): ");
+
 	offset = CONNSYS_DUMP_CR_REGION_OFFSET;
 	for (i = 0; i < cr_regions_idx && idx < total_count; i++, idx++, offset+=8) {
 		ctx->dump_regions[idx].base = conndump_get_dmp_info(ctx, offset, false);
 		ctx->dump_regions[idx].length = conndump_get_dmp_info(ctx, offset + 4, false);
-		pr_info("[%d][CR region] base: 0x%x, length: %d\n",
-			idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
+
+		if (wsize >= 0 && wsize < (BUF_SIZE - accum_size)) {
+			accum_size += wsize;
+			wsize = snprintf(buf + accum_size, (BUF_SIZE - accum_size), "[%d](0x%x, %d), ", idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
+		}
+
+		if (cr_count % MAX_IN_LINE == 0) {
+			pr_info("%s", buf);
+			memset(buf, '\0', sizeof(buf));
+			wsize = snprintf(buf, BUF_SIZE, "[CR region](base,length): ");
+			accum_size = 0;
+		}
+
+		cr_count++;
 	}
+
+	if ((cr_count - 1) % MAX_IN_LINE != 0) {
+		pr_info("%s", buf);
+	}
+
 	return ctx->dump_regions_num;
 }
 EXPORT_SYMBOL(connsys_coredump_setup_dump_region);
