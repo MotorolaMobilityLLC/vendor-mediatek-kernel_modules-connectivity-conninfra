@@ -234,6 +234,11 @@ static bool conndump_check_cr_readable(struct connsys_dump_ctx* ctx)
 {
 	int cb_ret = 0;
 
+	if (ctx->conn_type < 0 || ctx->conn_type > CONN_DEBUG_TYPE_BT) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, ctx->conn_type);
+		return false;
+	}
+
 	/* Check reg readable */
 	if (ctx->callback.reg_readable) {
 		cb_ret = ctx->callback.reg_readable();
@@ -382,7 +387,8 @@ do { \
 	} else if (ctx->info.issue_type == CONNSYS_ISSUE_FW_ASSERT) {
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t<rc>\n\t\t\t%s\n\t\t</rc>\n", ctx->info.assert_type);
-	} else if (ctx->info.issue_type == CONNSYS_ISSUE_DRIVER_ASSERT) {
+	} else if (ctx->info.issue_type == CONNSYS_ISSUE_DRIVER_ASSERT && ctx->info.drv_type >= 0 &&
+		ctx->info.drv_type < CONNDRV_TYPE_MAX) {
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t<rc>\n\t\t\t%s trigger assert\n\t\t</rc>\n", drv_name[ctx->info.drv_type]);
 	} else {
@@ -427,9 +433,11 @@ do { \
 				"\t\t\t<isr>0x%x</isr>\n",
 				ctx->info.fw_isr);
 		} else {
-			FORMAT_STRING(buf, len, max_len, sec_len,
-				"\t\t\t<task>%s</task>\n",
-				task_drv_name2[ctx->conn_type]);
+			if (ctx->conn_type >= 0 && ctx->conn_type < CONN_DEBUG_TYPE_END) {
+				FORMAT_STRING(buf, len, max_len, sec_len,
+					"\t\t\t<task>%s</task>\n",
+					task_drv_name2[ctx->conn_type]);
+			}
 			FORMAT_STRING(buf, len, max_len, sec_len,
 				"\t\t\t<irqx>NULL</irqx>\n");
 			FORMAT_STRING(buf, len, max_len, sec_len,
@@ -577,8 +585,10 @@ static void conndump_info_analysis(
 		remain_array_len = CONNSYS_ASSERT_INFO_SIZE;
 		sec_len = snprintf(&ctx->info.assert_info[idx], remain_array_len,
 			"%s", "Exception:");
-		remain_array_len -= sec_len;
-		idx += sec_len;
+		if (sec_len > 0) {
+			remain_array_len -= sec_len;
+			idx += sec_len;
+		}
 
 		/* Check ipc */
 		type_str = (char*)exception_sub_string[1];
@@ -605,8 +615,10 @@ static void conndump_info_analysis(
 			if (remain_array_len > 0) {
 				sec_len = snprintf(&ctx->info.assert_info[idx], remain_array_len,
 						" ipc=0x%x", ctx->info.exp_ipc);
-				remain_array_len -= sec_len;
-				idx += sec_len;
+				if (sec_len > 0) {
+					remain_array_len -= sec_len;
+					idx += sec_len;
+				}
 			}
 		}
 
@@ -636,8 +648,10 @@ static void conndump_info_analysis(
 				sec_len = snprintf(
 					&ctx->info.assert_info[idx], remain_array_len,
 					" eva=0x%x", ctx->info.exp_eva);
-				remain_array_len -= sec_len;
-				idx += sec_len;
+				if (sec_len > 0) {
+					remain_array_len -= sec_len;
+					idx += sec_len;
+				}
 			}
 		}
 
@@ -660,8 +674,10 @@ static void conndump_info_analysis(
 				sec_len = snprintf(
 					&ctx->info.assert_info[idx], remain_array_len,
 					" etype=%s", ctx->info.etype);
-				remain_array_len -= sec_len;
-				idx += sec_len;
+				if (sec_len > 0) {
+					remain_array_len -= sec_len;
+					idx += sec_len;
+				}
 			}
 		}
 	}
@@ -785,6 +801,10 @@ check_task_id:
 				} else {
 					pDtr += strlen("RB_FULL(");
 					pTemp = strchr(pDtr, ')');
+					if (pTemp == NULL) {
+						pr_notice("%s can't find ) in RB_FULL case\n", __func__);
+						return;
+					}
 					len = pTemp - pDtr;
 					len = (len >= CONNSYS_ASSERT_TYPE_SIZE) ? CONNSYS_ASSERT_TYPE_SIZE - 1 : len;
 					memcpy(&tempBuf[0], pDtr, len);
@@ -793,11 +813,12 @@ check_task_id:
 					if (ret) {
 						pr_err("get fw task id fail(%d)\n", ret);
 					} else {
-						snprintf(
+						if (snprintf(
 							ctx->info.keyword,
 							CONNSYS_ASSERT_KEYWORD_SIZE,
 							"RB_FULL_%d_%s", res,
-							ctx->hw_config.name);
+							ctx->hw_config.name) < 0)
+							pr_notice("%s snprintf failed\n", __func__);
 					}
 				}
 			}
@@ -1174,7 +1195,10 @@ static int conndump_dump_emi(struct connsys_dump_ctx* ctx)
 	// format: emi_size=aaaaaaaa, mcif_emi_size=bbbbbbbb
 	char emi_dump_command[EMI_COMMAND_LENGTH];
 
-	snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "emi_size=%d,mcif_emi_size=%d", ctx->full_emi_size, ctx->mcif_emi_size);
+	if (snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "emi_size=%d,mcif_emi_size=%d", ctx->full_emi_size, ctx->mcif_emi_size) < 0) {
+		pr_notice("%s snprintf failed\n", __func__);
+		return -1;
+	}
 	pr_info("[%s] dump command: %s\n", __func__, emi_dump_command);
 	conndump_set_dump_state(ctx, CORE_DUMP_EMI);
 	ret = conndump_netlink_send_to_native(ctx->conn_type, "[EMI]", emi_dump_command, strlen(emi_dump_command));
@@ -1240,16 +1264,18 @@ static int conndump_send_fake_coredump(struct connsys_dump_ctx* ctx)
 static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump)
 {
 	if (full_dump) {
-		snprintf(
+		if (snprintf(
 			ctx->info.exception_log, CONNSYS_AEE_INFO_SIZE,
 			"%s %s %s %s",
 			INFO_HEAD, ctx->hw_config.name,
-			ctx->info.assert_type, ctx->info.dump_info);
+			ctx->info.assert_type, ctx->info.dump_info) < 0)
+			pr_notice("%s snprintf failed\n", __func__);
 	} else {
-		snprintf(
+		if (snprintf(
 			ctx->info.exception_log, CONNSYS_AEE_INFO_SIZE,
 			"%s %s",
-			INFO_HEAD, ctx->hw_config.name);
+			INFO_HEAD, ctx->hw_config.name) < 0)
+			pr_notice("%s snprintf failed\n", __func__);
 	}
 
 #if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
@@ -1387,7 +1413,7 @@ int connsys_coredump_start(
 
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
-	if (ctx == NULL)
+	if (ctx == NULL || ctx->conn_type < 0 || ctx->conn_type > CONN_DEBUG_TYPE_BT)
 		return 0;
 
 	/* TODO: Check coredump mode */
@@ -1403,7 +1429,8 @@ int connsys_coredump_start(
 	if (drv >= CONNDRV_TYPE_BT && drv < CONNDRV_TYPE_MAX) {
 		ctx->info.issue_type = CONNSYS_ISSUE_DRIVER_ASSERT;
 		ctx->info.drv_type = drv;
-		snprintf(ctx->info.reason, CONNSYS_ASSERT_REASON_SIZE, "%s", reason);
+		if (snprintf(ctx->info.reason, CONNSYS_ASSERT_REASON_SIZE, "%s", reason) < 0)
+			pr_notice("%s snprintf failed\n", __func__);
 	}
 
 	/* Start coredump timer */
