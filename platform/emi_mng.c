@@ -97,6 +97,7 @@ struct consys_emi_addr_info connsys_emi_addr_info = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+#if 0
 /* Define weak function in case emi mpu ko is not inserted */
 #if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
 __weak int mtk_emimpu_init_region(struct emimpu_region_t *rg_info, unsigned int rg_num)
@@ -130,6 +131,7 @@ __weak int mtk_emimpu_free_region(struct emimpu_region_t *rg_info)
 	pr_info("%s is weak function\n", __func__);
 	return 0;
 }
+#endif
 #endif
 
 int emi_mng_set_region_protection(void)
