@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference debug file,
- * - [Lxxxn]connsys_power_debug.xlsx
- * - (Lxxxn)conn_infra_bus_debug_ctrl.xlsx
+ * - [Lxxxn]connsys_power_debug.xlsx (Modified date: 2021-08-15)
+ * - [Lxxxn]conn_infra_bus_debug_ctrl.xlsx (Modified date: 2021-07-01)
  */
 
 
