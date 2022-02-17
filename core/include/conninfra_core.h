@@ -228,6 +228,8 @@ void conninfra_core_pre_cal_blocking(void);
 int conninfra_core_reg_readable(void);
 int conninfra_core_reg_readable_no_lock(void);
 int conninfra_core_is_bus_hang(void);
+/* Special usage: for sspm ipi timeout dump */
+int conninfra_core_conn_bus_dump(void);
 
 int conninfra_core_is_consys_reg(phys_addr_t addr);
 int conninfra_core_reg_read(unsigned long address, unsigned int *value, unsigned int mask);
