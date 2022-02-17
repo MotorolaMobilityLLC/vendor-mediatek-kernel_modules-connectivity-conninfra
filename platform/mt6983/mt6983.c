@@ -331,27 +331,28 @@ static inline void __sleep_count_trigger_read(void)
 
 static void consys_power_state(void)
 {
-#if 0
 	unsigned int i, str_len;
 	unsigned int buf_len = 0;
 	unsigned int r;
 	const char* osc_str[] = {
-          "fm ", "gps ", "bgf ", "wf ", "ap2conn ", "conn_thm ", "conn_pta ", "conn_infra_bus "};
+	"fm ", "gps ", "bgf ", "wf ", "conn_infra_bus ", " ", "ap2conn "," ",
+	" "," "," ", "conn_pta ", "conn_spi ", " ", "conn_thm "};
 	char buf[256] = {'\0'};
 
-	CONSYS_REG_WRITE_HW_ENTRY(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL,
-                                  0x0);
-	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL,
+		0x0);
+	r = CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR);
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 15; i++) {
 		str_len = strlen(osc_str[i]);
-		if ((r & (0x1 << (18 + i))) > 0 && (buf_len + str_len < 256)) {
+		
+		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < 256)) {
 			strncat(buf, osc_str[i], str_len);
 			buf_len += str_len;
 		}
 	}
 	pr_info("[%s] [0x%x] %s", __func__, r, buf);
-#endif
 }
 
 int consys_power_state_dump_mt6983(void)
