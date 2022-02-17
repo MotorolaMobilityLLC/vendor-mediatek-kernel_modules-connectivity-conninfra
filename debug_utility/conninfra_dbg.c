@@ -113,9 +113,11 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0x14] = conninfra_dbg_connsys_coredump_mode_query,
 	/* Notice: The usage of config might be different for each platform. */
 	/* MT6983: for sleep mode control, 1: sleep_mode_1 2: sleep_mode_2 */
+#if CONNINFRA_DBG_SUPPORT
 	[0x15] = conninfra_dbg_set_platform_config,
 	[0x16] = conninfra_dbg_clk_reg_read,
 	[0x17] = conninfra_dbg_clk_reg_write,
+#endif
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -422,24 +424,6 @@ static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3)
 	osal_free(buf);
 	return 0;
 }
-#endif /* CONNINFRA_DBG_SUPPORT */
-
-static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3)
-{
-	unsigned int orig_mode = connsys_coredump_get_mode();
-
-	pr_info("Setup coredump mode from %d to %d\n", orig_mode, par2);
-	connsys_coredump_set_dump_mode(par2);
-	return 0;
-}
-
-static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3)
-{
-	unsigned int orig_mode = connsys_coredump_get_mode();
-
-	pr_info("Connsys coredump mode is [%d]\n", orig_mode);
-	return orig_mode;
-}
 
 static int conninfra_dbg_set_platform_config(int par1, int par2, int par3)
 {
@@ -482,6 +466,25 @@ static int conninfra_dbg_clk_reg_write(int par1, int par2, int par3)
 
 	return 0;
 }
+#endif /* CONNINFRA_DBG_SUPPORT */
+
+static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3)
+{
+	unsigned int orig_mode = connsys_coredump_get_mode();
+
+	pr_info("Setup coredump mode from %d to %d\n", orig_mode, par2);
+	connsys_coredump_set_dump_mode(par2);
+	return 0;
+}
+
+static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3)
+{
+	unsigned int orig_mode = connsys_coredump_get_mode();
+
+	pr_info("Connsys coredump mode is [%d]\n", orig_mode);
+	return orig_mode;
+}
+
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
