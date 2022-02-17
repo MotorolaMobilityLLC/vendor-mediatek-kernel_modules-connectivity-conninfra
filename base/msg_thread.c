@@ -436,10 +436,21 @@ void msg_op_history_save(struct osal_op_history *log_history, struct msg_op *op)
 unsigned int msg_evt_wait_event_checker(P_OSAL_THREAD thread)
 {
 	struct msg_thread_ctx *ctx = NULL;
+	int ret;
 
 	if (thread) {
 		ctx = (struct msg_thread_ctx *) (thread->pThreadData);
-		return !MSG_OP_EMPTY(&ctx->active_op_q);
+
+		ret = osal_lock_sleepable_lock(&ctx->active_op_q.lock);
+		if (ret) {
+			pr_info("[%s] lock fail, iRet(%d)\n", __func__, ret);
+			return 1;
+		}
+
+		ret = !MSG_OP_EMPTY(&ctx->active_op_q);
+
+		osal_unlock_sleepable_lock(&ctx->active_op_q.lock);
+		return ret;
 	}
 	return 0;
 }
