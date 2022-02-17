@@ -278,7 +278,7 @@ static int conninfra_dbg_ap_reg_write(int par1, int par2, int par3)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 static int conninfra_dbg_set_fw_log_mode(int par1, int par2, int par3)
 {
-	//connsys_dedicated_log_set_log_mode(par2);
+	connsys_dedicated_log_set_log_mode(par2);
 	return 0;
 }
 
