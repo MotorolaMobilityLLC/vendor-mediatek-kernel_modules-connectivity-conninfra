@@ -1349,6 +1349,7 @@ EXPORT_SYMBOL(connsys_coredump_clean);
  *****************************************************************************/
 int connsys_coredump_setup_dump_region(void* handler)
 {
+#define BUF_SIZE 1024
 	int ret = 0;
 	int cr_regions_idx = 0;
 	int total_mem_region;
@@ -1356,7 +1357,6 @@ int connsys_coredump_setup_dump_region(void* handler)
 	int i, idx = 0, offset;
 	struct connsys_dump_ctx* ctx = (struct connsys_dump_ctx*)handler;
 	struct dump_region* curr_region = 0;
-	const unsigned int BUF_SIZE = 1024;
 	const unsigned int MAX_IN_LINE = 10;
 	char buf[BUF_SIZE];
 	int wsize = 0;
