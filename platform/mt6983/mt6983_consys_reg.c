@@ -14,7 +14,8 @@
 #include "mt6983_consys_reg_offset.h"
 #include "mt6983_pos.h"
 #include "mt6983_pos_gen.h"
-#include "mt6983_debug.h"
+#include "mt6983_debug_gen.h"
+#include "osal.h"
 
 #define LOG_TMP_BUF_SZ 256
 
@@ -22,6 +23,7 @@ static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static int consys_check_reg_readable(void);
+static int __consys_check_reg_readable(int print_if_no_err);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 #endif
@@ -38,6 +40,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983 = {
 #endif
 };
 
+static struct conn_debug_info_mt6983 *debug_info;
 
 static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"infracfg_ao",
@@ -73,6 +76,72 @@ int consys_is_consys_reg(unsigned int addr)
 	return 0;
 }
 
+#define CONSYS_DUMP_BUF_SIZE 512
+static void consys_print_log(const char *title, struct conn_debug_info_mt6983 *info)
+{
+	char buf[CONSYS_DUMP_BUF_SIZE];
+	char temp[13];
+	int i;
+
+	temp[0] = '\0';
+	snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title);
+	for (i = 0; i < info->length; i++) {
+		snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]);
+		strncat(buf, temp, strlen(temp) + 1);
+	}
+	pr_info("%s\n", buf);
+}
+
+static void consys_print_power_debug(int level)
+{
+	pr_info("%s\n", __func__);
+
+	if (level >= 0) {
+		consys_print_power_debug_dbg_level_0_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[CONN_POWER_A]", debug_info);
+	}
+	if (level >= 1) {
+		consys_print_power_debug_dbg_level_1_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[CONN_POWER_B]", debug_info);
+	}
+	if (level >= 2) {
+		consys_print_power_debug_dbg_level_2_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[CONN_POWER_C]", debug_info);
+	}
+}
+
+static void consys_print_bus_debug(int level)
+{
+	pr_info("%s\n", __func__);
+
+	if (level >= 1) {
+		consys_print_bus_debug_dbg_level_1_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[CONN_BUS_B]", debug_info);
+	}
+	if (level >= 2) {
+		consys_print_bus_debug_dbg_level_2_mt6983_debug_gen(level, debug_info);
+		consys_print_log("[CONN_BUS_C]", debug_info);
+	}
+}
+
+int consys_print_debug_mt6983(int level)
+{
+	if (level < 0 || level > 2) {
+		pr_info("%s level[%d] unexpected value.");
+		return 0;
+	}
+
+	if (debug_info == NULL) {
+		pr_notice("%s debug_info is NULL\n", __func__);
+		return -1;
+	}
+
+	consys_print_power_debug(level);
+	consys_print_bus_debug(level);
+
+	return 0;
+}
+
 static inline unsigned int __consys_bus_hang_clock_detect(void)
 {
 	unsigned int r = 0;
@@ -100,7 +169,7 @@ static inline unsigned int __consys_bus_hang_clock_detect(void)
 
 static int consys_is_bus_hang(void)
 {
-	if (consys_check_reg_readable() > 0)
+	if (__consys_check_reg_readable(1) > 0)
 		return 0;
 	return 1;
 }
@@ -138,7 +207,7 @@ static int consys_check_conninfra_off_domain(void)
 	return 1;
 }
 
-static int consys_check_reg_readable(void)
+static int __consys_check_reg_readable(int print_if_no_err)
 {
 	unsigned int r;
 
@@ -161,7 +230,40 @@ static int consys_check_reg_readable(void)
 		return 0;
 
 	}
+
+	if (print_if_no_err)
+		consys_print_debug_mt6983(2);
+
 	return 1;
+}
+
+static void consys_debug_init_mt6983(void)
+{
+	debug_info = (struct conn_debug_info_mt6983 *)osal_malloc(sizeof(struct conn_debug_info_mt6983));
+	if (debug_info == NULL) {
+		pr_notice("%s malloc failed\n", __func__);
+		return;
+	}
+
+	consys_debug_init_mt6983_debug_gen();
+}
+
+static void consys_debug_deinit_mt6983(void)
+{
+	if (debug_info == NULL) {
+		pr_notice("%s debug_info is NULL\n", __func__);
+		return;
+	}
+
+	osal_free(debug_info);
+	debug_info = NULL;
+
+	consys_debug_deinit_mt6983_debug_gen();
+}
+
+static int consys_check_reg_readable(void)
+{
+	return __consys_check_reg_readable(0);
 }
 
 int consys_reg_init(struct platform_device *pdev)
@@ -199,6 +301,9 @@ int consys_reg_init(struct platform_device *pdev)
 		pr_err("[%s] can't find CONSYS compatible node\n", __func__);
 		return ret;
 	}
+
+	consys_debug_init_mt6983();
+
 	return 0;
 
 }
@@ -216,6 +321,8 @@ static int consys_reg_deinit(void)
 			conn_reg_mt6983.reg_base_addr[i].vir_addr = 0;
 		}
 	}
+
+	consys_debug_deinit_mt6983();
 
 	return 0;
 }
