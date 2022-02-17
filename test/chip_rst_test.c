@@ -105,7 +105,7 @@ int chip_rst_test(void)
 
 
 	pr_info("[%s] ++++++++++++++++++++++", __func__);
-	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
+	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
 	if (ret)
 		pr_warn("[%s] fail [%d]", __func__, ret);
 	else
@@ -113,7 +113,7 @@ int chip_rst_test(void)
 	osal_sleep_ms(10);
 
 	pr_info("Try to trigger whole chip reset when reset is ongoing. It should be fail.");
-	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
+	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
 	pr_info("Test %s. ret = %d.", ret == 1? "pass": "fail", ret);
 
 	osal_sleep_ms(1000);

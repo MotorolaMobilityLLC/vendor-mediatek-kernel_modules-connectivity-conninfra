@@ -18,6 +18,7 @@
 
 #include <linux/of_reserved_mem.h>
 #include <linux/io.h>
+#include <linux/types.h>
 #include "osal.h"
 
 #include "emi_mng.h"
@@ -59,8 +60,16 @@
 ********************************************************************************
 */
 
-P_CONSYS_PLATFORM_EMI_OPS consys_platform_emi_ops;
-unsigned char __iomem *pEmibaseaddr;
+
+extern unsigned long long gConEmiSize;
+extern phys_addr_t gConEmiPhyBase;
+
+struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
+
+struct consys_emi_addr_info connsys_emi_addr_info = {
+	.emi_ap_phy_addr = 0,
+	.emi_size = 0
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -85,20 +94,17 @@ int emi_mng_set_remapping_reg(void)
 {
 	if (consys_platform_emi_ops &&
 		consys_platform_emi_ops->consys_ic_emi_set_remapping_reg)
-		return consys_platform_emi_ops->consys_ic_emi_set_remapping_reg();
+		return consys_platform_emi_ops->consys_ic_emi_set_remapping_reg(gConEmiPhyBase);
 	return -1;
 }
 
-P_CONSYS_EMI_ADDR_INFO emi_mng_get_phy_addr(void)
+struct consys_emi_addr_info* emi_mng_get_phy_addr(void)
 {
-	if (consys_platform_emi_ops &&
-		consys_platform_emi_ops->consys_ic_emi_get_phy_addr)
-		return consys_platform_emi_ops->consys_ic_emi_get_phy_addr();
-	return NULL;
+	return &connsys_emi_addr_info;
 }
 
 
-P_CONSYS_PLATFORM_EMI_OPS __weak get_consys_platform_emi_ops(void)
+struct consys_platform_emi_ops* __weak get_consys_platform_emi_ops(void)
 {
 	pr_warn("No specify project\n");
 	return NULL;
@@ -113,12 +119,16 @@ int emi_mng_init(void)
 			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
 
 	if (gConEmiPhyBase) {
+
+		connsys_emi_addr_info.emi_ap_phy_addr = gConEmiPhyBase;
+		connsys_emi_addr_info.emi_size = gConEmiSize;
+
 	#if 0
 		if (consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection)
 			consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection();
 	#endif
 		if (consys_platform_emi_ops->consys_ic_emi_set_remapping_reg)
-			consys_platform_emi_ops->consys_ic_emi_set_remapping_reg();
+			consys_platform_emi_ops->consys_ic_emi_set_remapping_reg(gConEmiPhyBase);
 	#if 0
 		if (consys_platform_emi_ops->consys_ic_emi_coredump_remapping)
 			consys_platform_emi_ops->consys_ic_emi_coredump_remapping(&pEmibaseaddr, 1);

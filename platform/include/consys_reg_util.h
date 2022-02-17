@@ -16,11 +16,9 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
-#ifndef _PLATFORM_CONSYS_HW_UTIL_H_
-#define _PLATFORM_CONSYS_HW_UTIL_H_
+#ifndef _PLATFORM_CONSYS_REG_UTIL_H_
+#define _PLATFORM_CONSYS_REG_UTIL_H_
 
-#include <sync_write.h>
-#include "osal.h"
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -32,6 +30,15 @@
 */
 
 #define KBYTE (1024*sizeof(char))
+
+#define GENMASK(h, l) \
+	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+
+#define GET_BIT_MASK(value, mask) ((value) & (mask))
+#define SET_BIT_MASK(pdest, value, mask) (*(pdest) = (GET_BIT_MASK(*(pdest), ~(mask)) | GET_BIT_MASK(value, mask)))
+#define GET_BIT_RANGE(data, end, begin) ((data) & GENMASK(end, begin))
+#define SET_BIT_RANGE(pdest, data, end, begin) (SET_BIT_MASK(pdest, data, GENMASK(end, begin)))
+
 #define CONSYS_SET_BIT(REG, BITVAL) (*((volatile unsigned int *)(REG)) |= ((unsigned int)(BITVAL)))
 #define CONSYS_CLR_BIT(REG, BITVAL) ((*(volatile unsigned int *)(REG)) &= ~((unsigned int)(BITVAL)))
 #define CONSYS_CLR_BIT_WITH_KEY(REG, BITVAL, KEY) {\
@@ -125,4 +132,4 @@
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_CONSYS_HW_UTIL_H_ */
+#endif				/* _PLATFORM_CONSYS_REG_UTIL_H_ */
