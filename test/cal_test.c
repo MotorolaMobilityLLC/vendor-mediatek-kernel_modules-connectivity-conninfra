@@ -109,20 +109,9 @@ int calibration_test(void)
 	if (ret)
 		pr_warn("[%s] fail [%d]", __func__, ret);
 
-#if 0
-	pr_info("[%s] ++++++++++++++++++++++", __func__);
-	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
-	if (ret)
-		pr_warn("[%s] fail [%d]", __func__, ret);
-	osal_sleep_ms(10);
-
-	pr_info("[%s]>>>>>>>", __func__);
-	ret = trigger_whole_chip_rst(CONNDRV_TYPE_BT, "test reset");
-	if (ret)
-		pr_warn("[%s] fail [%d]", __func__, ret);
-	pr_info("[%s] ---------------------", __func__);
-#endif
 	osal_sleep_ms(1000);
+
+	conninfra_core_screen_on();
 
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_BT);
 	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);

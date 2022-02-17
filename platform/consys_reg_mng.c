@@ -16,7 +16,10 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
+#define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
+
 #include "consys_reg_mng.h"
+#include "consys_reg_util.h"
 
 struct consys_reg_mng_ops* g_consys_reg_ops = NULL;
 
@@ -26,21 +29,105 @@ struct consys_reg_mng_ops* __weak get_consys_reg_mng_ops(void)
 	return NULL;
 }
 
-int consys_hw_reg_readable(void)
+int consys_reg_mng_reg_readable(void)
 {
 	if (g_consys_reg_ops &&
 		g_consys_reg_ops->consys_reg_mng_check_reable)
 		return g_consys_reg_ops->consys_reg_mng_check_reable();
+	pr_err("%s not implement", __func__);
 	return -1;
 }
 
-int consys_hw_is_connsys_reg(phys_addr_t addr)
+int consys_reg_mng_is_connsys_reg(phys_addr_t addr)
 {
 	if (g_consys_reg_ops &&
 		g_consys_reg_ops->consys_reg_mng_is_consys_reg)
 		return g_consys_reg_ops->consys_reg_mng_is_consys_reg(addr);
 	return -1;
 }
+
+
+int consys_reg_mng_is_bus_hang(void)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_is_bus_hang)
+		return g_consys_reg_ops->consys_reg_mng_is_bus_hang();
+	return -1;
+}
+
+int consys_reg_mng_dump_bus_status(void)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_dump_bus_status)
+		return g_consys_reg_ops->consys_reg_mng_dump_bus_status();
+	return -1;
+}
+
+int consys_reg_mng_dump_conninfra_status(void)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_dump_conninfra_status)
+		return g_consys_reg_ops->consys_reg_mng_dump_conninfra_status();
+	return -1;
+}
+
+int consys_reg_mng_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times, unsigned long interval_us)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_dump_cpupcr)
+		return g_consys_reg_ops->consys_reg_mng_dump_cpupcr(dump_type, times, interval_us);
+	return -1;
+}
+
+unsigned long consys_reg_mng_validate_idx_n_offset(unsigned int idx, unsigned long offset)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_validate_idx_n_offset)
+		return g_consys_reg_ops->consys_reg_mng_validate_idx_n_offset(idx, offset);
+	return -1;
+}
+
+int consys_reg_mng_find_can_write_reg(unsigned int *idx, unsigned long* offset)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_find_can_write_reg)
+		return g_consys_reg_ops->consys_reg_mng_find_can_write_reg(idx, offset);
+	return -1;
+}
+
+unsigned long consys_reg_mng_get_phy_addr_by_idx(unsigned int idx)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_get_phy_addr_by_idx)
+		return g_consys_reg_ops->consys_reg_mng_get_phy_addr_by_idx(idx);
+	return -1;
+}
+
+unsigned long consys_reg_mng_get_virt_addr_by_idx(unsigned int idx)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_get_virt_addr_by_idx)
+		return g_consys_reg_ops->consys_reg_mng_get_virt_addr_by_idx(idx);
+	return -1;
+}
+
+
+int consys_reg_mng_get_chip_id_idx_offset(unsigned int *idx, unsigned long *offset)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_get_chip_id_idx_offset)
+		return g_consys_reg_ops->consys_reg_mng_get_chip_id_idx_offset(idx, offset);
+	return -1;
+}
+
+int consys_reg_mng_get_reg_symbol_num(void)
+{
+	if (g_consys_reg_ops&&
+		g_consys_reg_ops->consys_reg_mng_get_reg_symbol_num)
+		return g_consys_reg_ops->consys_reg_mng_get_reg_symbol_num();
+	return -1;
+}
+
 
 int consys_reg_mng_init(struct platform_device *pdev)
 {
@@ -66,3 +153,45 @@ int consys_reg_mng_deinit(void)
 	return 0;
 }
 
+int consys_reg_mng_reg_read(unsigned long addr, unsigned int *value, unsigned int mask)
+{
+	void __iomem *vir_addr = NULL;
+
+	vir_addr = ioremap_nocache(addr, 0x100);
+	if (!vir_addr) {
+		pr_err("ioremap fail");
+		return -1;
+	}
+
+	*value = (unsigned int)CONSYS_REG_READ(vir_addr) & mask;
+
+	pr_info("[%x] mask=[%x]", *value, mask);
+
+	iounmap(vir_addr);
+	return 0;
+}
+
+int consys_reg_mng_reg_write(unsigned long addr, unsigned int value, unsigned int mask)
+{
+	void __iomem *vir_addr = NULL;
+
+	vir_addr = ioremap_nocache(addr, 0x100);
+	if (!vir_addr) {
+		pr_err("ioremap fail");
+		return -1;
+	}
+
+	CONSYS_REG_WRITE_MASK(vir_addr, value, mask);
+
+	iounmap(vir_addr);
+	return 0;
+}
+
+
+int consys_reg_mng_is_host_csr(unsigned long addr)
+{
+	if (g_consys_reg_ops &&
+		g_consys_reg_ops->consys_reg_mng_is_host_csr)
+		return g_consys_reg_ops->consys_reg_mng_is_host_csr(addr);
+	return -1;
+}

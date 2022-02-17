@@ -23,7 +23,6 @@
 
 #include "emi_mng.h"
 
-
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -68,7 +67,9 @@ struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
 
 struct consys_emi_addr_info connsys_emi_addr_info = {
 	.emi_ap_phy_addr = 0,
-	.emi_size = 0
+	.emi_size = 0,
+	.md_emi_phy_addr = 0,
+	.md_emi_size = 0,
 };
 
 /*******************************************************************************
@@ -94,7 +95,9 @@ int emi_mng_set_remapping_reg(void)
 {
 	if (consys_platform_emi_ops &&
 		consys_platform_emi_ops->consys_ic_emi_set_remapping_reg)
-		return consys_platform_emi_ops->consys_ic_emi_set_remapping_reg(gConEmiPhyBase);
+		return consys_platform_emi_ops->consys_ic_emi_set_remapping_reg(
+			connsys_emi_addr_info.emi_ap_phy_addr,
+			connsys_emi_addr_info.md_emi_phy_addr);
 	return -1;
 }
 
@@ -112,30 +115,34 @@ struct consys_platform_emi_ops* __weak get_consys_platform_emi_ops(void)
 
 int emi_mng_init(void)
 {
+	unsigned int fw_emi_size = gConEmiSize;
+
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = get_consys_platform_emi_ops();
 
-	pr_info("[emi_mng_init] gConEmiPhyBase = [%p] size = [%d] ops=[%p]",
-			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
+	if (consys_platform_emi_ops->consys_ic_emi_get_fw_emi_size)
+		fw_emi_size = consys_platform_emi_ops->consys_ic_emi_get_fw_emi_size();
+	pr_info("[emi_mng_init] gConEmiPhyBase = [0x%llx] size = [%llx] fw size = [%llx] ops=[%p]",
+			gConEmiPhyBase, gConEmiSize, fw_emi_size, consys_platform_emi_ops);
 
 	if (gConEmiPhyBase) {
-
 		connsys_emi_addr_info.emi_ap_phy_addr = gConEmiPhyBase;
 		connsys_emi_addr_info.emi_size = gConEmiSize;
-
-	#if 0
-		if (consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection)
-			consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection();
-	#endif
-		if (consys_platform_emi_ops->consys_ic_emi_set_remapping_reg)
-			consys_platform_emi_ops->consys_ic_emi_set_remapping_reg(gConEmiPhyBase);
-	#if 0
-		if (consys_platform_emi_ops->consys_ic_emi_coredump_remapping)
-			consys_platform_emi_ops->consys_ic_emi_coredump_remapping(&pEmibaseaddr, 1);
-	#endif
+		connsys_emi_addr_info.fw_emi_size = fw_emi_size;
 	} else {
 		pr_err("consys emi memory address gConEmiPhyBase invalid\n");
 	}
+
+	if (consys_platform_emi_ops &&
+		consys_platform_emi_ops->consys_ic_emi_get_md_shared_emi)
+		consys_platform_emi_ops->consys_ic_emi_get_md_shared_emi(
+			&connsys_emi_addr_info.md_emi_phy_addr,
+			&connsys_emi_addr_info.md_emi_size);
+
+	if (consys_platform_emi_ops &&
+		consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection)
+		consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection();
+
 	return 0;
 }
 

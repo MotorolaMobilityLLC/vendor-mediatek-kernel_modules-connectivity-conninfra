@@ -93,8 +93,9 @@ int conninfra_conf_test(void)
 		pr_err("int conf fail [%d]", ret);
 		return -1;
 	}
-	if (conf->co_clock_flag != 1) {
-		pr_err("test co_clock_flag fail [%d]", conf->co_clock_flag);
+	if (conf->tcxo_gpio != 0) {
+		pr_err("test tcxo gpio fail [%d]. For most case, it should be 0.",
+			conf->tcxo_gpio);
 		return -1;
 	}
 

@@ -28,6 +28,8 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+/* platform dependent */
+#include "plat_def.h"
 
 #define KBYTE (1024*sizeof(char))
 

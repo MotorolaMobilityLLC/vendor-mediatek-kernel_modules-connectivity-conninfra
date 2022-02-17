@@ -275,8 +275,8 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 
 		/* check result */
 		wait_ret = osal_wait_for_signal_timeout(signal, &ctx->thread);
-		pr_info("osal_wait_for_signal_timeout:%d result=[%d]\n",
-							wait_ret, op->result);
+		/*pr_info("osal_wait_for_signal_timeout:%d result=[%d]\n",
+							wait_ret, op->result);*/
 
 		if (wait_ret == 0)
 			pr_warn("opId(%d) completion timeout\n", op->op.op_id);
@@ -336,14 +336,14 @@ int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 int msg_thread_send_wait(struct msg_thread_ctx *ctx, int opid,
 						int timeout)
 {
-	return msg_thread_send_wait_2(ctx, opid, timeout, 0, 0);
+	return msg_thread_send_wait_3(ctx, opid, timeout, 0, 0, 0);
 }
 
 int msg_thread_send_wait_1(struct msg_thread_ctx *ctx,
 							int opid, int timeout,
 							size_t param1)
 {
-	return msg_thread_send_wait_2(ctx, opid, timeout, param1, 0);
+	return msg_thread_send_wait_3(ctx, opid, timeout, param1, 0, 0);
 }
 
 
@@ -351,6 +351,15 @@ int msg_thread_send_wait_2(struct msg_thread_ctx *ctx,
 							int opid, int timeout,
 							size_t param1,
 							size_t param2)
+{
+	return msg_thread_send_wait_3(ctx, opid, timeout, param1, param2, 0);
+}
+
+int msg_thread_send_wait_3(struct msg_thread_ctx *ctx,
+							int opid, int timeout,
+							size_t param1,
+							size_t param2,
+							size_t param3)
 {
 	struct msg_op *op = NULL;
 	P_OSAL_SIGNAL signal;
@@ -364,6 +373,7 @@ int msg_thread_send_wait_2(struct msg_thread_ctx *ctx,
 	op->op.op_id = opid;
 	op->op.op_data[0] = param1;
 	op->op.op_data[1] = param2;
+	op->op.op_data[2] = param3;
 
 	signal = &op->signal;
 	signal->timeoutValue = timeout > 0 ? timeout : MSG_OP_TIMEOUT;
@@ -371,7 +381,6 @@ int msg_thread_send_wait_2(struct msg_thread_ctx *ctx,
 	return ret;
 
 }
-
 
 void msg_op_history_save(struct osal_op_history *log_history, struct msg_op *op)
 {
