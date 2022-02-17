@@ -84,6 +84,7 @@ static int conninfra_dbg_set_platform_config(int par1, int par2, int par3);
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
+static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
@@ -124,6 +125,7 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0x19] = conninfra_dbg_spi_write,
 	[0x20] = conninfra_dbg_set_spi_write_subsys,
 #endif
+	[0x21] = conninfra_dbg_mcu_log_ctrl,
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -564,6 +566,35 @@ static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par
 	return orig_mode;
 }
 
+static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3)
+{
+	int ret = 0;
+	pr_info("%s\n", __func__);
+
+	if (par2 < 0 || par2 > 1 || par3 < 0 || par3 > 1) {
+		pr_info("[%s] Invalid parameter\n", __func__);
+		return -1;
+	}
+
+	ret = conninfra_core_force_conninfra_wakeup();
+	if (ret) {
+		pr_info("[%s] conninfra wakup fail\n", __func__);
+		return -1;
+	}
+
+	if (par3 == 1)
+		consys_hw_set_mcu_control(par2, true);
+	else
+		consys_hw_set_mcu_control(par2, false);
+
+	ret = conninfra_core_force_conninfra_sleep();
+	if (ret) {
+		pr_info("[%s] conninfra sleep fail\n", __func__);
+		return -1;
+	}
+
+	return ret;
+}
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {

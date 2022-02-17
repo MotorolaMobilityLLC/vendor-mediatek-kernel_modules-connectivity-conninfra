@@ -192,6 +192,9 @@ endif
 # Debug utility
 $(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
+$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_mcu.o
+$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_wifi_mcu.o
+$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_bt_mcu.o
 $(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
 $(MODULE_NAME)-objs += debug_utility/metlog/metlog.o
