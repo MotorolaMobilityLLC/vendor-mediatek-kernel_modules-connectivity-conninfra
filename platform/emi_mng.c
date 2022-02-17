@@ -23,6 +23,12 @@
 #include <linux/of.h>
 #include "osal.h"
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#include <soc/mediatek/emi.h>
+#else
+#include <memory/mediatek/emi.h>
+#endif
+
 #include "emi_mng.h"
 
 /*******************************************************************************
@@ -63,8 +69,6 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-
-
 #ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
 phys_addr_t gConEmiPhyBase;
 EXPORT_SYMBOL(gConEmiPhyBase);
@@ -93,7 +97,40 @@ struct consys_emi_addr_info connsys_emi_addr_info = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+/* Define weak function in case emi mpu ko is not inserted */
+#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
+__weak int mtk_emimpu_init_region(struct emimpu_region_t *rg_info, unsigned int rg_num)
+{
+	pr_info("%s is weak function\n", __func__);
+	return 0;
+}
 
+__weak int mtk_emimpu_set_addr(struct emimpu_region_t *rg_info,
+	unsigned long long start, unsigned long long end)
+{
+	pr_info("%s is weak function\n", __func__);
+	return 0;
+}
+
+__weak int mtk_emimpu_set_apc(struct emimpu_region_t *rg_info,
+	unsigned int d_num, unsigned int apc)
+{
+	pr_info("%s is weak function\n", __func__);
+	return 0;
+}
+
+__weak int mtk_emimpu_set_protection(struct emimpu_region_t *rg_info)
+{
+	pr_info("%s is weak function\n", __func__);
+	return 0;
+}
+
+__weak int mtk_emimpu_free_region(struct emimpu_region_t *rg_info)
+{
+	pr_info("%s is weak function\n", __func__);
+	return 0;
+}
+#endif
 
 int emi_mng_set_region_protection(void)
 {
