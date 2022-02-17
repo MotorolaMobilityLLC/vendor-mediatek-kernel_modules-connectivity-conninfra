@@ -135,7 +135,6 @@ $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pos.o
 # Debug utility
 $(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/log_ring.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
 $(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
