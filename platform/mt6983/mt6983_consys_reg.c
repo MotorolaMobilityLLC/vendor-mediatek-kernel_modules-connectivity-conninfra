@@ -24,8 +24,8 @@ static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static int consys_check_reg_readable(void);
-static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type);
-static int __consys_check_reg_readable(int check_type, enum consys_drv_type drv_type);
+static int consys_check_reg_readable_for_coredump(void);
+static int __consys_check_reg_readable(int check_type);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 #endif
@@ -185,7 +185,7 @@ static inline unsigned int __consys_bus_hang_clock_detect(void)
 
 static int consys_is_bus_hang(void)
 {
-	if (__consys_check_reg_readable(1, CONNDRV_TYPE_CONNINFRA) > 0)
+	if (__consys_check_reg_readable(1) > 0)
 		return 0;
 	return 1;
 }
@@ -223,7 +223,7 @@ static int consys_check_conninfra_off_domain(void)
 	return 1;
 }
 
-static int __consys_check_reg_readable(int check_type, enum consys_drv_type drv_type)
+static int __consys_check_reg_readable(int check_type)
 {
 	// Type includes:
 	// 0: error
@@ -255,7 +255,7 @@ static int __consys_check_reg_readable(int check_type, enum consys_drv_type drv_
 	r = CONSYS_REG_READ_BIT(CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
 			(0x1 << 0) | (0x1 << 1) | (0x1 << 2));
 	if (r != 0) {
-		pr_info("%s bus timeout 0x1802_3400[2:0] = 0x%x, drv_type = %d\n", __func__, r, drv_type);
+		pr_info("%s bus timeout 0x1802_3400[2:0] = 0x%x\n", __func__, r);
 		consys_print_debug_mt6983(2);
 		if (check_type == 2)
 			return ret;
@@ -295,12 +295,12 @@ static void consys_debug_deinit_mt6983(void)
 
 static int consys_check_reg_readable(void)
 {
-	return __consys_check_reg_readable(0, CONNDRV_TYPE_CONNINFRA);
+	return __consys_check_reg_readable(0);
 }
 
-static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
+static int consys_check_reg_readable_for_coredump(void)
 {
-	return __consys_check_reg_readable(2, drv_type);
+	return __consys_check_reg_readable(2);
 }
 
 int consys_reg_init(struct platform_device *pdev)

@@ -1363,7 +1363,7 @@ int conninfra_core_reg_readable_no_lock(void)
 	return consys_hw_reg_readable();
 }
 
-int conninfra_core_reg_readable_for_coredump(enum consys_drv_type drv_type)
+int conninfra_core_reg_readable_for_coredump(void)
 {
 	int ret = 0, rst_status;
 	unsigned long flag;
@@ -1385,7 +1385,7 @@ int conninfra_core_reg_readable_for_coredump(enum consys_drv_type drv_type)
 	}
 
 	if (infra_ctx->infra_drv_status == DRV_STS_POWER_ON)
-		ret = consys_hw_reg_readable_for_coredump(drv_type);
+		ret = consys_hw_reg_readable_for_coredump();
 	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 
 	return ret;
