@@ -24,6 +24,7 @@
 #include "conninfra_test.h"
 #include "osal.h"
 
+#include "conninfra.h"
 #include "conninfra_core.h"
 #include "conf_test.h"
 #include "cal_test.h"
@@ -72,6 +73,7 @@ static int cal_tc(int par1, int par2, int par3);
 static int msg_evt_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
 static int mailbox_tc(int par1, int par2, int par3);
+static int emi_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -93,6 +95,7 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 	[0x04] = chip_rst_tc,
 	[0x05] = cal_tc,
 	[0x06] = mailbox_tc,
+	[0x07] = emi_tc,
 };
 
 /*******************************************************************************
@@ -162,6 +165,24 @@ static int mailbox_tc(int par1, int par2, int par3)
 	return mailbox_test();
 }
 
+static int emi_tc(int par1, int par2, int par3)
+{
+	unsigned int addr = 0;
+	unsigned int size = 0;
+	int ret = 0;
+
+	pr_info("[%s] start", __func__);
+	conninfra_get_phy_addr(&addr, &size);
+	if (addr == 0 || size == 0) {
+		pr_err("[%s] fail! addr=[0x%x] size=[%u]", __func__, addr, size);
+		ret = -1;
+	} else
+		pr_info("[%s] pass. addr=[0x%x] size=[%u]", __func__, addr, size);
+
+	pr_info("[%s] end", __func__);
+
+	return ret;
+}
 
 ssize_t conninfra_test_read(struct file *filp, char __user *buf,
 				size_t count, loff_t *f_pos)
