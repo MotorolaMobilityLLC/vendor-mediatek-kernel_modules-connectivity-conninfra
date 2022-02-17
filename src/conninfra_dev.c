@@ -657,7 +657,9 @@ static int conninfra_dev_do_drv_init()
 				= conninfra_dev_fb_notifier_callback;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	iret = mtk_disp_notifier_register("conninfra_driver", &conninfra_fb_notifier);
+#endif
 #else
 	iret = fb_register_client(&conninfra_fb_notifier);
 #endif
@@ -764,7 +766,9 @@ static void conninfra_dev_deinit(void)
 	g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	mtk_disp_notifier_unregister(&conninfra_fb_notifier);
+#endif
 #else
 	fb_unregister_client(&conninfra_fb_notifier);
 #endif
