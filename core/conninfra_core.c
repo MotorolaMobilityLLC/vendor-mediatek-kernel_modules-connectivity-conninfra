@@ -37,6 +37,7 @@
 #define CONNINFRA_EVENT_TIMEOUT 3000
 #define CONNINFRA_RESET_TIMEOUT 500
 #define CONNINFRA_PRE_CAL_TIMEOUT 500
+#define CONNINFRA_MAX_TEMP 120
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -1507,6 +1508,9 @@ int conninfra_core_thermal_query(int *temp_val)
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
+	if (temp_val == NULL)
+		return -1;
+
 	ret = msg_thread_send_wait_1(&infra_ctx->msg_ctx,
 		CONNINFRA_OPID_THERM_CTRL, 0,
 		(size_t) temp_val);
@@ -1515,6 +1519,10 @@ int conninfra_core_thermal_query(int *temp_val)
 		return ret;
 	}
 	pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
+
+	if (*temp_val >= CONNINFRA_MAX_TEMP)
+		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "thermal is too high");
+
 	return ret;
 }
 
