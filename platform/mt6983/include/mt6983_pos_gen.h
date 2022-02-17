@@ -13,16 +13,16 @@
  * Reference POS file,
  * - Lepin_power_on_sequence_20210628.xlsx
  * - Lepin_conn_infra_sub_task_210630.xlsx
- * - conn_infra_cmdbt_instr_autogen_se_20210503.txt
+ * - conn_infra_cmdbt_instr_autogen_20210503.txt
  */
 
 
 #ifndef _PLATFORM_MT6983_POS_GEN_H_
 #define _PLATFORM_MT6983_POS_GEN_H_
 
-int consys_conninfra_on_power_ctrl_mt6983_gen(unsigned int enable);
 void consys_set_if_pinmux_mt6983_gen(unsigned int enable);
 void consys_set_gpio_tcxo_mode_mt6983_gen(unsigned int tcxo_mode, unsigned int enable);
+int consys_conninfra_on_power_ctrl_mt6983_gen(unsigned int enable);
 int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id);
 unsigned int consys_emi_set_remapping_reg_mt6983_gen(
 		phys_addr_t con_emi_base_addr,
@@ -165,6 +165,7 @@ int consys_conninfra_sleep_mt6983_gen(void);
 /****************************************************************************************************/
 #define CONSYS_GEN_IP_VERSION_OFFSET_ADDR                                                   0x0
 #define CONSYS_GEN_EFUSE_OFFSET_ADDR                                                        0x20
+#define CONSYS_GEN_CMDBT_FETCH_START_ADDR0_OFFSET_ADDR                                      0x50
 #define CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR                                                    0x100
 
 /****************************************************************************************************/
