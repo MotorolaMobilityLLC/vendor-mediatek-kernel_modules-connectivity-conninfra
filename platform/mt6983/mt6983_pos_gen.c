@@ -11,8 +11,8 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Lxxxn_power_on_sequence_20210730.xlsx
- * - Lxxxn_conn_infra_sub_task_210721.xlsx
+ * - Lxxxn_power_on_sequence_20210810.xlsx
+ * - Lxxxn_conn_infra_sub_task_210811.xlsx
  * - conn_infra_cmdbt_instr_autogen_20210730.txt
  */
 
@@ -1624,6 +1624,16 @@ int connsys_a_die_cfg_adie6637_PART2_mt6983_gen(unsigned int hw_ver_id)
 		#endif
 	}
 
+	/* EN WF0 CAL/TRX LDO bleeding current both update for E1 and E2 POS */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ADIE6637_ATOP_RG_WF0_TOP_01, 0xE440A);
+	#endif
+
+	/* EN WF1 CAL/TRX LDO bleeding current both update for E1 and E2 POS */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		consys_spi_write_nolock_mt6983(SYS_SPI_TOP, CONSYS_GEN_ADIE6637_ATOP_RG_WF1_TOP_01, 0xE401A);
+	#endif
+
 	return 0;
 }
 
@@ -2015,11 +2025,11 @@ void connsys_afe_sw_patch_mt6983_gen(void)
 	/* note that this CR must be backuped and restored by command batch engine */
 	#ifndef CONFIG_FPGA_EARLY_PORTING
 		CONSYS_REG_WRITE(CONN_AFE_CTL_BASE +
-			CONSYS_GEN_RG_WBG_GL1_01_OFFSET_ADDR, 0x21D9F416);
+			CONSYS_GEN_RG_WBG_GL1_01_OFFSET_ADDR, 0x21D9F417);
 		CONSYS_REG_WRITE(CONN_AFE_CTL_BASE +
 			CONSYS_GEN_RG_WBG_GL1_02_OFFSET_ADDR, 0xA9100A9);
 		CONSYS_REG_WRITE(CONN_AFE_CTL_BASE +
-			CONSYS_GEN_RG_WBG_GL5_01_OFFSET_ADDR, 0x1D9F416);
+			CONSYS_GEN_RG_WBG_GL5_01_OFFSET_ADDR, 0x1D9F417);
 	#endif
 }
 
