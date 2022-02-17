@@ -69,24 +69,7 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983 = {
 
 static int consys_emi_mpu_set_region_protection_mt6983(void)
 {
-#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
-	struct emimpu_region_t region;
-	unsigned long long start = gConEmiPhyBase;
-	unsigned long long end = gConEmiPhyBase + gConEmiSize - 1;
-
-	mtk_emimpu_init_region(&region, REGION_CONN);
-	mtk_emimpu_set_addr(&region, start, end);
-	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
-	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
-	/* for scp */
-	mtk_emimpu_set_apc(&region, DOMAIN_SCP, MTK_EMIMPU_NO_PROTECTION);
-	mtk_emimpu_set_protection(&region);
-	mtk_emimpu_free_region(&region);
-
-	pr_info("setting MPU for EMI share memory\n");
-#else
-	pr_info("[%s] not enable\n", __func__);
-#endif
+	pr_info("[%s] is not supported. MPU is set in lk\n", __func__);
 	return 0;
 }
 
