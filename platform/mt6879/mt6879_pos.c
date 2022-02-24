@@ -311,6 +311,13 @@ int connsys_a_die_cfg_mt6879(void)
 
 int connsys_afe_wbg_cal_mt6879(void)
 {
+	static int first_cal = 1;
+
+	/* DAC cal should be executed only once. */
+	/* The result will be stored in always-on domain. */
+	if (first_cal == 0)
+		return 0;
+	first_cal = 0;
 	return connsys_afe_wbg_cal_mt6879_gen(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT);
 }
 
