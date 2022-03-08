@@ -322,7 +322,6 @@ void osal_memcpy_fromio(void *dst, const void *src, unsigned int len);
 void osal_memcpy_toio(void *dst, const void *src, unsigned int len);
 int osal_memcmp(const void *buf1, const void *buf2, unsigned int len);
 
-unsigned short osal_crc16(const unsigned char *buffer, const unsigned int length);
 void osal_thread_show_stack(P_OSAL_THREAD pThread);
 
 int osal_sleep_ms(unsigned int ms);

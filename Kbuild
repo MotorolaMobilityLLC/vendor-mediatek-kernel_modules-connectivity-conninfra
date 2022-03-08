@@ -49,59 +49,74 @@ endif
 ###############################################################################
 ccflags-y += -I$(KO_CODE_PATH)/include
 ccflags-y += -I$(KO_CODE_PATH)/base/include
-ccflags-y += -I$(KO_CODE_PATH)/core/include
 ccflags-y += -I$(KO_CODE_PATH)/conf/include
-ccflags-y += -I$(KO_CODE_PATH)/drv_init/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/include
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/include
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/connsyslog
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/connsyslog/platform/include
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/coredump
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/coredump/platform/include
-ccflags-y += -I$(KO_CODE_PATH)/debug_utility/metlog
+
+# adaptor
+ccflags-y += -I$(KO_CODE_PATH)/adaptor/connsyslog
+ccflags-y += -I$(KO_CODE_PATH)/adaptor/coredump
+ccflags-y += -I$(KO_CODE_PATH)/adaptor/include
+
+# connv2
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/src
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/core/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/drv_init/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/connsyslog
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/connsyslog/platform/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/coredump
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/coredump/platform/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/debug_utility/metlog
+
+# connv3
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/src
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/core/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/platform/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/debug_utility
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/debug_utility/include
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6885),)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6885/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6885/include/CODA
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6885),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6885/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6885/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6893),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6893),)
 $(warning $(MODULE_NAME) build mt6893)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6893/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6893/include/CODA
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6893/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6893/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6877),)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6877/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6877/include/CODA
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6877),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6877/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6877/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6983),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6983),)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6983/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6983/include/CODA
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6983),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6983/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6983/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6879),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6879),)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6879/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6879/include/CODA
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6879),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6879/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6879/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6895),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6895),)
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6895/include
-ccflags-y += -I$(KO_CODE_PATH)/platform/mt6895/include/CODA
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6895),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6895/include
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv2/platform/mt6895/include/CODA
 endif
 endif
 
@@ -126,108 +141,143 @@ endif
 $(MODULE_NAME)-objs += base/ring.o
 $(MODULE_NAME)-objs += base/osal.o
 $(MODULE_NAME)-objs += base/msg_thread.o
-$(MODULE_NAME)-objs += core/conninfra_core.o
-$(MODULE_NAME)-objs += src/conninfra_dev.o
-$(MODULE_NAME)-objs += src/conninfra.o
 $(MODULE_NAME)-objs += conf/conninfra_conf.o
-$(MODULE_NAME)-objs += platform/consys_hw.o
-$(MODULE_NAME)-objs += platform/consys_hw_plat_data.o
-$(MODULE_NAME)-objs += platform/clock_mng.o
-$(MODULE_NAME)-objs += platform/pmic_mng.o
-$(MODULE_NAME)-objs += platform/emi_mng.o
-$(MODULE_NAME)-objs += platform/consys_reg_mng.o
-$(MODULE_NAME)-objs += platform/coredump_mng.o
-$(MODULE_NAME)-objs += debug_utility/conninfra_dbg.o
+
+# adaptor
+$(MODULE_NAME)-objs += adaptor/conninfra_dev.o
+$(MODULE_NAME)-objs += adaptor/conn_kern_adaptor.o
+$(MODULE_NAME)-objs += adaptor/connsyslog/fw_log_mcu.o
+$(MODULE_NAME)-objs += adaptor/connsyslog/connsyslog_to_user.o
+$(MODULE_NAME)-objs += adaptor/coredump/conndump_netlink.o
+
+############################
+# connv2 core
+############################
+$(MODULE_NAME)-objs += conn_drv/connv2/core/conninfra_core.o
+$(MODULE_NAME)-objs += conn_drv/connv2/src/conninfra.o
+$(MODULE_NAME)-objs += conn_drv/connv2/src/connv2_drv.o
+
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/consys_hw.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/consys_hw_plat_data.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/clock_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/pmic_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/emi_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/consys_reg_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/coredump_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/conninfra_dbg.o
+
+############################
+# connv3
+############################
+$(MODULE_NAME)-objs += conn_drv/connv3/src/connv3.o
+$(MODULE_NAME)-objs += conn_drv/connv3/src/connv3_drv.o
+$(MODULE_NAME)-objs += conn_drv/connv3/core/connv3_core.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw_plat_data.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pmic_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pinctrl_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/connsyslog/connv3_mcu_log.o
+
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6885),)
-$(MODULE_NAME)-objs += platform/mt6885/mt6885.o
-$(MODULE_NAME)-objs += platform/mt6885/mt6885_pmic.o
-$(MODULE_NAME)-objs += platform/mt6885/mt6885_emi.o
-$(MODULE_NAME)-objs += platform/mt6885/mt6885_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6885/mt6885_pos.o
-$(MODULE_NAME)-objs += platform/mt6885/mt6885_coredump.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6885),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6885/mt6885_coredump.o
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6893),)
-$(MODULE_NAME)-objs += platform/mt6893/mt6893.o
-$(MODULE_NAME)-objs += platform/mt6893/mt6893_pmic.o
-$(MODULE_NAME)-objs += platform/mt6893/mt6893_emi.o
-$(MODULE_NAME)-objs += platform/mt6893/mt6893_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6893/mt6893_pos.o
-$(MODULE_NAME)-objs += platform/mt6893/mt6893_coredump.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6893),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6893/mt6893_coredump.o
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6877),)
-$(MODULE_NAME)-objs += platform/mt6877/mt6877.o
-$(MODULE_NAME)-objs += platform/mt6877/mt6877_pmic.o
-$(MODULE_NAME)-objs += platform/mt6877/mt6877_emi.o
-$(MODULE_NAME)-objs += platform/mt6877/mt6877_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6877/mt6877_pos.o
-$(MODULE_NAME)-objs += platform/mt6877/mt6877_coredump.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6877),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6877/mt6877_coredump.o
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6983),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6983),)
-$(MODULE_NAME)-objs += platform/mt6983/mt6983.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_pmic.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_emi.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_pos.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_pos_gen.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_coredump.o
-$(MODULE_NAME)-objs += platform/mt6983/mt6983_debug_gen.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6983),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos_gen.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_debug_gen.o
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6879),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6879),)
-$(MODULE_NAME)-objs += platform/mt6879/mt6879.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_pmic.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_emi.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_pos.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_pos_gen.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_coredump.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_debug_gen.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6879),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_pos_gen.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6879/mt6879_debug_gen.o
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6895),y)
-ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6895),)
-$(MODULE_NAME)-objs += platform/mt6895/mt6895.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_pmic.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_emi.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_consys_reg.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_pos.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_pos_gen.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_coredump.o
-$(MODULE_NAME)-objs += platform/mt6895/mt6895_debug_gen.o
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6895),)
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_consys_reg.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_pos.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_pos_gen.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6895/mt6895_debug_gen.o
 endif
 endif
 
 # Debug utility
-$(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_mcu.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_wifi_mcu.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/fw_log_bt_mcu.o
-$(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
-$(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
-$(MODULE_NAME)-objs += debug_utility/metlog/metlog.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/ring_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/connsyslog.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/connsys_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/metlog/metlog.o
 
 # Drv init
-$(MODULE_NAME)-objs += drv_init/bluetooth_drv_init.o
-$(MODULE_NAME)-objs += drv_init/conn_drv_init.o
-$(MODULE_NAME)-objs += drv_init/fm_drv_init.o
-$(MODULE_NAME)-objs += drv_init/gps_drv_init.o
-$(MODULE_NAME)-objs += drv_init/wlan_drv_init.o
+$(MODULE_NAME)-objs += conn_drv/connv2/drv_init/bluetooth_drv_init.o
+$(MODULE_NAME)-objs += conn_drv/connv2/drv_init/conn_drv_init.o
+$(MODULE_NAME)-objs += conn_drv/connv2/drv_init/fm_drv_init.o
+$(MODULE_NAME)-objs += conn_drv/connv2/drv_init/gps_drv_init.o
+$(MODULE_NAME)-objs += conn_drv/connv2/drv_init/wlan_drv_init.o
+
+
+
+###############################################################################
+# connv3 platform
+###############################################################################
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6983),y)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6983),)
+
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6983/mt6983.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6983/mt6983_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6983/mt6983_pinctrl.o
+endif
+endif
 
 ###############################################################################
 # Test
@@ -235,13 +285,18 @@ $(MODULE_NAME)-objs += drv_init/wlan_drv_init.o
 ifneq ($(TARGET_BUILD_VARIANT), user)
 ccflags-y += -D CFG_CONNINFRA_UT_SUPPORT
 
-ccflags-y += -I$(KO_CODE_PATH)/test/include
-$(MODULE_NAME)-objs += test/conninfra_core_test.o
-$(MODULE_NAME)-objs += test/conf_test.o
-$(MODULE_NAME)-objs += test/cal_test.o
-$(MODULE_NAME)-objs += test/msg_evt_test.o
-$(MODULE_NAME)-objs += test/chip_rst_test.o
-$(MODULE_NAME)-objs += test/conninfra_test.o
-$(MODULE_NAME)-objs += test/connsyslog_test.o
-$(MODULE_NAME)-objs += test/dump_test.o
+# connv2
+ccflags-y += -I$(KO_CODE_PATH)/test/connv2/include
+$(MODULE_NAME)-objs += test/connv2/conninfra_core_test.o
+$(MODULE_NAME)-objs += test/connv2/conf_test.o
+$(MODULE_NAME)-objs += test/connv2/cal_test.o
+$(MODULE_NAME)-objs += test/connv2/msg_evt_test.o
+$(MODULE_NAME)-objs += test/connv2/chip_rst_test.o
+$(MODULE_NAME)-objs += test/connv2/conninfra_test.o
+$(MODULE_NAME)-objs += test/connv2/connsyslog_test.o
+$(MODULE_NAME)-objs += test/connv2/dump_test.o
+
+# v3
+ccflags-y += -I$(KO_CODE_PATH)/test/connv3/include
+$(MODULE_NAME)-objs += test/connv3/connv3_test.o
 endif
