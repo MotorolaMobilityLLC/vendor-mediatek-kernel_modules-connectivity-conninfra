@@ -1196,10 +1196,10 @@ static int conndump_dump_emi(struct connsys_dump_ctx* ctx)
 #define EMI_COMMAND_LENGTH	64
 	int ret;
 	unsigned long comp_ret;
-	// format: emi_size=aaaaaaaa, mcif_emi_size=bbbbbbbb
+	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb
 	char emi_dump_command[EMI_COMMAND_LENGTH];
 
-	if (snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "emi_size=%d,mcif_emi_size=%d", ctx->full_emi_size, ctx->mcif_emi_size) < 0) {
+	if (snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "dev=/dev/conninfra_dev,emi_size=%d,mcif_emi_size=%d", ctx->full_emi_size, ctx->mcif_emi_size) < 0) {
 		pr_notice("%s snprintf failed\n", __func__);
 		return -1;
 	}
@@ -1623,7 +1623,7 @@ void* connsys_coredump_init(
 	/* EMI init */
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, &emi_base, &emi_size);
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_MCIF, NULL, &mcif_emi_size);
-	pr_info("conn_type=%d Get emi_base=0x%x emi_size=%d\n", conn_type, emi_base, emi_size);
+	pr_info("[%s][%s] Connsys emi_base=0x%x emi_size=%d\n", __func__, g_type_name[conn_type], emi_base, emi_size);
 	ctx->full_emi_size = emi_size;
 	ctx->emi_phy_addr_base = config->start_offset + emi_base;
 	ctx->emi_size = config->size;
@@ -1637,7 +1637,7 @@ void* connsys_coredump_init(
 		goto error_exit;
 	}
 
-	pr_info("Clear %p size=%d as zero\n", ctx->emi_virt_addr_base, ctx->emi_size);
+	pr_info("[%s] Clear %p size=%d as zero\n", __func__, ctx->emi_virt_addr_base, ctx->emi_size);
 	memset_io(ctx->emi_virt_addr_base, 0, ctx->emi_size);
 
 	/* Setup timer */
