@@ -147,7 +147,12 @@ const struct connlog_emi_config* get_connsyslog_platform_config(int conn_type)
 		pr_err("Incorrect type: %d\n", conn_type);
 		return NULL;
 	}
-	return g_connsyslog_config;
+
+	if (g_connsyslog_config == NULL) {
+		pr_err("g_connsyslog_config not init");
+		return NULL;
+	}
+	return &g_connsyslog_config[conn_type];
 }
 
 void *connlog_cache_allocate(size_t size)
@@ -229,6 +234,7 @@ static int connlog_emi_init(struct connlog_dev* handler,
 	int conn_type = handler->conn_type;
 	phys_addr_t emi_addr;
 	u32 emi_size, valid_size, base_addr;
+	u32 block_emi_size;
 	struct connlog_ctrl_block *block;
 	int i;
 
@@ -238,28 +244,32 @@ static int connlog_emi_init(struct connlog_dev* handler,
 	}
 
 	/* size validation */
-	valid_size = connlog_cal_log_size(emi_config->block[CONN_EMI_BLOCK_PRIMARY].size);
-	if (valid_size == 0) {
-		pr_err("[%s] consys emi memory size invalid emi_size=%d\n",
-			type_to_title[conn_type], emi_config->block[CONN_EMI_BLOCK_PRIMARY].size);
+	block_emi_size = emi_config->block[CONN_EMI_BLOCK_PRIMARY].size;
+	valid_size = connlog_cal_log_size(block_emi_size);
+	if (valid_size == 0 || valid_size != block_emi_size) {
+		pr_err("[%s][primary] consys emi memory size invalid: config emi size=[%d] cal size=[%d]\n",
+			type_to_title[conn_type], block_emi_size, valid_size);
 		return -1;
 	}
+	pr_info("[%s][primary] block size=[%d]",
+		type_to_title[conn_type], emi_config->block[CONN_EMI_BLOCK_PRIMARY].size);
 	handler->ctrl_block[CONN_EMI_BLOCK_PRIMARY].enable = true;
 
 	for (i = 1; i < CONN_EMI_BLOCK_TYPE_SIZE; i++) {
-		valid_size = connlog_cal_log_size(emi_config->block[i].size);
-		pr_info("[%s] [%d] emi=[%d][%d]", __func__, i, emi_config->block[i].size, valid_size);
+		block_emi_size = emi_config->block[i].size;
+		valid_size = connlog_cal_log_size(block_emi_size);
 		if (valid_size == 0) {
-			pr_warn("[%s] consys emi memory size invalid emi_size=%d\n",
-				type_to_title[conn_type], emi_config->block[i].size);
+			pr_warn("[%s][%s][block-%d] consys emi memory size invalid: emi_size=[%d] cal size=[%d]\n",
+				__func__, type_to_title[conn_type], i, emi_config->block[i].size, valid_size);
 			continue;
 		}
+		pr_info("[%s][%s] [block-%d] block size=[%d]", __func__, type_to_title[conn_type], i, block_emi_size);
 		handler->ctrl_block[i].enable = true;
 	}
 
 	emi_addr = emi_config->log_offset + gPhyEmiBase;
 	emi_size = emi_config->log_size;
-	pr_info("%s init. Base=%p size=%d\n", type_to_title[conn_type], emi_addr, emi_size);
+	pr_info("[%s][%s] Base offset=%p size=0x%x\n", __func__, type_to_title[conn_type], emi_addr, emi_size);
 
 	handler->phyAddrEmiBase = emi_addr;
 	handler->emi_size = emi_size;
@@ -269,11 +279,15 @@ static int connlog_emi_init(struct connlog_dev* handler,
 		pr_err("[%s] EMI mapping fail\n", type_to_title[conn_type]);
 		return -1;
 	}
+	pr_info("[%s][%s] EMI mapping OK virtual(0x%p) (0x%x) physical(0x%x) size=%d\n",
+		__func__, type_to_title[conn_type],
+		handler->virAddrEmiLogBase, handler->virAddrEmiLogBase,
+		(unsigned int)handler->phyAddrEmiBase,
+		handler->emi_size);
 
 	base_addr = CONNLOG_EMI_BASE_OFFSET;
 	for (i = 0; i < CONN_EMI_BLOCK_TYPE_SIZE; i++) {
 		block = &handler->ctrl_block[i];
-
 		if (!block->enable)
 			continue;
 
@@ -287,27 +301,17 @@ static int connlog_emi_init(struct connlog_dev* handler,
 		block->log_offset.emi_guard_pattern_offset =
 				block->log_offset.emi_buf + valid_size;
 
-		pr_info("[%s] [%d] [%x] sz=[%d] [%x][%x] buf=[%x]", __func__, i,
+		pr_info("[%s][%s] [%d] [%x] sz=[%d] ptr=[%x][%x] buf=[%x]", __func__, type_to_title[conn_type], i,
 					block->log_offset.emi_base_offset, block->log_offset.emi_size,
 					block->log_offset.emi_read, block->log_offset.emi_write, block->log_offset.emi_buf);
 		base_addr += (CONNLOG_EMI_SUB_HEADER + valid_size +
 						CONNLOG_CONTROL_RING_BUFFER_RESERVE_SIZE);
 	}
 
-	if (handler->virAddrEmiLogBase == NULL) {
-		pr_err("[%s] EMI mapping fail\n", type_to_title[conn_type]);
-		return -1;
-	}
-
-	pr_info("[%s] EMI mapping OK virtual(0x%p) (0x%x) physical(0x%x) size=%d\n",
-		type_to_title[conn_type],
-		handler->virAddrEmiLogBase,
-		handler->virAddrEmiLogBase,
-		(unsigned int)handler->phyAddrEmiBase,
-		handler->emi_size);
-
 	/* reset */
 	memset_io(handler->virAddrEmiLogBase, 0xff, handler->emi_size);
+	/* clean header */
+	memset_io(handler->virAddrEmiLogBase, 0x0, CONNLOG_CONTROL_RING_BUFFER_BASE_SIZE);
 	/* Set state to resume initially */
 	EMI_WRITE32(CONNLOG_EMI_AP_STATE_OFFSET(handler->virAddrEmiLogBase), 1);
 
@@ -353,7 +357,7 @@ static int connlog_buffer_init(struct connlog_dev* handler, int idx)
 	unsigned int cache_size = 0;
 	struct connlog_ctrl_block *block = &handler->ctrl_block[idx];
 
-	pr_info("[%s] [%p] sz=[%d] [%p][%p]", __func__,
+	pr_info("[%s][%s][%d] [%p] sz=[%d] [%p][%p]", __func__, type_to_title[handler->conn_type], idx,
 		(handler->virAddrEmiLogBase + block->log_offset.emi_buf),
 		block->log_offset.emi_size,
 		(handler->virAddrEmiLogBase + block->log_offset.emi_read),
@@ -839,6 +843,8 @@ static void connlog_log_data_handler(struct work_struct *work)
 
 	for (i = 0; i < CONN_EMI_BLOCK_TYPE_SIZE; i++) {
 		block = &handler->ctrl_block[i];
+		if (block->enable == false)
+			continue;
 
 		if (!RING_EMI_EMPTY(&block->log_buffer.ring_emi)) {
 			if (atomic_read(&g_log_mode) == LOG_TO_FILE)
@@ -958,7 +964,13 @@ static ssize_t connlog_read_internal(
 	}
 
 	if (block_type < 0 || block_type >= CONN_EMI_BLOCK_TYPE_SIZE) {
-		pr_notice("%s block_type %d is invalid\n", __func__, block_type);
+		pr_notice("[%s][%s] block_type %d is invalid\n",
+			__func__, type_to_title[conn_type], block_type);
+		return 0;
+	}
+	if (handler->ctrl_block[block_type].enable == false) {
+		pr_notice("[%s][%s] block_type %d is not enable\n",
+			__func__, type_to_title[conn_type], block_type);
 		return 0;
 	}
 
@@ -1245,11 +1257,12 @@ int connsys_log_init(int conn_type)
 
 	emi_config = get_connsyslog_platform_config(conn_type);
 	if (!emi_config) {
-		pr_err("[%s] get emi config fail.\n", __func__);
+		pr_err("[%s][%s] get emi config fail.\n", __func__, type_to_title[conn_type]);
 		return -1;
 	}
 
-	pr_info("[%s] type=[%d]", __func__, conn_type);
+	pr_info("[%s][%s] conn_type=[%d] emi offset=[0x%x] size=[0x%x]",
+		__func__, type_to_title[conn_type], conn_type, emi_config->log_offset, emi_config->log_size);
 	handler = connlog_subsys_init(conn_type, emi_config);
 
 	gLogDev[conn_type] = handler;
