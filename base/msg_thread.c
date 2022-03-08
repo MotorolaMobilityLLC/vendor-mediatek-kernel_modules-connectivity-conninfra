@@ -300,6 +300,11 @@ int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 	P_OSAL_SIGNAL signal;
 	int ret;
 
+	if (ctx == NULL) {
+		pr_err("[%s] ctx is NULL", __func__);
+		return -1;
+	}
+
 	op = msg_evt_get_free_op(ctx);
 	if (!op) {
 		pr_err("[%s] can't get free op\n", __func__);
@@ -358,6 +363,11 @@ int msg_thread_send_wait_4(struct msg_thread_ctx *ctx,
 	struct msg_op *op = NULL;
 	P_OSAL_SIGNAL signal;
 	int ret;
+
+	if (ctx == NULL) {
+		pr_err("[%s] msg ctx is NULL", __func__);
+		return -1;
+	}
 
 	op = msg_evt_get_free_op(ctx);
 	if (!op) {

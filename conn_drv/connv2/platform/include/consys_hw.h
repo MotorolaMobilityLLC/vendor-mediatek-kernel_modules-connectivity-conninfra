@@ -292,6 +292,7 @@ void consys_hw_set_mcu_control(int type, bool onoff);
 int consys_hw_pre_cal_backup(unsigned int offset, unsigned int size);
 int consys_hw_pre_cal_clean_data(void);
 
+unsigned int consys_hw_get_support_drv(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

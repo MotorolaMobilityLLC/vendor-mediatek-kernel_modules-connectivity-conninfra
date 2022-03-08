@@ -47,9 +47,10 @@
 ********************************************************************************
 */
 typedef enum _ENUM_DRV_STS_ {
-	DRV_STS_POWER_OFF = 0,	/* initial state */
-	DRV_STS_POWER_ON = 1,	/* powered on */
-	DRV_STS_RESET = 2,
+	DRV_STS_NONE = 0,	/* not support */
+	DRV_STS_POWER_OFF = 1,	/* initial state */
+	DRV_STS_POWER_ON = 2,	/* powered on */
+	DRV_STS_RESET = 3,
 	DRV_STS_MAX
 } ENUM_DRV_STS, *P_ENUM_DRV_STS;
 
@@ -100,6 +101,7 @@ struct conninfra_ctx {
 	ENUM_DRV_STS infra_drv_status;
 
 	struct subsys_drv_inst drv_inst[CONNDRV_TYPE_MAX];
+	unsigned int support_drv;
 	/*struct spinlock infra_lock;*/
 	spinlock_t infra_lock;
 
@@ -185,7 +187,7 @@ typedef enum {
 ********************************************************************************
 */
 
-extern int conninfra_core_init(void);
+extern int conninfra_core_init(unsigned int support_drv);
 extern int conninfra_core_deinit(void);
 
 int conninfra_core_power_on(enum consys_drv_type type);

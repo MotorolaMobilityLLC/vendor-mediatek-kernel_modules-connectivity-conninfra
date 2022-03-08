@@ -527,7 +527,7 @@ int connv2_drv_init(void)
 	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);
 
 	/* init core */
-	iret = conninfra_core_init();
+	iret = conninfra_core_init(consys_hw_get_support_drv());
 	if (iret) {
 		pr_err("conninfra init fail");
 		return -3;
@@ -539,6 +539,7 @@ int connv2_drv_init(void)
 	/* ap resume worker */
 	INIT_WORK(&g_ap_resume_work, consys_hw_ap_resume_handler);
 
+	g_connv2_drv_gen.drv_radio_support = consys_hw_get_support_drv();
 	iret = conn_adaptor_register_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_2, &g_connv2_drv_gen);
 
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)

@@ -87,6 +87,8 @@ static void _conninfra_core_update_rst_status(enum chip_rst_status status);
 static void conninfra_core_wake_lock_get(void);
 static void conninfra_core_wake_lock_put(void);
 
+static void _conninfra_core_drv_status_dump(char* tag);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -129,19 +131,21 @@ static const msg_opid_func conninfra_core_cb_opfunc[] = {
 
 
 /* subsys ops */
-static char *drv_thread_name[] = {
+static const char *g_drv_thread_name[CONNDRV_TYPE_MAX] = {
 	[CONNDRV_TYPE_BT] = "sub_bt_thrd",
 	[CONNDRV_TYPE_FM] = "sub_fm_thrd",
 	[CONNDRV_TYPE_GPS] = "sub_gps_thrd",
 	[CONNDRV_TYPE_WIFI] = "sub_wifi_thrd",
+	[CONNDRV_TYPE_MAWD] = "sub_mawd_thrd",
 	[CONNDRV_TYPE_CONNINFRA] = "sub_conninfra_thrd",
 };
 
-static char *drv_name[] = {
+static const char *g_drv_name[CONNDRV_TYPE_MAX] = {
 	[CONNDRV_TYPE_BT] = "BT",
 	[CONNDRV_TYPE_FM] = "FM",
 	[CONNDRV_TYPE_GPS] = "GPS",
 	[CONNDRV_TYPE_WIFI] = "WIFI",
+	[CONNDRV_TYPE_MAWD] = "MAWD",
 	[CONNDRV_TYPE_CONNINFRA] = "CONNINFRA",
 };
 
@@ -181,6 +185,35 @@ static unsigned int g_pre_cal_mode = 0;
 ********************************************************************************
 */
 
+static void _conninfra_core_drv_status_dump(char* tag)
+{
+#define DUMP_BUFF_SIZE	256
+	const char* drv_name[CONNDRV_TYPE_MAX] = {
+		"bt", "fm", "gps", "wifi", "mawd", "conninfra"
+	};
+	const char* drv_status_str[DRV_STS_MAX] = {
+		"not support", "off", "on", "reset"
+	};
+	char buf[DUMP_BUFF_SIZE] = {'\0'};
+	char tmp[DUMP_BUFF_SIZE] = {'\0'};
+	unsigned int i, buf_len = 0, str_len;
+	ENUM_DRV_STS drv_status;
+
+	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+		drv_status = g_conninfra_ctx.drv_inst[i].drv_status;
+		str_len = snprintf(tmp, DUMP_BUFF_SIZE, " %s:[%s]", drv_name[i], drv_status_str[drv_status]);
+		if (buf_len + str_len < DUMP_BUFF_SIZE) {
+			strncat(buf, tmp, str_len);
+			buf_len += str_len;
+		}
+	}
+
+	if (tag != NULL)
+		pr_info("%s:%s", tag, buf);
+	else
+		pr_info("Connsys drv status:%s", buf);
+}
+
 static void reset_chip_rst_trg_data(void)
 {
 	g_conninfra_ctx.trg_drv = CONNDRV_TYPE_MAX;
@@ -203,7 +236,8 @@ static unsigned int opfunc_get_current_status(void)
 	unsigned int i;
 
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-		ret |= (g_conninfra_ctx.drv_inst[i].drv_status << i);
+		if (g_conninfra_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON)
+			ret |= (0x1 << i);
 	}
 
 	return ret;
@@ -213,15 +247,16 @@ static unsigned int opfunc_get_current_status(void)
  */
 static void _status_dump(void)
 {
-	const char* drv_name[] = {
-		"bt ", "fm ", "gps ", "wifi ", "conninfra"
+	const char* drv_name[CONNDRV_TYPE_MAX] = {
+		"bt ", "fm ", "gps ", "wifi ", "mawd", "conninfra"
 	};
 	char buf[256] = {'\0'};
 	unsigned int i, buf_len = 0, str_len;
 
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		str_len = strlen(drv_name[i]);
-		if (g_conninfra_ctx.drv_inst[i].drv_status && (buf_len + str_len < 256)) {
+		if (g_conninfra_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON &&
+		    (buf_len + str_len < 256)) {
 			strncat(buf, drv_name[i], str_len);
 			buf_len += str_len;
 		}
@@ -258,27 +293,27 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 
 	/* Check abnormal type */
 	if (drv_type >= CONNDRV_TYPE_MAX) {
-		pr_err("abnormal Fun(%d)\n", drv_type);
+		pr_err("[%s] abnormal drv_type(%d)\n", __func__, drv_type);
 		return -EINVAL;
 	}
 
 	/* Check abnormal state */
 	if ((g_conninfra_ctx.drv_inst[drv_type].drv_status < DRV_STS_POWER_OFF)
 	    || (g_conninfra_ctx.drv_inst[drv_type].drv_status >= DRV_STS_MAX)) {
-		pr_err("func(%d) status[0x%x] abnormal\n", drv_type,
-				g_conninfra_ctx.drv_inst[drv_type].drv_status);
+		pr_err("[%s] func(%d) status[0x%x] abnormal\n",
+				__func__, drv_type, g_conninfra_ctx.drv_inst[drv_type].drv_status);
 		return -EINVAL;
 	}
 
 	ret = osal_lock_sleepable_lock(&infra_ctx->core_lock);
 	if (ret) {
-		pr_err("core_lock fail!!");
+		pr_err("[%s] core_lock fail!!", __func__);
 		return ret;
 	}
 
 	/* check if func already on */
 	if (g_conninfra_ctx.drv_inst[drv_type].drv_status == DRV_STS_POWER_ON) {
-		pr_warn("func(%d) already on\n", drv_type);
+		pr_warn("[%s] func(%s) already on\n", __func__, g_drv_name[drv_type]);
 		osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 		return 0;
 	}
@@ -289,8 +324,9 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	conninfra_core_wake_lock_put();
 
 	if (ret) {
-		pr_err("Conninfra power on fail. drv(%d) ret=(%d)\n",
-			drv_type, ret);
+		pr_err("[%s] Conninfra power on fail. drv(%d) ret=(%d)\n",
+			__func__, drv_type, ret);
+		_conninfra_core_drv_status_dump("[Conninfra Pwr On] failed.");
 		osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 		return ret;
 	}
@@ -309,11 +345,8 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	/* VCNx enable */
 	opfunc_vcn_control_internal(drv_type, true);
 
-	pr_info("[Conninfra Pwr On] BT=[%d] FM=[%d] GPS=[%d] WF=[%d]",
-			infra_ctx->drv_inst[CONNDRV_TYPE_BT].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_FM].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_GPS].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_WIFI].drv_status);
+	/* Dump current status */
+	_conninfra_core_drv_status_dump("[Conninfra Pwr On]");
 	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 
 	return 0;
@@ -414,13 +447,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 	if (try_power_off)
 		g_conninfra_ctx.infra_drv_status = DRV_STS_POWER_OFF;
 
-	pr_info("[Conninfra Pwr Off] Conninfra=[%d] BT=[%d] FM=[%d] GPS=[%d] WF=[%d]",
-			infra_ctx->infra_drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_BT].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_FM].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_GPS].drv_status,
-			infra_ctx->drv_inst[CONNDRV_TYPE_WIFI].drv_status);
-
+	_conninfra_core_drv_status_dump("[Conninfra Pwr Off]");
 	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 
 	return 0;
@@ -438,7 +465,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	int i, ret, cur_rst_state;
 	struct subsys_drv_inst *drv_inst;
 	unsigned int drv_pwr_state[CONNDRV_TYPE_MAX];
-	const unsigned int subdrv_all_done = (0x1 << CONNDRV_TYPE_MAX) - 1;
+	unsigned int subdrv_all_done = 0;
 	struct timespec64 pre_begin, pre_end, reset_end, done_end;
 
 	if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
@@ -459,8 +486,11 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		drv_inst = &g_conninfra_ctx.drv_inst[i];
 		drv_pwr_state[i] = drv_inst->drv_status;
 		pr_info("subsys %d is %d", i, drv_inst->drv_status);
-		ret = msg_thread_send_1(&drv_inst->msg_ctx,
-				INFRA_SUBDRV_OPID_PRE_RESET, i);
+		if (drv_inst->drv_status != DRV_STS_NONE) {
+			subdrv_all_done |= (0x1 << i);
+			ret = msg_thread_send_1(&drv_inst->msg_ctx,
+					INFRA_SUBDRV_OPID_PRE_RESET, i);
+		}
 	}
 
 	pr_info("[chip_rst] pre vvvvvvvvvvvvv");
@@ -473,7 +503,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		pr_info("cur_rst state =[%d]", cur_rst_state);
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 			if ((cur_rst_state & (0x1 << i)) == 0) {
-				pr_info("[chip_rst] [%s] pre-callback is not back", drv_thread_name[i]);
+				pr_info("[chip_rst] [%s] pre-callback is not back", g_drv_thread_name[i]);
 				drv_inst = &g_conninfra_ctx.drv_inst[i];
 				osal_thread_show_stack(&drv_inst->msg_ctx.thread);
 			}
@@ -496,7 +526,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 
 	/* Turn on subsys */
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-		if (drv_pwr_state[i]) {
+		if (drv_pwr_state[i] == DRV_STS_POWER_ON) {
 			ret = opfunc_power_on_internal(i);
 			pr_info("Call subsys(%d) power on ret=%d", i, ret);
 		}
@@ -514,8 +544,9 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	sema_init(&g_conninfra_ctx.rst_sema, 1);
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		drv_inst = &g_conninfra_ctx.drv_inst[i];
-		ret = msg_thread_send_1(&drv_inst->msg_ctx,
-				INFRA_SUBDRV_OPID_POST_RESET, i);
+		if (drv_inst->drv_status != DRV_STS_NONE)
+			ret = msg_thread_send_1(&drv_inst->msg_ctx,
+					INFRA_SUBDRV_OPID_POST_RESET, i);
 	}
 
 	while (atomic_read(&g_conninfra_ctx.rst_state) != subdrv_all_done) {
@@ -525,7 +556,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		cur_rst_state = atomic_read(&g_conninfra_ctx.rst_state);
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 			if ((cur_rst_state & (0x1 << i)) == 0) {
-				pr_info("[chip_rst] [%s] post-callback is not back", drv_thread_name[i]);
+				pr_info("[chip_rst] [%s] post-callback is not back", g_drv_thread_name[i]);
 				drv_inst = &g_conninfra_ctx.drv_inst[i];
 				osal_thread_show_stack(&drv_inst->msg_ctx.thread);
 			}
@@ -565,10 +596,18 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 		pr_err("[%s] core_lock fail!!", __func__);
 		return ret;
 	}
+
+	/* Check if both BT and Wifi is support */
+	if ((g_conninfra_ctx.support_drv & pre_cal_done_state) != pre_cal_done_state) {
+		pr_warn("[%s] support_drv=0x%x, don't do K", __func__, g_conninfra_ctx.support_drv);
+		osal_unlock_sleepable_lock(&g_conninfra_ctx.core_lock);
+		return 0;
+	}
+
 	/* check if func already on */
 	for (i = 0; i < CAL_DRV_COUNT; i++) {
 		if (g_conninfra_ctx.drv_inst[cal_drvs[i]].drv_status == DRV_STS_POWER_ON) {
-			pr_warn("[%s] %s already on\n", __func__, drv_name[cal_drvs[i]]);
+			pr_warn("[%s] %s already on\n", __func__, g_drv_name[cal_drvs[i]]);
 			osal_unlock_sleepable_lock(&g_conninfra_ctx.core_lock);
 			return 0;
 		}
@@ -631,7 +670,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	bt_cal_ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			INFRA_SUBDRV_OPID_CAL_DO_CAL, 0, CONNDRV_TYPE_BT);
 
-	pr_info("[pre_cal] driver [%s] calibration %s, ret=[%d]\n", drv_name[CONNDRV_TYPE_BT],
+	pr_info("[pre_cal] driver [%s] calibration %s, ret=[%d]\n", g_drv_name[CONNDRV_TYPE_BT],
 			(bt_cal_ret == CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF ||
 			bt_cal_ret == CONNINFRA_CB_RET_CAL_FAIL_POWER_ON) ? "fail" : "success",
 			bt_cal_ret);
@@ -648,7 +687,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	wf_cal_ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			INFRA_SUBDRV_OPID_CAL_DO_CAL, 0, CONNDRV_TYPE_WIFI);
 
-	pr_info("[pre_cal] driver [%s] calibration %s, ret=[%d]\n", drv_name[CONNDRV_TYPE_WIFI],
+	pr_info("[pre_cal] driver [%s] calibration %s, ret=[%d]\n", g_drv_name[CONNDRV_TYPE_WIFI],
 			(wf_cal_ret == CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF ||
 			wf_cal_ret == CONNINFRA_CB_RET_CAL_FAIL_POWER_ON) ? "fail" : "success",
 			wf_cal_ret);
@@ -718,7 +757,7 @@ static int opfunc_subdrv_get_cal_result(struct msg_op_data *op)
 	unsigned int *offset = (unsigned int*)op->op_data[1];
 	unsigned int *size = (unsigned int*)op->op_data[2];
 
-	pr_info("[%s] drv=[%s]", __func__, drv_thread_name[drv_type]);
+	pr_info("[%s] drv=[%s]", __func__, g_drv_thread_name[drv_type]);
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
 	if (drv_inst->ops_cb.pre_cal_cb.get_cal_result_cb) {
 		ret = drv_inst->ops_cb.pre_cal_cb.get_cal_result_cb(offset, size);
@@ -726,7 +765,7 @@ static int opfunc_subdrv_get_cal_result(struct msg_op_data *op)
 			pr_warn("[%s] fail [%d]", __func__, ret);
 	}
 
-	pr_info("[pre_cal][%s] [%s] DONE", __func__, drv_thread_name[drv_type]);
+	pr_info("[pre_cal][%s] [%s] DONE", __func__, g_drv_thread_name[drv_type]);
 	return ret;
 }
 
@@ -1171,7 +1210,7 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 	atomic_add(0x1 << drv_type, &g_conninfra_ctx.rst_state);
 	cur_rst_state = atomic_read(&g_conninfra_ctx.rst_state);
 
-	pr_info("[%s] rst_state=[%d]", drv_thread_name[drv_type], cur_rst_state);
+	pr_info("[%s] rst_state=[%d]", g_drv_thread_name[drv_type], cur_rst_state);
 
 	up(&g_conninfra_ctx.rst_sema);
 	return 0;
@@ -1203,7 +1242,7 @@ static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op)
 	unsigned int drv_type = op->op_data[0];
 	struct subsys_drv_inst *drv_inst;
 
-	pr_info("[%s] drv=[%s]", __func__, drv_thread_name[drv_type]);
+	pr_info("[%s] drv=[%s]", __func__, g_drv_thread_name[drv_type]);
 
 	/* TODO: should be locked, to avoid cb was reset */
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
@@ -1217,7 +1256,7 @@ static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op)
 	atomic_add(0x1 << drv_type, &g_conninfra_ctx.pre_cal_state);
 	up(&g_conninfra_ctx.pre_cal_sema);
 
-	pr_info("[pre_cal][%s] [%s] DONE", __func__, drv_thread_name[drv_type]);
+	pr_info("[pre_cal][%s] [%s] DONE", __func__, g_drv_thread_name[drv_type]);
 	return 0;
 }
 
@@ -1227,7 +1266,7 @@ static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op)
 	unsigned int drv_type = op->op_data[0];
 	struct subsys_drv_inst *drv_inst;
 
-	pr_info("[%s] drv=[%s]", __func__, drv_thread_name[drv_type]);
+	pr_info("[%s] drv=[%s]", __func__, g_drv_thread_name[drv_type]);
 
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
 	if (/*drv_inst->drv_status == DRV_ST_POWER_ON &&*/
@@ -1237,7 +1276,7 @@ static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op)
 			pr_warn("[%s] fail [%d]", __func__, ret);
 	}
 
-	pr_info("[pre_cal][%s] [%s] DONE", __func__, drv_thread_name[drv_type]);
+	pr_info("[pre_cal][%s] [%s] DONE", __func__, g_drv_thread_name[drv_type]);
 	return ret;
 }
 
@@ -1253,7 +1292,7 @@ static int opfunc_subdrv_time_change(struct msg_op_data *op)
 
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
 	if (drv_inst->ops_cb.time_change_notify) {
-		pr_info("[%s] drv=[%s]", __func__, drv_thread_name[drv_type]);
+		pr_info("[%s] drv=[%s]", __func__, g_drv_thread_name[drv_type]);
 		drv_inst->ops_cb.time_change_notify();
 	}
 	return 0;
@@ -1821,13 +1860,18 @@ int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
 	if (type < CONNDRV_TYPE_BT || type >= CONNDRV_TYPE_MAX)
 		return -1;
 
+	if ((infra_ctx->support_drv & (0x1 << type)) == 0) {
+		pr_warn("[%s] drv(%d) not support, support_drv=0x%x", __func__, type, infra_ctx->support_drv);
+		return -1;
+	}
+
 	spin_lock_irqsave(&g_conninfra_ctx.infra_lock, flag);
 	drv_inst = &g_conninfra_ctx.drv_inst[type];
 	memcpy(&g_conninfra_ctx.drv_inst[type].ops_cb, cb,
 					sizeof(struct sub_drv_ops_cb));
 
 	pr_info("[%s] [pre_cal] type=[%s] cb rst=[%p][%p] pre_cal=[%p][%p], therm=[%p]",
-			__func__, drv_name[type],
+			__func__, g_drv_name[type],
 			cb->rst_cb.pre_whole_chip_rst, cb->rst_cb.post_whole_chip_rst,
 			cb->pre_cal_cb.pwr_on_cb, cb->pre_cal_cb.do_cal_cb, cb->thermal_qry);
 
@@ -1859,6 +1903,11 @@ int conninfra_core_subsys_ops_unreg(enum consys_drv_type type)
 
 	if (type < CONNDRV_TYPE_BT || type >= CONNDRV_TYPE_MAX)
 		return -1;
+	if ((g_conninfra_ctx.support_drv & (0x1 << type)) == 0) {
+		pr_warn("[%s] drv(%s) not support, support_drv=0x%x", __func__, g_drv_name[type], g_conninfra_ctx.support_drv);
+		return -1;
+	}
+
 	spin_lock_irqsave(&g_conninfra_ctx.infra_lock, flag);
 	memset(&g_conninfra_ctx.drv_inst[type].ops_cb, 0,
 					sizeof(struct sub_drv_ops_cb));
@@ -2120,10 +2169,31 @@ static void conninfra_core_wake_lock_put(void)
 	}
 }
 
-int conninfra_core_init(void)
+static int conninfra_core_subsys_init(unsigned int support_drv)
 {
-	int ret = 0, i;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	int ret = 0, i;
+
+	/* Clear data */
+	memset(&infra_ctx->drv_inst, 0, sizeof(struct subsys_drv_inst)*CONNDRV_TYPE_MAX);
+	/* init subsys drv state */
+	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+		if ((support_drv & (0x1 << i)) != 0) {
+			ret += msg_thread_init(&infra_ctx->drv_inst[i].msg_ctx,
+				g_drv_thread_name[i], infra_subdrv_opfunc,
+				INFRA_SUBDRV_OPID_MAX);
+			infra_ctx->drv_inst[i].drv_status = DRV_STS_POWER_OFF;
+		}
+	}
+
+	return ret;
+}
+
+int conninfra_core_init(const unsigned int support_drv)
+{
+	int ret = 0;
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	const unsigned int bt_wifi_mask = ((0x1 << CONNDRV_TYPE_BT) | (0x1 << CONNDRV_TYPE_WIFI));
 
 	// Get pre-cal mode
 	const struct conninfra_conf *conf = NULL;
@@ -2156,16 +2226,18 @@ int conninfra_core_init(void)
 		pr_err("callback msg thread init fail(%d)\n", ret);
 		return -1;
 	}
-	/* init subsys drv state */
-	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-		ret += msg_thread_init(&infra_ctx->drv_inst[i].msg_ctx,
-				drv_thread_name[i], infra_subdrv_opfunc,
-				INFRA_SUBDRV_OPID_MAX);
-	}
 
+	/* init subsys drv state */
+	ret = conninfra_core_subsys_init(support_drv);
 	if (ret) {
 		pr_err("subsys callback thread init fail.\n");
 		return -1;
+	}
+	infra_ctx->support_drv = support_drv;
+	/* Setup pre-cal mode by support driver list */
+	if ((support_drv & bt_wifi_mask) != bt_wifi_mask) {
+		pr_info("[%s] support_drv=%u, disable pre-cal", __func__, support_drv);
+		g_pre_cal_mode = PRE_CAL_ALL_DISABLED;
 	}
 
 	INIT_WORK(&infra_ctx->cal_info.pre_cal_work, conninfra_core_pre_cal_work_handler);
