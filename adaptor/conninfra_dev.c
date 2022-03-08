@@ -24,7 +24,6 @@
 #include "connv2_drv.h"
 #include "connv3_drv.h"
 #include "conn_adaptor.h"
-#include "connv3_test.h"
 #include "conn_kern_adaptor.h"
 
 /*******************************************************************************
@@ -620,8 +619,6 @@ static void conninfra_dev_deinit(void)
 	unregister_pm_notifier(&conn_adaptor_pm_notifier);
 
 	iret = conninfra_conf_deinit();
-
-	connv3_test_remove();
 
 	if (p_conn_adaptor_dev) {
 		device_destroy(p_conn_adaptor_class, dev);
