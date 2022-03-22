@@ -171,7 +171,7 @@ static enum core_dump_state conndump_get_dump_state(struct connsys_dump_ctx* ctx
 static void conndump_timeout_handler(timer_handler_arg arg);
 static inline int conndump_get_dmp_info(struct connsys_dump_ctx* ctx, unsigned int offset, bool log);
 /* Dynamic remap relative function */
-static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, unsigned int base, unsigned int length);
+static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, unsigned int index, unsigned int base, unsigned int length);
 static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int base, unsigned int length);
 static void conndump_unmap(struct connsys_dump_ctx* ctx, void __iomem* vir_addr);
 /* To dump different partition */
@@ -936,34 +936,9 @@ static int conndump_dump_dump_buff(struct connsys_dump_ctx* ctx)
  * RETURNS
  *
  *****************************************************************************/
-static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, unsigned int base, unsigned int length)
+static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, unsigned int index, unsigned int base, unsigned int length)
 {
-
-#define DYNAMIC_MAP_MAX_SIZE	0x300000
-	unsigned int map_len = (length > DYNAMIC_MAP_MAX_SIZE? DYNAMIC_MAP_MAX_SIZE : length);
-	void __iomem* vir_addr = 0;
-
-	if (coredump_mng_is_host_view_cr(base, NULL)) {
-		return length;
-	}
-
-	/* Expand to request size */
-	vir_addr = ioremap(ctx->hw_config.seg1_cr, 4);
-	if (vir_addr) {
-		iowrite32(ctx->hw_config.seg1_phy_addr + map_len, vir_addr);
-		iounmap(vir_addr);
-	} else {
-		return 0;
-	}
-	/* Setup map base */
-	vir_addr = ioremap(ctx->hw_config.seg1_start_addr, 4);
-	if (vir_addr) {
-		iowrite32(base, vir_addr);
-		iounmap(vir_addr);
-	} else {
-		return 0;
-	}
-	return map_len;
+	return coredump_mng_setup_dynamic_remap(ctx->conn_type, index, base, length);
 }
 
 /*****************************************************************************
@@ -978,15 +953,7 @@ static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, u
  *****************************************************************************/
 static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int base, unsigned int length)
 {
-	void __iomem* vir_addr = 0;
-	unsigned int host_cr;
-
-	if (coredump_mng_is_host_view_cr(base, &host_cr)) {
-		vir_addr = ioremap(host_cr, length);
-	} else {
-		vir_addr = ioremap(ctx->hw_config.seg1_phy_addr, length);
-	}
-	return vir_addr;
+	return coredump_mng_remap(ctx->conn_type, base, length);
 }
 
 /*****************************************************************************
@@ -1001,7 +968,7 @@ static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int b
  *****************************************************************************/
 static void conndump_unmap(struct connsys_dump_ctx* ctx, void __iomem* vir_addr)
 {
-	iounmap(vir_addr);
+	coredump_mng_unmap(vir_addr);
 }
 
 
@@ -1058,7 +1025,7 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx)
 					ctx->dump_regions[idx].length);
 			}
 			map_length = conndump_setup_dynamic_remap(
-					ctx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
+					ctx, idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
 			/* For CR region, we assume region size should < dynamic remap region. */
 			if (map_length != ctx->dump_regions[idx].length) {
 				pr_err("Expect_size=0x%x map_length=0x%x\n", ctx->dump_regions[idx].length, map_length);
@@ -1146,7 +1113,7 @@ static int conndump_dump_mem_regions(struct connsys_dump_ctx* ctx)
 			}
 			/* Change dynamic window */
 			map_length = conndump_setup_dynamic_remap(
-					ctx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
+					ctx, idx, ctx->dump_regions[idx].base, ctx->dump_regions[idx].length);
 			if (map_length != ctx->dump_regions[idx].length) {
 				pr_err("Setup dynamic remap for %s fail. Expect 0x%x but 0x%x",
 					ctx->dump_regions[idx].name,
@@ -1284,13 +1251,13 @@ static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump
 
 #if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	pr_info("par1: [%s] pars: [%s] par3: [%d]\n",
-		ctx->hw_config.exception_tag_name,
+		coredump_mng_get_tag_name(ctx->conn_type),
 		ctx->info.exception_log,
 		strlen(ctx->info.exception_log));
 #if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 	/* Call AEE API */
 	aed_common_exception_api(
-		ctx->hw_config.exception_tag_name,
+		coredump_mng_get_tag_name(ctx->conn_type),
 		NULL, 0,
 		(const int*)ctx->info.exception_log, strlen(ctx->info.exception_log),
 		ctx->info.exception_log, 0);
@@ -1387,6 +1354,8 @@ int connsys_coredump_setup_dump_region(void* handler)
 		ctx->dump_regions[idx].base = conndump_get_dmp_info(ctx, offset, false);
 		ctx->dump_regions[idx].length = conndump_get_dmp_info(ctx, offset + 4, false);
 	}
+
+	coredump_mng_setup_dump_region(ctx->conn_type);
 
 	return ctx->dump_regions_num;
 }
@@ -1562,11 +1531,7 @@ EXPORT_SYMBOL(connsys_coredump_start);
  *****************************************************************************/
 phys_addr_t connsys_coredump_get_start_offset(int conn_type)
 {
-	struct coredump_hw_config *config = coredump_mng_get_platform_config(conn_type);
-
-	if (config)
-		return config->start_offset;
-	return 0;
+	return coredump_mng_get_emi_offset(conn_type);
 }
 EXPORT_SYMBOL(connsys_coredump_get_start_offset);
 
@@ -1621,8 +1586,8 @@ void* connsys_coredump_init(
 		pr_info("[%s][%d] callback is null\n", __func__, conn_type);
 
 	/* EMI init */
-	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, &emi_base, &emi_size);
-	conninfra_get_emi_phy_addr(CONNSYS_EMI_MCIF, NULL, &mcif_emi_size);
+	coredump_mng_get_emi_phy_addr(&emi_base, &emi_size);
+	coredump_mng_get_mcif_emi_phy_addr(NULL, &mcif_emi_size);
 	pr_info("[%s][%s] Connsys emi_base=0x%x emi_size=%d\n", __func__, g_type_name[conn_type], emi_base, emi_size);
 	ctx->full_emi_size = emi_size;
 	ctx->emi_phy_addr_base = config->start_offset + emi_base;
