@@ -38,7 +38,7 @@ static struct coredump_hw_config g_coredump_config[CONN_DEBUG_TYPE_END] = {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	.start_offset = 0x8000,
 #else
-        .start_offset = 0x0495400,
+        .start_offset = 0xb30000,
 #endif
         .size = 0x18000,
         .seg1_cr = 0x1840012c,
@@ -52,7 +52,7 @@ static struct coredump_hw_config g_coredump_config[CONN_DEBUG_TYPE_END] = {
     /* BT config */
     {
         .name = "BTSYS",
-        .start_offset = 0x43C00,
+        .start_offset = 0xb58000,
         .size = 0x18000,
         .seg1_cr = 0x18816024,
         .seg1_value_end = 0x18bfffff,
