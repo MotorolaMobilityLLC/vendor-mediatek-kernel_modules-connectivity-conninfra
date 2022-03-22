@@ -287,11 +287,11 @@ int connsys_a_die_cfg_mt6983(void)
 	connsys_a_die_switch_to_conn_mode_mt6983_gen();
 
 	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6983();
-#endif /* CONFIG_FPGA_EARLY_PORTING */
 
 	sleep_mode = consys_get_sleep_mode_mt6983();
 	pr_info("sleep_mode = %d\n", sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6983_gen(adie_id, sleep_mode);
+#endif /* CONFIG_FPGA_EARLY_PORTING */
 	return 0;
 }
 

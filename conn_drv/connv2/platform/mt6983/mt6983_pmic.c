@@ -155,9 +155,6 @@ int consys_plt_pmic_get_from_dts_mt6983(struct platform_device *pdev, struct con
 int consys_plt_pmic_common_power_ctrl_mt6983(unsigned int enable)
 {
 	int ret = 0;
-#ifdef CONFIG_FPGA_EARLY_PORTING
-	pr_info("[%s] not support on FPGA", __func__);
-#else
 	int sleep_mode;
 
 	if (enable) {
@@ -204,7 +201,6 @@ int consys_plt_pmic_common_power_ctrl_mt6983(unsigned int enable)
 			pr_info("Set buckboost to 3.45V\n");
 		}
 	}
-#endif
 	return ret;
 }
 
@@ -227,9 +223,6 @@ static void consys_pmic_regmap_set_value(struct regmap *rmap, unsigned int addre
 int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
 {
 	int ret = 0;
-#ifdef CONFIG_FPGA_EARLY_PORTING
-	pr_info("[%s] not support on FPGA", __func__);
-#else
 	int sleep_mode;
 	struct regmap *r = g_regmap_mt6363;
 
@@ -328,7 +321,6 @@ int consys_plt_pmic_common_power_low_power_mode_mt6983(unsigned int enable)
 		consys_pmic_vcn33_2_power_ctl_mt6983_rc(enable);
 	}
 	consys_pmic_vant18_power_ctl_mt6983(enable);
-#endif
 	return ret;
 }
 
