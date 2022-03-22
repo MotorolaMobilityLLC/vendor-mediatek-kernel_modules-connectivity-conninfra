@@ -51,11 +51,11 @@ const struct consys_platform_coredump_ops* consys_platform_coredump_ops = NULL;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-int coredump_mng_init(const struct conninfra_plat_data* plat_data)
+int coredump_mng_init(void* plat_data)
 {
     if (consys_platform_coredump_ops == NULL) {
         consys_platform_coredump_ops =
-            (const struct consys_platform_coredump_ops*)plat_data->platform_coredump_ops;
+            (const struct consys_platform_coredump_ops*)plat_data;
     }
 
     return 0;
@@ -129,3 +129,72 @@ enum cr_category coredump_mng_get_cr_category(unsigned int addr)
 
     return SUBSYS_CR;
 }
+
+unsigned int coredump_mng_get_emi_offset(int conn_type)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_get_emi_offset)
+        return consys_platform_coredump_ops->consys_coredump_get_emi_offset(conn_type);
+
+    return -1;
+}
+
+void coredump_mng_get_emi_phy_addr(phys_addr_t* base, unsigned int *size)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_get_emi_phy_addr)
+        consys_platform_coredump_ops->consys_coredump_get_emi_phy_addr(base, size);
+}
+
+void coredump_mng_get_mcif_emi_phy_addr(phys_addr_t* base, unsigned int *size)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_get_mcif_emi_phy_addr)
+        consys_platform_coredump_ops->consys_coredump_get_mcif_emi_phy_addr(base, size);
+}
+
+int coredump_mng_setup_dump_region(int conn_type)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_setup_dump_region)
+        return consys_platform_coredump_ops->consys_coredump_setup_dump_region(conn_type);
+
+    return -1;
+}
+
+unsigned int coredump_mng_setup_dynamic_remap(int conn_type, unsigned int idx, unsigned int base, unsigned int length)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_setup_dynamic_remap)
+        return consys_platform_coredump_ops->consys_coredump_setup_dynamic_remap(conn_type, idx, base, length);
+
+    return -1;
+}
+
+void __iomem* coredump_mng_remap(int conn_type, unsigned int base, unsigned int length)
+{
+	void __iomem* vir_addr = 0;
+
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_remap)
+        return consys_platform_coredump_ops->consys_coredump_remap(conn_type, base, length);
+
+    return vir_addr;
+}
+
+void coredump_mng_unmap(void __iomem* vir_addr)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_unmap)
+        consys_platform_coredump_ops->consys_coredump_unmap(vir_addr);
+}
+
+char* coredump_mng_get_tag_name(int conn_type)
+{
+    if (consys_platform_coredump_ops &&
+        consys_platform_coredump_ops->consys_coredump_get_tag_name)
+        return consys_platform_coredump_ops->consys_coredump_get_tag_name(conn_type);
+
+    return 0;
+}
+

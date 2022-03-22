@@ -12,6 +12,7 @@
 #include "connsys_debug_utility.h"
 #include "connsys_coredump_hw_config.h"
 #include "coredump_mng.h"
+#include "conninfra.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -76,6 +77,14 @@ static bool consys_plt_coredump_is_host_view_cr(unsigned int addr, unsigned int*
 static bool consys_plt_coredump_is_host_csr_readable(void);
 static enum cr_category consys_plt_coredump_get_cr_category(unsigned int addr);
 
+static unsigned int consys_plt_coredump_get_emi_offset(int conn_type);
+static void consys_plt_coredump_get_emi_phy_addr(phys_addr_t* base, unsigned int *size);
+static void consys_plt_coredump_get_mcif_emi_phy_addr(phys_addr_t* base, unsigned int *size);
+static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsigned int idx, unsigned int base, unsigned int length);
+static void __iomem* consys_plt_coredump_remap(int conn_type, unsigned int base, unsigned int length);
+static void consys_plt_coredump_unmap(void __iomem* vir_addr);
+static char* consys_plt_coredump_get_tag_name(int conn_type);
+
 struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983 = {
     .consys_coredump_get_platform_config = consys_plt_coredump_get_platform_config,
     .consys_coredump_get_platform_chipid = consys_plt_coredump_get_platform_chipid,
@@ -84,6 +93,13 @@ struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983 = {
     .consys_coredump_is_host_view_cr = consys_plt_coredump_is_host_view_cr,
     .consys_coredump_is_host_csr_readable = consys_plt_coredump_is_host_csr_readable,
     .consys_coredump_get_cr_category = consys_plt_coredump_get_cr_category,
+    .consys_coredump_get_emi_offset = consys_plt_coredump_get_emi_offset,
+    .consys_coredump_get_emi_phy_addr = consys_plt_coredump_get_emi_phy_addr,
+    .consys_coredump_get_mcif_emi_phy_addr = consys_plt_coredump_get_mcif_emi_phy_addr,
+    .consys_coredump_setup_dynamic_remap = consys_plt_coredump_setup_dynamic_remap,
+    .consys_coredump_remap = consys_plt_coredump_remap,
+    .consys_coredump_unmap = consys_plt_coredump_unmap,
+    .consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name,
 };
 
 static struct coredump_hw_config* consys_plt_coredump_get_platform_config(int conn_type)
@@ -179,3 +195,77 @@ static enum cr_category consys_plt_coredump_get_cr_category(unsigned int addr)
 
     return SUBSYS_CR;
 }
+
+static unsigned int consys_plt_coredump_get_emi_offset(int conn_type)
+{
+	struct coredump_hw_config *config = coredump_mng_get_platform_config(conn_type);
+
+	if (config)
+		return config->start_offset;
+	return 0;
+
+}
+
+static void consys_plt_coredump_get_emi_phy_addr(phys_addr_t* base, unsigned int *size)
+{
+	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, base, size);
+}
+
+static void consys_plt_coredump_get_mcif_emi_phy_addr(phys_addr_t* base, unsigned int *size)
+{
+	conninfra_get_emi_phy_addr(CONNSYS_EMI_MCIF, base, size);
+}
+
+static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsigned int idx, unsigned int base, unsigned int length)
+{
+#define DYNAMIC_MAP_MAX_SIZE	0x300000
+	unsigned int map_len = (length > DYNAMIC_MAP_MAX_SIZE? DYNAMIC_MAP_MAX_SIZE : length);
+	void __iomem* vir_addr = 0;
+
+	if (coredump_mng_is_host_view_cr(base, NULL)) {
+		return length;
+	}
+
+	/* Expand to request size */
+	vir_addr = ioremap(g_coredump_config[conn_type].seg1_cr, 4);
+	if (vir_addr) {
+		iowrite32(g_coredump_config[conn_type].seg1_phy_addr + map_len, vir_addr);
+		iounmap(vir_addr);
+	} else {
+		return 0;
+	}
+	/* Setup map base */
+	vir_addr = ioremap(g_coredump_config[conn_type].seg1_start_addr, 4);
+	if (vir_addr) {
+		iowrite32(base, vir_addr);
+		iounmap(vir_addr);
+	} else {
+		return 0;
+	}
+	return map_len;
+}
+
+static void __iomem* consys_plt_coredump_remap(int conn_type, unsigned int base, unsigned int length)
+{
+	void __iomem* vir_addr = 0;
+	unsigned int host_cr;
+
+	if (coredump_mng_is_host_view_cr(base, &host_cr)) {
+		vir_addr = ioremap(host_cr, length);
+	} else {
+		vir_addr = ioremap(g_coredump_config[conn_type].seg1_start_addr, length);
+	}
+	return vir_addr;
+}
+
+static void consys_plt_coredump_unmap(void __iomem* vir_addr)
+{
+	iounmap(vir_addr);
+}
+
+static char* consys_plt_coredump_get_tag_name(int conn_type)
+{
+	return g_coredump_config[conn_type].exception_tag_name;
+}
+
+
