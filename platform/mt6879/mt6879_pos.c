@@ -54,6 +54,9 @@ struct a_die_reg_config {
 ********************************************************************************
 */
 static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+static u64 log_sema_time[10];
+static unsigned int sema_count = 0;
+static unsigned long g_sema_irq_flags = 0;
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static const char* get_spi_sys_name(enum sys_spi_subsystem subsystem);
@@ -358,7 +361,6 @@ static int consys_sema_acquire(unsigned int index)
 int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 {
 	int i;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return CONN_SEMA_GET_FAIL;
@@ -366,7 +368,7 @@ int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
 			sema_get_time[index] = jiffies;
 			if (index == CONN_SEMA_RFSPI_INDEX)
-				local_irq_save(flags);
+				local_irq_save(g_sema_irq_flags);
 			return CONN_SEMA_GET_SUCCESS;
 		}
 		udelay(1);
@@ -388,7 +390,6 @@ int consys_sema_acquire_timeout_mt6879(unsigned int index, unsigned int usec)
 void consys_sema_release_mt6879(unsigned int index)
 {
 	u64 duration;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
@@ -396,8 +397,21 @@ void consys_sema_release_mt6879(unsigned int index)
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index*4), 0x1);
 
 	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
-	if (index == CONN_SEMA_RFSPI_INDEX)
-		local_irq_restore(flags);
+	if (index == CONN_SEMA_RFSPI_INDEX) {
+		local_irq_restore(g_sema_irq_flags);
+
+		if (sema_count == 10) {
+			pr_notice("[%s] log_sema_time: [%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu]\n",
+				__func__, log_sema_time[0], log_sema_time[1], log_sema_time[2], log_sema_time[3],
+				log_sema_time[4], log_sema_time[5], log_sema_time[6],
+				log_sema_time[7], log_sema_time[8], log_sema_time[9]);
+			sema_count = 0;
+		}
+
+		log_sema_time[sema_count] = duration;
+		sema_count++;
+	}
+
 	if (duration > SEMA_HOLD_TIME_THRESHOLD)
 		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
 }
@@ -592,6 +606,12 @@ int consys_spi_write_nolock_mt6879(enum sys_spi_subsystem subsystem, unsigned in
 int consys_spi_write_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM) {
+		ret = consys_spi_write_nolock_mt6879(subsystem, addr, data);
+		return ret;
+	}
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI WRITE] Require semaphore fail\n");
