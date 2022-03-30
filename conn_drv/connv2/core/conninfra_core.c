@@ -2233,6 +2233,8 @@ int conninfra_core_init(const unsigned int support_drv)
 		pr_err("subsys callback thread init fail.\n");
 		return -1;
 	}
+
+	infra_ctx->infra_drv_status = DRV_STS_POWER_OFF;
 	infra_ctx->support_drv = support_drv;
 	/* Setup pre-cal mode by support driver list */
 	if ((support_drv & bt_wifi_mask) != bt_wifi_mask) {
