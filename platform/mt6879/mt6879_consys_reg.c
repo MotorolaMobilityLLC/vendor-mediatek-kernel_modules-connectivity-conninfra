@@ -255,8 +255,10 @@ static int __consys_check_reg_readable(int check_type)
 			return 0;
 
 		/* wake up conninfra to read off register */
+		if (consys_hw_force_conninfra_wakeup() != 0)
+			return 0;
+
 		wakeup_conninfra = 1;
-		consys_hw_force_conninfra_wakeup();
 		ret = 0;
 	}
 
