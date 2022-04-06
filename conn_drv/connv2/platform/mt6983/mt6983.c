@@ -66,25 +66,25 @@ struct rf_cr_backup_data {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static int consys_clk_get_from_dts_mt6983(struct platform_device *pdev);
-static int consys_clock_buffer_ctrl_mt6983(unsigned int enable);
-static unsigned int consys_soc_chipid_get_mt6983(void);
-static void consys_clock_fail_dump_mt6983(void);
-static unsigned int consys_get_hw_ver_mt6983(void);
-static int consys_thermal_query_mt6983(void);
+int consys_clk_get_from_dts_mt6983(struct platform_device *pdev);
+int consys_clock_buffer_ctrl_mt6983(unsigned int enable);
+unsigned int consys_soc_chipid_get_mt6983(void);
+void consys_clock_fail_dump_mt6983(void);
+unsigned int consys_get_hw_ver_mt6983(void);
+int consys_thermal_query_mt6983(void);
 /* Power state relative */
-static int consys_enable_power_dump_mt6983(void);
-static int consys_reset_power_state_mt6983(void);
+int consys_enable_power_dump_mt6983(void);
+int consys_reset_power_state_mt6983(void);
 static int consys_reset_power_state(void);
-static int consys_power_state_dump_mt6983(char *buf, unsigned int size);
+int consys_power_state_dump_mt6983(char *buf, unsigned int size);
 
-static unsigned long long consys_soc_timestamp_get_mt6983(void);
+unsigned long long consys_soc_timestamp_get_mt6983(void);
 
-static unsigned int consys_adie_detection_mt6983(void);
-static void consys_set_mcu_control_mt6983(int type, bool onoff);
+unsigned int consys_adie_detection_mt6983(void);
+void consys_set_mcu_control_mt6983(int type, bool onoff);
 
-static int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size);
-static int consys_pre_cal_clean_data_mt6983(void);
+int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size);
+int consys_pre_cal_clean_data_mt6983(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -98,7 +98,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6983 = {
 
 	/* clock */
 	.consys_plt_clock_buffer_ctrl = consys_clock_buffer_ctrl_mt6983,
-	.consys_plt_co_clock_type = consys_co_clock_type_mt6983,
+	.consys_plt_co_clock_type = consys_get_co_clock_type_mt6983,
 
 	/* POS */
 	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl_mt6983,
@@ -163,7 +163,7 @@ static struct rf_cr_backup_data *mt6637_backup_data = NULL;
 static unsigned int mt6637_backup_cr_number = 0;
 extern phys_addr_t gConEmiPhyBase;
 
-int consys_co_clock_type_mt6983(void)
+int consys_get_co_clock_type_mt6983(void)
 {
 	const struct conninfra_conf *conf;
 	struct regmap *map = consys_clock_mng_get_regmap();
@@ -197,6 +197,11 @@ int consys_co_clock_type_mt6983(void)
 		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support, clock_name[clock_type]);
 
 	return clock_type;
+}
+
+int consys_co_clock_type_mt6983(void)
+{
+	return conn_hw_env.clock_type;
 }
 
 int consys_clk_get_from_dts_mt6983(struct platform_device *pdev)
@@ -619,7 +624,7 @@ int consys_thermal_query_mt6983(void)
 	return res;
 }
 
-static unsigned long long consys_soc_timestamp_get_mt6983(void)
+unsigned long long consys_soc_timestamp_get_mt6983(void)
 {
 #define TICK_PER_MS	(13000)
 	void __iomem *addr = NULL;
@@ -649,7 +654,7 @@ static unsigned long long consys_soc_timestamp_get_mt6983(void)
 	return timestamp;
 }
 
-static unsigned int consys_adie_detection_mt6983(void)
+unsigned int consys_adie_detection_mt6983(void)
 {
 	return ADIE_6637;
 }
@@ -659,7 +664,7 @@ unsigned int consys_get_adie_chipid_mt6983(void)
 	return ADIE_6637;
 }
 
-static void consys_set_mcu_control_mt6983(int type, bool onoff)
+void consys_set_mcu_control_mt6983(int type, bool onoff)
 {
 	pr_info("[%s] Set mcu control type=[%d] onoff=[%d]\n", __func__, type, onoff);
 
@@ -669,7 +674,7 @@ static void consys_set_mcu_control_mt6983(int type, bool onoff)
 		CONSYS_CLR_BIT(CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL, (0x1 << type));
 }
 
-static int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
+int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
 {
 	void __iomem* vir_addr = 0;
 	unsigned int expected_size = 0;
@@ -776,7 +781,7 @@ int consys_pre_cal_restore_mt6983(void)
 	return 0;
 }
 
-static int consys_pre_cal_clean_data_mt6983(void)
+int consys_pre_cal_clean_data_mt6983(void)
 {
 
 	pr_info("[%s]", __func__);

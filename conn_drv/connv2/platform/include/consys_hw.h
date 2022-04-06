@@ -65,6 +65,8 @@ typedef unsigned int(*CONSYS_PLT_SOC_CHIPID_GET) (void);
 typedef void(*CONSYS_PLT_FORCE_TRIGGER_ASSERT_DEBUG_PIN) (void);
 typedef int(*CONSYS_PLT_CO_CLOCK_TYPE) (void);
 
+typedef int(*CONSYS_PLT_INIT_ATF_DATA) (void);
+
 typedef int(*CONSYS_PLT_CHECK_REG_READABLE) (void);
 typedef void(*CONSYS_PLT_CLOCK_FAIL_DUMP) (void);
 typedef int(*CONSYS_PLT_IS_CONNSYS_REG) (unsigned int addr);
@@ -109,6 +111,9 @@ struct consys_hw_ops_struct {
 	/* clock */
 	CONSYS_PLT_CLOCK_BUFFER_CTRL consys_plt_clock_buffer_ctrl;
 	CONSYS_PLT_CO_CLOCK_TYPE consys_plt_co_clock_type;
+
+	/* a-die init data */
+	CONSYS_PLT_INIT_ATF_DATA consys_plt_init_atf_data;
 
 	/* POS */
 	CONSYS_PLT_CONNINFRA_ON_POWER_CTRL consys_plt_conninfra_on_power_ctrl;
@@ -178,6 +183,7 @@ struct consys_hw_env {
 	unsigned int adie_hw_version;
 	int is_rc_mode;
 	bool tcxo_support;
+	unsigned int clock_type;
 };
 
 struct conninfra_plat_data {
