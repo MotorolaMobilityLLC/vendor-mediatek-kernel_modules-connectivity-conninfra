@@ -253,7 +253,7 @@ static void __iomem* consys_plt_coredump_remap(int conn_type, unsigned int base,
 	if (coredump_mng_is_host_view_cr(base, &host_cr)) {
 		vir_addr = ioremap(host_cr, length);
 	} else {
-		vir_addr = ioremap(g_coredump_config[conn_type].seg1_start_addr, length);
+		vir_addr = ioremap(g_coredump_config[conn_type].seg1_phy_addr, length);
 	}
 	return vir_addr;
 }
