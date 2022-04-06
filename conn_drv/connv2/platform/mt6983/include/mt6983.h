@@ -9,8 +9,7 @@
 #define	ADIE_6637	0x6637
 #define	ADIE_6635	0x6635
 
-enum conn_semaphore_type
-{
+enum conn_semaphore_type {
 	CONN_SEMA_CHIP_POWER_ON_INDEX = 0,
 	CONN_SEMA_CALIBRATION_INDEX = 1,
 	CONN_SEMA_FW_DL_INDEX = 2,
@@ -65,7 +64,7 @@ int consys_pre_cal_clean_data_mt6983(void);
 int consys_platform_spm_conn_ctrl_mt6983(unsigned int enable);
 int consys_get_co_clock_type_mt6983(void);
 int consys_co_clock_type_mt6983(void);
-void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983* input);
+void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983 *input);
 unsigned int consys_get_adie_chipid_mt6983(void);
 int consys_pre_cal_restore_mt6983(void);
 

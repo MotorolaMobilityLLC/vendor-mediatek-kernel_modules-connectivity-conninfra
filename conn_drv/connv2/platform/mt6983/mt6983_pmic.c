@@ -533,7 +533,7 @@ static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *a
 
 	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 	for (i = 0; i < num; i++) {
-		consys_spi_read_mt6983(subsystem, adie_cr[i], &adie_value);
+		consys_hw_spi_read(subsystem, adie_cr[i], &adie_value);
 		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%04x: 0x%08x]", adie_cr[i], adie_value) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}

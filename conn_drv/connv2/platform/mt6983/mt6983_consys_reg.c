@@ -4,19 +4,19 @@
  */
 
 #include <linux/memblock.h>
-#include <linux/platform_device.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
+#include <linux/platform_device.h>
 
 #include "consys_reg_mng.h"
 #include "consys_reg_util.h"
 #include "mt6983_consys_reg.h"
 #include "mt6983_consys_reg_offset.h"
+#include "mt6983_debug_gen.h"
 #include "mt6983_pos.h"
 #include "mt6983_pos_gen.h"
-#include "mt6983_debug_gen.h"
-#include "osal.h"
 #include "mt6983_pmic.h"
+#include "osal.h"
 
 #define CONSYS_DUMP_BUF_SIZE 512
 
@@ -48,7 +48,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983 = {
 static struct conn_debug_info_mt6983 *debug_info;
 static char *debug_buf;
 
-static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
+static const char *consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"infracfg_ao",
 	"GPIO",
 	"IOCFG_RT",
@@ -180,7 +180,7 @@ static inline unsigned int __consys_bus_hang_clock_detect(void)
 		if (r == 0x6)
 			break;
 		udelay(1000);
-		count ++;
+		count++;
 	}
 
 	if (r != 0x6)
@@ -263,12 +263,13 @@ void consys_print_platform_debug_mt6983(void)
 	iounmap(addr);
 
 	pr_info("%s 0x1020E804=0x%x,0x1021515C=0x%x,0x10215160=0x%x,0x10215168=0x%x",
-		__func__, val[0], val[1],val[2],val[3]);
+		__func__, val[0], val[1], val[2], val[3]);
 }
 
 static void consys_debug_init_mt6983(void)
 {
-	debug_info = (struct conn_debug_info_mt6983 *)osal_malloc(sizeof(struct conn_debug_info_mt6983));
+	debug_info
+	= (struct conn_debug_info_mt6983 *)osal_malloc(sizeof(struct conn_debug_info_mt6983));
 	if (debug_info == NULL) {
 		pr_notice("%s debug_info malloc failed\n", __func__);
 		return;
@@ -347,7 +348,7 @@ int consys_reg_deinit_mt6983(void)
 			pr_info("[%d] Unmap %s (0x%zx)",
 				i, consys_base_addr_index_to_str[i],
 				conn_reg_mt6983.reg_base_addr[i].vir_addr);
-			iounmap((void __iomem*)conn_reg_mt6983.reg_base_addr[i].vir_addr);
+			iounmap((void __iomem *)conn_reg_mt6983.reg_base_addr[i].vir_addr);
 			conn_reg_mt6983.reg_base_addr[i].vir_addr = 0;
 		}
 	}

@@ -7,17 +7,18 @@
 #define _PLATFORM_CONSYS_REG_UTIL_H_
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ ********************************************************************************
+ */
+#include <linux/io.h>
+
 /* platform dependent */
 #include "plat_def.h"
-#include <linux/io.h>
 
 #define KBYTE (1024*sizeof(char))
 
@@ -27,12 +28,15 @@
 #endif
 
 #define GET_BIT_MASK(value, mask) ((value) & (mask))
-#define SET_BIT_MASK(pdest, value, mask) (*(pdest) = (GET_BIT_MASK(*(pdest), ~(mask)) | GET_BIT_MASK(value, mask)))
+#define SET_BIT_MASK(pdest, value, mask) \
+	(*(pdest) = (GET_BIT_MASK(*(pdest), ~(mask)) | GET_BIT_MASK(value, mask)))
 #define GET_BIT_RANGE(data, end, begin) ((data) & GENMASK(end, begin))
 #define SET_BIT_RANGE(pdest, data, end, begin) (SET_BIT_MASK(pdest, data, GENMASK(end, begin)))
 
-#define CONSYS_SET_BIT(REG, BITVAL) (*((volatile unsigned int *)(REG)) |= ((unsigned int)(BITVAL)))
-#define CONSYS_CLR_BIT(REG, BITVAL) ((*(volatile unsigned int *)(REG)) &= ~((unsigned int)(BITVAL)))
+#define CONSYS_SET_BIT(REG, BITVAL) \
+	(*((volatile unsigned int *)(REG)) |= ((unsigned int)(BITVAL)))
+#define CONSYS_CLR_BIT(REG, BITVAL) \
+	((*(volatile unsigned int *)(REG)) &= ~((unsigned int)(BITVAL)))
 #define CONSYS_CLR_BIT_WITH_KEY(REG, BITVAL, KEY) {\
 	unsigned int val = (*(volatile unsigned int *)(REG)); \
 	val &= ~((unsigned int)(BITVAL)); \
@@ -40,7 +44,8 @@
 	(*(volatile unsigned int *)(REG)) = val;\
 }
 #define CONSYS_REG_READ(addr) (*((volatile unsigned int *)(addr)))
-#define CONSYS_REG_READ_BIT(addr, BITVAL) (*((volatile unsigned int *)(addr)) & ((unsigned int)(BITVAL)))
+#define CONSYS_REG_READ_BIT(addr, BITVAL) \
+	(*((volatile unsigned int *)(addr)) & ((unsigned int)(BITVAL)))
 #define CONSYS_REG_WRITE(addr, data) do {\
 	writel(data, (volatile void *)addr); \
 	mb(); \
@@ -72,7 +77,8 @@
 	CONSYS_REG_WRITE_RANGE(reg, data, ((reg_offset) + ((size) - 1)), reg_offset); \
 })
 
-#define CONSYS_REG_WRITE_BIT(reg, offset, val) CONSYS_REG_WRITE_OFFSET_RANGE(reg, ((val) & 1), offset, 0, 1)
+#define CONSYS_REG_WRITE_BIT(reg, offset, val) \
+	CONSYS_REG_WRITE_OFFSET_RANGE(reg, ((val) & 1), offset, 0, 1)
 
 #define CONSYS_REG_BIT_POLLING(addr, bit_index, exp_val, loop, delay, success) {\
 	unsigned int polling_count = 0; \
@@ -98,40 +104,40 @@
 	CONSYS_REG_WRITE_MASK(ADDR(Field), (Value << SHFT(Field)), MASK(Field))
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
-
-
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
-
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
-
-/*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ ********************************************************************************
+ */
 
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ ********************************************************************************
+ */
+
+/*******************************************************************************
+ *                           P R I V A T E   D A T A
+ ********************************************************************************
+ */
+
+/*******************************************************************************
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ********************************************************************************
+ */
+
+
+/*******************************************************************************
+ *                              F U N C T I O N S
+ ********************************************************************************
+ */
 
 #endif				/* _PLATFORM_CONSYS_REG_UTIL_H_ */

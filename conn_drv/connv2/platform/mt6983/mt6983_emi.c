@@ -8,6 +8,7 @@
 #include "emi_mng.h"
 #include "mt6983.h"
 #include "mt6983_pos.h"
+#include "mt6983_emi.h"
 
 /* For EMI MPU */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
@@ -51,8 +52,7 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static int consys_emi_mpu_set_region_protection_mt6983(void);
-static void consys_emi_get_md_shared_emi_mt6983(phys_addr_t* base, unsigned int* size);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -67,7 +67,7 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983 = {
 	.consys_ic_emi_get_md_shared_emi = consys_emi_get_md_shared_emi_mt6983,
 };
 
-static int consys_emi_mpu_set_region_protection_mt6983(void)
+int consys_emi_mpu_set_region_protection_mt6983(void)
 {
 	pr_info("[%s] is not supported. MPU is set in lk\n", __func__);
 	return 0;
