@@ -18,7 +18,7 @@
 #include "osal.h"
 #include "mt6983_pmic.h"
 
-#define LOG_TMP_BUF_SZ 256
+#define CONSYS_DUMP_BUF_SIZE 512
 
 static int consys_reg_init_mt6983(struct platform_device *pdev);
 static int consys_reg_deinit_mt6983(void);
@@ -46,6 +46,7 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983 = {
 };
 
 static struct conn_debug_info_mt6983 *debug_info;
+static char *debug_buf;
 
 static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"infracfg_ao",
@@ -72,6 +73,8 @@ static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"conn_semaphore",
 	"spm",
 	"top_rgu",
+	"ccif_wf2ap_swirq",
+	"ccif_bgf2ap_swirq",
 };
 
 int consys_is_consys_reg_mt6983(unsigned int addr)
@@ -81,15 +84,16 @@ int consys_is_consys_reg_mt6983(unsigned int addr)
 	return 0;
 }
 
-#define CONSYS_DUMP_BUF_SIZE 512
 static void consys_print_log(const char *title, struct conn_debug_info_mt6983 *info)
 {
-	char buf[CONSYS_DUMP_BUF_SIZE];
 	char temp[13];
 	int i;
 
+	if (debug_buf == NULL)
+		return;
+
 	temp[0] = '\0';
-	if (snprintf(buf, CONSYS_DUMP_BUF_SIZE, "%s", title) < 0) {
+	if (snprintf(debug_buf, CONSYS_DUMP_BUF_SIZE, "%s", title) < 0) {
 		pr_notice("%s snprintf failed\n", __func__);
 		return;
 	}
@@ -99,9 +103,9 @@ static void consys_print_log(const char *title, struct conn_debug_info_mt6983 *i
 			pr_notice("%s snprintf failed\n", __func__);
 			return;
 		}
-		strncat(buf, temp, strlen(temp) + 1);
+		strncat(debug_buf, temp, strlen(temp) + 1);
 	}
-	pr_info("%s\n", buf);
+	pr_info("%s\n", debug_buf);
 }
 
 static void consys_print_power_debug(int level)
@@ -266,7 +270,13 @@ static void consys_debug_init_mt6983(void)
 {
 	debug_info = (struct conn_debug_info_mt6983 *)osal_malloc(sizeof(struct conn_debug_info_mt6983));
 	if (debug_info == NULL) {
-		pr_notice("%s malloc failed\n", __func__);
+		pr_notice("%s debug_info malloc failed\n", __func__);
+		return;
+	}
+
+	debug_buf = osal_malloc(CONSYS_DUMP_BUF_SIZE);
+	if (debug_buf == NULL) {
+		pr_notice("%s debug_buf malloc failed\n", __func__);
 		return;
 	}
 
@@ -275,13 +285,15 @@ static void consys_debug_init_mt6983(void)
 
 static void consys_debug_deinit_mt6983(void)
 {
-	if (debug_info == NULL) {
-		pr_notice("%s debug_info is NULL\n", __func__);
-		return;
+	if (debug_info != NULL) {
+		osal_free(debug_info);
+		debug_info = NULL;
 	}
 
-	osal_free(debug_info);
-	debug_info = NULL;
+	if (debug_buf != NULL) {
+		osal_free(debug_buf);
+		debug_buf = NULL;
+	}
 
 	consys_debug_deinit_mt6983_debug_gen();
 }

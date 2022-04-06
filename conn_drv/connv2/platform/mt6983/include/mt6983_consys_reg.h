@@ -33,6 +33,8 @@ enum consys_base_addr_index {
 	CONN_SEMAPHORE_BASE_INDEX 		= 21,	/* 0x1807_0000 conn_semaphore */
 	SPM_BASE_INDEX 				= 22,	/* 0x1c00_1000 spm */
 	TOP_RGU_BASE_INDEX 			= 23,	/* 0x1c00_7000 top_rgu */
+	CCIF_WF2AP_SWIRQ_BASE_INDEX		= 24,	/* 0x1803_C000 top_rgu */
+	CCIF_BGF2AP_SWIRQ_BASE_INDEX		= 25,	/* 0x1803_E000 top_rgu */
 	CONSYS_BASE_ADDR_MAX
 };
 
@@ -67,6 +69,11 @@ extern struct consys_base_addr conn_reg_mt6983;
 #define CONN_REG_CONN_SEMAPHORE_ADDR			conn_reg_mt6983.reg_base_addr[CONN_SEMAPHORE_BASE_INDEX].vir_addr
 #define CONN_REG_SPM_ADDR				conn_reg_mt6983.reg_base_addr[SPM_BASE_INDEX].vir_addr
 #define CONN_REG_TOP_RGU_ADDR				conn_reg_mt6983.reg_base_addr[TOP_RGU_BASE_INDEX].vir_addr
+#define CONN_REG_CCIF_WF2AP_SWIRQ_ADDR			\
+	conn_reg_mt6983.reg_base_addr[CCIF_WF2AP_SWIRQ_BASE_INDEX].vir_addr
+#define CONN_REG_CCIF_BGF2AP_SWIRQ_ADDR			\
+	conn_reg_mt6983.reg_base_addr[CCIF_BGF2AP_SWIRQ_BASE_INDEX].vir_addr
+
 
 int consys_is_consys_reg_mt6983(unsigned int addr);
 int consys_check_conninfra_on_domain_status_mt6983(void);

@@ -355,6 +355,49 @@ static inline void __sleep_count_trigger_read(void)
 
 }
 
+static void consys_print_irq_status(void)
+{
+	unsigned int val_1, val_2, val_3, val_4;
+
+	val_1 = CONSYS_REG_READ_BIT(CONN_REG_CONN_HOST_CSR_TOP_ADDR + 0x38, 0x1);
+	val_2 = CONSYS_REG_READ_BIT(CONN_REG_CONN_HOST_CSR_TOP_ADDR + 0x34, 0x1);
+	val_3 = CONSYS_REG_READ_BIT(CONN_REG_CONN_HOST_CSR_TOP_ADDR + 0x3C, 0x2);
+	val_4 = CONSYS_REG_READ_BIT(CONN_REG_CONN_HOST_CSR_TOP_ADDR + 0x44, 0x1);
+
+	/*
+	 * conn_bgf_hif_on_host_int_b
+	 * (~(0x1806_0038[0] & 0x1806_0034[0])) & (~(0x1806_0038[1] & 0x1806_003C[0]))
+	 */
+	if ((val_1 && val_2) || (val_1 && val_3))
+		pr_info("conn_bgf_hif_on_host_int_b %x %x %x", val_1, val_2, val_3);
+
+	/*
+	 * conn_gps_hif_on_host_int_b
+	 * ~ (0x1806_0038[0] & 0x1806_0044[0])
+	 */
+	if (val_1 && val_4)
+		pr_info("conn_gps_hif_on_host_int_b %x %x", val_1, val_4);
+
+
+	if (consys_check_conninfra_on_domain_status_mt6983() != 0)
+		return;
+	/*
+	 * ccif_wf2ap_sw_irq_b	0x1803_C008[7:0]
+	 * ccif_bgf2ap_sw_irq_b	0x1803_E008[7:0]
+	 */
+	if (CONN_REG_CCIF_WF2AP_SWIRQ_ADDR) {
+		val_1 = CONSYS_REG_READ(CONN_REG_CCIF_WF2AP_SWIRQ_ADDR) & 0xFF;
+		if (val_1 > 0)
+			pr_info("ccif_wf2ap_sw_irq_b %x", val_1);
+	}
+
+	if (CONN_REG_CCIF_BGF2AP_SWIRQ_ADDR) {
+		val_1 = CONSYS_REG_READ(CONN_REG_CCIF_BGF2AP_SWIRQ_ADDR) & 0xFF;
+		if (val_1 > 0)
+			pr_info("ccif_bgf2ap_sw_irq_b %x", val_1);
+	}
+}
+
 static void consys_power_state(void)
 {
 	unsigned int i, str_len;
@@ -372,13 +415,16 @@ static void consys_power_state(void)
 
 	for (i = 0; i < 15; i++) {
 		str_len = strlen(osc_str[i]);
-		
+
 		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < 256)) {
 			strncat(buf, osc_str[i], str_len);
 			buf_len += str_len;
 		}
 	}
 	pr_info("[%s] [0x%x] %s", __func__, r, buf);
+
+	consys_print_irq_status();
+
 }
 
 static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
