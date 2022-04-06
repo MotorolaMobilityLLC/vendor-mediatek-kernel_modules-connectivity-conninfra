@@ -11,14 +11,14 @@
 #include "conninfra.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ ********************************************************************************
+ */
 
 #define CONN_SEMA_GET_SUCCESS	0
 #define CONN_SEMA_GET_FAIL	1
@@ -26,19 +26,19 @@
 #define CONN_SEMA_TIMEOUT	(1*1000) /* 1ms */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ ********************************************************************************
+ */
 
 typedef int(*CONSYS_PLT_CLK_GET_FROM_DTS) (struct platform_device *pdev);
 typedef int(*CONSYS_PLT_CLK_DETACH) (void);
@@ -72,9 +72,12 @@ typedef void(*CONSYS_PLT_CLOCK_FAIL_DUMP) (void);
 typedef int(*CONSYS_PLT_IS_CONNSYS_REG) (unsigned int addr);
 
 
-typedef int(*CONSYS_PLT_SPI_READ)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
-typedef int(*CONSYS_PLT_SPI_WRITE)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
-typedef int(*CONSYS_PLT_SPI_UPDATE_BITS)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
+typedef int(*CONSYS_PLT_SPI_READ)(enum sys_spi_subsystem subsystem, unsigned int addr,
+				     unsigned int *data);
+typedef int(*CONSYS_PLT_SPI_WRITE)(enum sys_spi_subsystem subsystem, unsigned int addr,
+				      unsigned int data);
+typedef int(*CONSYS_PLT_SPI_UPDATE_BITS)(enum sys_spi_subsystem subsystem, unsigned int addr,
+					     unsigned int data, unsigned int mask);
 
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_ON)(enum consys_adie_ctl_type type);
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_OFF)(enum consys_adie_ctl_type type);
@@ -176,7 +179,7 @@ struct consys_hw_ops_struct {
 };
 
 struct conninfra_dev_cb {
-	int (*conninfra_pmic_event_notifier) (unsigned int, unsigned int);
+	int (*conninfra_pmic_event_notifier)(unsigned int id, unsigned int event);
 };
 
 struct consys_hw_env {
@@ -189,31 +192,31 @@ struct consys_hw_env {
 struct conninfra_plat_data {
 	const unsigned int chip_id;
 	const unsigned int consys_hw_version;
-	const void* hw_ops;
-	const void* reg_ops;
-	const void* platform_emi_ops;
-	const void* platform_pmic_ops;
-	const void* platform_coredump_ops;
-	const void* connsyslog_config;
+	const void *hw_ops;
+	const void *reg_ops;
+	const void *platform_emi_ops;
+	const void *platform_pmic_ops;
+	const void *platform_coredump_ops;
+	const void *connsyslog_config;
 };
 
 extern struct consys_hw_env conn_hw_env;
 extern struct consys_base_addr conn_reg;
 extern struct pinctrl *g_conninfra_pinctrl_ptr;
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ********************************************************************************
+ */
 int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb);
 int consys_hw_deinit(void);
 
@@ -249,7 +252,8 @@ int consys_hw_dump_bus_status(void);
 
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
-int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
+int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
+					 unsigned int data, unsigned int mask);
 
 int consys_hw_adie_top_ck_en_on(enum consys_adie_ctl_type type);
 int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type);
@@ -276,8 +280,8 @@ void consys_hw_config_setup(void);
 int consys_hw_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock, int status);
 /* raise: raise voltage or not
  * onoff: raise voltage because of power on/off or not
- * 	true: yes, raise voltage because power on/off
- * 	false: no, raise voltage by scenario
+ *	true: yes, raise voltage because power on/off
+ *	false: no, raise voltage by scenario
  */
 int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff);
 /* Get soc timestamp (non-sleep timer)
@@ -300,8 +304,8 @@ int consys_hw_pre_cal_clean_data(void);
 
 unsigned int consys_hw_get_support_drv(void);
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ ********************************************************************************
+ */
 
 #endif				/* _PLATFORM_CONSYS_HW_H_ */

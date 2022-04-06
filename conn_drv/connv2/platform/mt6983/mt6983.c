@@ -9,52 +9,51 @@
 #include <linux/delay.h>
 #include <linux/math64.h>
 #include <linux/of.h>
-#include <linux/types.h>
-#include <mtk_clkbuf_ctl.h>
 #include <linux/pm_runtime.h>
+#include <linux/types.h>
 
+#include <mtk_clkbuf_ctl.h>
 #include <connectivity_build_in_adapter.h>
 
-#include "osal.h"
+#include "clock_mng.h"
 #include "conninfra.h"
 #include "conninfra_conf.h"
 #include "consys_hw.h"
 #include "consys_reg_mng.h"
 #include "consys_reg_util.h"
-
+#include "coredump_mng.h"
 #include "mt6983.h"
-#include "mt6983_pos.h"
+#include "mt6983_connsyslog.h"
 #include "mt6983_consys_reg.h"
 #include "mt6983_consys_reg_offset.h"
-#include "mt6983_connsyslog.h"
-#include "clock_mng.h"
-#include "coredump_mng.h"
+#include "mt6983_pos.h"
+#include "osal.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ ********************************************************************************
+ */
 #define PLATFORM_SOC_CHIP 0x6983
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ ********************************************************************************
+ */
 
 struct rf_cr_backup_data {
 	unsigned int addr;
@@ -63,9 +62,9 @@ struct rf_cr_backup_data {
 };
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ********************************************************************************
+ */
 int consys_clk_get_from_dts_mt6983(struct platform_device *pdev);
 int consys_clock_buffer_ctrl_mt6983(unsigned int enable);
 unsigned int consys_soc_chipid_get_mt6983(void);
@@ -87,9 +86,9 @@ int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size);
 int consys_pre_cal_clean_data_mt6983(void);
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ ********************************************************************************
+ */
 
 struct consys_hw_ops_struct g_consys_hw_ops_mt6983 = {
 	/* load from dts */
@@ -159,8 +158,8 @@ const struct conninfra_plat_data mt6983_plat_data = {
 static struct consys_plat_thermal_data_mt6983 g_consys_plat_therm_data;
 
 /* For calibration backup/restore */
-static struct rf_cr_backup_data *mt6637_backup_data = NULL;
-static unsigned int mt6637_backup_cr_number = 0;
+static struct rf_cr_backup_data *mt6637_backup_data;
+static unsigned int mt6637_backup_cr_number;
 extern phys_addr_t gConEmiPhyBase;
 
 int consys_get_co_clock_type_mt6983(void)
@@ -173,7 +172,7 @@ int consys_get_co_clock_type_mt6983(void)
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();
-	if (NULL == conf) {
+	if (conf == NULL) {
 		pr_err("[%s] Get conf fail", __func__);
 		return -1;
 	}
@@ -187,11 +186,10 @@ int consys_get_co_clock_type_mt6983(void)
 		if (!map) {
 			pr_notice("%s, failed to get regmap.\n", __func__);
 			return -1;
-		} else {
-			regmap_read(map, DCXO_DIGCLK_ELR, &value);
-			if (value & 0x1)
-				clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
 		}
+		regmap_read(map, DCXO_DIGCLK_ELR, &value);
+		if (value & 0x1)
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
 	}
 	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d, %s",
 		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support, clock_name[clock_type]);
@@ -217,10 +215,10 @@ int consys_platform_spm_conn_ctrl_mt6983(unsigned int enable)
 	int ret = 0;
 	struct platform_device *pdev = get_consys_device();
 
-        if (!pdev) {
-                pr_info("get_consys_device fail.\n");
-                return -1;
-        }
+	if (!pdev) {
+		pr_info("get_consys_device fail.\n");
+		return -1;
+	}
 
 	if (enable) {
 		ret = pm_runtime_get_sync(&(pdev->dev));
@@ -398,15 +396,16 @@ static void consys_print_irq_status(void)
 	}
 }
 
+#define POWER_STATE_BUFF_LENGTH	256
 static void consys_power_state(void)
 {
 	unsigned int i, str_len;
 	unsigned int buf_len = 0;
 	unsigned int r;
-	const char* osc_str[] = {
-	"fm ", "gps ", "bgf ", "wf ", "conn_infra_bus ", " ", "ap2conn "," ",
-	" "," "," ", "conn_pta ", "conn_spi ", " ", "conn_thm "};
-	char buf[256] = {'\0'};
+	static const char *const osc_str[] = {
+	"fm ", "gps ", "bgf ", "wf ", "conn_infra_bus ", " ", "ap2conn ", " ",
+	" ", " ", " ", "conn_pta ", "conn_spi ", " ", "conn_thm "};
+	char buf[POWER_STATE_BUFF_LENGTH] = {'\0'};
 
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL,
@@ -416,7 +415,7 @@ static void consys_power_state(void)
 	for (i = 0; i < 15; i++) {
 		str_len = strlen(osc_str[i]);
 
-		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < 256)) {
+		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < POWER_STATE_BUFF_LENGTH)) {
 			strncat(buf, osc_str[i], str_len);
 			buf_len += str_len;
 		}
@@ -432,28 +431,28 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 #define POWER_STATE_BUF_SIZE 256
 #define CONN_32K_TICKS_PER_SEC (32768)
 #define CONN_TICK_TO_SEC(TICK) (TICK / CONN_32K_TICKS_PER_SEC)
-	static u64 round = 0;
-	static u64 t_conninfra_sleep_cnt = 0, t_conninfra_sleep_time = 0;
-	static u64 t_wf_sleep_cnt = 0, t_wf_sleep_time = 0;
-	static u64 t_bt_sleep_cnt = 0, t_bt_sleep_time = 0;
-	static u64 t_gps_sleep_cnt = 0, t_gps_sleep_time = 0;
+	static u64 round;
+	static u64 t_conninfra_sleep_cnt, t_conninfra_sleep_time;
+	static u64 t_wf_sleep_cnt, t_wf_sleep_time;
+	static u64 t_bt_sleep_cnt, t_bt_sleep_time;
+	static u64 t_gps_sleep_cnt, t_gps_sleep_time;
 	unsigned int conninfra_sleep_cnt, conninfra_sleep_time;
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
 	unsigned int gps_sleep_cnt, gps_sleep_time;
 	char temp_buf[POWER_STATE_BUF_SIZE];
-	char* buf_p = temp_buf;
+	char *buf_p = temp_buf;
 	int buf_sz = POWER_STATE_BUF_SIZE;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
-	 * 	3'h0: conn_infra sleep counter
-	 * 	3'h1: wfsys sleep counter
-	 * 	3'h2: bgfsys sleep counter
-	 * 	3'h3: gpssys sleep counter
+	 *	3'h0: conn_infra sleep counter
+	 *	3'h1: wfsys sleep counter
+	 *	3'h2: bgfsys sleep counter
+	 *	3'h3: gpssys sleep counter
 	 * 2. Dump time and count
-	 * 	a. Timer: 0x1806_0388
-	 * 	b. Count: 0x1806_038C
+	 *	a. Timer: 0x1806_0388
+	 *	b. Count: 0x1806_038C
 	 */
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
@@ -507,36 +506,34 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 		buf_sz = size;
 	}
 
-	if (print_log > 0 && snprintf(buf_p, buf_sz,"[consys_power_state][round:%llu]"
-		"conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;"
-		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
-		"bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
+	if (print_log > 0 && snprintf(buf_p, buf_sz,
+		"[consys_power_state][round:%llu]conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
 		round,
 		CONN_TICK_TO_SEC(conninfra_sleep_time),
-		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		conninfra_sleep_cnt,
 		CONN_TICK_TO_SEC(wf_sleep_time),
-		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		wf_sleep_cnt,
 		CONN_TICK_TO_SEC(bt_sleep_time),
-		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		bt_sleep_cnt,
 		CONN_TICK_TO_SEC(gps_sleep_time),
-		CONN_TICK_TO_SEC((gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((gps_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		gps_sleep_cnt,
 		CONN_TICK_TO_SEC(t_conninfra_sleep_time),
-		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		t_conninfra_sleep_cnt,
 		CONN_TICK_TO_SEC(t_wf_sleep_time),
-		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		t_wf_sleep_cnt,
 		CONN_TICK_TO_SEC(t_bt_sleep_time),
-		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		t_bt_sleep_cnt,
 		CONN_TICK_TO_SEC(t_gps_sleep_time),
-		CONN_TICK_TO_SEC((t_gps_sleep_time % CONN_32K_TICKS_PER_SEC)* 1000),
+		CONN_TICK_TO_SEC((t_gps_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
 		t_gps_sleep_cnt) > 0) {
-			pr_info("%s", buf_p);
+		pr_info("%s", buf_p);
 	}
 
 	/* Power state */
@@ -564,12 +561,12 @@ unsigned int consys_get_hw_ver_mt6983(void)
 	return CONN_HW_VER;
 }
 
-void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983* input)
+void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983 *input)
 {
 	memcpy(&g_consys_plat_therm_data, input, sizeof(struct consys_plat_thermal_data_mt6983));
 }
 
-#define PRINT_THERMAL_LOG 0
+#define PRINT_THERMAL_LOG 1
 static int calculate_thermal_temperature(int y)
 {
 	struct consys_plat_thermal_data_mt6983 *data = &g_consys_plat_therm_data;
@@ -577,7 +574,7 @@ static int calculate_thermal_temperature(int y)
 	int const_offset = 30;
 
 	/*  temperature = (y-b)*slope + (offset) */
-	/* Postpone division to avoid getting wrong slope becasue of integer division */
+	/* Postpone division to avoid getting wrong slope because of integer division */
 	t = (y - (data->thermal_b == 0 ? 0x38 : data->thermal_b)) *
 			(data->slop_molecule + 1866) / 1000 + const_offset;
 
@@ -619,8 +616,10 @@ int consys_thermal_query_mt6983(void)
 	connsys_adie_top_ck_en_ctl_mt6983(true);
 
 	/* Hold Semaphore, TODO: may not need this, because
-		thermal cr seperate for different  */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_THERMAL_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	 * thermal cr separate for different
+	 */
+	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_THERMAL_INDEX, CONN_SEMA_TIMEOUT)
+		== CONN_SEMA_GET_FAIL) {
 		pr_err("[THERM QRY] Require semaphore fail\n");
 		connsys_adie_top_ck_en_ctl_mt6983(false);
 		iounmap(addr);
@@ -694,7 +693,8 @@ unsigned long long consys_soc_timestamp_get_mt6983(void)
 		return 0;
 	}
 
-	timestamp = ((((u64)tick_h << 32) & 0xFFFFFFFF00000000) | ((u64)tick_l & 0x00000000FFFFFFFF));
+	timestamp = ((((u64)tick_h << 32) & 0xFFFFFFFF00000000)
+		    | ((u64)tick_l & 0x00000000FFFFFFFF));
 	do_div(timestamp, TICK_PER_MS);
 
 	return timestamp;
@@ -722,7 +722,7 @@ void consys_set_mcu_control_mt6983(int type, bool onoff)
 
 int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
 {
-	void __iomem* vir_addr = 0;
+	void __iomem *vir_addr = 0;
 	unsigned int expected_size = 0;
 
 	pr_info("[%s] emi base=0x%x offset=0x%x size=%d", __func__, gConEmiPhyBase, offset, size);
@@ -743,7 +743,8 @@ int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
 	iounmap(vir_addr);
 	expected_size = sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number + 4;
 	if (size < expected_size) {
-		pr_err("[%s] cr number=%d, expected_size=0x%x size=0x%x", __func__, mt6637_backup_cr_number, expected_size, size);
+		pr_err("[%s] cr number=%d, expected_size=0x%x size=0x%x", __func__,
+			mt6637_backup_cr_number, expected_size, size);
 		mt6637_backup_cr_number = 0;
 		return 1;
 	}
@@ -781,7 +782,8 @@ int consys_pre_cal_restore_mt6983(void)
 	pr_info("[%s] mt6637_backup_cr_number=%d mt6637_backup_data=%x",
 		__func__, mt6637_backup_cr_number, mt6637_backup_data);
 	/* Acquire semaphore */
-	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
+		== CONN_SEMA_GET_FAIL) {
 		pr_err("[%s] Require semaphore fail\n", __func__);
 		return CONNINFRA_SPI_OP_FAIL;
 	}
