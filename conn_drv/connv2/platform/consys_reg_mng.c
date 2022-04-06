@@ -11,22 +11,124 @@
 
 const struct consys_reg_mng_ops* g_consys_reg_ops = NULL;
 
-int consys_reg_mng_reg_readable(void)
+int consys_reg_mng_print_log(int level)
 {
-	if (g_consys_reg_ops &&
-		g_consys_reg_ops->consys_reg_mng_check_reable)
-		return g_consys_reg_ops->consys_reg_mng_check_reable();
-	pr_err("%s not implement", __func__);
-	return -1;
+	int ret = -1;
+
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_platform_log)
+		g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_platform_log();
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_pmic_log)
+		g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_pmic_log();
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_log)
+		ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_log(level);
+	return ret;
 }
 
+/*
+ * Get register status
+ * Return:
+ * 1: Readable
+ * 0: Not readable
+ * Print log if it is not readable
+ */
+int consys_reg_mng_reg_readable(void)
+{
+	int ret;
+
+	if (g_consys_reg_ops == NULL) {
+		pr_err("%s not implement", __func__);
+		BUG_ON(1);
+	}
+
+	/* Case of implement all checks in single platform function */
+	if (g_consys_reg_ops->consys_reg_mng_check_reable)
+		return g_consys_reg_ops->consys_reg_mng_check_reable();
+
+	/* Case of implement all checks by individual functions */
+	/* Check Power ON domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status == NULL) {
+		pr_err("%s not implement conninfra on domain check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		return 0;
+	}
+	/* Check Power OFF domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status == NULL) {
+		pr_err("%s not implement conninfra off domain check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+		return 0;
+	}
+	/* Check IRQ status */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq == NULL) {
+		pr_err("%s not implement conninfra irq check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+		return 0;
+	}
+	return 1;
+}
+
+/*
+ * Get register status for coredump
+ * Return:
+ * 1: Connsys Power on domain and Power off domain are both enabled
+ * 0: Connsys Power on domain and Power off domain are both disabled
+ * Print log if it is not readable
+ */
 int consys_reg_mng_reg_readable_for_coredump(void)
 {
-	if (g_consys_reg_ops &&
-		g_consys_reg_ops->consys_reg_mng_check_reable_for_coredump)
+	int ret;
+
+	if (g_consys_reg_ops == NULL) {
+		pr_err("%s not implement", __func__);
+		BUG_ON(1);
+	}
+
+	/* Case of implement all checks in single platform function */
+	if (g_consys_reg_ops->consys_reg_mng_check_reable_for_coredump)
 		return g_consys_reg_ops->consys_reg_mng_check_reable_for_coredump();
-	pr_notice("%s not implement", __func__);
-	return -1;
+
+	/* Case of implement all checks by individual functions */
+	/* Check Power On domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status == NULL) {
+		pr_err("%s not implement conninfra on domain check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		return 0;
+	}
+	/* Check Power OFF domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status == NULL) {
+		pr_err("%s not implement conninfra off domain check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+		return 0;
+	}
+	/* Check IRQ status */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq == NULL) {
+		pr_err("%s not implement conninfra irq check\n", __func__);
+		BUG_ON(1);
+	}
+	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
+	if (ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+	}
+	return 1;
 }
 
 int consys_reg_mng_is_connsys_reg(phys_addr_t addr)
@@ -37,13 +139,65 @@ int consys_reg_mng_is_connsys_reg(phys_addr_t addr)
 	return -1;
 }
 
-
+/*
+ * Get bus hang status
+ * Return:
+ * Error Code: Bus hang reason
+ * 0: bus is okay
+ * Always print log with bus status
+ */
 int consys_reg_mng_is_bus_hang(void)
 {
-	if (g_consys_reg_ops &&
-		g_consys_reg_ops->consys_reg_mng_is_bus_hang)
+	int fp_ret;
+	int ret = 0;
+	int wakeup_conninfra = 0;
+
+	if (g_consys_reg_ops == NULL) {
+		pr_err("%s not implement", __func__);
+		BUG_ON(1);
+	}
+
+	/* Case of implement all checks in single platform function */
+	if (g_consys_reg_ops->consys_reg_mng_is_bus_hang)
 		return g_consys_reg_ops->consys_reg_mng_is_bus_hang();
-	return -1;
+
+	/* Case of implement all checks by individual functions */
+	/* Check Power On domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status == NULL) {
+		pr_err("%s not implement conninfra on domain check\n", __func__);
+		BUG_ON(1);
+	}
+	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
+	if (fp_ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		return fp_ret;
+	}
+	/* Check Power OFF domain */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status == NULL) {
+		pr_err("%s not implement conninfra off domain check\n", __func__);
+		BUG_ON(1);
+	}
+	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
+	if (fp_ret != 0) {
+		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+
+		if (consys_hw_force_conninfra_wakeup() == 0)
+			wakeup_conninfra = 1;
+		ret = fp_ret;
+	}
+	/* Check IRQ status */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq == NULL) {
+		pr_err("%s not implement conninfra irq check\n", __func__);
+		BUG_ON(1);
+	}
+	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
+	ret |= fp_ret;
+	consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+
+	if (wakeup_conninfra)
+		consys_hw_force_conninfra_sleep();
+
+	return ret;
 }
 
 int consys_reg_mng_dump_bus_status(void)
@@ -77,9 +231,11 @@ int consys_reg_mng_init(struct platform_device *pdev, const struct conninfra_pla
 		g_consys_reg_ops = (const struct consys_reg_mng_ops*)plat_data->reg_ops;
 
 	if (g_consys_reg_ops &&
-		g_consys_reg_ops->consys_reg_mng_init)
+		g_consys_reg_ops->consys_reg_mng_init) {
 		ret = g_consys_reg_ops->consys_reg_mng_init(pdev);
-	else
+		if (g_consys_reg_ops->consys_reg_mng_debug_init)
+			g_consys_reg_ops->consys_reg_mng_debug_init();
+	} else
 		ret = EFAULT;
 
 	return ret;
@@ -88,8 +244,11 @@ int consys_reg_mng_init(struct platform_device *pdev, const struct conninfra_pla
 int consys_reg_mng_deinit(void)
 {
 	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_deinit)
+		g_consys_reg_ops->consys_reg_mng_deinit) {
 		g_consys_reg_ops->consys_reg_mng_deinit();
+		if (g_consys_reg_ops->consys_reg_mng_debug_deinit)
+			g_consys_reg_ops->consys_reg_mng_debug_deinit();
+	}
 
 	return 0;
 }
