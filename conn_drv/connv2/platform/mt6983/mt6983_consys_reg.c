@@ -22,6 +22,9 @@
 
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
+static void consys_debug_init_mt6983(void);
+static void consys_debug_deinit_mt6983(void);
+
 static int consys_check_reg_readable(void);
 static int consys_check_reg_readable_for_coredump(void);
 static int __consys_check_reg_readable(int check_type);
@@ -34,6 +37,9 @@ struct consys_base_addr conn_reg_mt6983;
 struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983 = {
 	.consys_reg_mng_init = consys_reg_init,
 	.consys_reg_mng_deinit = consys_reg_deinit,
+	.consys_reg_mng_debug_init = consys_debug_init_mt6983,
+	.consys_reg_mng_debug_deinit = consys_debug_deinit_mt6983,
+
 	.consys_reg_mng_check_reable = consys_check_reg_readable,
 	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
@@ -368,8 +374,6 @@ int consys_reg_init(struct platform_device *pdev)
 		return ret;
 	}
 
-	consys_debug_init_mt6983();
-
 	return 0;
 
 }
@@ -387,8 +391,6 @@ static int consys_reg_deinit(void)
 			conn_reg_mt6983.reg_base_addr[i].vir_addr = 0;
 		}
 	}
-
-	consys_debug_deinit_mt6983();
 
 	return 0;
 }
