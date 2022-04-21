@@ -188,9 +188,6 @@ static unsigned int g_pre_cal_mode = 0;
 static void _conninfra_core_drv_status_dump(char* tag)
 {
 #define DUMP_BUFF_SIZE	256
-	const char* drv_name[CONNDRV_TYPE_MAX] = {
-		"bt", "fm", "gps", "wifi", "mawd", "conninfra"
-	};
 	const char* drv_status_str[DRV_STS_MAX] = {
 		"not support", "off", "on", "reset"
 	};
@@ -201,7 +198,7 @@ static void _conninfra_core_drv_status_dump(char* tag)
 
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		drv_status = g_conninfra_ctx.drv_inst[i].drv_status;
-		str_len = snprintf(tmp, DUMP_BUFF_SIZE, " %s:[%s]", drv_name[i], drv_status_str[drv_status]);
+		str_len = snprintf(tmp, DUMP_BUFF_SIZE, " %s:[%s]", g_drv_name[i], drv_status_str[drv_status]);
 		if (buf_len + str_len < DUMP_BUFF_SIZE) {
 			strncat(buf, tmp, str_len);
 			buf_len += str_len;
@@ -247,17 +244,14 @@ static unsigned int opfunc_get_current_status(void)
  */
 static void _status_dump(void)
 {
-	const char* drv_name[CONNDRV_TYPE_MAX] = {
-		"bt ", "fm ", "gps ", "wifi ", "mawd", "conninfra"
-	};
 	char buf[256] = {'\0'};
 	unsigned int i, buf_len = 0, str_len;
 
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-		str_len = strlen(drv_name[i]);
+		str_len = strlen(g_drv_name[i]);
 		if (g_conninfra_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON &&
 		    (buf_len + str_len < 256)) {
-			strncat(buf, drv_name[i], str_len);
+			strncat(buf, g_drv_name[i], str_len);
 			buf_len += str_len;
 		}
 	}
