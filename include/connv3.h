@@ -32,10 +32,8 @@ enum connv3_drv_type {
 	CONNV3_DRV_TYPE_MAX
 };
 
-#define CONNV3_CB_RET_CAL_PASS_POWER_OFF 0x0
-#define CONNV3_CB_RET_CAL_PASS_POWER_ON  0x2
-#define CONNV3_CB_RET_CAL_FAIL_POWER_OFF 0x1
-#define CONNV3_CB_RET_CAL_FAIL_POWER_ON  0x3
+#define CONNV3_CB_RET_CAL_PASS 0x0
+#define CONNV3_CB_RET_CAL_FAIL 0x1
 
 /* bus hang error define */
 #define CONNINFRA_INFRA_BUS_HANG			0x1
@@ -45,11 +43,6 @@ enum connv3_drv_type {
 #define CONNINFRA_INFRA_BUS_HANG_IRQ		0x10
 
 #define CONNV3_ERR_RST_ONGOING			-0x7788
-#define CONNINFRA_ERR_WAKEUP_FAIL			-0x5566
-
-#define CONNINFRA_POWER_ON_D_DIE_FAIL	-0x1111
-#define CONNINFRA_POWER_ON_A_DIE_FAIL	-0x2222
-#define CONNINFRA_POWER_ON_CONFIG_FAIL	-0x3333
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -76,7 +69,7 @@ enum connv3_drv_type {
 int connv3_pwr_on(enum connv3_drv_type drv_type);
 int connv3_pwr_on_done(enum connv3_drv_type drv_type);
 int connv3_pwr_off(enum connv3_drv_type drv_type);
-
+int connv3_ext_32k_on(void);
 
 /* chip reset
  * return:
@@ -102,6 +95,7 @@ void connv3_update_pmic_state(enum connv3_drv_type drv);
 
 /* subsys callback register */
 struct connv3_pre_calibration_cb {
+	int (*pre_on_cb)(void);
 	int (*pwr_on_cb)(void);
 	int (*do_cal_cb)(void);
 };

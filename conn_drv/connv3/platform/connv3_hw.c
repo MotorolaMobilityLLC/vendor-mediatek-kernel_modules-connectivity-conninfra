@@ -96,13 +96,23 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret;
 
 	if ((curr_status & (~(0x1 << off_radio))) == 0) {
-		ret = connv3_pmic_mng_common_power_ctrl(0);
-		if (ret)
+		ret = connv3_pinctrl_mng_ext_32k_ctrl(false);
+		if (ret) {
+			pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
 			return ret;
+		}
 
 		ret = connv3_pinctrl_mng_remove();
-		if (ret)
+		if (ret) {
+			pr_err("[%s] remove pinctrl fail, ret = %d", __func__, ret);
 			return ret;
+		}
+
+		ret = connv3_pmic_mng_common_power_ctrl(0);
+		if (ret) {
+			pr_err("[%s] pmic off fail, ret = %d", __func__, ret);
+			return ret;
+		}
 	}
 
 	return 0;
@@ -158,6 +168,11 @@ int get_connv3_platform_ops(struct platform_device *pdev)
 		return -1;
 	}
 	return 0;
+}
+
+int connv3_hw_ext_32k_onoff(bool on)
+{
+	return connv3_pinctrl_mng_ext_32k_ctrl(on);
 }
 
 int connv3_hw_init(struct platform_device *pdev)

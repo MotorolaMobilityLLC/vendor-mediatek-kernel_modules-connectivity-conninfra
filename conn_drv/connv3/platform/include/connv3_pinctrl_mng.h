@@ -37,7 +37,7 @@ struct connv3_platform_pinctrl_ops {
 	int (*pinctrl_setup_pre) (void);
 	int (*pinctrl_setup_done) (void);
 	int (*pinctrl_remove) (void);
-
+	int (*pinctrl_ext_32k_ctrl)(bool);
 	/* debug */
 };
 
@@ -64,6 +64,8 @@ int connv3_pinctrl_mng_deinit(void);
 int connv3_pinctrl_mng_setup_pre(void);
 int connv3_pinctrl_mng_setup_done(void);
 int connv3_pinctrl_mng_remove(void);
+
+int connv3_pinctrl_mng_ext_32k_ctrl(bool);
 
 /*******************************************************************************
 *                              F U N C T I O N S

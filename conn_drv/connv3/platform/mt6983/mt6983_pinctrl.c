@@ -53,6 +53,7 @@ const struct connv3_platform_pinctrl_ops g_connv3_platform_pinctrl_ops_mt6983 = 
 	.pinctrl_setup_pre = connv3_plt_pinctrl_setup_pre_mt6983,
 	.pinctrl_setup_done = connv3_plt_pinctrl_setup_done_mt6983,
 	.pinctrl_remove = connv3_plt_pinctrl_remove_mt6983,
+	.pinctrl_ext_32k_ctrl = NULL, // In 6983, use TCXO. Don't need to control ext 32K.
 };
 
 
