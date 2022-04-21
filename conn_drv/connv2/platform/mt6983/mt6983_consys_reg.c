@@ -20,8 +20,6 @@
 
 #define CONSYS_DUMP_BUF_SIZE 800
 
-static int consys_reg_init_mt6983(struct platform_device *pdev);
-static int consys_reg_deinit_mt6983(void);
 static void consys_debug_init_mt6983(void);
 static void consys_debug_deinit_mt6983(void);
 

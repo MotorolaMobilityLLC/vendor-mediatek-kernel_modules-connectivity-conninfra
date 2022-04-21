@@ -6,6 +6,7 @@
 #ifndef PLATFORM_MT6983_ATF_H
 #define PLATFORM_MT6983_ATF_H
 
+#include "conninfra.h"
 #include <linux/arm-smccc.h>
 #include <linux/soc/mediatek/mtk_sip_svc.h>
 

@@ -73,7 +73,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6983_atf = {
 };
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6983_atf;
-extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983;
+extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983_atf;
 extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983_atf;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983;
 extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983;
@@ -82,7 +82,7 @@ const struct conninfra_plat_data mt6983_plat_data_atf = {
 	.chip_id = PLATFORM_SOC_CHIP,
 	.consys_hw_version = CONN_HW_VER,
 	.hw_ops = &g_consys_hw_ops_mt6983_atf,
-	.reg_ops = &g_dev_consys_reg_ops_mt6983,
+	.reg_ops = &g_dev_consys_reg_ops_mt6983_atf,
 	.platform_emi_ops = &g_consys_platform_emi_ops_mt6983_atf,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6983,
 	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6983,

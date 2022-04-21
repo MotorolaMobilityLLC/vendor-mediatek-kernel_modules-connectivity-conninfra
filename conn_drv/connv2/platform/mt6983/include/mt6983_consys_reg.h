@@ -99,6 +99,8 @@ extern struct consys_base_addr conn_reg_mt6983;
 #define CONN_REG_CCIF_BGF2AP_SWIRQ_ADDR			\
 	conn_reg_mt6983.reg_base_addr[CCIF_BGF2AP_SWIRQ_BASE_INDEX].vir_addr
 
+int consys_reg_init_mt6983(struct platform_device *pdev);
+int consys_reg_deinit_mt6983(void);
 
 int consys_is_consys_reg_mt6983(unsigned int addr);
 int consys_check_conninfra_on_domain_status_mt6983(void);
