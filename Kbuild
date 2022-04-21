@@ -218,6 +218,7 @@ $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_atf.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pmic.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_emi.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_emi_atf.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_consys_reg.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos_gen.o

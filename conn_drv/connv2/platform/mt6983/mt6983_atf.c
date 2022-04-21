@@ -74,7 +74,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6983_atf = {
 
 extern struct consys_hw_ops_struct g_consys_hw_ops_mt6983_atf;
 extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983;
-extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983;
+extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983_atf;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983;
 extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983;
 
@@ -83,7 +83,7 @@ const struct conninfra_plat_data mt6983_plat_data_atf = {
 	.consys_hw_version = CONN_HW_VER,
 	.hw_ops = &g_consys_hw_ops_mt6983_atf,
 	.reg_ops = &g_dev_consys_reg_ops_mt6983,
-	.platform_emi_ops = &g_consys_platform_emi_ops_mt6983,
+	.platform_emi_ops = &g_consys_platform_emi_ops_mt6983_atf,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6983,
 	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6983,
 	.connsyslog_config = &g_connsyslog_config,
@@ -326,6 +326,17 @@ int consys_pre_cal_clean_data_mt6983_atf(void)
 {
 	int ret = 0;
 	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_PRE_CAL_CLEAN_DATA_MT6983_OPID, 0, 0, 0, 0, 0, 0, ret);
+	return ret;
+}
+
+unsigned int consys_emi_set_remapping_reg_mt6983_atf(
+	phys_addr_t con_emi_base_addr,
+	phys_addr_t md_shared_emi_base_addr,
+	phys_addr_t gps_emi_base_addr)
+{
+	int ret;
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_EMI_SET_REMAPPING_REG_MT6983_OPID,
+			     0, 0, 0, 0, 0, 0, ret);
 	return ret;
 }
 
