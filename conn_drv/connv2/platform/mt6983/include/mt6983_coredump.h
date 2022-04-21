@@ -29,6 +29,7 @@ void __iomem *consys_plt_coredump_remap_mt6983(int conn_type, unsigned int base,
 	unsigned int length);
 void consys_plt_coredump_unmap_mt6983(void __iomem *vir_addr);
 char *consys_plt_coredump_get_tag_name_mt6983(int conn_type);
+bool consys_plt_coredump_is_supported_mt6983(unsigned int drv);
 
 int consys_plt_coredump_setup_dump_region_mt6983_atf(int conn_type);
 unsigned int consys_plt_coredump_setup_dynamic_remap_mt6983_atf(int conn_type, unsigned int idx,

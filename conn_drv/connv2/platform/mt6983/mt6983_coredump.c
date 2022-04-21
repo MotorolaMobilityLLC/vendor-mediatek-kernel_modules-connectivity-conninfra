@@ -10,6 +10,8 @@
 #include <linux/printk.h>
 
 #include "conninfra.h"
+#include "consys_hw.h"
+#include "consys_reg_util.h"
 #include "connsys_debug_utility.h"
 #include "connsys_coredump_hw_config.h"
 #include "consys_reg_util.h"
@@ -82,6 +84,7 @@ struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983 = {
 	.consys_coredump_remap = consys_plt_coredump_remap_mt6983,
 	.consys_coredump_unmap = consys_plt_coredump_unmap_mt6983,
 	.consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name_mt6983,
+	.consys_coredump_is_supported = consys_plt_coredump_is_supported_mt6983,
 };
 
 struct coredump_hw_config *consys_plt_coredump_get_platform_config_mt6983(int conn_type)
@@ -253,3 +256,15 @@ char *consys_plt_coredump_get_tag_name_mt6983(int conn_type)
 }
 
 
+bool consys_plt_coredump_is_supported_mt6983(unsigned int drv)
+{
+	bool ret = false;
+	unsigned int support_drv = consys_hw_get_support_drv();
+
+	if (drv == CONN_DEBUG_TYPE_WIFI && (support_drv & (0x1 << CONNDRV_TYPE_WIFI)) != 0)
+		ret = true;
+	else if (drv == CONN_DEBUG_TYPE_BT && (support_drv & (0x1 << CONNDRV_TYPE_BT)) != 0)
+		ret = true;
+
+	return ret;
+}

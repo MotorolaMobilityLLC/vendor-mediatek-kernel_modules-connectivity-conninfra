@@ -1557,6 +1557,11 @@ void* connsys_coredump_init(
 
 	config = coredump_mng_get_platform_config(conn_type);
 
+	if (!coredump_mng_is_supported(conn_type)) {
+		pr_notice("[%s] conn_type(%d) is not supported", __func__, conn_type);
+		return NULL;
+	}
+
 	/* Get EMI config */
 	if (config == NULL) {
 		pr_err("Get coredump EMI config fail\n");
