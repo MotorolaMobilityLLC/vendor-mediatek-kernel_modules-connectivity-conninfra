@@ -218,7 +218,9 @@ int pmic_mng_init(
 int pmic_mng_deinit(void)
 {
 	pmic_mng_unregister_device();
+#if COMMON_KERNEL_PMIC_SUPPORT
 	g_regmap = NULL;
+#endif
 	consys_platform_pmic_ops = NULL;
 	return 0;
 }
