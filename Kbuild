@@ -215,6 +215,7 @@ endif
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6983),y)
 ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv2/platform/mt6983),)
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_atf.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pmic.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_emi.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_consys_reg.o
