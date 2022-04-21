@@ -37,6 +37,8 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static int clock_mng_register_device(void);
+static int clock_mng_unregister_device(void);
 static int consys_mt6685_probe(struct platform_device *pdev);
 
 /*******************************************************************************
@@ -73,6 +75,18 @@ static struct platform_driver consys_mt6685_dev_drv = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+
+int clock_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data)
+{
+	return clock_mng_register_device();
+}
+
+int clock_mng_deinit(void)
+{
+	clock_mng_unregister_device();
+	return 0;
+}
+
 static int consys_mt6685_probe(struct platform_device *pdev)
 {
 	g_regmap_mt6685 = dev_get_regmap(pdev->dev.parent, NULL);
@@ -90,7 +104,7 @@ struct regmap* consys_clock_mng_get_regmap(void)
 	return g_regmap_mt6685;
 }
 
-int clock_mng_register_device(void)
+static int clock_mng_register_device(void)
 {
 	int ret;
 
@@ -103,3 +117,12 @@ int clock_mng_register_device(void)
 	return 0;
 }
 
+static int clock_mng_unregister_device(void)
+{
+	if (g_regmap_mt6685 != NULL) {
+		platform_driver_unregister(&consys_mt6685_dev_drv);
+		g_regmap_mt6685 = NULL;
+	}
+
+	return 0;
+}

@@ -538,7 +538,7 @@ static int conninfra_dev_init(void)
 	iret = register_chrdev_region(devID, CONNINFRA_DEV_NUM,
 						CONNINFRA_DRVIER_NAME);
 	if (iret) {
-		pr_err("fail to register chrdev\n");
+		pr_notice("[%s] fail to register chrdev, iret = %d\n", __func__, iret);
 		g_conn_adaptor_init_status = CONN_ADAPTOR_INIT_NOT_START;
 		return -1;
 	}

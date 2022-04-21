@@ -51,7 +51,8 @@ static int consys_mt6373_probe(struct platform_device *pdev);
 static int consys_mt6368_probe(struct platform_device *pdev);
 #endif
 
-int pmic_mng_register_device(void);
+static int pmic_mng_register_device(void);
+static int pmic_mng_unregister_device(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -216,6 +217,8 @@ int pmic_mng_init(
 
 int pmic_mng_deinit(void)
 {
+	pmic_mng_unregister_device();
+	g_regmap = NULL;
 	consys_platform_pmic_ops = NULL;
 	return 0;
 }
@@ -317,6 +320,25 @@ int pmic_mng_register_device(void)
 	else
 		pr_info("%s mt6368 ok.\n", __func__);
 
+#endif
+	return 0;
+}
+
+int pmic_mng_unregister_device(void)
+{
+#if COMMON_KERNEL_PMIC_SUPPORT
+	if (g_regmap_mt6368 != NULL) {
+		platform_driver_unregister(&consys_mt6368_dev_drv);
+		g_regmap_mt6368 = NULL;
+	}
+	if (g_regmap_mt6373 != NULL) {
+		platform_driver_unregister(&consys_mt6373_dev_drv);
+		g_regmap_mt6373 = NULL;
+	}
+	if (g_regmap_mt6363 != NULL) {
+		platform_driver_unregister(&consys_mt6363_dev_drv);
+		g_regmap_mt6363 = NULL;
+	}
 #endif
 	return 0;
 }

@@ -94,7 +94,6 @@ extern struct regmap *g_regmap_mt6368;
 
 int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb, const struct conninfra_plat_data* plat_data);
 int pmic_mng_deinit(void);
-int pmic_mng_register_device(void);
 
 int pmic_mng_common_power_ctrl(unsigned int enable);
 int pmic_mng_common_power_low_power_mode(unsigned int enable);

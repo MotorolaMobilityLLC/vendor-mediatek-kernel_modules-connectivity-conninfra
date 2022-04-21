@@ -11,8 +11,12 @@
 ********************************************************************************
 */
 
-#include <linux/version.h>
+#include <linux/platform_device.h>
 #include <linux/regmap.h>
+#include <linux/version.h>
+
+#include "consys_hw.h"
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 #define COMMON_KERNEL_CLK_SUPPORT	1
 #else
@@ -23,7 +27,6 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -55,9 +58,9 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+int clock_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data);
+int clock_mng_deinit(void);
 struct regmap* consys_clock_mng_get_regmap(void);
-int clock_mng_register_device(void);
-
 
 /*******************************************************************************
 *                              F U N C T I O N S
