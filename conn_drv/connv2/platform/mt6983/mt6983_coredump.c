@@ -14,6 +14,7 @@
 #include "connsys_coredump_hw_config.h"
 #include "consys_reg_util.h"
 #include "coredump_mng.h"
+#include "mt6983_coredump.h"
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -66,46 +67,24 @@ static struct coredump_hw_config g_coredump_config[CONN_DEBUG_TYPE_END] = {
 	},
 };
 
-/*******************************************************************************
- *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
- */
-static struct coredump_hw_config *consys_plt_coredump_get_platform_config(int conn_type);
-static unsigned int consys_plt_coredump_get_platform_chipid(void);
-static char *consys_plt_coredump_get_task_string(int conn_type, unsigned int task_id);
-static char *consys_plt_coredump_get_sys_name(int conn_type);
-static bool consys_plt_coredump_is_host_view_cr(unsigned int addr, unsigned int *host_view);
-static bool consys_plt_coredump_is_host_csr_readable(void);
-static enum cr_category consys_plt_coredump_get_cr_category(unsigned int addr);
-
-static unsigned int consys_plt_coredump_get_emi_offset(int conn_type);
-static void consys_plt_coredump_get_emi_phy_addr(phys_addr_t *base, unsigned int *size);
-static void consys_plt_coredump_get_mcif_emi_phy_addr(phys_addr_t *base, unsigned int *size);
-static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsigned int idx,
-	unsigned int base, unsigned int length);
-static void __iomem *consys_plt_coredump_remap(int conn_type, unsigned int base,
-	unsigned int length);
-static void consys_plt_coredump_unmap(void __iomem *vir_addr);
-static char *consys_plt_coredump_get_tag_name(int conn_type);
-
 struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983 = {
-	.consys_coredump_get_platform_config = consys_plt_coredump_get_platform_config,
-	.consys_coredump_get_platform_chipid = consys_plt_coredump_get_platform_chipid,
-	.consys_coredump_get_task_string = consys_plt_coredump_get_task_string,
-	.consys_coredump_get_sys_name = consys_plt_coredump_get_sys_name,
-	.consys_coredump_is_host_view_cr = consys_plt_coredump_is_host_view_cr,
-	.consys_coredump_is_host_csr_readable = consys_plt_coredump_is_host_csr_readable,
-	.consys_coredump_get_cr_category = consys_plt_coredump_get_cr_category,
-	.consys_coredump_get_emi_offset = consys_plt_coredump_get_emi_offset,
-	.consys_coredump_get_emi_phy_addr = consys_plt_coredump_get_emi_phy_addr,
-	.consys_coredump_get_mcif_emi_phy_addr = consys_plt_coredump_get_mcif_emi_phy_addr,
-	.consys_coredump_setup_dynamic_remap = consys_plt_coredump_setup_dynamic_remap,
-	.consys_coredump_remap = consys_plt_coredump_remap,
-	.consys_coredump_unmap = consys_plt_coredump_unmap,
-	.consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name,
+	.consys_coredump_get_platform_config = consys_plt_coredump_get_platform_config_mt6983,
+	.consys_coredump_get_platform_chipid = consys_plt_coredump_get_platform_chipid_mt6983,
+	.consys_coredump_get_task_string = consys_plt_coredump_get_task_string_mt6983,
+	.consys_coredump_get_sys_name = consys_plt_coredump_get_sys_name_mt6983,
+	.consys_coredump_is_host_view_cr = consys_plt_coredump_is_host_view_cr_mt6983,
+	.consys_coredump_is_host_csr_readable = consys_plt_coredump_is_host_csr_readable_mt6983,
+	.consys_coredump_get_cr_category = consys_plt_coredump_get_cr_category_mt6983,
+	.consys_coredump_get_emi_offset = consys_plt_coredump_get_emi_offset_mt6983,
+	.consys_coredump_get_emi_phy_addr = consys_plt_coredump_get_emi_phy_addr_mt6983,
+	.consys_coredump_get_mcif_emi_phy_addr = consys_plt_coredump_get_mcif_emi_phy_addr_mt6983,
+	.consys_coredump_setup_dynamic_remap = consys_plt_coredump_setup_dynamic_remap_mt6983,
+	.consys_coredump_remap = consys_plt_coredump_remap_mt6983,
+	.consys_coredump_unmap = consys_plt_coredump_unmap_mt6983,
+	.consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name_mt6983,
 };
 
-static struct coredump_hw_config *consys_plt_coredump_get_platform_config(int conn_type)
+struct coredump_hw_config *consys_plt_coredump_get_platform_config_mt6983(int conn_type)
 {
 	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_err("Incorrect type: %d\n", conn_type);
@@ -114,12 +93,12 @@ static struct coredump_hw_config *consys_plt_coredump_get_platform_config(int co
 	return &g_coredump_config[conn_type];
 }
 
-static unsigned int consys_plt_coredump_get_platform_chipid(void)
+unsigned int consys_plt_coredump_get_platform_chipid_mt6983(void)
 {
 	return 0x6983;
 }
 
-static char *consys_plt_coredump_get_task_string(int conn_type, unsigned int task_id)
+char *consys_plt_coredump_get_task_string_mt6983(int conn_type, unsigned int task_id)
 {
 	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_err("Incorrect type: %d\n", conn_type);
@@ -135,7 +114,7 @@ static char *consys_plt_coredump_get_task_string(int conn_type, unsigned int tas
 	return g_coredump_config[conn_type].task_map_table[task_id];
 }
 
-static char *consys_plt_coredump_get_sys_name(int conn_type)
+char *consys_plt_coredump_get_sys_name_mt6983(int conn_type)
 {
 	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_err("Incorrect type: %d\n", conn_type);
@@ -144,7 +123,7 @@ static char *consys_plt_coredump_get_sys_name(int conn_type)
 	return g_coredump_config[conn_type].name;
 }
 
-static bool consys_plt_coredump_is_host_view_cr(unsigned int addr, unsigned int *host_view)
+bool consys_plt_coredump_is_host_view_cr_mt6983(unsigned int addr, unsigned int *host_view)
 {
 	if (addr >= 0x7C000000 && addr <= 0x7Cffffff) {
 		if (host_view) {
@@ -160,7 +139,7 @@ static bool consys_plt_coredump_is_host_view_cr(unsigned int addr, unsigned int 
 	return false;
 }
 
-static bool consys_plt_coredump_is_host_csr_readable(void)
+bool consys_plt_coredump_is_host_csr_readable_mt6983(void)
 {
 	void __iomem *vir_addr = NULL;
 	bool ret = false;
@@ -187,7 +166,7 @@ static bool consys_plt_coredump_is_host_csr_readable(void)
 	return ret;
 }
 
-static enum cr_category consys_plt_coredump_get_cr_category(unsigned int addr)
+enum cr_category consys_plt_coredump_get_cr_category_mt6983(unsigned int addr)
 {
 	if (addr >= 0x7c000000 && addr <= 0x7c3fffff) {
 		if (addr >= 0x7c060000 && addr <= 0x7c06ffff) {
@@ -199,7 +178,7 @@ static enum cr_category consys_plt_coredump_get_cr_category(unsigned int addr)
 	return SUBSYS_CR;
 }
 
-static unsigned int consys_plt_coredump_get_emi_offset(int conn_type)
+unsigned int consys_plt_coredump_get_emi_offset_mt6983(int conn_type)
 {
 	struct coredump_hw_config *config = coredump_mng_get_platform_config(conn_type);
 
@@ -209,17 +188,17 @@ static unsigned int consys_plt_coredump_get_emi_offset(int conn_type)
 
 }
 
-static void consys_plt_coredump_get_emi_phy_addr(phys_addr_t *base, unsigned int *size)
+void consys_plt_coredump_get_emi_phy_addr_mt6983(phys_addr_t *base, unsigned int *size)
 {
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, base, size);
 }
 
-static void consys_plt_coredump_get_mcif_emi_phy_addr(phys_addr_t *base, unsigned int *size)
+void consys_plt_coredump_get_mcif_emi_phy_addr_mt6983(phys_addr_t *base, unsigned int *size)
 {
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_MCIF, base, size);
 }
 
-static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsigned int idx,
+unsigned int consys_plt_coredump_setup_dynamic_remap_mt6983(int conn_type, unsigned int idx,
 	unsigned int base, unsigned int length)
 {
 #define DYNAMIC_MAP_MAX_SIZE	0x300000
@@ -249,7 +228,7 @@ static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsig
 	return map_len;
 }
 
-static void __iomem *consys_plt_coredump_remap(int conn_type, unsigned int base,
+void __iomem *consys_plt_coredump_remap_mt6983(int conn_type, unsigned int base,
 	unsigned int length)
 {
 	void __iomem *vir_addr = 0;
@@ -263,12 +242,12 @@ static void __iomem *consys_plt_coredump_remap(int conn_type, unsigned int base,
 	return vir_addr;
 }
 
-static void consys_plt_coredump_unmap(void __iomem *vir_addr)
+void consys_plt_coredump_unmap_mt6983(void __iomem *vir_addr)
 {
 	iounmap(vir_addr);
 }
 
-static char *consys_plt_coredump_get_tag_name(int conn_type)
+char *consys_plt_coredump_get_tag_name_mt6983(int conn_type)
 {
 	return g_coredump_config[conn_type].exception_tag_name;
 }
