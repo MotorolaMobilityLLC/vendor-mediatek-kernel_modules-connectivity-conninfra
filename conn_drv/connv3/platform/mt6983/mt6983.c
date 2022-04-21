@@ -26,8 +26,8 @@
 ********************************************************************************
 */
 #define PLATFORM_SOC_CHIP		0x6983
-#define CONN_HW_VER				0x6639
-
+#define CONN_HW_VER			0x6639
+#define CONN_ADIE_ID			0x6639
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -49,6 +49,7 @@
 */
 
 u32 connv3_soc_get_chipid_mt6983(void);
+static u32 connv3_get_adie_chipid_mt6983(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -56,9 +57,9 @@ u32 connv3_soc_get_chipid_mt6983(void);
 */
 
 struct connv3_hw_ops_struct g_connv3_hw_ops_mt6983 = {
-
 	/* debug */
 	.connsys_plt_get_chipid = connv3_soc_get_chipid_mt6983,
+	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6983,
 };
 
 extern struct connv3_hw_ops_struct g_consys_hw_ops_mt6983;
@@ -78,5 +79,8 @@ u32 connv3_soc_get_chipid_mt6983(void)
 	return PLATFORM_SOC_CHIP;
 }
 
-
+u32 connv3_get_adie_chipid_mt6983(void)
+{
+	return CONN_ADIE_ID;
+}
 

@@ -20,11 +20,6 @@
 ********************************************************************************
 */
 
-#define CONN_SEMA_GET_SUCCESS	0
-#define CONN_SEMA_GET_FAIL	1
-
-#define CONN_SEMA_TIMEOUT	(1*1000) /* 1ms */
-
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -43,6 +38,7 @@
 struct connv3_hw_ops_struct {
 
 	u32 (*connsys_plt_get_chipid) (void);
+	u32 (*connsys_plt_get_adie_chipid) (void);
 };
 
 #define DRV_GEN_SUPPORT_FULL 0x7
@@ -76,7 +72,7 @@ int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
 
 unsigned int connv3_hw_get_chipid(void);
-
+unsigned int connv3_hw_get_adie_chipid(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
