@@ -173,44 +173,6 @@ int connv3_dump_power_state(uint8_t *buf, u32 buf_sz)
 	return 0;
 }
 
-#if 0
-int connv3_mmap(struct file *pFile, struct vm_area_struct *pVma)
-{
-	unsigned long bufId = pVma->vm_pgoff;
-	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
-
-	pr_info("conninfra_mmap start:%lu end:%lu size: %lu buffer id=%lu\n",
-		pVma->vm_start, pVma->vm_end,
-		pVma->vm_end - pVma->vm_start, bufId);
-
-	if (bufId == 0) {
-		if (pVma->vm_end - pVma->vm_start > addr_info->emi_size)
-			return -EINVAL;
-		pr_info("conninfra_mmap size: %lu\n", pVma->vm_end - pVma->vm_start);
-		if (remap_pfn_range(pVma, pVma->vm_start, addr_info->emi_ap_phy_addr >> PAGE_SHIFT,
-			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
-			return -EAGAIN;
-		return 0;
-	} else if (bufId == 1) {
-		if (addr_info == NULL)
-			return -EINVAL;
-		if (addr_info->md_emi_size == 0 ||
-		    pVma->vm_end - pVma->vm_start > addr_info->md_emi_size)
-			return -EINVAL;
-		pr_info("MD direct path size=%u map size=%lu\n",
-			addr_info->md_emi_size,
-			pVma->vm_end - pVma->vm_start);
-		if (remap_pfn_range(pVma, pVma->vm_start,
-			addr_info->md_emi_phy_addr >> PAGE_SHIFT,
-			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
-			return -EAGAIN;
-		return 0;
-	}
-	/* Invalid bufId */
-	return -EINVAL;
-}
-#endif
-
 /* BT, WIFI, GPS, FM */
 const int radio_support_map[CONNV3_DRV_TYPE_MAX] = {CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI, -1};
 

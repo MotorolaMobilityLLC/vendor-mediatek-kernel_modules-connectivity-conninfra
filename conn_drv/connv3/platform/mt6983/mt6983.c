@@ -15,6 +15,7 @@
 
 #include "osal.h"
 #include "connv3_hw.h"
+#include "coredump/connv3_dump_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -62,6 +63,10 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6983 = {
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6983,
 };
 
+const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6983 = {
+	.connv3_dump_plt_get_chipid = connv3_get_adie_chipid_mt6983,
+};
+
 extern struct connv3_hw_ops_struct g_consys_hw_ops_mt6983;
 extern struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6983;
 extern struct connv3_platform_pinctrl_ops g_connv3_platform_pinctrl_ops_mt6983;
@@ -72,6 +77,7 @@ const struct connv3_plat_data g_connv3_mt6983_plat_data = {
 	.hw_ops = &g_connv3_hw_ops_mt6983,
 	.platform_pmic_ops = &g_connv3_platform_pmic_ops_mt6983,
 	.platform_pinctrl_ops = &g_connv3_platform_pinctrl_ops_mt6983,
+	.platform_coredump_ops = &g_connv3_dump_ops_mt6983,
 };
 
 u32 connv3_soc_get_chipid_mt6983(void)
