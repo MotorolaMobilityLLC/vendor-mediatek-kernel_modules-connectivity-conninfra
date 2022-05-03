@@ -12,6 +12,11 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/suspend.h>
 
+#include <connectivity_build_in_adapter.h>
+
+#include "osal.h"
+#include "conninfra.h"
+#include "consys_hw.h"
 #include "clock_mng.h"
 #include "conn_power_throttling.h"
 #include "connsys_debug_utility.h"

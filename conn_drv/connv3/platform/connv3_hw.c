@@ -159,13 +159,13 @@ int get_connv3_platform_ops(struct platform_device *pdev)
 		return -1;
 	}
 
-	pr_info("[%s] chipid=[%x] [%x]", __func__, g_connv3_plat_data->chip_id,
+	pr_info("[%s] chipid=[%x] hw_ops=[%p]", __func__, g_connv3_plat_data->chip_id,
 						g_connv3_plat_data->hw_ops);
 	if (connv3_hw_ops == NULL)
 		connv3_hw_ops = (const struct connv3_hw_ops_struct*)g_connv3_plat_data->hw_ops;
 
 	if (connv3_hw_ops == NULL) {
-		pr_err("Get HW op fail");
+		pr_err("[%s] Get HW op fail", __func__);
 		return -1;
 	}
 	return 0;

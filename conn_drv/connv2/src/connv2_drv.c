@@ -135,11 +135,20 @@ static int conninfra_conn_bus_dump(void);
 #endif
 
 /* DEVAPC */
+#ifdef CONFIG_FPGA_EARLY_PORTING
+/* Disable DEVAPC on FPGA */
+#define CFG_CONNINFRA_DEVAPC_SUPPORT	0
+#else
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#define CFG_CONNINFRA_DEVAPC_SUPPORT	1
+#else
+#define CFG_CONNINFRA_DEVAPC_SUPPORT	0
+#endif
+#endif
+
+#if CFG_CONNINFRA_DEVAPC_SUPPORT
 static void conninfra_devapc_violation_cb(void);
 static void conninfra_register_devapc_callback(void);
-#endif
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 /* For DEVAPC callback */
 static struct work_struct g_conninfra_devapc_work;
 static struct devapc_vio_callbacks conninfra_devapc_handle = {
@@ -444,7 +453,7 @@ static int conninfra_conn_bus_dump(void)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_CONNINFRA_DEVAPC_SUPPORT
 static void conninfra_devapc_violation_cb(void)
 {
 	schedule_work(&g_conninfra_devapc_work);
@@ -460,7 +469,7 @@ static void conninfra_register_devapc_callback(void)
 	INIT_WORK(&g_conninfra_devapc_work, conninfra_devapc_handler);
 	register_devapc_vio_callback(&conninfra_devapc_handle);
 }
-#endif
+#endif /* CFG_CONNINFRA_DEVAPC_SUPPORT */
 
 static void conninfra_register_power_throttling_callback(void)
 {
@@ -548,7 +557,7 @@ int connv2_drv_init(void)
 	if (iret)
 		pr_notice("Register to conn_adap fail, ret = %d", iret);
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_CONNINFRA_DEVAPC_SUPPORT
 	conninfra_register_devapc_callback();
 #endif
 	conninfra_register_thermal_callback();
