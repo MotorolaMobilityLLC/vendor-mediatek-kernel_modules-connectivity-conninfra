@@ -5,9 +5,9 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
-#include "emi_mng.h"
-#include "mt6983_pos.h"
-#include "mt6983_emi.h"
+#include "../include/emi_mng.h"
+#include "include/mt6983_emi.h"
+#include "include/mt6983_pos.h"
 
 struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983_atf = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection_mt6983,

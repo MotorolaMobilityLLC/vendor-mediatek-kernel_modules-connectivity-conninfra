@@ -5,21 +5,23 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
-#include <connectivity_build_in_adapter.h>
 #include <asm/atomic.h>
 #include <linux/delay.h>
 #include <linux/jiffies.h>
 #include <linux/platform_device.h>
+#include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
 #include <linux/timer.h>
-#include "osal.h"
-#include "consys_hw.h"
-#include "consys_reg_util.h"
-#include "pmic_mng.h"
-#include <linux/regmap.h>
-#include "mt6983_pmic.h"
-#include "mt6983_consys_reg_offset.h"
-#include "mt6983_pos.h"
+
+#include <connectivity_build_in_adapter.h>
+
+#include "../../../../base/include/osal.h"
+#include "../include/consys_hw.h"
+#include "../include/consys_reg_util.h"
+#include "../include/pmic_mng.h"
+#include "include/mt6983_consys_reg_offset.h"
+#include "include/mt6983_pmic.h"
+#include "include/mt6983_pos.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S

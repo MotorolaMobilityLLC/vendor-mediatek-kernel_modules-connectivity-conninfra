@@ -5,10 +5,10 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
-#include "emi_mng.h"
-#include "mt6983.h"
-#include "mt6983_pos.h"
-#include "mt6983_emi.h"
+#include "../include/emi_mng.h"
+#include "include/mt6983.h"
+#include "include/mt6983_emi.h"
+#include "include/mt6983_pos.h"
 
 /* For EMI MPU */
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
@@ -58,8 +58,8 @@
 ********************************************************************************
 */
 
-extern unsigned long long gConEmiSize;
-extern phys_addr_t gConEmiPhyBase;
+extern unsigned long long g_con_emi_size;
+extern phys_addr_t g_con_emi_phy_base;
 
 struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983 = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection_mt6983,

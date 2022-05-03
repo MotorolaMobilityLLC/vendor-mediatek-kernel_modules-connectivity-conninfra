@@ -17,8 +17,8 @@
  */
 
 
-#ifndef _PLATFORM_MT6983_POS_GEN_H_
-#define _PLATFORM_MT6983_POS_GEN_H_
+#ifndef MT6983_POS_GEN_H
+#define MT6983_POS_GEN_H
 
 void consys_set_if_pinmux_mt6983_gen(unsigned int enable);
 void consys_set_gpio_tcxo_mode_mt6983_gen(unsigned int tcxo_mode, unsigned int enable);
@@ -94,7 +94,7 @@ int connsys_a_die_cfg_adie6637_PART2_mt6983_gen(unsigned int hw_ver_id);
 int connsys_a_die_cfg_deassert_adie_reset_mt6983_gen(void);
 int connsys_a_die_cfg_read_adie_id_mt6983_gen(unsigned int *padie_id, unsigned int *phw_ver_id);
 int connsys_a_die_efuse_read_get_efuse_info_mt6983_gen(
-		void __iomem **psysram_efuse_list,
+		mapped_addr *psysram_efuse_list,
 		int *pslop_molecule,
 		int *pthermal_b,
 		int *poffset);
@@ -391,4 +391,4 @@ int consys_conninfra_sleep_mt6983_gen(void);
 #define CONSYS_GEN_ATOP_RG_TOP_XO_3                                                         0xb08
 #define CONSYS_GEN_ATOP_RG_TOP_XO_7                                                         0xb18
 
-#endif /* _PLATFORM_MT6983_POS_GEN_H_ */
+#endif /* MT6983_POS_GEN_H */

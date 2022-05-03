@@ -16,8 +16,8 @@
  */
 
 
-#ifndef _PLATFORM_MT6983_DEBUG_GEN_H_
-#define _PLATFORM_MT6983_DEBUG_GEN_H_
+#ifndef MT6983_DEBUG_GEN_H
+#define MT6983_DEBUG_GEN_H
 
 #define CONN_DEBUG_INFO_SIZE 256
 #define DEBUG_TAG_SIZE 10
@@ -233,4 +233,4 @@ void consys_print_bus_slpprot_debug_dbg_level_0_mt6983_debug_gen(
 #define CONSYS_DBG_GEN_INFRASYS_PROTECT_RDY_STA_1_OFFSET_ADDR                0xc5c
 #define CONSYS_DBG_GEN_MCU_CONNSYS_PROTECT_RDY_STA_0_OFFSET_ADDR             0xc9c
 
-#endif /* _PLATFORM_MT6983_DEBUG_GEN_H_ */
+#endif /* MT6983_DEBUG_GEN_H */

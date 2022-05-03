@@ -16,20 +16,16 @@
  * - conn_infra_cmdbt_instr_autogen_20211025.txt
  */
 
-
 #ifndef CFG_CONNINFRA_ON_CTP
-#include <linux/types.h>
-#include <linux/clk.h>
-#include <linux/io.h>
-#include <connectivity_build_in_adapter.h>
+#include "../include/plat_library.h"
 #endif
-#include "consys_hw.h"
-#include "consys_reg_util.h"
-#include "mt6983_consys_reg_offset.h"
-#include "mt6983.h"
-#include "mt6983_pos.h"
-#include "mt6983_pos_gen.h"
-#include "conninfra.h"
+#include "../include/consys_hw.h"
+#include "../include/consys_reg_util.h"
+#include "../include/plat_def.h"
+#include "include/mt6983.h"
+#include "include/mt6983_consys_reg_offset.h"
+#include "include/mt6983_pos.h"
+#include "include/mt6983_pos_gen.h"
 
 
 const unsigned int g_cmdbt_dwn_value_ary_mt6983[1024] = {
@@ -1680,7 +1676,7 @@ int connsys_a_die_cfg_read_adie_id_mt6983_gen(unsigned int *padie_id, unsigned i
 }
 
 int connsys_a_die_efuse_read_get_efuse_info_mt6983_gen(
-		void __iomem **psysram_efuse_list,
+		mapped_addr *psysram_efuse_list,
 		int *pslop_molecule,
 		int *pthermal_b,
 		int *poffset)

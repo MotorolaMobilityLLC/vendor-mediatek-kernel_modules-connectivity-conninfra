@@ -3,9 +3,9 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#include "pmic_mng.h"
-
 #include <linux/regmap.h>
+
+#include "include/pmic_mng.h"
 #include "osal.h"
 #if COMMON_KERNEL_PMIC_SUPPORT
 #include <linux/regulator/consumer.h>

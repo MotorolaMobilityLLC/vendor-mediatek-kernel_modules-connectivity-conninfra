@@ -95,7 +95,7 @@ static void _conninfra_core_drv_status_dump(char* tag);
 */
 
 struct conninfra_ctx g_conninfra_ctx;
-extern phys_addr_t gConEmiPhyBase;
+extern phys_addr_t g_con_emi_phy_base;
 static struct osal_wake_lock conninfra_wake_lock;
 
 /*******************************************************************************

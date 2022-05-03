@@ -3,8 +3,8 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_CONSYS_REG_BASE_H_
-#define _PLATFORM_CONSYS_REG_BASE_H_
+#ifndef CONSYS_REG_BASE_H
+#define CONSYS_REG_BASE_H
 
 struct consys_reg_base_addr {
 	unsigned long vir_addr;
@@ -12,4 +12,4 @@ struct consys_reg_base_addr {
 	unsigned long long size;
 };
 
-#endif				/* _PLATFORM_CONSYS_REG_BASE_H_ */
+#endif	/* CONSYS_REG_BASE_H */

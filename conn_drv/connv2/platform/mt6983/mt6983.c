@@ -5,50 +5,16 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
-#include <linux/clk.h>
-#include <linux/delay.h>
-#include <linux/math64.h>
-#include <linux/of.h>
-#include <linux/pm_runtime.h>
-#include <linux/types.h>
+#include "../include/connsys_library.h"
+#include "../include/consys_reg_mng.h"
+#include "../include/consys_reg_util.h"
+#include "../include/plat_def.h"
+#include "../include/plat_library.h"
 
-#include <mtk_clkbuf_ctl.h>
-#include <connectivity_build_in_adapter.h>
-
-#include "clock_mng.h"
-#include "conninfra.h"
-#include "conninfra_conf.h"
-#include "consys_hw.h"
-#include "consys_reg_mng.h"
-#include "consys_reg_util.h"
-#include "coredump_mng.h"
-#include "mt6983.h"
-#include "mt6983_connsyslog.h"
-#include "mt6983_consys_reg.h"
-#include "mt6983_consys_reg_offset.h"
-#include "mt6983_pos.h"
-#include "osal.h"
-
-/*******************************************************************************
- *                         C O M P I L E R   F L A G S
- ********************************************************************************
- */
-
-/*******************************************************************************
- *                                 M A C R O S
- ********************************************************************************
- */
-#define PLATFORM_SOC_CHIP 0x6983
-
-/*******************************************************************************
- *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
- */
-
-/*******************************************************************************
- *                              C O N S T A N T S
- ********************************************************************************
- */
+#include "include/mt6983.h"
+#include "include/mt6983_consys_reg.h"
+#include "include/mt6983_consys_reg_offset.h"
+#include "include/mt6983_pos.h"
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -61,218 +27,18 @@ struct rf_cr_backup_data {
 	unsigned int value2;
 };
 
-/*******************************************************************************
- *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
- */
-int consys_clk_get_from_dts_mt6983(struct platform_device *pdev);
-int consys_clock_buffer_ctrl_mt6983(unsigned int enable);
-unsigned int consys_soc_chipid_get_mt6983(void);
-void consys_clock_fail_dump_mt6983(void);
-unsigned int consys_get_hw_ver_mt6983(void);
-int consys_thermal_query_mt6983(void);
-/* Power state relative */
-int consys_enable_power_dump_mt6983(void);
-int consys_reset_power_state_mt6983(void);
-static int consys_reset_power_state(void);
-int consys_power_state_dump_mt6983(char *buf, unsigned int size);
-
-unsigned long long consys_soc_timestamp_get_mt6983(void);
-
-unsigned int consys_adie_detection_mt6983(void);
-void consys_set_mcu_control_mt6983(int type, bool onoff);
-
-int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size);
-int consys_pre_cal_clean_data_mt6983(void);
-
-/*******************************************************************************
- *                            P U B L I C   D A T A
- ********************************************************************************
- */
-
-struct consys_hw_ops_struct g_consys_hw_ops_mt6983 = {
-	/* load from dts */
-	/* TODO: mtcmos should move to a independent module */
-	.consys_plt_clk_get_from_dts = consys_clk_get_from_dts_mt6983,
-
-	/* clock */
-	.consys_plt_clock_buffer_ctrl = consys_clock_buffer_ctrl_mt6983,
-	.consys_plt_co_clock_type = consys_get_co_clock_type_mt6983,
-
-	/* POS */
-	.consys_plt_conninfra_on_power_ctrl = consys_conninfra_on_power_ctrl_mt6983,
-	.consys_plt_set_if_pinmux = consys_set_if_pinmux_mt6983,
-
-	.consys_plt_polling_consys_chipid = consys_polling_chipid_mt6983,
-	.consys_plt_d_die_cfg = connsys_d_die_cfg_mt6983,
-	.consys_plt_spi_master_cfg = connsys_spi_master_cfg_mt6983,
-	.consys_plt_a_die_cfg = connsys_a_die_cfg_mt6983,
-	.consys_plt_afe_wbg_cal = connsys_afe_wbg_cal_mt6983,
-	.consys_plt_afe_sw_patch = connsys_afe_sw_patch_mt6983,
-	.consys_plt_subsys_pll_initial = connsys_subsys_pll_initial_mt6983,
-	.consys_plt_low_power_setting = connsys_low_power_setting_mt6983,
-	.consys_plt_soc_chipid_get = consys_soc_chipid_get_mt6983,
-	.consys_plt_conninfra_wakeup = consys_conninfra_wakeup_mt6983,
-	.consys_plt_conninfra_sleep = consys_conninfra_sleep_mt6983,
-	.consys_plt_is_rc_mode_enable = consys_is_rc_mode_enable_mt6983,
-
-	/* debug */
-	.consys_plt_clock_fail_dump = consys_clock_fail_dump_mt6983,
-	.consys_plt_get_hw_ver = consys_get_hw_ver_mt6983,
-
-	.consys_plt_spi_read = consys_spi_read_mt6983,
-	.consys_plt_spi_write = consys_spi_write_mt6983,
-	.consys_plt_spi_update_bits = consys_spi_update_bits_mt6983,
-	.consys_plt_spi_clock_switch = consys_spi_clock_switch_mt6983,
-	.consys_plt_subsys_status_update = consys_subsys_status_update_mt6983,
-
-	.consys_plt_thermal_query = consys_thermal_query_mt6983,
-	.consys_plt_enable_power_dump = consys_enable_power_dump_mt6983,
-	.consys_plt_reset_power_state = consys_reset_power_state_mt6983,
-	.consys_plt_power_state = consys_power_state_dump_mt6983,
-	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6983,
-	.consys_plt_adie_detection = consys_adie_detection_mt6983,
-	.consys_plt_set_mcu_control = consys_set_mcu_control_mt6983,
-
-	.consys_plt_pre_cal_backup = consys_pre_cal_backup_mt6983,
-	.consys_plt_pre_cal_clean_data = consys_pre_cal_clean_data_mt6983,
-};
-
-extern struct consys_hw_ops_struct g_consys_hw_ops_mt6983;
-extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6983;
-extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6983;
-extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6983;
-extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983;
-
-const struct conninfra_plat_data mt6983_plat_data = {
-	.chip_id = PLATFORM_SOC_CHIP,
-	.consys_hw_version = CONN_HW_VER,
-	.hw_ops = &g_consys_hw_ops_mt6983,
-	.reg_ops = &g_dev_consys_reg_ops_mt6983,
-	.platform_emi_ops = &g_consys_platform_emi_ops_mt6983,
-	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6983,
-	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6983,
-	.connsyslog_config = &g_connsyslog_config,
-};
-
 static struct consys_plat_thermal_data_mt6983 g_consys_plat_therm_data;
 
 /* For calibration backup/restore */
-static struct rf_cr_backup_data *mt6637_backup_data;
+#define MAX_CALIBRATION_DATA_BACKUP_SIZE	256
+static struct rf_cr_backup_data mt6637_backup_data[MAX_CALIBRATION_DATA_BACKUP_SIZE];
 static unsigned int mt6637_backup_cr_number;
-extern phys_addr_t gConEmiPhyBase;
-
-int consys_get_co_clock_type_mt6983(void)
-{
-	const struct conninfra_conf *conf;
-	struct regmap *map = consys_clock_mng_get_regmap();
-	int value = 0, clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
-	const char *clock_name[CONNSYS_CLOCK_SCHEMATIC_MAX] = {
-		"26M co-clock", "52M co-clock", "26M tcxo", "52M tcxo"};
-
-	/* Default solution */
-	conf = conninfra_conf_get_cfg();
-	if (conf == NULL) {
-		pr_err("[%s] Get conf fail", __func__);
-		return -1;
-	}
-
-	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
-		if (conf->co_clock_flag == 3)
-			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
-		else
-			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
-	} else {
-		if (!map) {
-			pr_notice("%s, failed to get regmap.\n", __func__);
-			return -1;
-		}
-		regmap_read(map, DCXO_DIGCLK_ELR, &value);
-		if (value & 0x1)
-			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
-	}
-	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d, %s",
-		__func__, conf->tcxo_gpio, conn_hw_env.tcxo_support, clock_name[clock_type]);
-
-	return clock_type;
-}
+extern phys_addr_t g_con_emi_phy_base;
+unsigned long mt6983_power_state_dump_data[POWER_STATE_DUMP_DATA_SIZE];
 
 int consys_co_clock_type_mt6983(void)
 {
 	return conn_hw_env.clock_type;
-}
-
-int consys_clk_get_from_dts_mt6983(struct platform_device *pdev)
-{
-	pm_runtime_enable(&pdev->dev);
-	dev_pm_syscore_device(&pdev->dev, true);
-
-	return 0;
-}
-
-int consys_platform_spm_conn_ctrl_mt6983(unsigned int enable)
-{
-	int ret = 0;
-	struct platform_device *pdev = get_consys_device();
-
-	if (!pdev) {
-		pr_info("get_consys_device fail.\n");
-		return -1;
-	}
-
-	if (enable) {
-		ret = pm_runtime_get_sync(&(pdev->dev));
-		if (ret)
-			pr_info("pm_runtime_get_sync() fail(%d)\n", ret);
-		else
-			pr_info("pm_runtime_get_sync() CONSYS ok\n");
-
-		ret = device_init_wakeup(&(pdev->dev), true);
-		if (ret)
-			pr_info("device_init_wakeup(true) fail.\n");
-		else
-			pr_info("device_init_wakeup(true) CONSYS ok\n");
-	} else {
-		ret = device_init_wakeup(&(pdev->dev), false);
-		if (ret)
-			pr_info("device_init_wakeup(false) fail.\n");
-		else
-			pr_info("device_init_wakeup(false) CONSYS ok\n");
-
-		ret = pm_runtime_put_sync(&(pdev->dev));
-		if (ret)
-			pr_info("pm_runtime_put_sync() fail.\n");
-		else
-			pr_info("pm_runtime_put_sync() CONSYS ok\n");
-	}
-	return ret;
-}
-
-int consys_clock_buffer_ctrl_mt6983(unsigned int enable)
-{
-	/* This function call didn't work now.
-	 * clock buffer is HW controlled, not SW controlled.
-	 * Keep this function call to update status.
-	 */
-#if (!COMMON_KERNEL_CLK_SUPPORT)
-	if (enable)
-		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, true);	/*open XO_WCN*/
-	else
-		KERNEL_clk_buf_ctrl(CLK_BUF_CONN, false);	/*close XO_WCN*/
-#endif
-	return 0;
-}
-
-unsigned int consys_soc_chipid_get_mt6983(void)
-{
-	return PLATFORM_SOC_CHIP;
-}
-
-void consys_clock_fail_dump_mt6983(void)
-{
-#if defined(KERNEL_clk_buf_show_status_info)
-	KERNEL_clk_buf_show_status_info();
-#endif
 }
 
 int consys_enable_power_dump_mt6983(void)
@@ -281,7 +47,7 @@ int consys_enable_power_dump_mt6983(void)
 	return 0;
 }
 
-int consys_reset_power_state(void)
+static int consys_reset_power_state(void)
 {
 	/* Clear data and disable stop */
 	/* I. Clear
@@ -416,7 +182,7 @@ static void consys_power_state(void)
 		str_len = strlen(osc_str[i]);
 
 		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < POWER_STATE_BUFF_LENGTH)) {
-			strncat(buf, osc_str[i], str_len);
+			strnlcat(buf, osc_str[i], str_len, POWER_STATE_BUFF_LENGTH);
 			buf_len += str_len;
 		}
 	}
@@ -426,9 +192,10 @@ static void consys_power_state(void)
 
 }
 
+#define POWER_STATE_BUF_SIZE 256
+static char temp_buf[POWER_STATE_BUF_SIZE];
 static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 {
-#define POWER_STATE_BUF_SIZE 256
 #define CONN_32K_TICKS_PER_SEC (32768)
 #define CONN_TICK_TO_SEC(TICK) (TICK / CONN_32K_TICKS_PER_SEC)
 	static u64 round;
@@ -440,9 +207,9 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 	unsigned int wf_sleep_cnt, wf_sleep_time;
 	unsigned int bt_sleep_cnt, bt_sleep_time;
 	unsigned int gps_sleep_cnt, gps_sleep_time;
-	char temp_buf[POWER_STATE_BUF_SIZE];
 	char *buf_p = temp_buf;
 	int buf_sz = POWER_STATE_BUF_SIZE;
+	int ret = 0;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
@@ -501,39 +268,75 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 	t_gps_sleep_time += gps_sleep_time;
 	t_gps_sleep_cnt += gps_sleep_cnt;
 
-	if (print_log > 0 && buf != NULL && size > 0) {
-		buf_p = buf;
-		buf_sz = size;
-	}
+	if (print_log) {
+		mt6983_power_state_dump_data[0] = round;
+		mt6983_power_state_dump_data[1] = CONN_TICK_TO_SEC(conninfra_sleep_time);
+		mt6983_power_state_dump_data[2] = CONN_TICK_TO_SEC((conninfra_sleep_time
+							    % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[3] = conninfra_sleep_cnt;
+		mt6983_power_state_dump_data[4] = CONN_TICK_TO_SEC(wf_sleep_time);
+		mt6983_power_state_dump_data[5] = CONN_TICK_TO_SEC((wf_sleep_time
+							    % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[6] = wf_sleep_cnt;
+		mt6983_power_state_dump_data[7] = CONN_TICK_TO_SEC(bt_sleep_time);
+		mt6983_power_state_dump_data[8] = CONN_TICK_TO_SEC((bt_sleep_time
+							    % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[9] = bt_sleep_cnt;
+		mt6983_power_state_dump_data[10] = CONN_TICK_TO_SEC(gps_sleep_time);
+		mt6983_power_state_dump_data[11] = CONN_TICK_TO_SEC((gps_sleep_time
+							     % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[12] = gps_sleep_cnt;
+		mt6983_power_state_dump_data[13] = CONN_TICK_TO_SEC(t_conninfra_sleep_time);
+		mt6983_power_state_dump_data[14] = CONN_TICK_TO_SEC((t_conninfra_sleep_time
+							     % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[15] = t_conninfra_sleep_cnt;
+		mt6983_power_state_dump_data[16] = CONN_TICK_TO_SEC(t_wf_sleep_time);
+		mt6983_power_state_dump_data[17] = CONN_TICK_TO_SEC((t_wf_sleep_time
+							     % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[18] = t_wf_sleep_cnt;
+		mt6983_power_state_dump_data[19] = CONN_TICK_TO_SEC(t_bt_sleep_time);
+		mt6983_power_state_dump_data[20] = CONN_TICK_TO_SEC((t_bt_sleep_time
+							     % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[21] = t_bt_sleep_cnt;
+		mt6983_power_state_dump_data[22] = CONN_TICK_TO_SEC(t_gps_sleep_time);
+		mt6983_power_state_dump_data[23] = CONN_TICK_TO_SEC((t_gps_sleep_time
+							     % CONN_32K_TICKS_PER_SEC) * 1000);
+		mt6983_power_state_dump_data[24] = t_gps_sleep_cnt;
 
-	if (print_log > 0 && snprintf(buf_p, buf_sz,
-		"[consys_power_state][round:%llu]conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
-		round,
-		CONN_TICK_TO_SEC(conninfra_sleep_time),
-		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		conninfra_sleep_cnt,
-		CONN_TICK_TO_SEC(wf_sleep_time),
-		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		wf_sleep_cnt,
-		CONN_TICK_TO_SEC(bt_sleep_time),
-		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		bt_sleep_cnt,
-		CONN_TICK_TO_SEC(gps_sleep_time),
-		CONN_TICK_TO_SEC((gps_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		gps_sleep_cnt,
-		CONN_TICK_TO_SEC(t_conninfra_sleep_time),
-		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		t_conninfra_sleep_cnt,
-		CONN_TICK_TO_SEC(t_wf_sleep_time),
-		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		t_wf_sleep_cnt,
-		CONN_TICK_TO_SEC(t_bt_sleep_time),
-		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		t_bt_sleep_cnt,
-		CONN_TICK_TO_SEC(t_gps_sleep_time),
-		CONN_TICK_TO_SEC((t_gps_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
-		t_gps_sleep_cnt) > 0) {
-		pr_info("%s", buf_p);
+		if (buf != NULL && size > 0) {
+			buf_p = buf;
+			buf_sz = size;
+
+			ret = snprintf(buf_p, buf_sz,
+				"[consys_power_state][round:%lu]conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;[total]conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;",
+				mt6983_power_state_dump_data[0],
+				mt6983_power_state_dump_data[1],
+				mt6983_power_state_dump_data[2],
+				mt6983_power_state_dump_data[3],
+				mt6983_power_state_dump_data[4],
+				mt6983_power_state_dump_data[5],
+				mt6983_power_state_dump_data[6],
+				mt6983_power_state_dump_data[7],
+				mt6983_power_state_dump_data[8],
+				mt6983_power_state_dump_data[9],
+				mt6983_power_state_dump_data[10],
+				mt6983_power_state_dump_data[11],
+				mt6983_power_state_dump_data[12],
+				mt6983_power_state_dump_data[13],
+				mt6983_power_state_dump_data[14],
+				mt6983_power_state_dump_data[15],
+				mt6983_power_state_dump_data[16],
+				mt6983_power_state_dump_data[17],
+				mt6983_power_state_dump_data[18],
+				mt6983_power_state_dump_data[19],
+				mt6983_power_state_dump_data[20],
+				mt6983_power_state_dump_data[21],
+				mt6983_power_state_dump_data[22],
+				mt6983_power_state_dump_data[23],
+				mt6983_power_state_dump_data[24]);
+			if (ret)
+				pr_info("%s", buf_p);
+		}
 	}
 
 	/* Power state */
@@ -594,7 +397,7 @@ int consys_thermal_query_mt6983(void)
 #define CONN_GPT2_CTRL_BASE	0x18007000
 #define CONN_GPT2_CTRL_AP_EN	0x38
 
-	void __iomem *addr = NULL;
+	mapped_addr addr = 0;
 	int cal_val, res = 0;
 	/* Base: 0x1800_2000, CONN_TOP_THERM_CTL */
 	const unsigned int thermal_dump_crs[THERMAL_DUMP_NUM] = {
@@ -647,7 +450,7 @@ int consys_thermal_query_mt6983(void)
 		if (snprintf(
 			tmp, TEMP_SIZE, "[0x%08x]",
 			CONSYS_REG_READ(CONN_REG_CONN_THERM_CTL_ADDR + thermal_dump_crs[i])) >= 0)
-			strncat(tmp_buf, tmp, strlen(tmp));
+			strnlcat(tmp_buf, tmp, strlen(tmp), LOG_TMP_BUF_SZ);
 	}
 #if PRINT_THERMAL_LOG
 	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
@@ -667,37 +470,6 @@ int consys_thermal_query_mt6983(void)
 	iounmap(addr);
 
 	return res;
-}
-
-unsigned long long consys_soc_timestamp_get_mt6983(void)
-{
-#define TICK_PER_MS	(13000)
-	void __iomem *addr = NULL;
-	u32 tick_h = 0, tick_l = 0, tmp_h = 0;
-	u64 timestamp = 0;
-
-	/* 0x1c01_1000	sys_timer@13M (VLPSYS)
-	 * - 0x0008	CNTCV_L	32	System counter count value low
-	 * - 0x000C	CNTCV_H	32	System counter count value high
-	 */
-	addr = ioremap(0x1c011000, 0x10);
-	if (addr) {
-		do {
-			tick_h = CONSYS_REG_READ(addr + 0x000c);
-			tick_l = CONSYS_REG_READ(addr + 0x0008);
-			tmp_h = CONSYS_REG_READ(addr + 0x000c);
-		} while (tick_h != tmp_h);
-		iounmap(addr);
-	} else {
-		pr_info("[%s] remap fail", __func__);
-		return 0;
-	}
-
-	timestamp = ((((u64)tick_h << 32) & 0xFFFFFFFF00000000)
-		    | ((u64)tick_l & 0x00000000FFFFFFFF));
-	do_div(timestamp, TICK_PER_MS);
-
-	return timestamp;
 }
 
 unsigned int consys_adie_detection_mt6983(void)
@@ -722,24 +494,27 @@ void consys_set_mcu_control_mt6983(int type, bool onoff)
 
 int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
 {
-	void __iomem *vir_addr = 0;
+	mapped_addr vir_addr = 0;
 	unsigned int expected_size = 0;
 
-	pr_info("[%s] emi base=0x%x offset=0x%x size=%d", __func__, gConEmiPhyBase, offset, size);
+	pr_info("[%s] emi base=0x%lx offset=0x%x size=%d", __func__, g_con_emi_phy_base, offset, size);
 	if ((size == 0) || ((offset & 0x3) != 0x0))
 		return 1;
-	if (mt6637_backup_data != NULL) {
-		kfree(mt6637_backup_data);
-		mt6637_backup_data = NULL;
-	}
 
 	/* Read CR number from EMI */
-	vir_addr = ioremap(gConEmiPhyBase + offset, 4);
+	vir_addr = ioremap(g_con_emi_phy_base + offset, 4);
 	if (vir_addr == NULL) {
 		pr_err("[%s] ioremap CR number fail", __func__);
 		return -ENOMEM;
 	}
 	mt6637_backup_cr_number = readl(vir_addr);
+	if (mt6637_backup_cr_number > MAX_CALIBRATION_DATA_BACKUP_SIZE) {
+		pr_err("[%s] requested back size overflow=%d > %d\n", __func__,
+		      mt6637_backup_cr_number, MAX_CALIBRATION_DATA_BACKUP_SIZE);
+
+		BUG_ON(1);
+	}
+
 	iounmap(vir_addr);
 	expected_size = sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number + 4;
 	if (size < expected_size) {
@@ -749,15 +524,7 @@ int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size)
 		return 1;
 	}
 
-	mt6637_backup_data =
-		kmalloc(
-			sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number,
-			GFP_KERNEL);
-	if (mt6637_backup_data == NULL) {
-		pr_err("[%s] allocate fail");
-		return -ENOMEM;
-	}
-	vir_addr = ioremap(gConEmiPhyBase + offset + 4,
+	vir_addr = ioremap(g_con_emi_phy_base + offset + 4,
 			sizeof(struct rf_cr_backup_data)*mt6637_backup_cr_number);
 	if (vir_addr == NULL) {
 		pr_err("[%s] ioremap data fail", __func__);
@@ -774,13 +541,13 @@ int consys_pre_cal_restore_mt6983(void)
 {
 	int i;
 
-	if (mt6637_backup_cr_number == 0 || mt6637_backup_data == NULL) {
-		pr_info("[%s] mt6637_backup_cr_number=%d mt6637_backup_data=%x",
-			__func__, mt6637_backup_cr_number, mt6637_backup_data);
+	if (mt6637_backup_cr_number == 0) {
+		pr_info("[%s] mt6637_backup_cr_number=%d",
+			__func__, mt6637_backup_cr_number);
 		return 1;
 	}
-	pr_info("[%s] mt6637_backup_cr_number=%d mt6637_backup_data=%x",
-		__func__, mt6637_backup_cr_number, mt6637_backup_data);
+	pr_info("[%s] mt6637_backup_cr_number=%d",
+		__func__, mt6637_backup_cr_number);
 	/* Acquire semaphore */
 	if (consys_sema_acquire_timeout_mt6983(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
 		== CONN_SEMA_GET_FAIL) {
@@ -831,12 +598,7 @@ int consys_pre_cal_restore_mt6983(void)
 
 int consys_pre_cal_clean_data_mt6983(void)
 {
-
 	pr_info("[%s]", __func__);
-	if (mt6637_backup_data != NULL) {
-		kfree(mt6637_backup_data);
-		mt6637_backup_data = NULL;
-	}
 	mt6637_backup_cr_number = 0;
 
 	return 0;

@@ -3,14 +3,15 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_EMI_MNG_H_
-#define _PLATFORM_EMI_MNG_H_
+#ifndef EMI_MNG_H
+#define EMI_MNG_H
 
-#include <linux/types.h>
 #include <linux/platform_device.h>
+#include <linux/types.h>
 
-#include "osal.h"
 #include "consys_hw.h"
+#include "osal.h"
+
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -88,5 +89,5 @@ struct consys_emi_addr_info* emi_mng_get_phy_addr(void);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_EMI_MNG_H_ */
+#endif	/* EMI_MNG_H */
 

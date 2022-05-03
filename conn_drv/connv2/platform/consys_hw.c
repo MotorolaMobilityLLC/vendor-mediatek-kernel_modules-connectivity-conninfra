@@ -3,29 +3,18 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
-#include <connectivity_build_in_adapter.h>
-
-#include <linux/delay.h>
-#include <linux/of.h>
-#include <linux/of_device.h>
-#include <linux/of_reserved_mem.h>
-#include <linux/pinctrl/consumer.h>
-#include <linux/suspend.h>
-
-#include <connectivity_build_in_adapter.h>
-
-#include "osal.h"
-#include "conninfra.h"
-#include "consys_hw.h"
-#include "clock_mng.h"
+#include "../../../base/include/osal.h"
+#include "../../../include/conninfra.h"
+#include "../debug_utility/coredump/coredump_mng.h"
+#include "../debug_utility/include/connsys_debug_utility.h"
 #include "conn_power_throttling.h"
-#include "connsys_debug_utility.h"
-#include "consys_hw.h"
-#include "consys_reg_mng.h"
-#include "coredump_mng.h"
-#include "emi_mng.h"
-#include "osal.h"
-#include "pmic_mng.h"
+#include "include/clock_mng.h"
+#include "include/consys_hw.h"
+#include "include/consys_reg_mng.h"
+#include "include/emi_mng.h"
+#include "include/plat_def.h"
+#include "include/plat_library.h"
+#include "include/pmic_mng.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S

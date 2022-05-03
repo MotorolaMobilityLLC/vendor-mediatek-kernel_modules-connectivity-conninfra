@@ -3,8 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_CONSYS_REG_OFFSET_H_
-#define _PLATFORM_MT6983_CONSYS_REG_OFFSET_H_
+#ifndef MT6983_CONSYS_REG_OFFSET_H
+#define MT6983_CONSYS_REG_OFFSET_H
 
 #include "mt6983_consys_reg.h"
 
@@ -71,21 +71,21 @@
  * Base: 0x1800_0000
  * Size: 0x470
  *********************************************************************/
-#include "conn_rgu_on.h"
+#include "CODA/conn_rgu_on.h"
 
 /**********************************************************************
  * conn_infra_cfg_on
  * Base: 0x1800_1000
  * Size: 0x658
  *********************************************************************/
-#include "conn_cfg_on.h"
+#include "CODA/conn_cfg_on.h"
 
 /**********************************************************************
  * conn_wt_slp_ctl_reg
  * Base: 0x1800_3000
  * Size: 0x204
  *********************************************************************/
-#include "conn_wt_slp_ctl_reg.h"
+#include "CODA/conn_wt_slp_ctl_reg.h"
 
 /**********************************************************************
  * conn_infra_bus_cr_on
@@ -94,14 +94,14 @@
  * Max offset: 0x1800e120
  * Size: 0x124
  *********************************************************************/
-#include "conn_bus_cr_on.h"
+#include "CODA/conn_bus_cr_on.h"
 
 /**********************************************************************
  * conn_infra_cfg
  * Base: 0x1801_1000
  * Size: 0x138
  *********************************************************************/
-#include "conn_cfg.h"
+#include "CODA/conn_cfg.h"
 #define CONN_HW_VER	0x02050100
 
 /**********************************************************************
@@ -109,49 +109,49 @@
  * Base: 0x1801_2000
  * Size: 0x100
  *********************************************************************/
-#include "conn_clkgen_top.h"
+#include "CODA/conn_clkgen_top.h"
 
 /**********************************************************************
  * conn_von_bus_bcrm
  * Base: 0x1802_0000
  * Size: 0x04c
  *********************************************************************/
-#include "conn_von_bus_bcrm.h"
+#include "CODA/conn_von_bus_bcrm.h"
 
 /**********************************************************************
  * conn_dbg_ctl
  * Base: 0x1802_3000
  * Size: 0xe28
  *********************************************************************/
-#include "conn_dbg_ctl.h"
+#include "CODA/conn_dbg_ctl.h"
 
 /**********************************************************************
  * conn_infra_on_bus_bcrm
  * Base: 0x1803_b000
  * Size: 0x018
  *********************************************************************/
-#include "conn_on_bus_bcrm.h"
+#include "CODA/conn_on_bus_bcrm.h"
 
 /**********************************************************************
  * conn_therm_ctl
  * Base: 0x1804_0000
  * Size: 0x2c
  *********************************************************************/
-#include "conn_therm_ctl.h"
+#include "CODA/conn_therm_ctl.h"
 
 /**********************************************************************
  * conn_afe_ctl
  * Base: 0x1804_1000
  * Size: 0x128
  *********************************************************************/
-#include "conn_afe_ctl.h"
+#include "CODA/conn_afe_ctl.h"
 
 /**********************************************************************
  * conn_rf_spi_mst_reg
  * Base: 0x1804_2000
  * Size: 0x324
  *********************************************************************/
-#include "conn_rf_spi_mst_reg.h"
+#include "CODA/conn_rf_spi_mst_reg.h"
 /* For RFSPI table usage */
 #define CONN_RF_SPI_MST_REG_SPI_STA_OFFSET		0x0000
 #define CONN_RF_SPI_MST_REG_SPI_WF_ADDR_OFFSET		0x0010
@@ -175,21 +175,21 @@
  * Base: 0x1804_b000
  * Size: 0x414
  *********************************************************************/
-#include "conn_bus_cr.h"
+#include "CODA/conn_bus_cr.h"
 
 /**********************************************************************
  * conn_infra_off_debug_ctrl_ao
  * Base: 0x1804_d000
  * Size: 0x41c
  *********************************************************************/
-#include "conn_off_debug_ctrl_ao.h"
+#include "CODA/conn_off_debug_ctrl_ao.h"
 
 /**********************************************************************
  * conn_infra_off_bus_bcrm
  * Base: 0x1804_f000
  * Size: 0x148
  *********************************************************************/
-#include "conn_off_bus_bcrm.h"
+#include "CODA/conn_off_bus_bcrm.h"
 
 /**********************************************************************
  * conn_infra_sysram_sw_cr
@@ -218,14 +218,14 @@
  * Base: 0x1806_0000
  * Size: 0x7cc
  *********************************************************************/
-#include "conn_host_csr_top.h"
+#include "CODA/conn_host_csr_top.h"
 
 /**********************************************************************
  * conn_semaphore
  * Base: 0x1807_0000
  * Size: 0x8004
  *********************************************************************/
-#include "conn_semaphore.h"
+#include "CODA/conn_semaphore.h"
 
 /**********************************************************************/
 /* A-die CR */
@@ -266,5 +266,5 @@
 #define RC_CENTRAL_CFG1 0x1C00D004
 #define DCXO_DIGCLK_ELR 0x7f4
 
-#endif /* _PLATFORM_MT6983_CONSSY_REG_OFFSET_H_ */
+#endif /* MT6983_CONSSY_REG_OFFSET_H */
 
