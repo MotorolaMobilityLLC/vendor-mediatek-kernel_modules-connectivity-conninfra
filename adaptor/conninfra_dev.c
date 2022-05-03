@@ -366,7 +366,6 @@ static int mtk_conn_adaptor_suspend(void)
 	int i;
 
 	/* suspend callback is in atomic context */
-	pr_info("[%s] +++", __func__);
 	for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
 		if (atomic_read(&g_drv_gen_inst[i].enable) &&
 			g_drv_gen_inst[i].drv_gen_cb.plat_suspend_notify)
@@ -380,7 +379,6 @@ static int mtk_conn_adaptor_resume(void)
 {
 	int i;
 	/* suspend callback is in atomic context */
-	pr_info("[%s] +++", __func__);
 	for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
 		if (atomic_read(&g_drv_gen_inst[i].enable) &&
 			g_drv_gen_inst[i].drv_gen_cb.plat_resume_notify)
