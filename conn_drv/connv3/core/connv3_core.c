@@ -1297,6 +1297,25 @@ int connv3_core_is_rst_locking(void)
 	return ret;
 }
 
+int connv3_core_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	if (ctx->core_status == DRV_STS_POWER_ON)
+		ret = connv3_hw_bus_dump(drv_type, cb, priv_data);
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
+}
+
 static void connv3_core_pre_cal_work_handler(struct work_struct *work)
 {
 	int ret;

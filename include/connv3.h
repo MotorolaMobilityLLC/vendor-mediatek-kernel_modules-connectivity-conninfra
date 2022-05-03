@@ -36,11 +36,11 @@ enum connv3_drv_type {
 #define CONNV3_CB_RET_CAL_FAIL 0x1
 
 /* bus hang error define */
-#define CONNINFRA_INFRA_BUS_HANG			0x1
-#define CONNINFRA_AP2CONN_RX_SLP_PROT_ERR	0x2
-#define CONNINFRA_AP2CONN_TX_SLP_PROT_ERR	0x4
-#define CONNINFRA_AP2CONN_CLK_ERR			0x8
-#define CONNINFRA_INFRA_BUS_HANG_IRQ		0x10
+#define CONNV3_BUS_CB_TOP_BUS_HANG			0x1
+#define CONNV3_BUS_AP2CONN_RX_SLP_PROT_ERR		0x2
+#define CONNV3_BUS_AP2CONN_TX_SLP_PROT_ERR		0x4
+#define CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR		0x8
+#define CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ		0x10
 
 #define CONNV3_ERR_RST_ONGOING			-0x7788
 
@@ -92,6 +92,20 @@ struct connv3_whole_chip_rst_cb {
 
 /* PMIC state */
 void connv3_update_pmic_state(enum connv3_drv_type drv);
+
+/* Conninfra bus dump
+ * addr is connsys view
+ */
+struct connv3_cr_cb {
+	int (*read)(void *priv_data, unsigned int addr, unsigned int *value);
+	int (*write)(void *priv_data, unsigned int addr, unsigned int value);
+	int (*write_mask)(void *priv_data, unsigned int addr, unsigned int mask, unsigned int value);
+};
+/* Return value:
+ * - 0: no error
+ * - CONNV3_BUS_CB_TOP_BUS_HANG ~ CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ
+ */
+int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
 
 /* subsys callback register */
 struct connv3_pre_calibration_cb {

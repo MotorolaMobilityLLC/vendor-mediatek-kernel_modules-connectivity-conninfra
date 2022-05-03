@@ -53,7 +53,8 @@ static ssize_t connv3_test_read(struct file *filp, char __user *buf, size_t coun
 static int core_tc(int par1, int par2, int par3);
 static int cal_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
-static int v3_dump_tc(int par1, int par2, int par3);
+static int v3_coredump_tc(int par1, int par2, int par3);
+static int v3_bus_dump_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -79,8 +80,8 @@ static const CONNINFRA_TEST_FUNC connv3_test_func[] = {
 	//[0x08] = log_tc,
 	//[0x09] = thermal_tc,
 	//[0x0a] = bus_hang_tc,
-	[0x0b] = v3_dump_tc,
-	//[0x0c] = is_bus_hang_tc,
+	[0x0b] = v3_coredump_tc,
+	[0x0c] = v3_bus_dump_tc,
 	//[0x0d] = ap_resume_tc,
 };
 
@@ -226,7 +227,7 @@ static int cal_tc(int par1, int par2, int par3)
 	return 0;
 }
 
-static int v3_dump_tc(int par1, int par2, int par3)
+static int v3_coredump_tc(int par1, int par2, int par3)
 {
 	pr_info("[%s][%d][%d][%d]", __func__, par1, par2, par3);
 
@@ -234,43 +235,53 @@ static int v3_dump_tc(int par1, int par2, int par3)
 	return 0;
 }
 
-#if 0
-static int emi_tc(int par1, int par2, int par3)
+
+static int bus_dump_cb_read(void *priv_data, unsigned int addr, unsigned int *value)
 {
-	phys_addr_t addr = 0;
-	unsigned int size = 0;
-	int ret = 0;
 
-	pr_info("[%s] start", __func__);
-	conninfra_get_phy_addr(&addr, &size);
-	if (addr == 0 || size == 0) {
-		pr_notice("[%s] fail! addr=[%p] size=[%u]", __func__, addr, size);
-		ret = -1;
-	} else
-		pr_info("[%s] pass. addr=[%p] size=[%u]", __func__, addr, size);
-
-	pr_info("[%s] end", __func__);
-
-	return ret;
-}
-#endif
-
-#if 0
-static int thermal_tc(int par1, int par2, int par3)
-{
-	int ret, temp;
-
-	ret = core_tc_pwr_on();
-	if (ret) {
-		pr_err("pwr on fail");
-		return -1;
+	pr_info("[%s] read 0x%08x", (char*)priv_data, addr);
+	if (addr == 0x70028730) {
+		*value = 0;
+	} else if (addr == 0x7c023000) {
+		*value = 0xf;
+	} else if (addr == 0x7c011000) {
+		*value = 0x03010001;
+	} else {
+		*value = addr;
 	}
-	ret = conninfra_core_thermal_query(&temp);
-	pr_info("[%s] thermal res=[%d][%d]", __func__, ret, temp);
-
-	return ret;
+	return 0;
 }
-#endif
+
+static int bus_dump_cb_write(void *priv_data, unsigned int addr, unsigned int value)
+{
+	pr_info("[%s] write 0x%08x=0x%08x", (char*)priv_data, addr, value);
+	return 0;
+}
+
+static int bus_dump_cb_write_mask(void *priv_data, unsigned int addr, unsigned int mask, unsigned int value)
+{
+	pr_info("[%s] write 0x%08x=0x%08x w/ mask=0x%08x", (char*)priv_data, addr, value, mask);
+	return 0;
+}
+
+static int v3_bus_dump_tc(int par1, int par2, int par3)
+{
+	struct connv3_cr_cb bus_dump_cb = {
+		.read = bus_dump_cb_read,
+		.write = bus_dump_cb_write,
+		.write_mask = bus_dump_cb_write_mask,
+	};
+	char *test = "bus_test";
+	int ret;
+
+	pr_info("[%s][%d][%d][%d]", __func__, par1, par2, par3);
+
+	ret = connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI, &bus_dump_cb, test);
+	pr_info("[%s] ret=%d", __func__, ret);
+
+	return 0;
+}
+
 #if 0
 static int log_tc(int par1, int par2, int par3)
 {
@@ -313,38 +324,6 @@ static int log_tc(int par1, int par2, int par3)
 }
 #endif
 
-#if 0
-static int bus_hang_tc(int par1, int par2, int par3)
-{
-	int r;
-	r = conninfra_core_is_bus_hang();
-
-	pr_info("[%s] r=[%d]\n", __func__, r);
-	return 0;
-}
-
-static int dump_tc(int par1, int par2, int par3)
-{
-	return coredump_test(par1, par2, par3);
-}
-
-static int is_bus_hang_tc(int par1, int par2, int par3)
-{
-	int r;
-
-	r = consys_reg_mng_reg_readable();
-	pr_info("[%s] r=[%d]", __func__, r);
-	r = consys_reg_mng_is_bus_hang();
-	pr_info("[%s] r=[%d]", __func__, r);
-	return 0;
-}
-
-static int ap_resume_tc(int par1, int par2, int par3)
-{
-	return 0;
-}
-
-#endif
 ssize_t connv3_test_read(struct file *filp, char __user *buf,
 				size_t count, loff_t *f_pos)
 {
