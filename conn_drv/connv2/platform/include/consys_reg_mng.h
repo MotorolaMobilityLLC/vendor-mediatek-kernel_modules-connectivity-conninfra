@@ -3,12 +3,11 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_CONSYS_REG_MNG_H_
-#define _PLATFORM_CONSYS_REG_MNG_H_
-
-#include <linux/platform_device.h>
+#ifndef CONSYS_REG_MNG_H
+#define CONSYS_REG_MNG_H
 
 #include "consys_hw.h"
+#include "plat_library.h"
 
 enum conn_dump_cpupcr_type {
 	CONN_DUMP_CPUPCR_TYPE_BT = 1,
@@ -18,9 +17,9 @@ enum conn_dump_cpupcr_type {
 
 enum conninfra_bus_error_type
 {
-	CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE = 0,
-	CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE = 1,
-	CONNINFRA_BUG_HANG_IRQ_OCCUR = 2,
+	CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY = 0,
+	CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON = 1,
+	CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF = 2,
 };
 
 struct consys_reg_mng_ops {
@@ -44,7 +43,7 @@ struct consys_reg_mng_ops {
 	int (*consys_reg_mng_check_readable_conninfra_off_status)(void);
 	int (*consys_reg_mng_check_readable_conninfra_irq)(void);
 	void (*consys_reg_mng_check_readable_conninfra_platform_log)(void);
-	int (*consys_reg_mng_check_readable_conninfra_log)(int level);
+	int (*consys_reg_mng_check_readable_conninfra_log)(enum conninfra_bus_error_type level);
 	void (*consys_reg_mng_check_readable_conninfra_pmic_log)(void);
 };
 
@@ -64,4 +63,4 @@ int consys_reg_mng_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times,
 
 int consys_reg_mng_is_host_csr(unsigned long addr);
 
-#endif				/* _PLATFORM_CONSYS_REG_MNG_H_ */
+#endif	/* CONSYS_REG_MNG_H */

@@ -3,11 +3,11 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_CONNSYSLOG_H_
-#define _PLATFORM_MT6983_CONNSYSLOG_H_
+#ifndef MT6983_CONNSYSLOG_H
+#define MT6983_CONNSYSLOG_H
 
-#include "connsyslog_hw_config.h"
 #include "connsys_debug_utility.h"
+#include "connsyslog_hw_config.h"
 
 #ifdef CONFIG_FPGA_EARLY_PORTING
 #define CONNLOG_EMI_OFFSET_WIFI 0x000c8000
@@ -43,4 +43,4 @@ static struct connlog_emi_config g_connsyslog_config[CONN_DEBUG_TYPE_END] = {
 	},
 };
 
-#endif /* _PLATFORM_MT6983_CONNSYSLOG_H_ */
+#endif /* MT6983_CONNSYSLOG_H */

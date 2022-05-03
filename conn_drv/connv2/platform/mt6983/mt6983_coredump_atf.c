@@ -3,9 +3,11 @@
  * Copyright (c) 2022 MediaTek Inc.
  */
 
-#include "coredump_mng.h"
-#include "mt6983_atf.h"
-#include "mt6983_coredump.h"
+#include "../../debug_utility/coredump/coredump_mng.h"
+#include "../include/connsys_smc.h"
+#include "../include/consys_hw.h"
+#include "include/mt6983_atf.h"
+#include "include/mt6983_coredump.h"
 
 struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6983_atf = {
 	.consys_coredump_get_platform_config = consys_plt_coredump_get_platform_config_mt6983,
@@ -30,7 +32,7 @@ int consys_plt_coredump_setup_dump_region_mt6983_atf(int conn_type)
 {
 	int ret;
 
-	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_SETUP_DUMP_REGION_MT6983_OPID,
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_SETUP_DUMP_REGION_OPID,
 			     conn_type, 0, 0, 0, 0, 0, ret);
 	return ret;
 }
@@ -44,7 +46,7 @@ unsigned int consys_plt_coredump_setup_dynamic_remap_mt6983_atf(int conn_type, u
 	 * Cannot send address to ATF
 	 * Send index of dump_regions instead
 	 */
-	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_SETUP_DYNAMIC_REMAP_MT6983_OPID,
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_SETUP_DYNAMIC_REMAP_OPID,
 			     conn_type, idx, 0, 0, 0, 0, ret);
 	return ret;
 }

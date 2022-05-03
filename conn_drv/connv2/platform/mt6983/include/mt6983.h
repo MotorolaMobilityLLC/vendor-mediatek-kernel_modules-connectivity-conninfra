@@ -3,8 +3,10 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_H_
-#define _PLATFORM_MT6983_H_
+#ifndef MT6983_H
+#define MT6983_H
+
+#include "../../include/plat_def.h"
 
 #define	ADIE_6637	0x6637
 #define	ADIE_6635	0x6635
@@ -43,10 +45,9 @@ struct consys_plat_thermal_data_mt6983 {
 	int offset;
 };
 
-int consys_clk_get_from_dts_mt6983(struct platform_device *pdev);
-int consys_clock_buffer_ctrl_mt6983(unsigned int enable);
-unsigned int consys_soc_chipid_get_mt6983(void);
-void consys_clock_fail_dump_mt6983(void);
+#define POWER_STATE_DUMP_DATA_SIZE	25
+extern unsigned long mt6983_power_state_dump_data[];
+
 unsigned int consys_get_hw_ver_mt6983(void);
 int consys_thermal_query_mt6983(void);
 /* Power state relative */
@@ -54,18 +55,15 @@ int consys_enable_power_dump_mt6983(void);
 int consys_reset_power_state_mt6983(void);
 int consys_power_state_dump_mt6983(char *buf, unsigned int size);
 
-unsigned long long consys_soc_timestamp_get_mt6983(void);
 unsigned int consys_adie_detection_mt6983(void);
 void consys_set_mcu_control_mt6983(int type, bool onoff);
 
 int consys_pre_cal_backup_mt6983(unsigned int offset, unsigned int size);
 int consys_pre_cal_clean_data_mt6983(void);
 
-int consys_platform_spm_conn_ctrl_mt6983(unsigned int enable);
-int consys_get_co_clock_type_mt6983(void);
 int consys_co_clock_type_mt6983(void);
 void update_thermal_data_mt6983(struct consys_plat_thermal_data_mt6983 *input);
 unsigned int consys_get_adie_chipid_mt6983(void);
 int consys_pre_cal_restore_mt6983(void);
 
-#endif /* _PLATFORM_MT6983_H_ */
+#endif /* MT6983_H */

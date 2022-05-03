@@ -52,7 +52,7 @@ int consys_reg_mng_reg_readable(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY);
 		return 0;
 	}
 	/* Check Power OFF domain */
@@ -62,7 +62,7 @@ int consys_reg_mng_reg_readable(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
 		return 0;
 	}
 	/* Check IRQ status */
@@ -72,7 +72,7 @@ int consys_reg_mng_reg_readable(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF);
 		return 0;
 	}
 	return 1;
@@ -106,7 +106,7 @@ int consys_reg_mng_reg_readable_for_coredump(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY);
 		return 0;
 	}
 	/* Check Power OFF domain */
@@ -116,7 +116,7 @@ int consys_reg_mng_reg_readable_for_coredump(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
 		return 0;
 	}
 	/* Check IRQ status */
@@ -126,7 +126,7 @@ int consys_reg_mng_reg_readable_for_coredump(void)
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
 	if (ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF);
 	}
 	return 1;
 }
@@ -169,7 +169,7 @@ int consys_reg_mng_is_bus_hang(void)
 	}
 	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_on_status();
 	if (fp_ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_ON_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY);
 		return fp_ret;
 	}
 	/* Check Power OFF domain */
@@ -179,7 +179,7 @@ int consys_reg_mng_is_bus_hang(void)
 	}
 	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (fp_ret != 0) {
-		consys_reg_mng_print_log(CONNINFRA_POWER_OFF_DOMAIN_INACCESSIBLE);
+		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
 
 		if (consys_hw_force_conninfra_wakeup() == 0)
 			wakeup_conninfra = 1;
@@ -194,7 +194,7 @@ int consys_reg_mng_is_bus_hang(void)
 	}
 	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_irq();
 	ret |= fp_ret;
-	consys_reg_mng_print_log(CONNINFRA_BUG_HANG_IRQ_OCCUR);
+	consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF);
 
 	if (wakeup_conninfra)
 		consys_hw_force_conninfra_sleep();

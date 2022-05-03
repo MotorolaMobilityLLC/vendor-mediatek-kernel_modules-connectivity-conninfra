@@ -3,8 +3,8 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_PMIC_H_
-#define _PLATFORM_MT6983_PMIC_H_
+#ifndef MT6983_PMIC_H
+#define MT6983_PMIC_H
 
 #define MT6363_BUCK_VS2_VOTER_CON0_SET_ADDR         0x149b
 #define MT6363_BUCK_VS2_VOTER_CON0_CLR_ADDR         0x149c
@@ -75,4 +75,4 @@
 
 void consys_pmic_debug_log_mt6983(void);
 
-#endif /* _PLATFORM_MT6983_PMIC_H_ */
+#endif /* MT6983_PMIC_H */

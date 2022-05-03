@@ -3,11 +3,12 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#include <linux/version.h>
-#include <linux/of_reserved_mem.h>
 #include <linux/io.h>
-#include <linux/types.h>
 #include <linux/of.h>
+#include <linux/of_reserved_mem.h>
+#include <linux/types.h>
+#include <linux/version.h>
+#include "emi_mng.h"
 #include "osal.h"
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
@@ -15,8 +16,6 @@
 #else
 #include <memory/mediatek/emi.h>
 #endif
-
-#include "emi_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -56,15 +55,8 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-#if defined(ALLOCATE_CONNSYS_EMI_FROM_DTS)
-phys_addr_t gConEmiPhyBase;
-EXPORT_SYMBOL(gConEmiPhyBase);
-unsigned long long gConEmiSize;
-EXPORT_SYMBOL(gConEmiSize);
-#else
-extern unsigned long long gConEmiSize;
-extern phys_addr_t gConEmiPhyBase;
-#endif
+phys_addr_t g_con_emi_phy_base;
+unsigned long long g_con_emi_size;
 
 const struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
 
@@ -157,8 +149,8 @@ static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 		return -1;
 	}
 
-	gConEmiPhyBase = rmem->base;
-	gConEmiSize = rmem->size;
+	g_con_emi_phy_base = rmem->base;
+	g_con_emi_size = rmem->size;
 
 	return 0;
 }
@@ -186,8 +178,8 @@ static int emi_mng_get_emi_allocated_by_lk2(struct platform_device *pdev)
 	}
 
 	pr_info("%s emi_addr %x, emi_size %x\n", __func__, phy_addr, phy_size);
-	gConEmiPhyBase = phy_addr;
-	gConEmiSize = phy_size;
+	g_con_emi_phy_base = phy_addr;
+	g_con_emi_size = phy_size;
 
 	return 0;
 }
@@ -203,14 +195,14 @@ int emi_mng_init(struct platform_device *pdev, const struct conninfra_plat_data*
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = (const struct consys_platform_emi_ops*)plat_data->platform_emi_ops;
 
-	pr_info("[emi_mng_init] gConEmiPhyBase = [0x%llx] size = [%llx] ops=[%p]",
-			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
+	pr_info("[emi_mng_init] g_con_emi_phy_base = [0x%llx] size = [%llx] ops=[%p]",
+			g_con_emi_phy_base, g_con_emi_size, consys_platform_emi_ops);
 
-	if (gConEmiPhyBase) {
-		connsys_emi_addr_info.emi_ap_phy_addr = gConEmiPhyBase;
-		connsys_emi_addr_info.emi_size = gConEmiSize;
+	if (g_con_emi_phy_base) {
+		connsys_emi_addr_info.emi_ap_phy_addr = g_con_emi_phy_base;
+		connsys_emi_addr_info.emi_size = g_con_emi_size;
 	} else {
-		pr_err("consys emi memory address gConEmiPhyBase invalid\n");
+		pr_err("consys emi memory address g_con_emi_phy_base invalid\n");
 	}
 
 	if (consys_platform_emi_ops &&

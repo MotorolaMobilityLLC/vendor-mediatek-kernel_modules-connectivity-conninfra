@@ -3,21 +3,16 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include <linux/irqflags.h>
-#include <linux/pinctrl/consumer.h>
-#include <linux/pm_runtime.h>
+#include "../include/consys_hw.h" /* for semaphore index */
+#include "../include/consys_reg_util.h" /* macro for read/write cr */
+#include "../include/plat_def.h"
+#include "../include/plat_library.h"
 
-#include <connectivity_build_in_adapter.h>
-
-#include "consys_hw.h" /* for semaphore index */
-#include "consys_reg_util.h" /* macro for read/write cr */
-#include "mt6983.h" /* For function declaration */
-#include "mt6983_consys_reg.h" /* cr base address */
-#include "mt6983_consys_reg_offset.h" /* cr offset */
-#include "mt6983_pos.h"
-#include "mt6983_pos_gen.h"
-#include "plat_def.h" /* platform dependent */
-#include "plat_def.h"
+#include "include/mt6983.h" /* For function declaration */
+#include "include/mt6983_consys_reg.h" /* cr base address */
+#include "include/mt6983_consys_reg_offset.h" /* cr offset */
+#include "include/mt6983_pos.h"
+#include "include/mt6983_pos_gen.h"
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -65,21 +60,6 @@ unsigned int consys_emi_set_remapping_reg_mt6983(
 							gps_emi_base_addr, 16);
 }
 
-int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable)
-{
-	int ret = 0;
-
-#if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
-	ret = consys_platform_spm_conn_ctrl_mt6983(enable);
-#else
-	ret = consys_conninfra_on_power_ctrl_mt6983_gen(enable);
-#endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
-	if (enable)
-		consys_update_ap2conn_hclk_mt6983_gen();
-
-	return ret;
-}
-
 int consys_conninfra_wakeup_mt6983(void)
 {
 	return consys_conninfra_wakeup_mt6983_gen();
@@ -88,64 +68,6 @@ int consys_conninfra_wakeup_mt6983(void)
 int consys_conninfra_sleep_mt6983(void)
 {
 	return consys_conninfra_sleep_mt6983_gen();
-}
-
-void consys_set_if_pinmux_mt6983(unsigned int enable)
-{
-#ifndef CFG_CONNINFRA_ON_CTP
-	struct pinctrl_state *tcxo_pinctrl_set;
-	struct pinctrl_state *tcxo_pinctrl_clr;
-	int ret = -1;
-#endif
-	int clock_type = consys_co_clock_type_mt6983();
-
-	if (enable) {
-		consys_set_if_pinmux_mt6983_gen(1);
-		/* if(TCXO mode)
-		 *	Set GPIO135 pinmux for TCXO mode (Aux3)(CONN_TCXOENA_REQ)
-		 */
-
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
-	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6983_gen(1, 1);
-	#else
-			if (IS_ERR(g_conninfra_pinctrl_ptr))
-				return;
-
-			tcxo_pinctrl_set = pinctrl_lookup_state(g_conninfra_pinctrl_ptr,
-								"conninfra_tcxo_set");
-			if (IS_ERR(tcxo_pinctrl_set))
-				return;
-
-			ret = pinctrl_select_state(g_conninfra_pinctrl_ptr, tcxo_pinctrl_set);
-			if (ret)
-				pr_err("[%s] set TCXO mode error: %d\n", __func__, ret);
-	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
-		}
-	} else {
-		consys_set_if_pinmux_mt6983_gen(0);
-
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
-	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6983_gen(1, 0);
-	#else
-			if (IS_ERR(g_conninfra_pinctrl_ptr))
-				return;
-
-			tcxo_pinctrl_clr = pinctrl_lookup_state(g_conninfra_pinctrl_ptr,
-								"conninfra_tcxo_clr");
-			if (IS_ERR(tcxo_pinctrl_clr))
-				return;
-
-			ret = pinctrl_select_state(g_conninfra_pinctrl_ptr, tcxo_pinctrl_clr);
-			if (ret)
-				pr_err("[%s] clear TCXO mode error: %d\n", __func__, ret);
-	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
-		}
-	}
-
 }
 
 int consys_polling_chipid_mt6983(void)
@@ -227,7 +149,7 @@ int connsys_a_die_cfg_mt6983(void)
 	unsigned int hw_ver_id = 0;
 	int check = 0;
 	struct consys_plat_thermal_data_mt6983 input;
-	void __iomem *sysram_efuse_list[16] = { 0 };
+	mapped_addr sysram_efuse_list[16] = { 0 };
 	unsigned int sleep_mode = 0;
 	unsigned int clock_type = 0;
 	unsigned int sysram_clock_type = 0;
@@ -277,10 +199,10 @@ int connsys_a_die_cfg_mt6983(void)
 	/* Write to conninfra sysram */
 	CONSYS_REG_WRITE(CONN_INFRA_SYSRAM_SW_CR_A_DIE_CHIP_ID, adie_id);
 
-	sysram_efuse_list[0] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_0;
-	sysram_efuse_list[1] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_1;
-	sysram_efuse_list[2] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_2;
-	sysram_efuse_list[3] = (void __iomem *)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_3;
+	sysram_efuse_list[0] = (mapped_addr)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_0;
+	sysram_efuse_list[1] = (mapped_addr)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_1;
+	sysram_efuse_list[2] = (mapped_addr)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_2;
+	sysram_efuse_list[3] = (mapped_addr)CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_3;
 	connsys_a_die_efuse_read_get_efuse_info_mt6983_gen(sysram_efuse_list,
 			&(input.slop_molecule), &(input.thermal_b), &(input.offset));
 	pr_info("slop_molecule=[%d], thermal_b =[%d], offset=[%d]",
@@ -364,7 +286,7 @@ int consys_sema_acquire_timeout_mt6983(unsigned int index, unsigned int usec)
 		return CONN_SEMA_GET_FAIL;
 	for (i = 0; i < usec; i++) {
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
-			sema_get_time[index] = jiffies;
+			sema_get_time[index] = get_jiffies();
 			if (index == CONN_SEMA_RFSPI_INDEX)
 				local_irq_save(flags);
 			return CONN_SEMA_GET_SUCCESS;
@@ -372,7 +294,7 @@ int consys_sema_acquire_timeout_mt6983(unsigned int index, unsigned int usec)
 		udelay(1);
 	}
 
-	pr_err("Get semaphore 0x%x timeout, dump status:\n", index);
+	pr_err("Get semaphore 0x%x timeout, flags=%lu, dump status:\n", index, flags);
 	pr_err("M0:[0x%x] M1:[0x%x] M2:[0x%x] M3:[0x%x]\n",
 		CONSYS_REG_READ(CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR),
 		CONSYS_REG_READ(CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M1_STA_REP_1_ADDR),
@@ -387,7 +309,7 @@ int consys_sema_acquire_timeout_mt6983(unsigned int index, unsigned int usec)
 
 void consys_sema_release_mt6983(unsigned int index)
 {
-	u64 duration;
+	unsigned long duration;
 	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
@@ -395,11 +317,12 @@ void consys_sema_release_mt6983(unsigned int index)
 	CONSYS_REG_WRITE(
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index * 4), 0x1);
 
-	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
+	duration = time_duration(sema_get_time[index]);
 	if (index == CONN_SEMA_RFSPI_INDEX)
 		local_irq_restore(flags);
 	if (duration > SEMA_HOLD_TIME_THRESHOLD)
-		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
+		pr_notice("%s hold semaphore (%d), flags=%lu for %lu ms\n",
+			__func__, index, flags, duration);
 }
 
 struct spi_op {
@@ -494,7 +417,7 @@ int consys_spi_read_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned int
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit,
 		0, 100, 50, check);
 	if (check != 0) {
-		pr_err("[%s][%s][STEP1] polling 0x%08x bit %d fail. Value=0x%08x\n",
+		pr_err("[%s][%s][STEP1] polling 0x%08lx bit %d fail. Value=0x%08x\n",
 			__func__, get_spi_sys_name(subsystem),
 			CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 			op->polling_bit,
@@ -515,7 +438,7 @@ int consys_spi_read_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned int
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit,
 		0, 100, 50, check);
 	if (check != 0) {
-		pr_err("[%s][%d][STEP4] polling 0x%08x bit %d fail. Value=0x%08x\n",
+		pr_err("[%s][%d][STEP4] polling 0x%08lx bit %d fail. Value=0x%08x\n",
 			__func__, subsystem, CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 			op->polling_bit,
 			CONSYS_REG_READ(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr));
@@ -564,7 +487,7 @@ int consys_spi_write_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned in
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 		op->polling_bit, 0, 100, 50, check);
 	if (check != 0) {
-		pr_err("[%s][%s][STEP1] polling 0x%08x bit %d fail. Value=0x%08x\n",
+		pr_err("[%s][%s][STEP1] polling 0x%08lx bit %d fail. Value=0x%08x\n",
 			__func__, get_spi_sys_name(subsystem),
 			CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 			op->polling_bit,
@@ -583,7 +506,7 @@ int consys_spi_write_nolock_mt6983(enum sys_spi_subsystem subsystem, unsigned in
 	CONSYS_REG_BIT_POLLING(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit,
 			       0, 100, 50, check);
 	if (check != 0) {
-		pr_err("[%s][%s][STEP4] polling 0x%08x bit %d fail. Value=0x%08x\n",
+		pr_err("[%s][%s][STEP4] polling 0x%08lx bit %d fail. Value=0x%08x\n",
 			__func__, get_spi_sys_name(subsystem),
 			CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 			op->polling_bit,
@@ -753,7 +676,7 @@ bool consys_is_rc_mode_enable_mt6983(void)
 	return ret;
 #else /* CFG_CONNINFRA_ON_CTP */
 	static bool ever_read;
-	void __iomem *addr = NULL;
+	mapped_addr addr = 0;
 	static bool ret;
 
 	/* Base: SRCLEN_RC (0x1C00_D000)

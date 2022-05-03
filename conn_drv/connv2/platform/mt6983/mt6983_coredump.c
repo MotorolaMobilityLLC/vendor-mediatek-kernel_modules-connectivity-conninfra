@@ -9,14 +9,13 @@
 #include <linux/platform_device.h>
 #include <linux/printk.h>
 
-#include "conninfra.h"
-#include "consys_hw.h"
-#include "consys_reg_util.h"
-#include "connsys_debug_utility.h"
-#include "connsys_coredump_hw_config.h"
-#include "consys_reg_util.h"
-#include "coredump_mng.h"
-#include "mt6983_coredump.h"
+#include "../../../../include/conninfra.h"
+#include "../../debug_utility/coredump/connsys_coredump_hw_config.h"
+#include "../../debug_utility/coredump/coredump_mng.h"
+#include "../include/connsys_debug_utility.h"
+#include "../include/consys_hw.h"
+#include "../include/consys_reg_util.h"
+#include "include/mt6983_coredump.h"
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

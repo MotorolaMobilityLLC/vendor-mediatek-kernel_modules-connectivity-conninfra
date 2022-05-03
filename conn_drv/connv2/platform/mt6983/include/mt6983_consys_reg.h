@@ -3,10 +3,12 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_CONSYS_REG_H_
-#define _PLATFORM_MT6983_CONSYS_REG_H_
+#ifndef MT6983_CONSYS_REG_H
+#define MT6983_CONSYS_REG_H
 
-#include "consys_reg_base.h"
+#include "../../include/consys_reg_base.h"
+#include "../../include/consys_reg_mng.h"
+#include "../../include/plat_library.h"
 
 enum consys_base_addr_index {
 	INFRACFG_AO_BASE_INDEX			= 0,	/* 0x1000_1000 infracfg_ao */
@@ -99,15 +101,19 @@ extern struct consys_base_addr conn_reg_mt6983;
 #define CONN_REG_CCIF_BGF2AP_SWIRQ_ADDR			\
 	conn_reg_mt6983.reg_base_addr[CCIF_BGF2AP_SWIRQ_BASE_INDEX].vir_addr
 
-int consys_reg_init_mt6983(struct platform_device *pdev);
-int consys_reg_deinit_mt6983(void);
-
 int consys_is_consys_reg_mt6983(unsigned int addr);
 int consys_check_conninfra_on_domain_status_mt6983(void);
 int consys_check_conninfra_off_domain_status_mt6983(void);
+void consys_debug_init_mt6983(void);
+void consys_debug_deinit_mt6983(void);
 int consys_check_conninfra_irq_status_mt6983(void);
-void consys_print_platform_debug_mt6983(void);
-int consys_print_debug_mt6983(int level);
+int consys_print_debug_mt6983(enum conninfra_bus_error_type level);
 
-#endif /* _PLATFORM_MT6983_CONSYS_REG_H_ */
+void consys_debug_init_mt6983_atf(void);
+void consys_debug_deinit_mt6983_atf(void);
+int consys_check_conninfra_off_domain_status_mt6983_atf(void);
+int consys_check_conninfra_irq_status_mt6983_atf(void);
+int consys_print_debug_mt6983_atf(enum conninfra_bus_error_type level);
+
+#endif /* MT6983_CONSYS_REG_H */
 

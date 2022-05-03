@@ -3,18 +3,18 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6983_POS_H_
-#define _PLATFORM_MT6983_POS_H_
+#ifndef MT6983_POS_H
+#define MT6983_POS_H
 
-#include <linux/types.h>
+#include "../../include/plat_library.h"
 
-unsigned int consys_emi_set_remapping_reg_mt6983(phys_addr_t, phys_addr_t, phys_addr_t);
-unsigned int consys_emi_set_remapping_reg_mt6983_atf(phys_addr_t, phys_addr_t, phys_addr_t);
+unsigned int consys_emi_set_remapping_reg_mt6983(phys_addr_t con_emi_base_addr,
+	phys_addr_t md_shared_emi_base_addr, phys_addr_t gps_emi_base_addr);
+unsigned int consys_emi_set_remapping_reg_mt6983_atf(phys_addr_t con_emi_base_addr,
+	phys_addr_t md_shared_emi_base_addr, phys_addr_t gps_emi_base_addr);
 
-int consys_conninfra_on_power_ctrl_mt6983(unsigned int enable);
 int consys_conninfra_wakeup_mt6983(void);
 int consys_conninfra_sleep_mt6983(void);
-void consys_set_if_pinmux_mt6983(unsigned int enable);
 int consys_polling_chipid_mt6983(void);
 
 int connsys_d_die_cfg_mt6983(void);
@@ -52,5 +52,5 @@ void consys_spi_write_offset_range_nolock_mt6983(
 	unsigned int reg_offset, unsigned int value_offset, unsigned int size);
 #endif
 
-#endif /* _PLATFORM_MT6983_POS_H_ */
+#endif /* MT6983_POS_H */
 

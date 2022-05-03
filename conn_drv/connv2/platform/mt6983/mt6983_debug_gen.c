@@ -17,15 +17,13 @@
 
 
 #ifndef CFG_CONNINFRA_ON_CTP
-#include <linux/types.h>
-#include <linux/clk.h>
-#include <linux/io.h>
+#include "../include/plat_library.h"
 #endif
-#include "consys_hw.h"
-#include "consys_reg_util.h"
-#include "mt6983_consys_reg_offset.h"
-#include "mt6983_debug_gen.h"
-#include "conninfra.h"
+#include "../include/consys_hw.h"
+#include "../include/consys_reg_util.h"
+#include "../include/plat_def.h"
+#include "include/mt6983_consys_reg_offset.h"
+#include "include/mt6983_debug_gen.h"
 
 
 void __iomem *vir_addr_consys_dbg_gen_srclkenrc_base_mt6983 = NULL;
