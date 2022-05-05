@@ -876,7 +876,7 @@ int connsys_a_die_efuse_read_adie6637_check_efuse_valid_mt6879_gen(bool *pefuse_
 	unsigned int ret = 0;
 	int retry = 0;
 	bool efuse_valid = false;
-	unsigned int ret1, ret2, ret3, ret4, ret5, ret6, ret7, ret8, ret9;
+	unsigned int ret1 = 0, ret2 = 0, ret3 = 0, ret4 = 0, ret5 = 0, ret6 = 0, ret7 = 0, ret8 = 0, ret9 = 0;
 	#endif
 
 	if (SYS_SPI_TOP == 0) {
@@ -1917,7 +1917,7 @@ int connsys_low_power_setting_mt6879_gen(void)
 	/* enable ddr_en timeout, timeout value = 1023 T (Bus clock) */
 	#ifndef CONFIG_FPGA_EARLY_PORTING
 		CONSYS_REG_WRITE_MASK(CONN_CFG_BASE +
-			CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR, 0x10230, 0x7FF0);
+			CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR, 0x3FF0, 0x7FF0);
 	#endif
 
 	/* update ddr_en timeout value enable */
