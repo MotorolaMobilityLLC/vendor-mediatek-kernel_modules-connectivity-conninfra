@@ -2132,7 +2132,7 @@ static void consys_spi_write_offset_range_nolock(
 	unsigned int reg_mask;
 	int ret;
 
-	if (subsystem < 0 || subsystem >= SYS_SPI_MAX) {
+	if (subsystem >= SYS_SPI_MAX) {
 		pr_notice("%s subsystem %d is invalid\n", __func__, subsystem);
 		return;
 	}
@@ -2219,7 +2219,7 @@ int consys_adie_top_ck_en_on_mt6893(enum consys_adie_ctl_type type)
 	unsigned int status;
 	int ret;
 
-	if (type >= CONNSYS_ADIE_CTL_MAX || type < CONNSYS_ADIE_CTL_HOST_BT) {
+	if (type < CONNSYS_ADIE_CTL_HOST_BT) {
 		pr_err("[%s] invalid parameter(%d)\n", __func__, type);
 		return -1;
 	}
@@ -2247,7 +2247,7 @@ int consys_adie_top_ck_en_off_mt6893(enum consys_adie_ctl_type type)
 	unsigned int status;
 	int ret = 0;
 
-	if (type >= CONNSYS_ADIE_CTL_MAX || type < CONNSYS_ADIE_CTL_HOST_BT) {
+	if (type >= CONNSYS_ADIE_CTL_MAX) {
 		pr_err("[%s] invalid parameter(%d)\n", __func__, type);
 		return -1;
 	}

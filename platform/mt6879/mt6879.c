@@ -168,7 +168,7 @@ int consys_co_clock_type_mt6879(void)
 {
 	const struct conninfra_conf *conf;
 	struct regmap *map = consys_clock_mng_get_regmap();
-	int value, clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
+	int value = 0, clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();

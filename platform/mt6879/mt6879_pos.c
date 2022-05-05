@@ -815,7 +815,7 @@ const char* get_spi_sys_name(enum sys_spi_subsystem subsystem)
 		"SYS_SPI_WF2",
 		"SYS_SPI_WF3",
 	};
-	if (subsystem >= SYS_SPI_WF1 && subsystem < SYS_SPI_MAX)
+	if (subsystem < SYS_SPI_MAX)
 		return spi_system_name[subsystem];
 	return "UNKNOWN";
 }

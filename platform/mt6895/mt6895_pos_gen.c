@@ -1953,7 +1953,7 @@ int connsys_low_power_setting_mt6895_gen(void)
 	/* enable ddr_en timeout, timeout value = 1023 T (Bus clock) */
 	#ifndef CONFIG_FPGA_EARLY_PORTING
 		CONSYS_REG_WRITE_MASK(CONN_CFG_BASE +
-			CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR, 0x10230, 0x7FF0);
+			CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR, 0x3FF0, 0x7FF0);
 	#endif
 
 	/* update ddr_en timeout value enable */
