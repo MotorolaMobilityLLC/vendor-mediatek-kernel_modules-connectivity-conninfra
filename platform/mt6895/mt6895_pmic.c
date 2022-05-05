@@ -625,7 +625,7 @@ void consys_pmic_debug_log_mt6895(void)
 {
 	struct regmap *r = g_regmap_mt6363;
 	struct regmap *r2 = g_regmap_mt6368;
-	int vcn13, vrfio18, vcn33_1, vcn33_2, vant18;
+	int vcn13 = 0, vrfio18 = 0, vcn33_1 = 0, vcn33_2 = 0, vant18 = 0;
 
 	if (!r || !r2) {
 		pr_notice("%s regmap is NULL\n", __func__);
