@@ -33,7 +33,7 @@
 #define MT6637E1 0x66378A00
 #define MT6637E2 0x66378A01
 
-#define SEMA_HOLD_TIME_THRESHOLD 10 //10 ms
+#define SEMA_HOLD_TIME_THRESHOLD 5 //5 ms
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -407,21 +407,20 @@ void consys_sema_release_mt6895(unsigned int index)
 	if (index == CONN_SEMA_RFSPI_INDEX) {
 		local_irq_restore(g_sema_irq_flags);
 
-		if (sema_count == 10) {
-			pr_notice("[%s] log_sema_time: [%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu]\n",
-				__func__, log_sema_time[0], log_sema_time[1], log_sema_time[2], log_sema_time[3],
-				log_sema_time[4], log_sema_time[5], log_sema_time[6],
-				log_sema_time[7], log_sema_time[8], log_sema_time[9]);
+		if (sema_count == 10)
 			sema_count = 0;
-		}
 
 		log_sema_time[sema_count] = duration;
 		sema_count++;
 	}
 
-
-	if (duration > SEMA_HOLD_TIME_THRESHOLD)
+	if (duration > SEMA_HOLD_TIME_THRESHOLD) {
 		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
+		pr_notice("[%s] log_sema_time: [%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu]\n",
+			__func__, log_sema_time[0], log_sema_time[1], log_sema_time[2], log_sema_time[3],
+			log_sema_time[4], log_sema_time[5], log_sema_time[6],
+			log_sema_time[7], log_sema_time[8], log_sema_time[9]);
+	}
 }
 
 struct spi_op {
@@ -549,6 +548,10 @@ int consys_spi_read_nolock_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 int consys_spi_read_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM)
+		return consys_spi_read_nolock_mt6895(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_notice("[SPI READ] Require semaphore fail\n");
@@ -609,10 +612,8 @@ int consys_spi_write_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr,
 {
 	int ret = 0;
 
-	if (subsystem == SYS_SPI_FM) {
-		ret = consys_spi_write_nolock_mt6895(subsystem, addr, data);
-		return ret;
-	}
+	if (subsystem == SYS_SPI_FM)
+		return consys_spi_write_nolock_mt6895(subsystem, addr, data);
 
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
@@ -633,16 +634,19 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 	unsigned int new_val = 0;
 	bool change = false;
 
-	/* Get semaphore before updating bits */
-	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
-		pr_notice("[SPI WRITE] Require semaphore fail\n");
-		return CONNINFRA_SPI_OP_FAIL;
+	if (subsystem != SYS_SPI_FM) {
+		/* Get semaphore before updating bits */
+		if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+			pr_notice("[SPI WRITE] Require semaphore fail\n");
+			return CONNINFRA_SPI_OP_FAIL;
+		}
 	}
 
 	ret = consys_spi_read_nolock_mt6895(subsystem, addr, &curr_val);
 
 	if (ret) {
-		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
+		if (subsystem != SYS_SPI_FM)
+			consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_notice("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
@@ -657,7 +661,8 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 		ret = consys_spi_write_nolock_mt6895(subsystem, addr, new_val);
 	}
 
-	consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
+	if (subsystem != SYS_SPI_FM)
+		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
 }
