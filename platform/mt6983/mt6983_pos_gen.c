@@ -495,7 +495,7 @@ int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id)
 	/* - write 0x1 to 0x1802_3000[0], reset clock detect */
 	/* - 0x1802_3000[1]  conn_infra off bus clock (should be 1'b1 if clock exist) */
 	/* - 0x1802_3000[2]  osc clock (should be 1'b1 if clock exist) */
-	while (retry < 4) {
+	while (retry < 10) {
 		CONSYS_SET_BIT(CONN_DBG_CTL_CLOCK_DETECT_ADDR, (0x1 << 0));
 		udelay(20);
 		r = CONSYS_REG_READ_BIT(CONN_DBG_CTL_CLOCK_DETECT_ADDR, ((0x1 << 2) | (0x1 << 1)));
@@ -504,6 +504,9 @@ int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id)
 		udelay(1000);
 		retry ++;
 	}
+
+	if (retry > 5)
+		pr_info("%s detect clock, retry = %d", __func__, retry);
 
 	if (r != 0x6) {
 		pr_info("%s detect clock fail:0x1802_3000 = %x\n", __func__, r);
