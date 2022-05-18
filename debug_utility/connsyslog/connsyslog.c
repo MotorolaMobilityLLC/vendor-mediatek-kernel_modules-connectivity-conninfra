@@ -1509,7 +1509,7 @@ EXPORT_SYMBOL(connsys_dedicated_log_path_blank_state_changed);
 int connsys_dedicated_log_path_apsoc_init(phys_addr_t emiaddr, const struct connlog_emi_config* config)
 {
 	if (gPhyEmiBase != 0 || emiaddr == 0) {
-		pr_err("Connsys log double init or invalid parameter(emiaddr=%p)\n", emiaddr);
+		pr_notice("Connsys log double init or invalid parameter(emiaddr=%llx)\n", emiaddr);
 		return -1;
 	}
 
