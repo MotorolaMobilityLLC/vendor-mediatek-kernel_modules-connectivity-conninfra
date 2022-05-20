@@ -145,6 +145,11 @@ int connv3_hw_pwr_on_done(unsigned int radio)
 	return ret;
 }
 
+int connv3_hw_pmic_parse_state(char *buffer, int buf_sz)
+{
+	return connv3_pmic_mng_parse_state(buffer, buf_sz);
+}
+
 int get_connv3_platform_ops(struct platform_device *pdev)
 {
 

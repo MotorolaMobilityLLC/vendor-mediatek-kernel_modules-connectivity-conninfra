@@ -1118,6 +1118,10 @@ int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason)
 	return 0;
 }
 
+void connv3_core_update_pmic_status(enum connv3_drv_type drv, char *buffer, int buf_sz)
+{
+	connv3_hw_pmic_parse_state(buffer, buf_sz);
+}
 
 int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 					struct connv3_sub_drv_ops_cb *cb)
