@@ -249,7 +249,6 @@ static void conninfra_dev_pmic_event_handler(struct work_struct *work)
 
 void connv2_suspend_notify(void)
 {
-	pr_info("[%s] +++", __func__);
 	connsys_dedicated_log_set_ap_state(0);
 	conninfra_core_reset_power_state();
 	conn_pwr_suspend();
@@ -257,7 +256,6 @@ void connv2_suspend_notify(void)
 
 void connv2_resume_notify(void)
 {
-	pr_info("[%s] +++", __func__);
 	schedule_work(&g_ap_resume_work);
 }
 
