@@ -187,6 +187,7 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	u32 cur_pre_on_state;
 	const unsigned int subdrv_all_done = (0x1 << CONNV3_DRV_TYPE_MAX) - 1;
+	unsigned int subdrv_preon_done;
 	struct subsys_drv_inst *drv_inst;
 
 	/* Check abnormal type */
@@ -257,18 +258,37 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 			osal_unlock_sleepable_lock(&ctx->core_lock);
 			return ret;
 		}
-		if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
-			g_connv3_ctx.core_status = DRV_STS_POWER_ON;
+		g_connv3_ctx.core_status = DRV_STS_POWER_ON;
 
-			/* power on notify */
-			for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
-				if (i == drv_type)
-					continue;
-				drv_inst = &g_connv3_ctx.drv_inst[i];
-				ret = msg_thread_send_1(&drv_inst->msg_ctx,
-						CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY, i);
+		/* power on notify */
+		for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+			if (i == drv_type)
+				continue;
+			drv_inst = &g_connv3_ctx.drv_inst[i];
+			ret = msg_thread_send_1(&drv_inst->msg_ctx,
+					CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY, i);
+		}
+	} else {
+		/* second/third radio power on */
+		drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+		/* pre_power_on flow */
+		atomic_set(&g_connv3_ctx.pre_pwr_state, 0);
+		sema_init(&g_connv3_ctx.pre_pwr_sema, 1);
 
-			}
+		ret = msg_thread_send_1(&drv_inst->msg_ctx, CONNV3_SUBDRV_OPID_PRE_PWR_ON, drv_type);
+		if (ret)
+			pr_notice("[%s] drv(%d) pre_on fail, ret=%d", __func__, drv_type, ret);
+		subdrv_preon_done = (0x1 << drv_type);
+
+		pr_info("[CONNV3_PWR_ON][%s] pre vvvvvvvvvvvvv", connv3_drv_name[drv_type]);
+		while (atomic_read(&g_connv3_ctx.pre_pwr_state) != subdrv_preon_done) {
+			ret = down_timeout(&g_connv3_ctx.pre_pwr_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
+			pr_info("sema ret=[%d]", ret);
+			if (ret == 0)
+				continue;
+			cur_pre_on_state = atomic_read(&g_connv3_ctx.pre_pwr_state);
+			pr_info("[pre_pwr_on] [%s] pre-callback is not back", connv3_drv_thread_name[drv_type]);
+			osal_thread_show_stack(&drv_inst->msg_ctx.thread);
 		}
 	}
 
