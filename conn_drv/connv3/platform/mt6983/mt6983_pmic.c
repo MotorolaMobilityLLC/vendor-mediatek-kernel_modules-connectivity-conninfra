@@ -63,6 +63,8 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6983 = {
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6983,
 };
 
+/* skip PMIC FaultB interrupt, due to irq# conflict with pwm driver */
+/*
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
 	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
@@ -70,13 +72,12 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 
 	return IRQ_HANDLED;
 }
+*/
 
 int connv3_plt_pmic_initial_setting_mt6983(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
 {
 	struct pinctrl_state *pinctrl_init;
-	struct pinctrl_state *pinctrl_faultb_init;
 	int ret = 0;
-	unsigned int irq_num = 0;
 
 	g_dev_cb = dev_cb;
 
@@ -99,6 +100,8 @@ int connv3_plt_pmic_initial_setting_mt6983(struct platform_device *pdev, struct 
 		return -1;
 	}
 
+	/* skip PMIC FaultB interrupt, due to irq# conflict with pwm driver */
+	/*
 	pinctrl_faultb_init = pinctrl_lookup_state(
 			g_pinctrl_ptr, "connsys_pin_pmic_faultb_default");
 	if (!IS_ERR(pinctrl_faultb_init)) {
@@ -127,6 +130,7 @@ int connv3_plt_pmic_initial_setting_mt6983(struct platform_device *pdev, struct 
 		pr_err("%s[%d], enable_irq_wake %s (%u) failed! ret(%d)", "MT6376_FAULT", irq_num, ret);
 		return ret;
 	}
+	*/
 
 	return 0;
 }
