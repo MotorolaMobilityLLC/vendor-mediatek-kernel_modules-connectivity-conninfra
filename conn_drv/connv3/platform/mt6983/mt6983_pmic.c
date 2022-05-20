@@ -7,7 +7,10 @@
 
 #include <asm/atomic.h>
 #include <linux/delay.h>
+#include <linux/gpio/consumer.h>
 #include <linux/jiffies.h>
+#include <linux/of_irq.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/timer.h>
@@ -16,6 +19,7 @@
 
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
+#include <linux/pinctrl/consumer.h>
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -41,25 +45,131 @@
 ********************************************************************************
 */
 
+static struct connv3_dev_cb* g_dev_cb;
+static struct pinctrl *g_pinctrl_ptr;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 
+int connv3_plt_pmic_initial_setting_mt6983(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 int connv3_plt_pmic_common_power_ctrl_mt6983(u32 enable);
 int connv3_plt_pmic_parse_state_mt6983(char *buffer, int buf_sz);
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6983 = {
+	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6983,
 	.pmic_common_power_ctrl = connv3_plt_pmic_common_power_ctrl_mt6983,
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6983,
 };
 
+static irqreturn_t pmic_fault_handler(int irq, void * arg)
+{
+	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
+			g_dev_cb->connv3_pmic_event_notifier(0, 1);
+
+	return IRQ_HANDLED;
+}
+
+int connv3_plt_pmic_initial_setting_mt6983(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
+{
+	struct pinctrl_state *pinctrl_init;
+	struct pinctrl_state *pinctrl_faultb_init;
+	int ret = 0;
+	unsigned int irq_num = 0;
+
+	g_dev_cb = dev_cb;
+
+	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(g_pinctrl_ptr)) {
+		pr_err("[%s] get pinctrl fail, %d", __func__, PTR_ERR(g_pinctrl_ptr));
+		return -1;
+	}
+
+	pinctrl_init = pinctrl_lookup_state(
+			g_pinctrl_ptr, "connsys_pin_pmic_en_default");
+	if (!IS_ERR(pinctrl_init)) {
+		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_init);
+		if (ret) {
+			pr_err("[%s] pinctrl on fail, %d", __func__, ret);
+			return -1;
+		}
+	} else {
+		pr_err("[%s] fail to get \"connsys_pin_pmic_en_default\"",  __func__);
+		return -1;
+	}
+
+	pinctrl_faultb_init = pinctrl_lookup_state(
+			g_pinctrl_ptr, "connsys_pin_pmic_faultb_default");
+	if (!IS_ERR(pinctrl_faultb_init)) {
+		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_faultb_init);
+		if (ret) {
+			pr_err("[%s] faultb init fail, %d", __func__, ret);
+			return -1;
+		}
+	} else {
+		pr_err("[%s] fail to get \"connsys_pin_pmic_faultb_default\"",  __func__);
+		return -1;
+	}
+
+	irq_num = irq_of_parse_and_map(pdev->dev.of_node, 0);
+	pr_info("%s[%d], irqNum of CONNSYS = %d", __func__, __LINE__, irq_num);
+
+	ret = request_irq(irq_num, pmic_fault_handler, IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
+				  "MT6376_FAULT", NULL);
+	if (ret) {
+		pr_err("%s[%d], request irq fail with irq_num=%d\n", __func__, __LINE__, irq_num);
+		return ret;
+	}
+
+	ret = enable_irq_wake(irq_num);
+	if (ret) {
+		pr_err("%s[%d], enable_irq_wake %s (%u) failed! ret(%d)", "MT6376_FAULT", irq_num, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 int connv3_plt_pmic_common_power_ctrl_mt6983(u32 enable)
 {
+	struct pinctrl_state *pinctrl_set;
+	static u64 turn_off_time;
+	u64 duration;
 	int ret = 0;
 
+	if (enable) {
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys_pin_pmic_en_set");
+		if (!IS_ERR(pinctrl_set)) {
+			duration = jiffies_to_msecs(jiffies - turn_off_time);
+			if (duration < 20)
+				mdelay(20 - duration);
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
+			else
+				pr_info("[%s] pinctrl_select_state, expect GPIO#223 output-high", __func__);
+		} else {
+			pr_err("[%s] fail to get \"connsys_pin_pmic_en_set\"",  __func__);
+		}
+	} else {
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys_pin_pmic_en_clr");
+		if (!IS_ERR(pinctrl_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
+			else
+				pr_info("[%s] pinctrl_select_state, expect GPIO#223 output-low", __func__);
+			turn_off_time = jiffies;
+		} else {
+			pr_err("[%s] fail to get \"connsys_pin_pmic_en_clr\"",  __func__);
+		}
+	}
+
 	pr_info("[%s] enable=[%d]", __func__, enable);
+
 	return ret;
 }
 
@@ -94,7 +204,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6983(u32 enable)
  * register_dump[19]: 0x24[5:6]: PG/OC mode of BuckIO
  * register_dump[20]: 0x2C[5:6]: PG/OC mode of BuckR
  */
-#define PMIC_DUMP_REGISTER_SIZE 21
+#define PMIC_DUMP_REGISTER_SIZE 48
 
 /* slave: PMIC, IC status */
 #define PMIC_SYSUV_EVT (0x1U < 7)
