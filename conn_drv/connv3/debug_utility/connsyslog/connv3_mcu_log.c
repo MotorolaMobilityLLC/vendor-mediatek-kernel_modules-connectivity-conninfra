@@ -142,7 +142,7 @@ static unsigned int connv3_cal_log_size(unsigned int emi_size)
 	int i;
 
 	if (emi_size > 0) {
-		for (i = (emi_size >> 1), position = 0; i != 0; ++position)
+		for (i = (emi_size), position = 0; i != 0; ++position)
 			i >>= 1;
 	} else {
 		return 0;
@@ -166,15 +166,17 @@ static int connv3_log_buffer_init(struct connv3_log_ctrl_block *block, u32 sz)
 {
 	void *pBuffer = NULL;
 	unsigned int cache_size = 0;
+	unsigned int cal_size;
 
 	//if (sz > 16 MB) return fail;
-	if (connv3_cal_log_size(sz) == 0) {
+	cal_size = connv3_cal_log_size(sz);
+	if (cal_size == 0) {
 		return -1;
 	}
 
 	/* init ring cache */
 	block->size = sz;
-	cache_size = sz * 2;
+	cache_size = cal_size * 2;
 	pBuffer = connv3_log_cache_allocate(cache_size);
 
 	if (pBuffer == NULL) {
