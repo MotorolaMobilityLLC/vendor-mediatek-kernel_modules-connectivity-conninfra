@@ -525,9 +525,17 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 	return 0;
 }
 
+
 int connv2_drv_init(void)
 {
 	int iret = 0;
+	unsigned int connv2_radio_support = 0;
+	unsigned int drv_enum_converter[CONNDRV_TYPE_MAX] =
+		{CONN_SUPPOPRT_DRV_BT_TYPE_BIT, CONN_SUPPOPRT_DRV_FM_TYPE_BIT,
+		CONN_SUPPOPRT_DRV_GPS_TYPE_BIT, CONN_SUPPOPRT_DRV_WIFI_TYPE_BIT,
+		0x0, 0x0};
+	int i = 0;
+	unsigned int adaptor_radio_support = 0;
 
 	iret = platform_driver_register(&mtk_conninfra_dev_drv);
 	if (iret)
@@ -550,7 +558,15 @@ int connv2_drv_init(void)
 	/* ap resume worker */
 	INIT_WORK(&g_ap_resume_work, consys_hw_ap_resume_handler);
 
-	g_connv2_drv_gen.drv_radio_support = consys_hw_get_support_drv();
+	connv2_radio_support = consys_hw_get_support_drv();
+	for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
+		if (connv2_radio_support & (0x1 << i))
+			adaptor_radio_support |= drv_enum_converter[i];
+	}
+	pr_info("[%s] radio support convert 0x%x => 0x%x",
+		__func__, connv2_radio_support, adaptor_radio_support);
+
+	g_connv2_drv_gen.drv_radio_support = adaptor_radio_support;
 	iret = conn_adaptor_register_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_2, &g_connv2_drv_gen);
 	if (iret)
 		pr_notice("Register to conn_adap fail, ret = %d", iret);

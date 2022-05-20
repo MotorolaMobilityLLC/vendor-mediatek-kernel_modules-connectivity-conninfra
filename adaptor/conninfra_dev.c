@@ -232,6 +232,10 @@ ssize_t conn_adaptor_dev_write(struct file *filp,
 	return 0;
 }
 
+static const char *g_adp_drv_name[CONN_ADAPTOR_DRV_SIZE] = {
+	"WIFI", "BT", "GPS", "FM"
+};
+
 static long conn_adaptor_dev_unlocked_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	int retval = 0;
@@ -254,8 +258,8 @@ static long conn_adaptor_dev_unlocked_ioctl(struct file *filp, unsigned int cmd,
 		conn_adaptor_set_coredump_mode(arg);
 		break;
 	case CONNINFRA_IOCTL_GET_ADIE_CHIP_ID:
-		pr_info("[%s] get adie [%d]", __func__, arg);
 		retval = conn_adaptor_detect_adie_chipid(arg);
+		pr_info("[%s] get adie [%s]=[0x%04x]", __func__, g_adp_drv_name[arg], retval);
 		break;
 	}
 
