@@ -337,10 +337,10 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 			if (ret)
 				pr_info("%s", buf_p);
 		}
-	}
 
-	/* Power state */
-	consys_power_state();
+		/* Power state */
+		consys_power_state();
+	}
 
 	round++;
 
