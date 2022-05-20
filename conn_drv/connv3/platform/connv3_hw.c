@@ -186,7 +186,7 @@ int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, v
 	return connv3_hw_dbg_bus_dump(drv_type, cb, priv_data);
 }
 
-int connv3_hw_init(struct platform_device *pdev)
+int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 {
 	int ret = 0;
 
@@ -197,7 +197,7 @@ int connv3_hw_init(struct platform_device *pdev)
 		return -2;
 	}
 
-	ret = connv3_pmic_mng_init(pdev, g_connv3_plat_data);
+	ret = connv3_pmic_mng_init(pdev, dev_cb, g_connv3_plat_data);
 	if (ret) {
 		pr_err("[%s] init pmic fail", __func__);
 		return -3;

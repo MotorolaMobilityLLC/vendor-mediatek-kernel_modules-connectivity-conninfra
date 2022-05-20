@@ -105,12 +105,14 @@ static char *connv3_drv_thread_name[] = {
 	[CONNV3_DRV_TYPE_BT] = "sub_bt_thrd",
 	[CONNV3_DRV_TYPE_WIFI] = "sub_wifi_thrd",
 	[CONNV3_DRV_TYPE_MODEM] = "sub_md_thrd",
+	[CONNV3_DRV_TYPE_CONNV3] = "connv3_thrd",
 };
 
 static char *connv3_drv_name[] = {
 	[CONNV3_DRV_TYPE_BT] = "BT",
 	[CONNV3_DRV_TYPE_WIFI] = "WIFI",
 	[CONNV3_DRV_TYPE_MODEM] = "MODEM",
+	[CONNV3_DRV_TYPE_CONNV3] = "CONNV3",
 };
 
 typedef enum {
@@ -1115,6 +1117,14 @@ int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason)
 		return -1;
 	}
 	pr_info("trg_reset DONE!");
+	return 0;
+}
+
+int connv3_core_pmic_event_cb(unsigned int id, unsigned int event)
+{
+	if (event == 1)
+		connv3_core_trg_chip_rst(CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
+
 	return 0;
 }
 

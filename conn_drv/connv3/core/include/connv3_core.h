@@ -190,6 +190,7 @@ int connv3_core_lock_rst(void);
 int connv3_core_unlock_rst(void);
 int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason);
 
+int connv3_core_pmic_event_cb(unsigned int id, unsigned int event);
 void connv3_core_update_pmic_status(enum connv3_drv_type drv, char *buffer, int buf_sz);
 
 int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
