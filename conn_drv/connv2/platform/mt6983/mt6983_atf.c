@@ -199,6 +199,9 @@ int consys_power_state_dump_mt6983_atf(char *buf, unsigned int size)
 		power_state_dump_data[0 + 3 * i] = res.a1;
 	}
 
+	if (buf == NULL || size <= 0)
+		return ret;
+
 	snprintf(buf, size,"[consys_power_state][round:%llu]"
 		"conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;"
 		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
