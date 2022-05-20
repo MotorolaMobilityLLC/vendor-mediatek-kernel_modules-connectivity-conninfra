@@ -19,6 +19,7 @@ enum conn_adaptor_drv_gen {
 #define CONN_SUPPOPRT_DRV_WIFI_TYPE_BIT	(0x1 << CONN_ADAPTOR_DRV_WIFI)
 #define CONN_SUPPOPRT_DRV_BT_TYPE_BIT	(0x1 << CONN_ADAPTOR_DRV_BT)
 #define CONN_SUPPOPRT_DRV_GPS_TYPE_BIT	(0x1 << CONN_ADAPTOR_DRV_GPS)
+#define CONN_SUPPOPRT_DRV_FM_TYPE_BIT	(0x1 << CONN_ADAPTOR_DRV_FM)
 
 struct conn_adaptor_drv_gen_cb {
 	u32 drv_radio_support;

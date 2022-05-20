@@ -246,7 +246,10 @@ int mtk_connv3_probe(struct platform_device *pdev)
 		return 0;
 	}
 
-	g_connv3_drv_gen.drv_radio_support = support;
+	g_connv3_drv_gen.drv_radio_support =
+		(support & ((0x1 << CONNV3_DRV_TYPE_BT) | (0x1 << CONNV3_DRV_TYPE_WIFI)));
+	pr_info("[%s] v3 radio support=0x%x, adap radio support=0x%x",
+		__func__, support, g_connv3_drv_gen.drv_radio_support);
 
 	/* hw init */
 	ret = connv3_hw_init(pdev, &g_connv3_dev_cb);
