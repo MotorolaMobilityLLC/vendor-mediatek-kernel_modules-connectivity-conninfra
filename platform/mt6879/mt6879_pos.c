@@ -406,6 +406,8 @@ void consys_sema_release_mt6879(unsigned int index)
 
 		log_sema_time[sema_count] = duration;
 		sema_count++;
+		/* delay for firmware to take semaphore */
+		udelay(2);
 	}
 
 	if (duration > SEMA_HOLD_TIME_THRESHOLD) {
@@ -543,7 +545,7 @@ int consys_spi_read_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr, 
 {
 	int ret = 0;
 
-	if (subsystem == SYS_SPI_FM)
+	if (subsystem == SYS_SPI_FM  || subsystem == SYS_SPI_GPS)
 		return consys_spi_read_nolock_mt6879(subsystem, addr, data);
 
 	/* Get semaphore before read */
@@ -612,7 +614,7 @@ int consys_spi_write_mt6879(enum sys_spi_subsystem subsystem, unsigned int addr,
 {
 	int ret = 0;
 
-	if (subsystem == SYS_SPI_FM)
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
 		return consys_spi_write_nolock_mt6879(subsystem, addr, data);
 
 	/* Get semaphore before read */
@@ -635,7 +637,7 @@ int consys_spi_update_bits_mt6879(enum sys_spi_subsystem subsystem, unsigned int
 	bool change = false;
 
 	/* Get semaphore before updating bits */
-	if (subsystem != SYS_SPI_FM) {
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS) {
 		if (consys_sema_acquire_timeout_mt6879(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 			pr_notice("[SPI WRITE] Require semaphore fail\n");
 			return CONNINFRA_SPI_OP_FAIL;
@@ -645,7 +647,7 @@ int consys_spi_update_bits_mt6879(enum sys_spi_subsystem subsystem, unsigned int
 	ret = consys_spi_read_nolock_mt6879(subsystem, addr, &curr_val);
 
 	if (ret) {
-		if (subsystem != SYS_SPI_FM)
+		if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
 			consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
@@ -661,7 +663,7 @@ int consys_spi_update_bits_mt6879(enum sys_spi_subsystem subsystem, unsigned int
 		ret = consys_spi_write_nolock_mt6879(subsystem, addr, new_val);
 	}
 
-	if (subsystem != SYS_SPI_FM)
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
 		consys_sema_release_mt6879(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
