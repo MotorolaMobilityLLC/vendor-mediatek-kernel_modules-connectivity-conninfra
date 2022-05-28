@@ -101,23 +101,6 @@ void consys_set_if_pinmux_mt6985(unsigned int enable)
 int consys_conninfra_on_power_ctrl_mt6985(unsigned int enable)
 {
 	int ret = 0;
-	void __iomem *vir_addr = NULL;
-
-
-	/* Need confirmed with clock buffer owner */
-	/* turn on osc clk for on domain
-	 * TOPCKGEN CLK_CFG_30 0x1000_01f0[24]	ap2con_clk_en
-	 * 	0x01f4	CLK_CFG_30_SET
-	 * 	0x01f8	CLK_CFG_30_CLR
-	 */
-	vir_addr = ioremap(0x10000000, 0x200);
-	if (!vir_addr) {
-		pr_notice("[%s] ioremap error\n", __func__);
-		return -1;
-	}
-
-	if (enable)
-		CONSYS_SET_BIT(vir_addr + 0x1f4, (0x1 << 24));
 
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
 	ret = consys_platform_spm_conn_ctrl_mt6985(enable);
@@ -125,10 +108,6 @@ int consys_conninfra_on_power_ctrl_mt6985(unsigned int enable)
 	ret = consys_conninfra_on_power_ctrl_mt6985_gen(enable);
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
 
-	if (!enable)
-		CONSYS_SET_BIT(vir_addr + 0x1f8, (0x1 << 24));
-
-	iounmap(vir_addr);
 	return ret;
 }
 
