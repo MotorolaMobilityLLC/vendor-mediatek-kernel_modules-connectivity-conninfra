@@ -211,117 +211,126 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 #define PMIC_DUMP_REGISTER_SIZE 48
 
 /* slave: PMIC, IC status */
-#define PMIC_SYSUV_EVT (0x1U << 7)
-#define PMIC_SYSOV_EVT (0x1U << 6)
-#define PMIC_OTP_EVT (0x1U << 5)
+#define PMIC_OTP_EVT		(0x1U << 5)
+#define PMIC_SYSOV_EVT		(0x1U << 6)
+#define PMIC_SYSUV_EVT		(0x1U << 7)
+#define PMIC_STAT_FAIL		(PMIC_OTP_EVT | PMIC_SYSOV_EVT | PMIC_SYSUV_EVT)
 
 /* slave: PMIC, BUCK OC info */
-#define PMIC_PSW_VB_OC_EVT (0x1U << 5)
-#define PMIC_BUCK_R_OC_EVT (0x1U << 4)
-#define PMIC_BUCK_IO_OC_EVT (0x1U << 2)
-#define PMIC_BUCK_D_OC_EVT (0x1U << 1)
+#define PMIC_BUCK_D_OC_EVT	(0x1U << 1)
+#define PMIC_BUCK_IO_OC_EVT	(0x1U << 2)
+#define PMIC_BUCK_R_OC_EVT	(0x1U << 4)
+#define PMIC_PSW_VB_OC_EVT	(0x1U << 5)
+#define PMIC_BUCK_OC		(PMIC_BUCK_D_OC_EVT | PMIC_BUCK_IO_OC_EVT | PMIC_BUCK_R_OC_EVT | PMIC_PSW_VB_OC_EVT)
 
 /* slave: PMIC, LDO OC info */
-#define PMIC_PALDO_OC_EVT (0x1U << 7)
-#define PMIC_ANALDO_OC_EVT (0x1U << 6)
-#define PMIC_MLDO_OC_EVT (0x1U << 5)
-#define PMIC_ALDO_OC_EVT (0x1U << 4)
-#define PMIC_IOLDO_OC_EVT (0x1U << 3)
-#define PMIC_PHYLDO_OC_EVT (0x1U << 2)
-#define PMIC_HIOLDO_OC_EVT (0x1U << 1)
-#define PMIC_RFLDO_OC_EVT (0x1U << 0)
+#define PMIC_RFLDO_OC_EVT	(0x1U << 0)
+#define PMIC_HIOLDO_OC_EVT	(0x1U << 1)
+#define PMIC_IOLDO_OC_EVT	(0x1U << 3)
+#define PMIC_ALDO_OC_EVT	(0x1U << 4)
+#define PMIC_MLDO_OC_EVT	(0x1U << 5)
+#define PMIC_ANALDO_OC_EVT	(0x1U << 6)
+#define PMIC_PALDO_OC_EVT	(0x1U << 7)
+#define PMIC_LDO_OC		(PMIC_RFLDO_OC_EVT | PMIC_HIOLDO_OC_EVT | PMIC_IOLDO_OC_EVT | PMIC_ALDO_OC_EVT | PMIC_MLDO_OC_EVT | PMIC_ANALDO_OC_EVT | PMIC_ANALDO_OC_EVT | PMIC_PALDO_OC_EVT)
 
 /* slave: PMIC, BUCK PG info */
 #define PMIC_BUCK_PG_EVT_ADDR 0x19
-#define PMIC_PSW_VB_VSHORT_EVT (0x1U << 5)
-#define PMIC_BUCK_R_PGB_EVT (0x1U << 4)
-#define PMIC_BUCK_IO_PGB_EVT (0x1U << 2)
-#define PMIC_BUCK_D_PGB_EVT (0x1U << 1)
+
+#define PMIC_BUCK_D_PGB_EVT	(0x1U << 1)
+#define PMIC_BUCK_IO_PGB_EVT	(0x1U << 2)
+#define PMIC_BUCK_R_PGB_EVT	(0x1U << 4)
+#define PMIC_BUCK_PG		(PMIC_BUCK_D_PGB_EVT | PMIC_BUCK_IO_PGB_EVT | PMIC_BUCK_R_PGB_EVT)
 
 /* slave: PMIC, LDO PG info */
 #define PMIC_LDO_PG_EVT_ADDR 0x1B
-#define PMIC_PALDO_PGB_EVT (0x1U << 7)
-#define PMIC_ANALDO_PGB_EVT (0x1U << 6)
-#define PMIC_MLDO_PGB_EVT (0x1U << 5)
-#define PMIC_ALDO_PGB_EVT (0x1U << 4)
-#define PMIC_IOLDO_PGB_EVT (0x1U << 3)
-#define PMIC_PHYLDO_PGB_EVT (0x1U << 2)
-#define PMIC_HIOLDO_PGB_EVT (0x1U << 1)
-#define PMIC_RFLDO_PGB_EVT (0x1U << 0)
+
+#define PMIC_RFLDO_PGB_EVT	(0x1U << 0)
+#define PMIC_HIOLDO_PGB_EVT	(0x1U << 1)
+#define PMIC_PHYLDO_PGB_EVT	(0x1U << 2)
+#define PMIC_IOLDO_PGB_EVT	(0x1U << 3)
+#define PMIC_ALDO_PGB_EVT	(0x1U << 4)
+#define PMIC_MLDO_PGB_EVT	(0x1U << 5)
+#define PMIC_ANALDO_PGB_EVT	(0x1U << 6)
+#define PMIC_PALDO_PGB_EVT	(0x1U << 7)
+#define PMIC_LDO_PG		(PMIC_RFLDO_PGB_EVT | PMIC_HIOLDO_PGB_EVT | PMIC_PHYLDO_PGB_EVT | PMIC_IOLDO_PGB_EVT | PMIC_ALDO_PGB_EVT | PMIC_MLDO_PGB_EVT | PMIC_ANALDO_PGB_EVT | PMIC_PALDO_PGB_EVT)
 
 /* slave: BUCK, BUCK op mode info */
-#define BUCK_BUCK_OC_MODE_DBGFLAG (0x1U << 6)
-#define BUCK_BUCK_PG_MODE_DBGFLAG (0x1U << 5)
+#define BUCK_BUCK_OC_MODE_DBGFLAG	(0x1U << 6)
+#define BUCK_BUCK_PG_MODE_DBGFLAG	(0x1U << 5)
 
 /* slave: PMIC, LDO op mode info */
-#define PMIC_LDO_OC_MODE_DBGFLAG (0x1U << 4)
-#define PMIC_LDO_PG_MODE_DBGFLAG (0x1U << 3)
+#define PMIC_LDO_OC_MODE_DBGFLAG	(0x1U << 4)
+#define PMIC_LDO_PG_MODE_DBGFLAG	(0x1U << 3)
 
 /* slave: PMIC, UDS enable status */
-#define PMIC_UDS_EN_STAT_BIT (0x1U << 0)
+#define PMIC_UDS_EN_STAT_BIT		(0x1U << 0)
 
-#define PMIC_AEE_LOG_SIZE 1024
+//#define PMIC_AEE_LOG_SIZE 1024
+#define PMIC_STAT_SIZE  21
+
 int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 {
+#define TMP_LOG_SIZE 128
 	u8 *register_dump;
-	u8 pmic_fault = 0;
-	u8 base_stat = 0;
-	u8 oc_fault = 0;
-	u8 pg_fault = 0;
-	u8 buck_d_op_mode, buck_io_op_mode, buck_r_op_mode;
-	u8 rfldo_op_mode, hioldo_op_mode, phyldo_op_mode, ioldo_op_mode, aldo_op_mode, mldo_op_mode, analdo_op_mode, paldo_op_mode;
+	u8 pmic_stat = 0;
+	u8 buck_oc_stat = 0, ldo_oc_stat = 0;
+	u8 buck_pg_stat = 0, ldo_pg_stat = 0;
 	u8 uds_status;
 	u8 i2c_last_dev, i2c_last_addr, i2c_last_wdata;
-	char *log_buffer;
-	u8 log_length = 0;
-
-	if (buf_sz != PMIC_DUMP_REGISTER_SIZE) {
-		pr_err("[%s] PMIC dump register size = %d (!= %d)\n", __func__, buf_sz, PMIC_DUMP_REGISTER_SIZE);
-		return -1;
-	}
+	u8 log_len = 0;
+	int i;
+	u32 data_size = 0;
+	char tmp[4];
+	char log_buf[TMP_LOG_SIZE];
+	int remain_size = TMP_LOG_SIZE;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
 		return -1;
 	}
 
-	register_dump = buffer;
-	log_buffer = vmalloc(PMIC_AEE_LOG_SIZE);
-	if (!log_buffer)
+	if (buf_sz < 4) {
+		pr_err("[%s] PMIC dump register size = %d (!= %d)\n", __func__, buf_sz, PMIC_DUMP_REGISTER_SIZE);
 		return -1;
+	}
 
-	/* 1. Base status */
-	base_stat = register_dump[4] & (PMIC_SYSUV_EVT | PMIC_SYSOV_EVT | PMIC_OTP_EVT);
-	pmic_fault |= base_stat;
+	memcpy(&data_size, buffer, 4);
+
+	pr_info("[%s] data size=[%d]", __func__, data_size);
+
+	if (data_size < PMIC_STAT_SIZE) {
+		pr_notice("[MT6376] incorrect state size=[%d]", data_size);
+		return -1;
+	}
+
+	log_buf[0] = '\0';
+	for (i = 0; i < data_size; i++) {
+		if (snprintf(tmp, 4, "%02X ", buffer[i+4]) < 0)
+			pr_notice("[%s] snprintf error", __func__);
+
+		strncat(log_buf, tmp, remain_size);
+		remain_size -= 3;
+		if (i > 0 && (i % 8 == 7)) {
+			pr_info("[MT6376-State] %s", log_buf);
+			log_buf[0] = '\0';
+			remain_size = TMP_LOG_SIZE;
+		}
+	}
+	if (strlen(log_buf) > 0)
+		pr_info("[MT6376-State] %s", log_buf);
+
+	register_dump = buffer + 4;
+
+	/* 1. OT/OV/UV status */
+	pmic_stat = register_dump[4] & (PMIC_STAT_FAIL);
 
 	/* 2. check BUCK/LDO OC status */
-	oc_fault |= register_dump[0] & (PMIC_PSW_VB_OC_EVT | PMIC_BUCK_R_OC_EVT | PMIC_BUCK_IO_OC_EVT | PMIC_BUCK_D_OC_EVT);
-	oc_fault |= register_dump[1] & (PMIC_PALDO_OC_EVT | PMIC_ANALDO_OC_EVT | PMIC_MLDO_OC_EVT | PMIC_ALDO_OC_EVT
-		| PMIC_IOLDO_OC_EVT | PMIC_PHYLDO_OC_EVT | PMIC_HIOLDO_OC_EVT | PMIC_RFLDO_OC_EVT);
-	pmic_fault |= oc_fault;
+	buck_oc_stat = register_dump[0] & PMIC_BUCK_OC;
+	ldo_oc_stat = register_dump[1] & PMIC_LDO_OC;
 
 	/* 3. check BUCK/LDO PG status */
-	pg_fault |= register_dump[2] & (PMIC_PSW_VB_VSHORT_EVT | PMIC_BUCK_R_PGB_EVT | PMIC_BUCK_IO_PGB_EVT | PMIC_BUCK_D_PGB_EVT);
-	pg_fault |= register_dump[3] & (PMIC_PALDO_PGB_EVT | PMIC_ANALDO_PGB_EVT | PMIC_MLDO_PGB_EVT | PMIC_ALDO_PGB_EVT
-		| PMIC_IOLDO_PGB_EVT | PMIC_PHYLDO_PGB_EVT | PMIC_HIOLDO_PGB_EVT | PMIC_RFLDO_PGB_EVT);
-	pmic_fault |= pg_fault;
-
-	/* 2.1. check "op mode when OC happen" */
-	/* 3.1. check "op mode when PG happen" */
-	if (oc_fault || pg_fault) {
-		buck_d_op_mode = register_dump[18] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG);
-		buck_io_op_mode = register_dump[19] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG);
-		buck_r_op_mode = register_dump[20] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG);
-
-		rfldo_op_mode = register_dump[5] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		hioldo_op_mode = register_dump[6] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		phyldo_op_mode = register_dump[7] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		ioldo_op_mode = register_dump[8] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		aldo_op_mode = register_dump[9] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		mldo_op_mode = register_dump[10] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		analdo_op_mode = register_dump[11] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-		paldo_op_mode = register_dump[12] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG);
-	}
+	buck_pg_stat = register_dump[2] & PMIC_BUCK_PG;
+	ldo_pg_stat = register_dump[3] & PMIC_LDO_PG;
 
 	/* 4. UDS status */
 	uds_status = register_dump[13] & (PMIC_UDS_EN_STAT_BIT);
@@ -332,29 +341,61 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	i2c_last_addr = register_dump[16];
 	i2c_last_wdata = register_dump[17];
 
-	if (pmic_fault) {
-		log_length += snprintf(log_buffer + log_length, PMIC_AEE_LOG_SIZE - log_length, "MT6376 with fault:\n");
-		if (base_stat)
-			log_length += snprintf(log_buffer + log_length, PMIC_AEE_LOG_SIZE - log_length, "base_stat=0x%x\n", base_stat);
-		if (oc_fault)
-			log_length += snprintf(log_buffer + log_length, PMIC_AEE_LOG_SIZE - log_length, "oc_fault=0x%x, buck_oc=0x%x, ldo_oc=0x%x\n",
-								   oc_fault, register_dump[0], register_dump[1]);
-		if (pg_fault)
-			log_length += snprintf(log_buffer + log_length, PMIC_AEE_LOG_SIZE - log_length, "pg_fault=0x%x, buck_pg=0x%x, ldo_pg=0x%x\n",
-								   pg_fault, register_dump[2], register_dump[3]);
-		if (oc_fault || pg_fault)
-			log_length += snprintf(log_buffer + log_length, PMIC_AEE_LOG_SIZE - log_length,
-			"op mode=[0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x 0x%x]\n",
-			buck_d_op_mode, buck_io_op_mode, buck_r_op_mode,
-			rfldo_op_mode, hioldo_op_mode, phyldo_op_mode, ioldo_op_mode, aldo_op_mode, mldo_op_mode, analdo_op_mode, paldo_op_mode);
-		// aee_kernel_exception("Connv3", "%s", log_buffer);
+	if (pmic_stat
+		|| buck_oc_stat || ldo_oc_stat
+		|| buck_pg_stat || ldo_pg_stat) {
+
+		pr_notice("[MT6376] EXCEPTION pmic=[%02X] oc=[%02X][%02X] pg=[%02X][%02X]",
+				pmic_stat, buck_oc_stat, ldo_oc_stat, buck_pg_stat, ldo_pg_stat);
+
+		/* 2.1. check "op mode when OC happen" */
+		/* 3.1. check "op mode when PG happen" */
+		if (buck_oc_stat || ldo_oc_stat || buck_pg_stat || ldo_pg_stat) {
+			pr_notice("[MT6376] EXCEPTION op=%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+					(register_dump[18] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG)),
+					(register_dump[19] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG)),
+					(register_dump[20] & (BUCK_BUCK_OC_MODE_DBGFLAG | BUCK_BUCK_PG_MODE_DBGFLAG)),
+					(register_dump[5] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[6] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[7] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[8] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[9] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[10] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[11] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)),
+					(register_dump[12] & (PMIC_LDO_OC_MODE_DBGFLAG | PMIC_LDO_PG_MODE_DBGFLAG)));
+		}
+
+		pr_notice("[MT6376] EXCEPTION UDS=[%d], Last i2c write to %s, write 0x%x by 0x%x\n",
+			uds_status, (i2c_last_dev == 0x0)?"PMIC":"BUCK", i2c_last_addr, i2c_last_wdata);
+
+		log_buf[0] = '\0';
+		log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "[MT6376] EXCEPTION: ");
+		if (pmic_stat) {
+			if (pmic_stat & PMIC_OTP_EVT)
+				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "OT ");
+			if (pmic_stat & PMIC_SYSOV_EVT)
+				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "OV ");
+			if (pmic_stat & PMIC_SYSUV_EVT)
+				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "UV ");
+		}
+		if (buck_oc_stat)
+			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "BUCK_OC %02X ", buck_oc_stat);
+
+		if (ldo_oc_stat)
+			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "LDO_OC %02X ", ldo_oc_stat);
+
+		if (buck_pg_stat)
+			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "BUCK_PG %02X ", buck_pg_stat);
+
+		if (ldo_pg_stat)
+			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "LDO_PG %02X ", ldo_pg_stat);
+
+		aee_kernel_exception("Connv3", "%s", log_buf);
 	}
 
 	/* print UDS and I2C command for more info */
 	pr_info("[%s] UDS status=[%d], Last i2c write to %s, write 0x%x by 0x%x\n",
 			__func__, uds_status, (i2c_last_dev == 0x0)?"PMIC":"BUCK", i2c_last_addr, i2c_last_wdata);
-
-	vfree(log_buffer);
 
 	return 0;
 }
