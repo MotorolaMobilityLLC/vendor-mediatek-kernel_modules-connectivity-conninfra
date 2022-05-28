@@ -202,7 +202,7 @@ int consys_power_state_dump_mt6983_atf(char *buf, unsigned int size)
 	if (buf == NULL || size <= 0)
 		return ret;
 
-	snprintf(buf, size,"[consys_power_state][round:%llu]"
+	if(snprintf(buf, size,"[consys_power_state][round:%llu]"
 		"conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;"
 		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
 		"bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
@@ -230,9 +230,8 @@ int consys_power_state_dump_mt6983_atf(char *buf, unsigned int size)
 		power_state_dump_data[21],
 		power_state_dump_data[22],
 		power_state_dump_data[23],
-		power_state_dump_data[24]);
-
-	pr_info("%s", buf);
+		power_state_dump_data[24]) > 0)
+		pr_info("%s", buf);
 	return ret;
 }
 

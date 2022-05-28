@@ -379,9 +379,10 @@ check_task_str:
 				strncpy(task_name, pTemp, task_len);
 				task_name[task_len] = '\0';
 
-				snprintf(ctx->issue_info.task_name, CONNV3_TASK_NAME_SIZE,
+				if (snprintf(ctx->issue_info.task_name, CONNV3_TASK_NAME_SIZE,
 					"Task_%s_%s", task_name,
-					connv3_dump_mng_get_subsys_tag(ctx->conn_type));
+					connv3_dump_mng_get_subsys_tag(ctx->conn_type)) < 0)
+					pr_notice("%s snprintf failed\n", __func__);
 			}
 		}
 	}
@@ -466,7 +467,7 @@ int connv3_coredump_start(void* handler, const int drv, const char *reason, cons
 	int ret = 0;
 	enum connv3_coredump_state state;
 	char* fw_ver_one_line = NULL;
-	int fw_version_len = strlen(fw_version);
+	int fw_version_len = 0;
 
 	if (ctx == NULL) {
 		pr_notice("[%s] invalid input", __func__);
@@ -486,8 +487,11 @@ int connv3_coredump_start(void* handler, const int drv, const char *reason, cons
 	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_START);
 	osal_gettimeofday(&g_dump_start_time);
 
+	if (fw_version != NULL)
+		fw_version_len = strlen(fw_version);
+
 	/* Log FW version in the first line of CMM */
-	if (fw_version != NULL && fw_version_len != 0) {
+	if (fw_version_len > 0) {
 		/* Add newline symbol in the end */
 		fw_version_len += 2;
 		fw_ver_one_line = connv3_dump_malloc(fw_version_len*sizeof(char));
