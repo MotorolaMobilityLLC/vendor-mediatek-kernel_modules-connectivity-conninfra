@@ -211,54 +211,54 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 #define PMIC_DUMP_REGISTER_SIZE 48
 
 /* slave: PMIC, IC status */
-#define PMIC_SYSUV_EVT (0x1U < 7)
-#define PMIC_SYSOV_EVT (0x1U < 6)
-#define PMIC_OTP_EVT (0x1U < 5)
+#define PMIC_SYSUV_EVT (0x1U << 7)
+#define PMIC_SYSOV_EVT (0x1U << 6)
+#define PMIC_OTP_EVT (0x1U << 5)
 
 /* slave: PMIC, BUCK OC info */
-#define PMIC_PSW_VB_OC_EVT (0x1U < 5)
-#define PMIC_BUCK_R_OC_EVT (0x1U < 4)
-#define PMIC_BUCK_IO_OC_EVT (0x1U < 2)
-#define PMIC_BUCK_D_OC_EVT (0x1U < 1)
+#define PMIC_PSW_VB_OC_EVT (0x1U << 5)
+#define PMIC_BUCK_R_OC_EVT (0x1U << 4)
+#define PMIC_BUCK_IO_OC_EVT (0x1U << 2)
+#define PMIC_BUCK_D_OC_EVT (0x1U << 1)
 
 /* slave: PMIC, LDO OC info */
-#define PMIC_PALDO_OC_EVT (0x1U < 7)
-#define PMIC_ANALDO_OC_EVT (0x1U < 6)
-#define PMIC_MLDO_OC_EVT (0x1U < 5)
-#define PMIC_ALDO_OC_EVT (0x1U < 4)
-#define PMIC_IOLDO_OC_EVT (0x1U < 3)
-#define PMIC_PHYLDO_OC_EVT (0x1U < 2)
-#define PMIC_HIOLDO_OC_EVT (0x1U < 1)
-#define PMIC_RFLDO_OC_EVT (0x1U < 0)
+#define PMIC_PALDO_OC_EVT (0x1U << 7)
+#define PMIC_ANALDO_OC_EVT (0x1U << 6)
+#define PMIC_MLDO_OC_EVT (0x1U << 5)
+#define PMIC_ALDO_OC_EVT (0x1U << 4)
+#define PMIC_IOLDO_OC_EVT (0x1U << 3)
+#define PMIC_PHYLDO_OC_EVT (0x1U << 2)
+#define PMIC_HIOLDO_OC_EVT (0x1U << 1)
+#define PMIC_RFLDO_OC_EVT (0x1U << 0)
 
 /* slave: PMIC, BUCK PG info */
 #define PMIC_BUCK_PG_EVT_ADDR 0x19
-#define PMIC_PSW_VB_VSHORT_EVT (0x1U < 5)
-#define PMIC_BUCK_R_PGB_EVT (0x1U < 4)
-#define PMIC_BUCK_IO_PGB_EVT (0x1U < 2)
-#define PMIC_BUCK_D_PGB_EVT (0x1U < 1)
+#define PMIC_PSW_VB_VSHORT_EVT (0x1U << 5)
+#define PMIC_BUCK_R_PGB_EVT (0x1U << 4)
+#define PMIC_BUCK_IO_PGB_EVT (0x1U << 2)
+#define PMIC_BUCK_D_PGB_EVT (0x1U << 1)
 
 /* slave: PMIC, LDO PG info */
 #define PMIC_LDO_PG_EVT_ADDR 0x1B
-#define PMIC_PALDO_PGB_EVT (0x1U < 7)
-#define PMIC_ANALDO_PGB_EVT (0x1U < 6)
-#define PMIC_MLDO_PGB_EVT (0x1U < 5)
-#define PMIC_ALDO_PGB_EVT (0x1U < 4)
-#define PMIC_IOLDO_PGB_EVT (0x1U < 3)
-#define PMIC_PHYLDO_PGB_EVT (0x1U < 2)
-#define PMIC_HIOLDO_PGB_EVT (0x1U < 1)
-#define PMIC_RFLDO_PGB_EVT (0x1U < 0)
+#define PMIC_PALDO_PGB_EVT (0x1U << 7)
+#define PMIC_ANALDO_PGB_EVT (0x1U << 6)
+#define PMIC_MLDO_PGB_EVT (0x1U << 5)
+#define PMIC_ALDO_PGB_EVT (0x1U << 4)
+#define PMIC_IOLDO_PGB_EVT (0x1U << 3)
+#define PMIC_PHYLDO_PGB_EVT (0x1U << 2)
+#define PMIC_HIOLDO_PGB_EVT (0x1U << 1)
+#define PMIC_RFLDO_PGB_EVT (0x1U << 0)
 
 /* slave: BUCK, BUCK op mode info */
-#define BUCK_BUCK_OC_MODE_DBGFLAG (0x1U < 6)
-#define BUCK_BUCK_PG_MODE_DBGFLAG (0x1U < 5)
+#define BUCK_BUCK_OC_MODE_DBGFLAG (0x1U << 6)
+#define BUCK_BUCK_PG_MODE_DBGFLAG (0x1U << 5)
 
 /* slave: PMIC, LDO op mode info */
-#define PMIC_LDO_OC_MODE_DBGFLAG (0x1U < 4)
-#define PMIC_LDO_PG_MODE_DBGFLAG (0x1U < 3)
+#define PMIC_LDO_OC_MODE_DBGFLAG (0x1U << 4)
+#define PMIC_LDO_PG_MODE_DBGFLAG (0x1U << 3)
 
 /* slave: PMIC, UDS enable status */
-#define PMIC_UDS_EN_STAT_BIT (0x1U < 0)
+#define PMIC_UDS_EN_STAT_BIT (0x1U << 0)
 
 #define PMIC_AEE_LOG_SIZE 1024
 int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
