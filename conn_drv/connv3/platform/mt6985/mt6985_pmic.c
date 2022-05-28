@@ -347,7 +347,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 			"op mode=[0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x 0x%x]\n",
 			buck_d_op_mode, buck_io_op_mode, buck_r_op_mode,
 			rfldo_op_mode, hioldo_op_mode, phyldo_op_mode, ioldo_op_mode, aldo_op_mode, mldo_op_mode, analdo_op_mode, paldo_op_mode);
-		aee_kernel_exception("Connv3", "%s", log_buffer);
+		// aee_kernel_exception("Connv3", "%s", log_buffer);
 	}
 
 	/* print UDS and I2C command for more info */
