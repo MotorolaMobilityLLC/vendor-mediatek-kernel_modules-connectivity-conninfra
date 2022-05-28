@@ -20,6 +20,7 @@
 
 #include "conndump_netlink.h"
 #include "connv3_coredump.h"
+#include "connv3_debug_utility.h"
 #include "connv3_dump_mng.h"
 #include "connv3.h"
 #include "osal.h"
@@ -172,6 +173,11 @@ static int connv3_coredump_info_analysis(
 
 	/* reset */
 	memset(&ctx->issue_info, 0, sizeof(struct connv3_issue_info));
+
+	if (ctx->conn_type < 0 || ctx->conn_type >= CONNV3_DEBUG_TYPE_SIZE) {
+		pr_notice("[%s] conn_type(%d) is not supported", __func__, ctx->conn_type);
+		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+	}
 
 	/* Check force dump */
 	if (strncmp(dump_msg, CONNV3_COREDUMP_FORCE_DUMP, strlen(CONNV3_COREDUMP_FORCE_DUMP)) == 0) {
@@ -368,7 +374,7 @@ check_task_str:
 		} else {
 			task_end = strchr(pTemp, ',');
 			if (task_end != NULL) {
-				unsigned int task_len = ((task_end - pTemp) > CONNV3_TASK_NAME_SIZE - 1? CONNV3_TASK_NAME_SIZE : (task_end - pTemp));
+				unsigned int task_len = ((task_end - pTemp) > CONNV3_TASK_NAME_SIZE - 1 ? CONNV3_TASK_NAME_SIZE - 1 : (task_end - pTemp));
 				char task_name[CONNV3_TASK_NAME_SIZE];
 				strncpy(task_name, pTemp, task_len);
 				task_name[task_len] = '\0';
@@ -439,12 +445,16 @@ check_driver_assert:
 	if (drv >= CONNV3_DRV_TYPE_BT && drv < CONNV3_DRV_TYPE_MAX) {
 		ctx->issue_info.issue_type = CONNV3_ISSUE_DRIVER_ASSERT;
 		ctx->issue_info.drv_type = drv;
-		snprintf(ctx->issue_info.task_name, CONNV3_TASK_NAME_SIZE, "%s", task_drv_name[drv]);
+		if (snprintf(ctx->issue_info.task_name, CONNV3_TASK_NAME_SIZE, "%s", task_drv_name[drv]) < 0) {
+			pr_notice("[%s] snprintf failed, task name = %s\n", __func__, task_drv_name[drv]);
+		}
 	}
 	if (reason != NULL) {
 		strncpy(ctx->issue_info.reason, reason, CONNV3_ASSERT_REASON_SIZE - 1);
 	}
-	snprintf(ctx->issue_info.subsys_tag, CONNV3_SUBSYS_TAG_SIZE, "%s", connv3_dump_mng_get_subsys_tag(ctx->conn_type));
+	if (snprintf(ctx->issue_info.subsys_tag, CONNV3_SUBSYS_TAG_SIZE, "%s", connv3_dump_mng_get_subsys_tag(ctx->conn_type)) < 0) {
+		pr_notice("[%s] snprintf failed\n", __func__);
+	}
 
 	return 0;
 }
@@ -482,8 +492,10 @@ int connv3_coredump_start(void* handler, const int drv, const char *reason, cons
 		fw_version_len += 2;
 		fw_ver_one_line = connv3_dump_malloc(fw_version_len*sizeof(char));
 		if (fw_ver_one_line != NULL) {
-			snprintf(fw_ver_one_line, fw_version_len, "%s\n", fw_version);
-			ret = conndump_netlink_send_to_native(ctx->conn_type, "[M]", (char*)fw_ver_one_line, strlen(fw_ver_one_line));
+			if (snprintf(fw_ver_one_line, fw_version_len, "%s\n", fw_version) < 0)
+				pr_notice("[%s] snprintf fail\n", __func__);
+			else
+				ret = conndump_netlink_send_to_native(ctx->conn_type, "[M]", (char*)fw_ver_one_line, strlen(fw_ver_one_line));
 			connv3_dump_free(fw_ver_one_line);
 			fw_ver_one_line = NULL;
 		}
@@ -509,6 +521,12 @@ int connv3_coredump_send(void *handler, char *tag, char *content, unsigned int l
 		pr_notice("[%s] invalid input", __func__);
 		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
 	}
+
+	if (ctx->conn_type < 0 || ctx->conn_type >= CONNV3_DEBUG_TYPE_SIZE) {
+		pr_notice("[%s] conn_type(%d) is not supported", __func__, ctx->conn_type);
+		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+	}
+
 	if (state >= CONNV3_COREDUMP_STATE_START && state <= CONNV3_COREDUMP_STATE_MEM_REGION) {
 		ret = conndump_netlink_send_to_native(ctx->conn_type, tag, content, length);
 	} else {
@@ -556,7 +574,7 @@ do { \
 	} else if (ctx->issue_info.issue_type == CONNV3_ISSUE_FW_ASSERT) {
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t<rc>\n\t\t\tFW Assert\n\t\t</rc>\n");
-	} else if (ctx->issue_info.issue_type == CONNV3_ISSUE_DRIVER_ASSERT && ctx->issue_info.drv_type >= 0 &&
+	} else if (ctx->issue_info.issue_type == CONNV3_ISSUE_DRIVER_ASSERT &&
 		ctx->issue_info.drv_type < CONNV3_DRV_TYPE_MAX) {
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t<rc>\n\t\t\t%s trigger assert\n\t\t</rc>\n", drv_name[ctx->issue_info.drv_type]);
@@ -744,7 +762,7 @@ void* connv3_coredump_init(int conn_type, const struct connv3_coredump_event_cb 
 	struct connv3_dump_ctx *ctx = NULL;
 	struct netlink_event_cb nl_cb;
 
-	if (conn_type < 0 || conn_type > 2) {
+	if (conn_type < 0 || conn_type >= CONNV3_DEBUG_TYPE_SIZE) {
 		pr_notice("[%s] wrong type: %d", __func__, conn_type);
 		goto error_exit;
 	}

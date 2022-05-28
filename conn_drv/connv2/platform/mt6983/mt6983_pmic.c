@@ -535,7 +535,10 @@ static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *a
 
 	memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 	for (i = 0; i < num; i++) {
-		consys_hw_spi_read(subsystem, adie_cr[i], &adie_value);
+		if (consys_hw_spi_read(subsystem, adie_cr[i], &adie_value) < 0) {
+			pr_notice("[%s] consys_hw_spi_read failed\n", __func__);
+			continue;
+		}
 		if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%04x: 0x%08x]", adie_cr[i], adie_value) >= 0)
 			strncat(tmp_buf, tmp, strlen(tmp));
 	}
@@ -632,7 +635,7 @@ void consys_pmic_debug_log_mt6983(void)
 {
 	struct regmap *r = g_regmap_mt6363;
 	struct regmap *r2 = g_regmap_mt6373;
-	int vcn13, vrfio18, vcn33_1, vcn33_2, vant18;
+	int vcn13 = 0, vrfio18 = 0, vcn33_1 = 0, vcn33_2 = 0, vant18 = 0;
 
 	if (!r || !r2) {
 		pr_notice("%s regmap is NULL\n", __func__);

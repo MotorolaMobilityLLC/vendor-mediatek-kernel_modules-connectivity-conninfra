@@ -357,6 +357,9 @@ static int connlog_buffer_init(struct connlog_dev* handler, int idx)
 	unsigned int cache_size = 0;
 	struct connlog_ctrl_block *block = &handler->ctrl_block[idx];
 
+	if (!handler || handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END)
+		return -1;
+
 	pr_info("[%s][%s][%d] [%p] sz=[%d] [%p][%p]", __func__, type_to_title[handler->conn_type], idx,
 		(handler->virAddrEmiLogBase + block->log_offset.emi_buf),
 		block->log_offset.emi_size,
@@ -1597,7 +1600,7 @@ int connsys_dedicated_log_set_ap_state(int state)
 		return -1;
 	}
 
-	for (i = CONN_DEBUG_TYPE_WIFI; i < CONN_EMI_BLOCK_TYPE_SIZE; i++) {
+	for (i = CONN_DEBUG_TYPE_WIFI; i < CONN_DEBUG_TYPE_END; i++) {
 		handler = gLogDev[i];
 
 		if (handler == NULL || handler->virAddrEmiLogBase == 0) {
