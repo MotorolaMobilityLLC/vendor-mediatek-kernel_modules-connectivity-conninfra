@@ -183,8 +183,8 @@ int conndump_netlink_init(int conn_type, void* dump_ctx, struct netlink_event_cb
 	int ret = 0;
 	struct dump_netlink_ctx* ctx;
 
-	if (conn_type < CONN_ADAPTOR_DRV_WIFI || conn_type >= CONN_ADAPTOR_DRV_SIZE) {
-		pr_err("Incorrect type (%d)\n", conn_type);
+	if (conn_type < CONN_ADAPTOR_DRV_WIFI || conn_type >= sizeof(g_netlink_ctx)/sizeof(struct dump_netlink_ctx) ) {
+		pr_notice("[%s] Incorrect type (%d)\n", __func__, conn_type);
 		return -1;
 	}
 
@@ -351,7 +351,7 @@ int conndump_netlink_send_to_native(int conn_type, char* tag, char* buf, unsigne
 	unsigned int remain_len = length;
 	int ret;
 
-	if ((conn_type < CONN_ADAPTOR_DRV_WIFI || conn_type >= CONN_ADAPTOR_DRV_SIZE) || tag == NULL) {
+	if (conn_type < CONN_ADAPTOR_DRV_WIFI || conn_type >= sizeof(g_netlink_ctx)/sizeof(struct dump_netlink_ctx)  || tag == NULL) {
 		pr_err("Incorrect type (%d), tag = %s\n", conn_type, tag);
 		return -1;
 	}

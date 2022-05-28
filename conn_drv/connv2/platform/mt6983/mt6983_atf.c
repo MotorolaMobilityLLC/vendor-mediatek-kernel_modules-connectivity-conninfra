@@ -203,7 +203,7 @@ int consys_power_state_dump_mt6983_atf(char *buf, unsigned int size)
 		return ret;
 
 	snprintf(buf, size,"[consys_power_state][round:%llu]"
-		"conninfra:%u.%03u,%u;wf:%u.%03u,%u;bt:%u.%03u,%u;gps:%u.%03u,%u;"
+		"conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;"
 		"[total]conninfra:%llu.%03llu,%llu;wf:%llu.%03llu,%llu;"
 		"bt:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
 		power_state_dump_data[0],

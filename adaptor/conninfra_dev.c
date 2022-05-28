@@ -178,7 +178,7 @@ static void conn_adaptor_set_coredump_mode(int mode)
 static u32 conn_adaptor_detect_adie_chipid(u32 drv_type)
 {
 
-	if (drv_type < 0 || drv_type >= CONN_ADAPTOR_DRV_SIZE) {
+	if (drv_type >= CONN_ADAPTOR_DRV_SIZE) {
 		pr_warn("[%s] incorrect mode [%d]", __func__, drv_type);
 		return 0;
 	}
