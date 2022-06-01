@@ -309,6 +309,7 @@ int connsys_a_die_cfg_mt6895(void)
 	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6895();
 
 	sleep_mode = consys_get_sleep_mode_mt6895();
+	pr_info("[%s] sleep_mode=[%d]\n", __func__, sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(adie_id, sleep_mode);
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 	return 0;
