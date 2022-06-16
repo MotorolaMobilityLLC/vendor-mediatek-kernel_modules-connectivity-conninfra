@@ -321,7 +321,7 @@ $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_pos.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_pos_gen.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_coredump.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_atf.o
-#$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_debug_gen.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6985/mt6985_debug_gen.o
 endif
 endif
 

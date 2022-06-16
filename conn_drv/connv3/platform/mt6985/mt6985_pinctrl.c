@@ -207,8 +207,14 @@ int connv3_plt_pinctrl_init_mt6985(struct platform_device *pdev)
 		if (IS_ERR_OR_NULL(g_ext32k_pin_state_init) ||
 		    IS_ERR_OR_NULL(g_ext32k_pin_state_on) ||
 		    IS_ERR_OR_NULL(g_ext32k_pin_state_off))
-			pr_notice("[%s] get ext32k fail: [%p][%p][%p]",
-				__func__, g_ext32k_pin_state_init, g_ext32k_pin_state_on, g_ext32k_pin_state_off);
+			pr_notice("[%s] get ext32k fail: [%s]=[%p]\t[%s]=[%p]\t[%s]=[%p]",
+				__func__,
+				CONNSYS_PIN_NAME_EXT_32K_EN_DEFAULT,
+				g_ext32k_pin_state_init,
+				CONNSYS_PIN_NAME_EXT_32K_EN_SET,
+				g_ext32k_pin_state_on,
+				CONNSYS_PIN_NAME_EXT_32K_EN_CLR,
+				g_ext32k_pin_state_off);
 		else {
 			ret = pinctrl_select_state(g_pinctrl_ptr, g_ext32k_pin_state_init);
 			if (ret)

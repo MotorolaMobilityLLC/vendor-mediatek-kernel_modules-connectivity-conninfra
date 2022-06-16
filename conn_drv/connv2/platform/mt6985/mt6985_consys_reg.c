@@ -14,10 +14,11 @@
 #include "consys_reg_mng.h"
 #include "consys_reg_util.h"
 #include "osal.h"
-#include "mt6985_consys_reg.h"
-#include "mt6985_consys_reg_offset.h"
-#include "mt6985_pos.h"
-#include "mt6985_pos_gen.h"
+#include "include/mt6985_consys_reg.h"
+#include "include/mt6985_consys_reg_offset.h"
+#include "include/mt6985_debug_gen.h"
+#include "include/mt6985_pos.h"
+#include "include/mt6985_pos_gen.h"
 
 static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
@@ -26,7 +27,16 @@ static int consys_check_reg_readable_for_coredump(void);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 
+static void consys_debug_init_mt6985(void);
+static void consys_debug_deinit_mt6985(void);
+
 struct consys_base_addr g_conn_reg_mt6985;
+
+#define CONSYS_DUMP_BUF_SIZE 800
+static struct conn_debug_info_mt6985 static_debug_info;
+static struct conn_debug_info_mt6985 *g_debug_info_ptr;
+static char static_debug_buf[CONSYS_DUMP_BUF_SIZE];
+static char *g_debug_buf_ptr;
 
 struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6985 = {
 	.consys_reg_mng_init = consys_reg_init,
@@ -35,6 +45,8 @@ struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6985 = {
 	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
 	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
 	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
+	.consys_reg_mng_debug_init = consys_debug_init_mt6985,
+	.consys_reg_mng_debug_deinit = consys_debug_deinit_mt6985,
 };
 
 static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
@@ -56,6 +68,35 @@ static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"SRCLKENRC",
 	"CONN_DBG_CTL",
 };
+
+
+static void consys_print_log(const char *title, struct conn_debug_info_mt6985 *info)
+{
+	char temp[13];
+	int i;
+
+	if (g_debug_buf_ptr == NULL)
+		return;
+
+	temp[0] = '\0';
+	if (snprintf(g_debug_buf_ptr, CONSYS_DUMP_BUF_SIZE, "%s", title) < 0) {
+		pr_notice("[%s] snprintf failed\n", __func__);
+		return;
+	}
+
+	for (i = 0; i < info->length; i++) {
+		if (snprintf(temp, sizeof(temp), "[0x%08x]", info->rd_data[i]) < 0) {
+			pr_notice("[%s] snprintf failed\n", __func__);
+			return;
+		}
+
+		if (strlen(g_debug_buf_ptr) + strlen(temp) < CONSYS_DUMP_BUF_SIZE)
+			strnlcat(g_debug_buf_ptr, temp, strlen(temp) + 1, CONSYS_DUMP_BUF_SIZE);
+		else
+			pr_notice("[%s] debug_buf len is not enough\n", __func__);
+	}
+	pr_info("%s\n", g_debug_buf_ptr);
+}
 
 int consys_reg_init(struct platform_device *pdev)
 {
@@ -219,6 +260,16 @@ int consys_is_consys_reg(unsigned int addr)
 int consys_is_bus_hang(void)
 {
 	int ret = 0;
+	int is_clock_fail;
+
+	if (g_debug_info_ptr == NULL) {
+		pr_notice("[%s] debug_info is NULL\n", __func__);
+		return -1;
+	}
+
+	consys_print_power_debug_dbg_level_0_mt6985_debug_gen(
+		CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY, g_debug_info_ptr);
+	consys_print_log("[CONN_POWER_A]", g_debug_info_ptr);
 
 	ret = consys_check_ap2conn_infra_on();
 	if (ret) {
@@ -226,13 +277,62 @@ int consys_is_bus_hang(void)
 		return ret;
 	}
 
-	ret = consys_check_ap2conn_infra_off_clock();
-	if (ret)
+	consys_print_power_debug_dbg_level_1_mt6985_debug_gen(
+		CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON, g_debug_info_ptr);
+	consys_print_log("[CONN_POWER_B]", g_debug_info_ptr);
+	consys_print_bus_debug_dbg_level_1_mt6985_debug_gen(
+		CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON, g_debug_info_ptr);
+	consys_print_log("[CONN_BUS_B]", g_debug_info_ptr);
+
+	is_clock_fail = consys_check_ap2conn_infra_off_clock();
+	if (is_clock_fail)
 		pr_info("[%s] ap2conn_infra_off clock fail", __func__);
 
 	ret = consys_check_ap2conn_infra_off_irq();
 	if (ret)
 		pr_notice("[%s] ap2conn_infra_off timeout irq fail", __func__);
 
+	if (!is_clock_fail) {
+		consys_print_power_debug_dbg_level_2_mt6985_debug_gen(
+			CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF, g_debug_info_ptr);
+		consys_print_log("[CONN_POWER_C]", g_debug_info_ptr);
+
+		consys_print_bus_debug_dbg_level_2_mt6985_debug_gen(
+			CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF, g_debug_info_ptr);
+		consys_print_log("[CONN_BUS_C]", g_debug_info_ptr);
+
+		consys_print_bus_slpprot_debug_dbg_level_2_mt6985_debug_gen(
+			CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF, g_debug_info_ptr);
+		consys_print_log("[slpprot_c]", g_debug_info_ptr);
+	}
+
 	return ret;
+}
+
+void consys_debug_init_mt6985(void)
+{
+	g_debug_info_ptr = &static_debug_info;
+	if (g_debug_info_ptr == NULL) {
+		pr_notice("[%s] debug_info malloc failed\n", __func__);
+		return;
+	}
+
+	g_debug_buf_ptr = static_debug_buf;
+	if (g_debug_buf_ptr == NULL) {
+		pr_notice("[%s] debug_buf malloc failed\n", __func__);
+		return;
+	}
+
+	consys_debug_init_mt6985_debug_gen();
+}
+
+void consys_debug_deinit_mt6985(void)
+{
+	if (g_debug_info_ptr != NULL)
+		g_debug_info_ptr = NULL;
+
+	if (g_debug_buf_ptr != NULL)
+		g_debug_buf_ptr = NULL;
+
+	consys_debug_deinit_mt6985_debug_gen();
 }
