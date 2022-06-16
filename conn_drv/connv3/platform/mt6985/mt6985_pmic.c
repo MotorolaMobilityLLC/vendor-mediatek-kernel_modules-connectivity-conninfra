@@ -63,21 +63,25 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6985,
 };
 
-/* skip PMIC FaultB interrupt, due to irq# conflict with pwm driver */
-/*
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
+	/* Do nothing before whole chip reset ready */
+	pr_err("%s, Get PMIC FaultB interrupt\n", __func__);
+	return IRQ_HANDLED;
+
 	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
 			g_dev_cb->connv3_pmic_event_notifier(0, 1);
 
 	return IRQ_HANDLED;
 }
-*/
 
+unsigned int g_pmic_excep_irq_num = 0;
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
 {
 	struct pinctrl_state *pinctrl_init;
+	struct pinctrl_state *pinctrl_faultb_init;
 	int ret = 0;
+	unsigned int irq_num = 0;
 
 	g_dev_cb = dev_cb;
 
@@ -88,7 +92,7 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 	}
 
 	pinctrl_init = pinctrl_lookup_state(
-			g_pinctrl_ptr, "connsys_pin_pmic_en_default");
+			g_pinctrl_ptr, "connsys-pin-pmic-en-default");
 	if (!IS_ERR(pinctrl_init)) {
 		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_init);
 		if (ret) {
@@ -96,14 +100,12 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 			return -1;
 		}
 	} else {
-		pr_err("[%s] fail to get \"connsys_pin_pmic_en_default\"",  __func__);
+		pr_err("[%s] fail to get \"connsys-pin-pmic-en-default\"",  __func__);
 		return -1;
 	}
 
-	/* skip PMIC FaultB interrupt, due to irq# conflict with pwm driver */
-	/*
 	pinctrl_faultb_init = pinctrl_lookup_state(
-			g_pinctrl_ptr, "connsys_pin_pmic_faultb_default");
+			g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
 	if (!IS_ERR(pinctrl_faultb_init)) {
 		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_faultb_init);
 		if (ret) {
@@ -111,26 +113,22 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 			return -1;
 		}
 	} else {
-		pr_err("[%s] fail to get \"connsys_pin_pmic_faultb_default\"",  __func__);
+		pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-default\"",  __func__);
 		return -1;
 	}
 
 	irq_num = irq_of_parse_and_map(pdev->dev.of_node, 0);
 	pr_info("%s[%d], irqNum of CONNSYS = %d", __func__, __LINE__, irq_num);
 
-	ret = request_irq(irq_num, pmic_fault_handler, IRQF_TRIGGER_HIGH | IRQF_ONESHOT,
-				  "MT6376_FAULT", NULL);
+	ret = devm_request_threaded_irq(&pdev->dev, irq_num, NULL,
+				pmic_fault_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
+				"MT6376_FAULT", platform_get_drvdata(pdev));
 	if (ret) {
 		pr_err("%s[%d], request irq fail with irq_num=%d\n", __func__, __LINE__, irq_num);
 		return ret;
 	}
-
-	ret = enable_irq_wake(irq_num);
-	if (ret) {
-		pr_err("%s[%d], enable_irq_wake %s (%u) failed! ret(%d)", "MT6376_FAULT", irq_num, ret);
-		return ret;
-	}
-	*/
+	g_pmic_excep_irq_num = irq_num;
+	disable_irq(g_pmic_excep_irq_num);
 
 	return 0;
 }
@@ -138,13 +136,26 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 {
 	struct pinctrl_state *pinctrl_set;
+	struct pinctrl_state *faultb_set;
 	static u64 turn_off_time;
 	u64 duration;
 	int ret = 0;
 
 	if (enable) {
+		faultb_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-faultb-enable");
+		if (!IS_ERR(faultb_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
+			if (ret)
+				pr_err("[%s] faultb on fail, %d", __func__, ret);
+			else
+				pr_info("[%s] faultb on, expect GPIO#231 output-high", __func__);
+		} else {
+			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-enable\"",  __func__);
+		}
+
 		pinctrl_set = pinctrl_lookup_state(
-				g_pinctrl_ptr, "connsys_pin_pmic_en_set");
+				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
 		if (!IS_ERR(pinctrl_set)) {
 			duration = jiffies_to_msecs(jiffies - turn_off_time);
 			if (duration < 20)
@@ -153,22 +164,38 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
 			else
-				pr_info("[%s] pinctrl_select_state, expect GPIO#223 output-high", __func__);
+				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-high", __func__);
 		} else {
-			pr_err("[%s] fail to get \"connsys_pin_pmic_en_set\"",  __func__);
+			pr_err("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
 		}
+
+		enable_irq(g_pmic_excep_irq_num);
 	} else {
+		disable_irq(g_pmic_excep_irq_num);
+
+		faultb_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
+		if (!IS_ERR(faultb_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
+			if (ret)
+				pr_err("[%s] faultb off fail, %d", __func__, ret);
+			else
+				pr_info("[%s] faultb off, expect GPIO#231 output-low", __func__);
+		} else {
+			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-default\"",  __func__);
+		}
+
 		pinctrl_set = pinctrl_lookup_state(
-				g_pinctrl_ptr, "connsys_pin_pmic_en_clr");
+				g_pinctrl_ptr, "connsys-pin-pmic-en-clr");
 		if (!IS_ERR(pinctrl_set)) {
 			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
 			else
-				pr_info("[%s] pinctrl_select_state, expect GPIO#223 output-low", __func__);
+				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-low", __func__);
 			turn_off_time = jiffies;
 		} else {
-			pr_err("[%s] fail to get \"connsys_pin_pmic_en_clr\"",  __func__);
+			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
 	}
 
