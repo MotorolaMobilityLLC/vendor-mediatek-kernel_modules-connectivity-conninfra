@@ -299,6 +299,14 @@ int pmic_mng_raise_voltage(unsigned int drv_type, bool raise, bool onoff)
 	return ret;
 }
 
+bool pmic_mng_is_support_raise_voltage(void)
+{
+	if (consys_platform_pmic_ops &&
+		consys_platform_pmic_ops->consys_pmic_raise_voltage)
+		return true;
+	return false;
+}
+
 int pmic_mng_register_device(void)
 {
 #if COMMON_KERNEL_PMIC_SUPPORT
