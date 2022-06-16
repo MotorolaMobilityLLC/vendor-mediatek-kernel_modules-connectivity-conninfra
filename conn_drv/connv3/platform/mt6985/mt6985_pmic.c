@@ -265,7 +265,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 /* slave: PMIC, UDS enable status */
 #define PMIC_UDS_EN_STAT_BIT		(0x1U << 0)
 
-//#define PMIC_AEE_LOG_SIZE 1024
 #define PMIC_STAT_SIZE  21
 
 int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
@@ -369,26 +368,26 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 			uds_status, (i2c_last_dev == 0x0)?"PMIC":"BUCK", i2c_last_addr, i2c_last_wdata);
 
 		log_buf[0] = '\0';
-		log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "[MT6376] EXCEPTION: ");
+		log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "[MT6376] EXCEPTION: ");
 		if (pmic_stat) {
 			if (pmic_stat & PMIC_OTP_EVT)
-				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "OT ");
+				log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "OT ");
 			if (pmic_stat & PMIC_SYSOV_EVT)
-				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "OV ");
+				log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "OV ");
 			if (pmic_stat & PMIC_SYSUV_EVT)
-				log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "UV ");
+				log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "UV ");
 		}
 		if (buck_oc_stat)
-			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "BUCK_OC %02X ", buck_oc_stat);
+			log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "BUCK_OC %02X ", buck_oc_stat);
 
 		if (ldo_oc_stat)
-			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "LDO_OC %02X ", ldo_oc_stat);
+			log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "LDO_OC %02X ", ldo_oc_stat);
 
 		if (buck_pg_stat)
-			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "BUCK_PG %02X ", buck_pg_stat);
+			log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "BUCK_PG %02X ", buck_pg_stat);
 
 		if (ldo_pg_stat)
-			log_len += snprintf(log_buf + log_len, PMIC_STAT_SIZE - log_len, "LDO_PG %02X ", ldo_pg_stat);
+			log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "LDO_PG %02X ", ldo_pg_stat);
 
 		aee_kernel_exception("Connv3", "%s", log_buf);
 	}
