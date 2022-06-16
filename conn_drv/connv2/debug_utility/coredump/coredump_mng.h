@@ -50,6 +50,7 @@ typedef void __iomem*(*CONSYS_COREDUMP_REMAP)(int conn_type, unsigned int base, 
 typedef void (*CONSYS_COREDUMP_UNMAP)(void __iomem* vir_addr);
 typedef char*(*CONSYS_COREDUMP_GET_TAG_NAME)(int conn_type);
 typedef bool(*CONSYS_COREDUMP_IS_SUPPORTED)(unsigned int conn_type);
+typedef void(*CONSYS_COREDUMP_GET_EMI_DUMP_OFFSET)(unsigned int *start, unsigned int *end);
 
 struct consys_platform_coredump_ops {
 	CONSYS_COREDUMP_GET_PLATFORM_CONFIG consys_coredump_get_platform_config;
@@ -68,6 +69,7 @@ struct consys_platform_coredump_ops {
 	CONSYS_COREDUMP_UNMAP consys_coredump_unmap;
 	CONSYS_COREDUMP_GET_TAG_NAME consys_coredump_get_tag_name;
 	CONSYS_COREDUMP_IS_SUPPORTED consys_coredump_is_supported;
+	CONSYS_COREDUMP_GET_EMI_DUMP_OFFSET consys_coredump_get_emi_dump_offset;
 };
 
 /********************************************************************************
@@ -100,6 +102,7 @@ void __iomem* coredump_mng_remap(int conn_type, unsigned int base, unsigned int 
 void coredump_mng_unmap(void __iomem* vir_addr);
 char* coredump_mng_get_tag_name(int conn_type);
 bool coredump_mng_is_supported(unsigned int conn_type);
+void coredump_mng_get_emi_dump_offset(unsigned int *start, unsigned int *end);
 
 /*******************************************************************************
 *                              F U N C T I O N S

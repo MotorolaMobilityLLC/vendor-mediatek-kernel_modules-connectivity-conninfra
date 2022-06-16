@@ -66,6 +66,7 @@ struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6985 = {
 	.consys_coredump_unmap = consys_plt_coredump_unmap_mt6985,
 	.consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name_mt6985,
 	.consys_coredump_is_supported = consys_plt_coredump_is_supported_mt6985,
+	.consys_coredump_get_emi_dump_offset = consys_plt_coredump_get_emi_dump_offset_mt6985,
 };
 
 struct coredump_hw_config *consys_plt_coredump_get_platform_config_mt6985(int conn_type)
@@ -245,4 +246,12 @@ bool consys_plt_coredump_is_supported_mt6985(unsigned int drv)
 		ret = true;
 
 	return ret;
+}
+
+void consys_plt_coredump_get_emi_dump_offset_mt6985(unsigned int *start, unsigned int *end)
+{
+	if (start)
+		*start = 0x470000;
+	if (end)
+		*end = 0x690000;
 }
