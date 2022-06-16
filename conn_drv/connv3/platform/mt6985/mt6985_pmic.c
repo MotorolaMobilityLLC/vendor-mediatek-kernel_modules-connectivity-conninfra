@@ -282,7 +282,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	u32 data_size = 0;
 	char tmp[4];
 	char log_buf[TMP_LOG_SIZE];
-	int remain_size = TMP_LOG_SIZE;
+	int remain_size = TMP_LOG_SIZE - 1;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
