@@ -134,6 +134,7 @@ static atomic_t g_dump_mode = ATOMIC_INIT(DUMP_MODE_DAEMON);
 static const char* g_type_name[] = {
 	"Wi-Fi",
 	"BT",
+	"GPS"
 };
 
 /*******************************************************************************
@@ -234,7 +235,7 @@ static bool conndump_check_cr_readable(struct connsys_dump_ctx* ctx)
 {
 	int cb_ret = 0;
 
-	if (ctx->conn_type < 0 || ctx->conn_type > CONN_DEBUG_TYPE_BT) {
+	if (ctx->conn_type < 0 || ctx->conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_notice("%s conn_type %d is invalid\n", __func__, ctx->conn_type);
 		return false;
 	}
@@ -367,6 +368,7 @@ do { \
 	char* task_drv_name2[CONN_DEBUG_TYPE_END] = {
 		"Task_DrvWifi",
 		"Task_DrvBT",
+		"Task_DrvGPS",
 	};
 
 	if (!buf) {
@@ -1385,7 +1387,7 @@ int connsys_coredump_start(
 	unsigned int coredump_mode = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
-	if (ctx == NULL || ctx->conn_type < 0 || ctx->conn_type > CONN_DEBUG_TYPE_BT)
+	if (ctx == NULL || ctx->conn_type < 0 || ctx->conn_type >= CONN_DEBUG_TYPE_END)
 		return 0;
 
 	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);

@@ -16,10 +16,12 @@
 #include "consys_reg_util.h"
 #include "connsys_smc.h"
 
-#include "mt6985.h"
-#include "mt6985_pos.h"
-#include "mt6985_consys_reg.h"
-#include "mt6985_consys_reg_offset.h"
+#include "include/mt6985.h"
+#include "include/mt6985_pos.h"
+#include "include/mt6985_consys_reg.h"
+#include "include/mt6985_consys_reg_offset.h"
+#include "include/mt6985_connsyslog.h"
+
 #include "clock_mng.h"
 #include "coredump_mng.h"
 
@@ -76,8 +78,8 @@ const struct conninfra_plat_data mt6985_plat_data = {
 	.reg_ops = &g_dev_consys_reg_ops_mt6985,
 	.platform_emi_ops = &g_consys_platform_emi_ops_mt6985,
 	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6985,
-//	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6985,
-//	.connsyslog_config = &g_connsyslog_config_mt6985,
+	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6985,
+	.connsyslog_config = &g_connsyslog_config_mt6985,
 };
 
 

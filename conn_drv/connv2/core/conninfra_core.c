@@ -500,9 +500,10 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		cur_rst_state = atomic_read(&g_conninfra_ctx.rst_state);
 		pr_info("cur_rst state =[%d]", cur_rst_state);
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-			if ((cur_rst_state & (0x1 << i)) == 0) {
+			drv_inst = &g_conninfra_ctx.drv_inst[i];
+			if ((cur_rst_state & (0x1 << i)) == 0 &&
+			    (drv_inst->drv_status != DRV_STS_NONE)) {
 				pr_info("[chip_rst] [%s] pre-callback is not back", g_drv_thread_name[i]);
-				drv_inst = &g_conninfra_ctx.drv_inst[i];
 				osal_thread_show_stack(&drv_inst->msg_ctx.thread);
 			}
 		}
@@ -553,9 +554,10 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 			continue;
 		cur_rst_state = atomic_read(&g_conninfra_ctx.rst_state);
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-			if ((cur_rst_state & (0x1 << i)) == 0) {
+			drv_inst = &g_conninfra_ctx.drv_inst[i];
+			if ((cur_rst_state & (0x1 << i)) == 0 &&
+			    (drv_inst->drv_status != DRV_STS_NONE)) {
 				pr_info("[chip_rst] [%s] post-callback is not back", g_drv_thread_name[i]);
-				drv_inst = &g_conninfra_ctx.drv_inst[i];
 				osal_thread_show_stack(&drv_inst->msg_ctx.thread);
 			}
 		}
