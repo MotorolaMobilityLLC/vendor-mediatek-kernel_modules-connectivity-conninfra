@@ -309,6 +309,7 @@ int connsys_a_die_cfg_mt6895(void)
 	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6895();
 
 	sleep_mode = consys_get_sleep_mode_mt6895();
+	pr_info("[%s] sleep_mode=[%d]\n", __func__, sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(adie_id, sleep_mode);
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 	return 0;
@@ -412,6 +413,8 @@ void consys_sema_release_mt6895(unsigned int index)
 
 		log_sema_time[sema_count] = duration;
 		sema_count++;
+		/* delay for firmware to take semaphore */
+		udelay(2);
 	}
 
 	if (duration > SEMA_HOLD_TIME_THRESHOLD) {
@@ -549,7 +552,7 @@ int consys_spi_read_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr, 
 {
 	int ret = 0;
 
-	if (subsystem == SYS_SPI_FM)
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
 		return consys_spi_read_nolock_mt6895(subsystem, addr, data);
 
 	/* Get semaphore before read */
@@ -612,7 +615,7 @@ int consys_spi_write_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr,
 {
 	int ret = 0;
 
-	if (subsystem == SYS_SPI_FM)
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
 		return consys_spi_write_nolock_mt6895(subsystem, addr, data);
 
 	/* Get semaphore before read */
@@ -634,7 +637,7 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 	unsigned int new_val = 0;
 	bool change = false;
 
-	if (subsystem != SYS_SPI_FM) {
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS) {
 		/* Get semaphore before updating bits */
 		if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 			pr_notice("[SPI WRITE] Require semaphore fail\n");
@@ -645,7 +648,7 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 	ret = consys_spi_read_nolock_mt6895(subsystem, addr, &curr_val);
 
 	if (ret) {
-		if (subsystem != SYS_SPI_FM)
+		if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
 			consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_notice("[%s][%s] Get 0x%08x error, ret=%d",
@@ -661,7 +664,7 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 		ret = consys_spi_write_nolock_mt6895(subsystem, addr, new_val);
 	}
 
-	if (subsystem != SYS_SPI_FM)
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
 		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;

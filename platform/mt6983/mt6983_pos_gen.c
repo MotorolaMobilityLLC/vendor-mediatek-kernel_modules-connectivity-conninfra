@@ -476,12 +476,41 @@ void consys_update_ap2conn_hclk_mt6983_gen(void)
 
 int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id)
 {
+	int r = 0;
 	int check = 0;
 	int retry = 0;
 	unsigned int consys_ver_id = 0;
 
+	if (CONN_DBG_CTL_CLOCK_DETECT_ADDR == 0) {
+		pr_notice("CONN_DBG_CTL_CLOCK_DETECT_ADDR is not defined\n");
+		return -1;
+	}
+
 	if (CONN_CFG_BASE == 0) {
 		pr_notice("CONN_CFG_BASE is not defined\n");
+		return -1;
+	}
+
+	/* Check conn_infra off bus clock */
+	/* - write 0x1 to 0x1802_3000[0], reset clock detect */
+	/* - 0x1802_3000[1]  conn_infra off bus clock (should be 1'b1 if clock exist) */
+	/* - 0x1802_3000[2]  osc clock (should be 1'b1 if clock exist) */
+	while (retry < 10) {
+		CONSYS_SET_BIT(CONN_DBG_CTL_CLOCK_DETECT_ADDR, (0x1 << 0));
+		udelay(20);
+		r = CONSYS_REG_READ_BIT(CONN_DBG_CTL_CLOCK_DETECT_ADDR, ((0x1 << 2) | (0x1 << 1)));
+		if (r == 0x6)
+			break;
+		udelay(1000);
+		retry ++;
+	}
+
+	if (retry > 5)
+		pr_info("%s detect clock, retry = %d", __func__, retry);
+
+	if (r != 0x6) {
+		pr_info("%s detect clock fail:0x1802_3000 = %x\n", __func__, r);
+		consys_print_debug_mt6983(1);
 		return -1;
 	}
 
@@ -509,6 +538,7 @@ int consys_polling_chipid_mt6983_gen(unsigned int *pconsys_ver_id)
 		#if defined(KERNEL_clk_buf_show_status_info)
 			KERNEL_clk_buf_show_status_info();  /* dump clock buffer */
 		#endif
+		consys_print_debug_mt6983(1);
 		return -1;
 	}
 
@@ -2741,9 +2771,23 @@ int connsys_low_power_setting_mt6983_gen(void)
 			CONSYS_GEN_CONN_VON_BUS_DCM_CTL_1_OFFSET_ADDR, (0x1 << 16));
 	#endif
 
+	/* bus access protector range setting */
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_WF_LIGHT_SECURITY_START_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_WF_LIGHT_SECURITY_END_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_BT_LIGHT_SECURITY_START_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_BT_LIGHT_SECURITY_END_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_M3_LIGHT_SECURITY_START_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
+		CONSYS_GEN_M3_LIGHT_SECURITY_END_ADDR_4_OFFSET_ADDR, 0x18050, 0xFFFFF);
+
 	/* bus access protector (to aviod BT/WF/GPS access each other) */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
-		CONSYS_GEN_LIGHT_SECURITY_CTRL_OFFSET_ADDR, 0xC63, 0xC63);
+		CONSYS_GEN_LIGHT_SECURITY_CTRL_OFFSET_ADDR, 0x4E73, 0x4E73);
 
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 1 set timing */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +

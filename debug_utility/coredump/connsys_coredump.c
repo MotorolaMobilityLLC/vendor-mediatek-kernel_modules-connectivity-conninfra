@@ -561,7 +561,7 @@ static void conndump_info_analysis(
 				}
 				pr_info("(pTemp2 - pTemp)=%ld\n", (pTemp2 - pTemp));
 				if ((remain_array_len) > (pTemp2 - pTemp)) {
-					pr_info("Copy %d\n", pTemp2 - pTemp);
+					pr_info("Copy %ld\n", pTemp2 - pTemp);
 					memcpy(
 						&ctx->info.assert_info[idx],
 						pTemp,
