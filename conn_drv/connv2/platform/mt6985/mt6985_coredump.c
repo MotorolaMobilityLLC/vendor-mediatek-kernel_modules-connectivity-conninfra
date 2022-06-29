@@ -38,7 +38,7 @@ static struct coredump_hw_config g_coredump_config[CONN_DEBUG_TYPE_END] = {
 	/* GPS config */
 	{
 		.name = "GPSSYS",
-		.start_offset = 0x560000,
+		.start_offset = 0x608000,
 		.size = 0x18000,
 		.seg1_cr = 0x18c16024,
 		.seg1_value_end = 0x18ffffff,
@@ -251,7 +251,7 @@ bool consys_plt_coredump_is_supported_mt6985(unsigned int drv)
 void consys_plt_coredump_get_emi_dump_offset_mt6985(unsigned int *start, unsigned int *end)
 {
 	if (start)
-		*start = 0x470000;
+		*start = 0x510000;
 	if (end)
-		*end = 0x690000;
+		*end = 0x770000;
 }
