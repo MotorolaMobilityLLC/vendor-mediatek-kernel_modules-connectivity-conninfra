@@ -158,6 +158,7 @@ static struct devapc_vio_callbacks conninfra_devapc_handle = {
 #endif
 /* mmap */
 int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma);
+ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 int connv2_dump_power_state(uint8_t *buf, u32 buf_sz);
 
 struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
@@ -176,6 +177,7 @@ struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
 	/* coredump */
 	.set_coredump_mode = connv2_set_coredump_mode,
 	.coredump_mmap = connv2_mmap,
+	.coredump_emi_read = connv2_coredump_emi_read,
 
 	/* dump power state */
 	.dump_power_state = connv2_dump_power_state,
@@ -402,7 +404,49 @@ int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma)
 	return -EINVAL;
 }
 
+ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
+	unsigned int start_offset = 0, end_offset = 0;
+	unsigned long size = 0;
+	phys_addr_t emi_dump_addr = addr_info->emi_ap_phy_addr;
+	void __iomem *emi_virt_addr_base;
+	char* tmp_buf = NULL;
+	unsigned long retval;
 
+	coredump_mng_get_emi_dump_offset(&start_offset, &end_offset);
+	size = end_offset - start_offset;
+
+	if (count != size || end_offset < start_offset) {
+		pr_notice("[%s][0x%x,0x%x] emi_size=0x%x but buf_size=0x%x",
+			start_offset, end_offset,
+			__func__, size, count);
+		return 0;
+	} else {
+		pr_info("[%s] base=[%x] [0x%x~0x%x] size=0x%x", __func__, emi_dump_addr, start_offset, end_offset, size);
+		emi_virt_addr_base = ioremap(emi_dump_addr + start_offset, size);
+		if (emi_virt_addr_base == NULL) {
+			pr_notice("[%s] remap fail, addr=0x%x size=%d",
+				__func__, emi_dump_addr + start_offset, size);
+			return 0;
+		}
+		tmp_buf = (char*)osal_malloc(sizeof(char) * size);
+		if (tmp_buf == NULL) {
+			pr_notice("[%s] allocate buf fail, size = %d",
+				__func__, size);
+			iounmap(emi_virt_addr_base);
+			return 0;
+		}
+		memcpy_fromio(tmp_buf, emi_virt_addr_base, size);
+		retval = copy_to_user(buf, tmp_buf, size);
+		if (retval != 0)
+			pr_notice("[%s] copy to user fail: %d", __func__, retval);
+		iounmap(emi_virt_addr_base);
+		osal_free(tmp_buf);
+
+		return (size - retval);
+	}
+}
 
 int connv2_dump_power_state(uint8_t *buf, u32 buf_sz)
 {

@@ -40,6 +40,9 @@ struct conn_adaptor_drv_gen_cb {
 	/* mmap for coredump */
 	int (*coredump_mmap)(struct file *pFile, struct vm_area_struct *pVma);
 
+	/* read emi for coredump */
+	ssize_t (*coredump_emi_read)(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
+
 	/* dbg read/write */
 	int (*dump_power_state)(uint8_t *buf, u32 buf_sz);
 
