@@ -67,6 +67,7 @@ static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op);
 static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op);
 static int opfunc_subdrv_pre_pwr_on(struct msg_op_data *op);
 static int opfunc_subdrv_pwr_on_notify(struct msg_op_data *op);
+static int opfunc_subdrv_efuse_on(struct msg_op_data *op);
 
 static void _connv3_core_update_rst_status(enum chip_rst_status status);
 
@@ -123,7 +124,8 @@ typedef enum {
 	CONNV3_SUBDRV_OPID_CAL_PWR_ON	= 3,
 	CONNV3_SUBDRV_OPID_CAL_DO_CAL	= 4,
 	CONNV3_SUBDRV_OPID_PRE_PWR_ON	= 5,
-	CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY	= 6,
+	CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY= 6,
+	CONNV3_SUBDRV_OPID_CAL_EFUSE_ON = 7,
 
 	CONNV3_SUBDRV_OPID_MAX
 } connv3_subdrv_op;
@@ -137,6 +139,7 @@ static const msg_opid_func connv3_subdrv_opfunc[] = {
 	[CONNV3_SUBDRV_OPID_CAL_DO_CAL] = opfunc_subdrv_cal_do_cal,
 	[CONNV3_SUBDRV_OPID_PRE_PWR_ON] = opfunc_subdrv_pre_pwr_on,
 	[CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY] = opfunc_subdrv_pwr_on_notify,
+	[CONNV3_SUBDRV_OPID_CAL_EFUSE_ON] = opfunc_subdrv_efuse_on,
 };
 
 enum pre_cal_type {
@@ -544,6 +547,69 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	return 0;
 }
 
+static int opfunc_pre_cal_efuse_on(void)
+{
+	int pre_cal_done_state = (0x1 << CONNV3_DRV_TYPE_WIFI);
+	int ret;
+	struct timespec64 efuse_begin, efuse_pre_on, efuse_on, efuse_end;
+	struct subsys_drv_inst *drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI];
+
+	/* efuse pwoer on */
+	atomic_set(&g_connv3_ctx.pre_cal_state, 0);
+	sema_init(&g_connv3_ctx.pre_cal_sema, 1);
+
+	osal_gettimeofday(&efuse_begin);
+	pr_info("[pre_cal][efuse_on] wifi on");
+	ret = msg_thread_send_1(&drv_inst->msg_ctx,
+		CONNV3_SUBDRV_OPID_CAL_PRE_ON, CONNV3_DRV_TYPE_WIFI);
+	if (ret)
+		pr_notice("wifi pre_on for efuse fail, ret=%d", ret);
+
+	while (atomic_read(&g_connv3_ctx.pre_cal_state) != pre_cal_done_state) {
+		ret = down_timeout(&g_connv3_ctx.pre_cal_sema, msecs_to_jiffies(CONNV3_PRE_CAL_TIMEOUT));
+		if (ret == 0)
+			continue;
+		pr_info("[pre_cal][efuse_on] wifi pre_on is not back");
+	}
+	pr_info("[pre_cal][efuse_on] wifi on done");
+	osal_gettimeofday(&efuse_pre_on);
+
+	ret = connv3_core_power_on(CONNV3_DRV_TYPE_WIFI);
+	if (ret) {
+		pr_notice("[%s] Connv3 power on fail, ret=(%d)", __func__, ret);
+		return ret;
+	}
+
+	atomic_set(&g_connv3_ctx.pre_cal_state, 0);
+	sema_init(&g_connv3_ctx.pre_cal_sema, 1);
+
+	ret = msg_thread_send_1(&drv_inst->msg_ctx,
+		CONNV3_SUBDRV_OPID_CAL_EFUSE_ON, CONNV3_DRV_TYPE_WIFI);
+	if (ret)
+		pr_notice("wifi efuse on fail, ret=%d", ret);
+	while (atomic_read(&g_connv3_ctx.pre_cal_state) != pre_cal_done_state) {
+		ret = down_timeout(&g_connv3_ctx.pre_cal_sema, msecs_to_jiffies(CONNV3_PRE_CAL_TIMEOUT));
+		if (ret == 0)
+			continue;
+		pr_info("[pre_cal][efuse_on] wifi efuse_on_cb is not back");
+	}
+	pr_info("[pre_cal][efuse_on] efuse_on_cb done");
+	osal_gettimeofday(&efuse_on);
+
+	ret = connv3_core_power_off(CONNV3_DRV_TYPE_WIFI);
+	if (ret)
+		pr_notice("[%s] Connv3 power off fail, ret(%d)", __func__, ret);
+	osal_gettimeofday(&efuse_end);
+
+	pr_info("[efuse_on] summary pre_on=[%lu] pwr=[%lu] pwr off=[%lu]",
+		timespec64_to_ms(&efuse_begin, &efuse_pre_on),
+		timespec64_to_ms(&efuse_pre_on, &efuse_on),
+		timespec64_to_ms(&efuse_on, &efuse_end));
+
+
+	return ret;
+}
+
 static int opfunc_pre_cal(struct msg_op_data *op)
 {
 #define CAL_DRV_COUNT 2
@@ -570,8 +636,9 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	}
 	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 
-	osal_gettimeofday(&begin);
+	opfunc_pre_cal_efuse_on();
 
+	osal_gettimeofday(&begin);
 	/* power on subsys */
 	atomic_set(&g_connv3_ctx.pre_cal_state, 0);
 	sema_init(&g_connv3_ctx.pre_cal_sema, 1);
@@ -944,6 +1011,27 @@ int opfunc_ext_32k_on(struct msg_op_data *op)
 	int ret;
 
 	ret = connv3_hw_ext_32k_onoff(true);
+	return 0;
+}
+
+static int opfunc_subdrv_efuse_on(struct msg_op_data *op) {
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+
+	pr_info("[%s] drv=[%s]", __func__, connv3_drv_thread_name[drv_type]);
+	if (drv_type >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid type=[%d]", __func__, drv_type);
+		return -EINVAL;
+	}
+
+	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+	if (drv_inst->ops_cb.pre_cal_cb.efuse_on_cb)
+		(drv_inst->ops_cb.pre_cal_cb.efuse_on_cb)();
+	atomic_add(0x1 << drv_type, &g_connv3_ctx.pre_cal_state);
+	up(&g_connv3_ctx.pre_cal_sema);
+
+	pr_info("[pre_cal][%s] [%s] DONE", __func__, connv3_drv_thread_name[drv_type]);
+
 	return 0;
 }
 

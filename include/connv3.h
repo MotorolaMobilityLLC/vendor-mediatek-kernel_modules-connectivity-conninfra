@@ -113,6 +113,8 @@ struct connv3_pre_calibration_cb {
 	int (*pre_on_cb)(void);
 	int (*pwr_on_cb)(void);
 	int (*do_cal_cb)(void);
+	/* for security efuse download */
+	int (*efuse_on_cb)(void);
 };
 
 struct connv3_power_on_cb {
