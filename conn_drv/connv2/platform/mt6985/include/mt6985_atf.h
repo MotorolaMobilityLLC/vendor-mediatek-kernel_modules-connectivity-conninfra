@@ -24,5 +24,8 @@ int consys_spi_update_bits_mt6985_atf(
 	enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 int consys_spi_clock_switch_mt6985_atf(enum connsys_spi_speed_type type);
 int consys_subsys_status_update_mt6985_atf(bool on, int radio);
+int consys_reset_power_state_mt6985_atf(void);
+int consys_power_state_dump_mt6985_atf(char *buf, unsigned int size);
+void consys_set_mcu_control_mt6985_atf(int type, bool onoff);
 
 #endif /* MT6985_ATF_H */

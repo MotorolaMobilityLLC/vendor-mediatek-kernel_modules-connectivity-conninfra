@@ -151,8 +151,10 @@ typedef enum {
 	CONNV3_OPID_PWR_ON_DONE			= 3,
 	CONNV3_OPID_PRE_CAL_PREPARE		= 4,
 	CONNV3_OPID_PRE_CAL_CHECK		= 5,
-	CONNV3_OPID_DUMP_POWER_STATE		= 6,
-	CONNV3_OPID_EXT_32K_ON			= 7,
+	CONNV3_OPID_RESET_POWER_STATE		= 6,
+	CONNV3_OPID_DUMP_POWER_STATE		= 7,
+	CONNV3_OPID_EXT_32K_ON			= 8,
+	CONNV3_OPID_RESET_AND_DUMP_POWER_STATE	= 9,
 	CONNV3_OPID_MAX
 } connv3_core_opid;
 
@@ -211,6 +213,14 @@ int connv3_core_is_rst_locking(void);
 
 int connv3_core_bus_dump(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+
+int connv3_core_reset_power_state(void);
+int connv3_core_dump_power_state(char *buf, unsigned int size);
+/* Call following two function in single op
+ * 1. Dump power state if has started.
+ * 2. Reset power state
+ */
+int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size);
 
 /*******************************************************************************
 *                              F U N C T I O N S

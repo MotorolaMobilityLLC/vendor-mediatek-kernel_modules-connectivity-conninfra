@@ -6,7 +6,8 @@
 #ifndef _PLATFORM_MT6985_CONSYS_REG_H_
 #define _PLATFORM_MT6985_CONSYS_REG_H_
 
-#include "consys_reg_base.h"
+#include "../../include/consys_reg_base.h"
+#include "../../include/consys_reg_mng.h"
 
 enum connsys_base_addr_index {
 	CONN_CFG_BASE_INDEX		= 0,	/* 0x1801_1000 conn_cfg*/
@@ -53,5 +54,20 @@ extern struct consys_base_addr g_conn_reg_mt6985;
 #define VLPSYS_SRCLKENRC_MT6985			g_conn_reg_mt6985.reg_base_addr[VLPSYS_SRCLKENRC].vir_addr
 #define CONN_REG_CONN_INFRA_DBG_CTL_ADDR_MT6985	g_conn_reg_mt6985.reg_base_addr[CONN_INFRA_DBG_CTL_BASE_INDEX].vir_addr
 
+int consys_reg_init_mt6985(struct platform_device *pdev);
+int consys_reg_deinit_mt6985(void);
+int consys_check_reg_readable_mt6985(void);
+int consys_check_reg_readable_for_coredump_mt6985(void);
+int consys_is_consys_reg_mt6985(unsigned int addr);
+int consys_is_bus_hang_mt6985(void);
+void consys_debug_init_mt6985(void);
+void consys_debug_deinit_mt6985(void);
+int consys_check_ap2conn_infra_on_mt6985(void);
+
+void consys_debug_init_mt6985_atf(void);
+void consys_debug_deinit_mt6985_atf(void);
+int consys_check_conninfra_off_domain_status_mt6985_atf(void);
+int consys_check_conninfra_irq_status_mt6985_atf(void);
+int consys_print_debug_mt6985_atf(enum conninfra_bus_error_type level);
 
 #endif /* _PLATFORM_MT6985_CONSYS_REG_H_ */

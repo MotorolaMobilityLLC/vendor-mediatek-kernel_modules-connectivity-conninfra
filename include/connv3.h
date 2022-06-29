@@ -122,14 +122,33 @@ struct connv3_power_on_cb {
 	int (*power_on_notify)(void);
 };
 
+/* Call from connv3 driver to subsys.
+ * - power_dump_start
+ * 	Return
+ * 		- 0 if it is ok to dump (FW is wakeup).
+ * 		    Driver has to make FW wakeup until power_dump_end is called.
+ * 		- Else if FW is sleep.
+ * - power_dump_end
+ * 	Power dump flow is completed. Driver could make FW to sleep now.
+ * - cr_cb: callback function to access CR through HIF
+ */
+struct connv3_power_dump_cb {
+	int (*power_dump_start)(void);
+	void *priv_data;
+	struct connv3_cr_cb cr_cb;
+	void (*power_dump_end)(void);
+};
+
+
 struct connv3_sub_drv_ops_cb {
 	/* power on */
 	struct connv3_power_on_cb pwr_on_cb;
 	/* chip reset */
 	struct connv3_whole_chip_rst_cb rst_cb;
-
 	/* calibration */
 	struct connv3_pre_calibration_cb pre_cal_cb;
+	/* power dump */
+	struct connv3_power_dump_cb pwr_dump_cb;
 };
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type drv_type, struct connv3_sub_drv_ops_cb *cb);

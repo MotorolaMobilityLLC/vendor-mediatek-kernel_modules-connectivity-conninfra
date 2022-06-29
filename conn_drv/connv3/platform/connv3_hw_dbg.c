@@ -112,3 +112,24 @@ int connv3_hw_dbg_dump_utility(
 	return func_ret;
 }
 
+
+int connv3_hw_dbg_power_info_dump(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	char *buf, unsigned int size)
+{
+	if (g_connv3_platform_dbg_ops &&
+		g_connv3_platform_dbg_ops->dbg_power_info_dump)
+	return g_connv3_platform_dbg_ops->dbg_power_info_dump(drv_type, cb, data, buf, size);
+
+	return 0;
+}
+
+int connv3_hw_dbg_power_info_reset(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+{
+	if (g_connv3_platform_dbg_ops &&
+		g_connv3_platform_dbg_ops->dbg_power_info_reset)
+		return g_connv3_platform_dbg_ops->dbg_power_info_reset(drv_type, cb, data);
+
+	return 0;
+}
