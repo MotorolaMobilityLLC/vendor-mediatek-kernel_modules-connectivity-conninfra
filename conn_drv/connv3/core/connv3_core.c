@@ -46,6 +46,13 @@
 ********************************************************************************
 */
 
+enum connv3_pwr_dump_type {
+	CONNV3_PWR_INFO_RESET = 0,
+	CONNV3_PWR_INFO_DUMP,
+	CONNV3_PWR_INFO_DUMP_AND_RESET,
+	CONNV3_PWR_INFO_MAX,
+};
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -59,6 +66,9 @@ static int opfunc_pre_cal(struct msg_op_data *op);
 static int opfunc_pre_cal_prepare(struct msg_op_data *op);
 static int opfunc_pre_cal_check(struct msg_op_data *op);
 static int opfunc_ext_32k_on(struct msg_op_data *op);
+static int opfunc_reset_power_state(struct msg_op_data *op);
+static int opfunc_dump_power_state(struct msg_op_data *op);
+static int opfunc_reset_and_dump_power_state(struct msg_op_data *op);
 
 static int opfunc_subdrv_pre_reset(struct msg_op_data *op);
 static int opfunc_subdrv_post_reset(struct msg_op_data *op);
@@ -90,9 +100,13 @@ static const msg_opid_func connv3_core_opfunc[] = {
 	[CONNV3_OPID_PWR_OFF] = opfunc_power_off,
 	[CONNV3_OPID_PWR_ON_DONE] = opfunc_power_on_done,
 	[CONNV3_OPID_EXT_32K_ON] = opfunc_ext_32k_on,
-
+	/* Pre-cal */
 	[CONNV3_OPID_PRE_CAL_PREPARE] = opfunc_pre_cal_prepare,
 	[CONNV3_OPID_PRE_CAL_CHECK] = opfunc_pre_cal_check,
+	/* Power dump */
+	[CONNV3_OPID_RESET_POWER_STATE] = opfunc_reset_power_state,
+	[CONNV3_OPID_DUMP_POWER_STATE] = opfunc_dump_power_state,
+	[CONNV3_OPID_RESET_AND_DUMP_POWER_STATE] = opfunc_reset_and_dump_power_state,
 };
 
 static const msg_opid_func connv3_core_cb_opfunc[] = {
@@ -792,7 +806,7 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 		ret = drv_inst->ops_cb.rst_cb.pre_whole_chip_rst(g_connv3_ctx.trg_drv,
 					g_connv3_ctx.trg_reason);
 		if (ret)
-			pr_err("[%s] fail [%d]", __func__, ret);
+			pr_notice("[%s] fail [%d]", __func__, ret);
 	}
 
 	atomic_add(0x1 << drv_type, &g_connv3_ctx.rst_state);
@@ -803,6 +817,104 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 	up(&g_connv3_ctx.rst_sema);
 	return 0;
 }
+
+static bool __power_dump(
+	enum connv3_drv_type drv_type,
+	struct subsys_drv_inst *drv_inst,
+	enum connv3_pwr_dump_type dump_type,
+	char *buf, unsigned int size)
+{
+	static bool is_start = false;
+	bool cb_ok = false;
+	struct connv3_power_dump_cb *pwr_dump_cb;
+	struct connv3_cr_cb *cr_cb;
+
+	pwr_dump_cb = &drv_inst->ops_cb.pwr_dump_cb;
+	/* Check dump function first */
+	if (pwr_dump_cb != NULL &&
+	    pwr_dump_cb->power_dump_start != NULL &&
+	    pwr_dump_cb->power_dump_end != NULL) {
+		cr_cb = &pwr_dump_cb->cr_cb;
+		if (cr_cb->read != NULL &&
+		    cr_cb->write != NULL &&
+		    cr_cb->write_mask != NULL)
+			cb_ok = true;
+	}
+
+	if (!cb_ok)
+		return false;
+
+	if (pwr_dump_cb->power_dump_start() == 0) {
+		if (dump_type == CONNV3_PWR_INFO_DUMP) {
+			if (is_start)
+				connv3_hw_power_info_dump(drv_type, cr_cb, pwr_dump_cb->priv_data, buf, size);
+			else
+				pr_notice("[CONNV3] power dump not start\n");
+		} else if (dump_type == CONNV3_PWR_INFO_RESET) {
+			connv3_hw_power_info_reset(drv_type, cr_cb, pwr_dump_cb->priv_data);
+			is_start = true;
+		} else if (dump_type == CONNV3_PWR_INFO_DUMP_AND_RESET) {
+			if (is_start)
+				connv3_hw_power_info_dump(drv_type, cr_cb, pwr_dump_cb->priv_data, buf, size);
+			else
+				pr_notice("[CONNV3] power dump not start\n");
+			connv3_hw_power_info_reset(drv_type, cr_cb, pwr_dump_cb->priv_data);
+			is_start = true;
+		}
+		pwr_dump_cb->power_dump_end();
+	} else
+		return false;
+
+	return true;
+}
+
+static int opfunc_power_dump_internal(enum connv3_pwr_dump_type dump_type, struct msg_op_data *op)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	int ret;
+	bool dump_done = false;
+	struct subsys_drv_inst *drv_inst;
+	char *buf = (char *)op->op_data[0];
+	unsigned int buf_sz = op->op_data[1];
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_notice("core_lock fail!!");
+		return ret;
+	}
+	/* Check BT first */
+	drv_inst = &ctx->drv_inst[CONNV3_DRV_TYPE_BT];
+	if (drv_inst->drv_status == DRV_STS_POWER_ON) {
+		/* if BT is on, check bt first */
+		dump_done = __power_dump(
+			CONNV3_DRV_TYPE_BT, drv_inst, dump_type, buf, buf_sz);
+	}
+
+	drv_inst = &ctx->drv_inst[CONNV3_DRV_TYPE_WIFI];
+	if (!dump_done && drv_inst->drv_status == DRV_STS_POWER_ON) {
+		dump_done = __power_dump(
+			CONNV3_DRV_TYPE_WIFI, drv_inst, dump_type, buf, buf_sz);
+	}
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+	return 0;
+}
+
+static int opfunc_reset_power_state(struct msg_op_data *op)
+{
+	return opfunc_power_dump_internal(CONNV3_PWR_INFO_RESET, op);
+}
+
+static int opfunc_dump_power_state(struct msg_op_data *op)
+{
+	return opfunc_power_dump_internal(CONNV3_PWR_INFO_DUMP, op);
+}
+
+static int opfunc_reset_and_dump_power_state(struct msg_op_data *op)
+{
+	return opfunc_power_dump_internal(CONNV3_PWR_INFO_DUMP_AND_RESET, op);
+}
+
 
 static int opfunc_subdrv_post_reset(struct msg_op_data *op)
 {
@@ -1376,6 +1488,61 @@ static void connv3_core_pre_cal_work_handler(struct work_struct *work)
 	/* if fail, do we need re-try? */
 	ret = connv3_core_pre_cal_start();
 	pr_info("[%s] [pre_cal][ret=%d] -----------", __func__, ret);
+}
+
+int connv3_core_reset_power_state(void)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send_wait(
+		&ctx->msg_ctx, CONNV3_OPID_RESET_POWER_STATE, 0);
+	if (ret) {
+		pr_notice("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+
+	return 0;
+}
+
+int connv3_core_dump_power_state(char *buf, unsigned int size)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	if (buf && size > 0)
+		ret = msg_thread_send_wait_2(
+			&ctx->msg_ctx, CONNV3_OPID_DUMP_POWER_STATE,
+			0, (size_t)buf, size);
+	else
+		ret = msg_thread_send_wait(
+			&ctx->msg_ctx, CONNV3_OPID_DUMP_POWER_STATE, 0);
+	if (ret) {
+		pr_notice("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+
+	return 0;
+}
+
+int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	if (buf && size > 0)
+		ret = msg_thread_send_wait_2(
+			&ctx->msg_ctx, CONNV3_OPID_RESET_AND_DUMP_POWER_STATE,
+			0, (size_t)buf, size);
+	else
+		ret = msg_thread_send_wait(
+			&ctx->msg_ctx, CONNV3_OPID_RESET_AND_DUMP_POWER_STATE, 0);
+	if (ret) {
+		pr_notice("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+
+	return 0;
 }
 
 static void connv3_core_wake_lock_get(void)

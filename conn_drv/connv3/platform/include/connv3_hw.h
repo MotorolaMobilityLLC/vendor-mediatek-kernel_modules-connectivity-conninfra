@@ -84,6 +84,13 @@ unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
 
 int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+/* power dump */
+int connv3_hw_power_info_dump(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data,
+	char *buf, unsigned int size);
+int connv3_hw_power_info_reset(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
