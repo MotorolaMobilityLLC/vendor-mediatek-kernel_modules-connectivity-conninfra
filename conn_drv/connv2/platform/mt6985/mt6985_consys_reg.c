@@ -20,16 +20,6 @@
 #include "include/mt6985_pos.h"
 #include "include/mt6985_pos_gen.h"
 
-static int consys_reg_init(struct platform_device *pdev);
-static int consys_reg_deinit(void);
-static int consys_check_reg_readable(void);
-static int consys_check_reg_readable_for_coredump(void);
-static int consys_is_consys_reg(unsigned int addr);
-static int consys_is_bus_hang(void);
-
-static void consys_debug_init_mt6985(void);
-static void consys_debug_deinit_mt6985(void);
-
 struct consys_base_addr g_conn_reg_mt6985;
 
 #define CONSYS_DUMP_BUF_SIZE 800
@@ -37,17 +27,6 @@ static struct conn_debug_info_mt6985 static_debug_info;
 static struct conn_debug_info_mt6985 *g_debug_info_ptr;
 static char static_debug_buf[CONSYS_DUMP_BUF_SIZE];
 static char *g_debug_buf_ptr;
-
-struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6985 = {
-	.consys_reg_mng_init = consys_reg_init,
-	.consys_reg_mng_deinit = consys_reg_deinit,
-	.consys_reg_mng_check_reable = consys_check_reg_readable,
-	.consys_reg_mng_check_reable_for_coredump = consys_check_reg_readable_for_coredump,
-	.consys_reg_mng_is_bus_hang = consys_is_bus_hang,
-	.consys_reg_mng_is_consys_reg = consys_is_consys_reg,
-	.consys_reg_mng_debug_init = consys_debug_init_mt6985,
-	.consys_reg_mng_debug_deinit = consys_debug_deinit_mt6985,
-};
 
 static const char* consys_base_addr_index_to_str[CONSYS_BASE_ADDR_MAX] = {
 	"conn_cfg",
@@ -98,7 +77,7 @@ static void consys_print_log(const char *title, struct conn_debug_info_mt6985 *i
 	pr_info("%s\n", g_debug_buf_ptr);
 }
 
-int consys_reg_init(struct platform_device *pdev)
+int consys_reg_init_mt6985(struct platform_device *pdev)
 {
 	int ret = -1;
 	struct device_node *node = NULL;
@@ -137,7 +116,7 @@ int consys_reg_init(struct platform_device *pdev)
 	return 0;
 }
 
-static int consys_reg_deinit(void)
+int consys_reg_deinit_mt6985(void)
 {
 	int i = 0;
 
@@ -154,7 +133,7 @@ static int consys_reg_deinit(void)
 	return 0;
 }
 
-int consys_check_ap2conn_infra_on(void)
+int consys_check_ap2conn_infra_on_mt6985(void)
 {
 	unsigned int tx, rx;
 	/* Check ap2conn slpprot
@@ -231,9 +210,9 @@ int consys_check_ap2conn_infra_off_irq(void)
 	return (ret == 0) ? 0 : CONNINFRA_INFRA_BUS_HANG_IRQ;
 }
 
-int consys_check_reg_readable(void)
+int consys_check_reg_readable_mt6985(void)
 {
-	if (consys_check_ap2conn_infra_on())
+	if (consys_check_ap2conn_infra_on_mt6985())
 		return 0;
 	if (consys_check_ap2conn_infra_off_clock())
 		return 0;
@@ -243,21 +222,21 @@ int consys_check_reg_readable(void)
 }
 
 
-int consys_check_reg_readable_for_coredump(void)
+int consys_check_reg_readable_for_coredump_mt6985(void)
 {
-	if (consys_check_ap2conn_infra_on())
+	if (consys_check_ap2conn_infra_on_mt6985())
 		return 0;
 	return 1;
 }
 
-int consys_is_consys_reg(unsigned int addr)
+int consys_is_consys_reg_mt6985(unsigned int addr)
 {
 	if (addr >= 0x18000000 && addr < 0x19000000)
 		return 1;
 	return 0;
 }
 
-int consys_is_bus_hang(void)
+int consys_is_bus_hang_mt6985(void)
 {
 	int ret = 0;
 	int is_clock_fail;
@@ -271,7 +250,7 @@ int consys_is_bus_hang(void)
 		CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY, g_debug_info_ptr);
 	consys_print_log("[CONN_POWER_A]", g_debug_info_ptr);
 
-	ret = consys_check_ap2conn_infra_on();
+	ret = consys_check_ap2conn_infra_on_mt6985();
 	if (ret) {
 		pr_notice("[%s] ap2conn_infra_on fail", __func__);
 		return ret;

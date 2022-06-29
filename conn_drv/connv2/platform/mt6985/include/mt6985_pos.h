@@ -21,7 +21,6 @@ int connsys_spi_master_cfg_mt6985(unsigned int next_status);
 int consys_conninfra_wakeup_mt6985(void);
 int consys_conninfra_sleep_mt6985(void);
 int connsys_subsys_pll_initial_mt6985(void);
-void consys_set_if_pinmux_mt6985(unsigned int enable);
 int connsys_low_power_setting_mt6985(unsigned int, unsigned int);
 int consys_subsys_status_update_mt6985(bool on, int radio);
 

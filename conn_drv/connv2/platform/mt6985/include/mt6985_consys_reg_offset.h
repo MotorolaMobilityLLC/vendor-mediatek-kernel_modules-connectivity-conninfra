@@ -119,6 +119,7 @@
 
 #define CONN_INFRA_SYSRAM_SW_CR_RADIO_STATUS	(CONN_INFRA_SYSRAM_SW_CR_BASE + 0x034) // 0034
 #define CONN_INFRA_SYSRAM_SW_CR_BUILD_MODE	(CONN_INFRA_SYSRAM_SW_CR_BASE + 0x038) // 0038
+#define CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL	 (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x040)
 
 /**********************************************************************
  * conn_afe_ctl

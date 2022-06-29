@@ -49,55 +49,6 @@ bool consys_is_rc_mode_enable_mt6985(void)
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 }
 
-void consys_set_if_pinmux_mt6985(unsigned int enable)
-{
-#ifndef CFG_CONNINFRA_ON_CTP
-	struct pinctrl_state *tcxo_pinctrl_set;
-	struct pinctrl_state *tcxo_pinctrl_clr;
-	int ret = -1;
-#endif
-	int clock_type = consys_co_clock_type_mt6985();
-
-	if (enable) {
-		/* if(TCXO mode)
-		 * 	Set GPIO135 pinmux for TCXO mode (Aux3)(CONN_TCXOENA_REQ)
-		 */
-
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
-	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6985_gen(1, 1);
-	#else
-			if (!IS_ERR(g_conninfra_pinctrl_ptr)) {
-				tcxo_pinctrl_set = pinctrl_lookup_state(g_conninfra_pinctrl_ptr, "conninfra_tcxo_set");
-				if (!IS_ERR(tcxo_pinctrl_set)) {
-					ret = pinctrl_select_state(g_conninfra_pinctrl_ptr, tcxo_pinctrl_set);
-					if (ret)
-						pr_err("[%s] set TCXO mode error: %d\n", __func__, ret);
-				}
-			}
-	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
-		}
-	} else {
-		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
-			clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO) {
-	#if defined(CFG_CONNINFRA_ON_CTP)
-			consys_set_gpio_tcxo_mode_mt6985_gen(1, 0);
-	#else
-			if (!IS_ERR(g_conninfra_pinctrl_ptr)) {
-				tcxo_pinctrl_clr = pinctrl_lookup_state(g_conninfra_pinctrl_ptr, "conninfra_tcxo_clr");
-				if (!IS_ERR(tcxo_pinctrl_clr)) {
-					ret = pinctrl_select_state(g_conninfra_pinctrl_ptr, tcxo_pinctrl_clr);
-					if (ret)
-						pr_err("[%s] clear TCXO mode error: %d\n", __func__, ret);
-				}
-			}
-	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
-		}
-	}
-}
-
-
 int consys_conninfra_on_power_ctrl_mt6985(unsigned int enable)
 {
 	int ret = 0;

@@ -10,6 +10,7 @@
 #include "include/mt6985_atf.h"
 #include "include/mt6985_consys_reg_offset.h"
 #include "include/mt6985_pos.h"
+#include "include/mt6985_soc.h"
 
 int consys_init_atf_data_mt6985_atf(void)
 {
@@ -122,4 +123,79 @@ int consys_subsys_status_update_mt6985_atf(bool on, int radio)
 	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_SUBSYS_STATUS_UPDATE_OPID,
 			     on, radio, 0, 0, 0, 0, ret);
 	return ret;
+}
+
+int consys_reset_power_state_mt6985_atf(void)
+{
+	int ret = 0;
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_RESET_POWER_STATE_OPID, 0, 0, 0, 0, 0, 0, ret);
+	return ret;
+}
+
+/*
+ * This is to get sleep count related information from ATF.
+ * But it cannot get string from ATF.
+ * Separate into several SMC call
+ * Getting all data as integer value and then combine it into string.
+ */
+#define POWER_STATE_DUMP_DATA_SIZE	25
+int consys_power_state_dump_mt6985_atf(char *buf, unsigned int size)
+{
+	int	i, op_id;
+	struct arm_smccc_res res;
+	unsigned long power_state_dump_data[POWER_STATE_DUMP_DATA_SIZE];
+	int ret;
+
+	for (op_id = SMC_CONNSYS_POWER_STATE_DUMP_START_OPID, i = 0;
+	     op_id < SMC_CONNSYS_POWER_STATE_DUMP_END_OPID;
+	     op_id++, i++) {
+		arm_smccc_smc(MTK_SIP_KERNEL_CONNSYS_CONTROL, op_id,
+			      0, 0, 0, 0, 0, 0, &res);
+		ret = res.a0;
+		if (ret) {
+			pr_notice("[%s][%d], Get power state dump fail at opid=%d\n",
+			       __func__, __LINE__, op_id);
+			return -1;
+		}
+		power_state_dump_data[0 + 3 * i] = res.a1;
+		power_state_dump_data[1 + 3 * i] = res.a2;
+		power_state_dump_data[2 + 3 * i] = res.a3;
+	}
+	if (op_id == SMC_CONNSYS_POWER_STATE_DUMP_END_OPID) {
+		arm_smccc_smc(MTK_SIP_KERNEL_CONNSYS_CONTROL, op_id,
+			      0, 0, 0, 0, 0, 0, &res);
+		ret = res.a0;
+		if (ret) {
+			pr_notice("[%s][%d], Get power state dump fail\n", __func__, __LINE__);
+			return -1;
+		}
+		power_state_dump_data[0 + 3 * i] = res.a1;
+	}
+
+	if (buf == NULL || size <= 0)
+		return ret;
+
+	if(snprintf(buf, size,"[consys_power_state][round:%llu]"
+		"conninfra:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;"
+		"[total]conninfra:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
+		power_state_dump_data[0],
+		power_state_dump_data[1],
+		power_state_dump_data[2],
+		power_state_dump_data[3],
+		power_state_dump_data[10],
+		power_state_dump_data[11],
+		power_state_dump_data[12],
+		power_state_dump_data[13],
+		power_state_dump_data[14],
+		power_state_dump_data[15],
+		power_state_dump_data[22],
+		power_state_dump_data[23],
+		power_state_dump_data[24]) > 0)
+		pr_info("%s", buf);
+	return ret;
+}
+
+void consys_set_mcu_control_mt6985_atf(int type, bool onoff)
+{
+	CONNSYS_SMC_CALL_VOID(SMC_CONNSYS_SET_MCU_CONTROL_OPID, 0, 0, 0, 0, 0, 0);
 }

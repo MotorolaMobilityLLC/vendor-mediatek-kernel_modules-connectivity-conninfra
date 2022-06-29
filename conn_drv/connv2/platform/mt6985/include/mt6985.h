@@ -3,10 +3,9 @@
  * Copyright (c) 2022 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_MT6985_H_
-#define _PLATFORM_MT6985_H_
+#ifndef MT6985_H
+#define MT6985_H
 
-#define PLATFORM_SOC_CHIP_MT6985	0x6985
 #define CONN_HW_VER_MT6985		0x02050300
 #define CONNSYS_A_DIE_ID_MT6985		0x6686
 
@@ -27,8 +26,11 @@ enum conn_semaphore_type
 };
 
 int consys_platform_spm_conn_ctrl_mt6985(unsigned int enable);
-int consys_co_clock_type_mt6985(void);
 unsigned int consys_get_adie_chipid_mt6985(void);
+unsigned int consys_get_hw_ver_mt6985(void);
+int consys_enable_power_dump_mt6985(void);
+int consys_reset_power_state_mt6985(void);
+int consys_power_state_dump_mt6985(char *buf, unsigned int size);
+void consys_set_mcu_control_mt6985(int type, bool onoff);
 
-
-#endif /* _PLATFORM_MT6985_H_ */
+#endif /* MT6985_H */
