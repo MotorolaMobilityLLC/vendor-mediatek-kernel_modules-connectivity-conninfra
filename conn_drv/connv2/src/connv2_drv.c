@@ -358,7 +358,11 @@ int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma)
 	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
 	unsigned int start_offset = 0, end_offset = 0;
 	unsigned long size = 0;
-	phys_addr_t emi_dump_addr = addr_info->emi_ap_phy_addr;
+	phys_addr_t emi_dump_addr = 0;
+
+	if (addr_info == NULL)
+		return -EINVAL;
+	emi_dump_addr = addr_info->emi_ap_phy_addr;
 
 	coredump_mng_get_emi_dump_offset(&start_offset, &end_offset);
 	size = end_offset - start_offset;
@@ -386,8 +390,6 @@ int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma)
 			return -EAGAIN;
 		return 0;
 	} else if (bufId == 1) {
-		if (addr_info == NULL)
-			return -EINVAL;
 		if (addr_info->md_emi_size == 0 ||
 		    pVma->vm_end - pVma->vm_start > addr_info->md_emi_size)
 			return -EINVAL;
@@ -409,18 +411,27 @@ ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t cou
 	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
 	unsigned int start_offset = 0, end_offset = 0;
 	unsigned long size = 0;
-	phys_addr_t emi_dump_addr = addr_info->emi_ap_phy_addr;
+	unsigned int mcif_emi_size = 0;
+	phys_addr_t emi_dump_addr = 0;
+	phys_addr_t mcif_emi_dump_addr = 0;
 	void __iomem *emi_virt_addr_base;
+	void __iomem *mcif_emi_virt_addr_base;
 	char* tmp_buf = NULL;
 	unsigned long retval;
+
+	if (addr_info == NULL)
+		return -EINVAL;
+	mcif_emi_size = addr_info->md_emi_size;
+	emi_dump_addr = addr_info->emi_ap_phy_addr;
+	mcif_emi_dump_addr = addr_info->md_emi_phy_addr;
 
 	coredump_mng_get_emi_dump_offset(&start_offset, &end_offset);
 	size = end_offset - start_offset;
 
-	if (count != size || end_offset < start_offset) {
-		pr_notice("[%s][0x%x,0x%x] emi_size=0x%x but buf_size=0x%x",
-			start_offset, end_offset,
-			__func__, size, count);
+	if (count != (size + mcif_emi_size) || end_offset < start_offset) {
+		pr_notice("[%s][0x%x,0x%x] connsys emi_size=0x%x, mcif emi size=0x%x but buf_size=0x%x",
+			__func__, start_offset, end_offset,
+			size, mcif_emi_size, count);
 		return 0;
 	} else {
 		pr_info("[%s] base=[%x] [0x%x~0x%x] size=0x%x", __func__, emi_dump_addr, start_offset, end_offset, size);
@@ -444,7 +455,32 @@ ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t cou
 		iounmap(emi_virt_addr_base);
 		osal_free(tmp_buf);
 
-		return (size - retval);
+		if (mcif_emi_size == 0)
+			return (size - retval);
+
+		pr_info("[%s] base=[%x] [0x%x~0x%x] size=0x%x", __func__, mcif_emi_dump_addr, 0, mcif_emi_size, mcif_emi_size);
+		mcif_emi_virt_addr_base = ioremap(mcif_emi_dump_addr, mcif_emi_size);
+		if (mcif_emi_virt_addr_base == NULL) {
+			pr_notice("[%s] remap fail, addr=0x%x size=%d",
+				__func__, mcif_emi_dump_addr, mcif_emi_size);
+			return size;
+		}
+		tmp_buf = (char*)osal_malloc(sizeof(char) * mcif_emi_size);
+		if (tmp_buf == NULL) {
+			pr_notice("[%s] allocate buf fail, size = %d",
+				__func__, mcif_emi_size);
+			iounmap(mcif_emi_virt_addr_base);
+			return size;
+		}
+		memcpy_fromio(tmp_buf, mcif_emi_virt_addr_base, mcif_emi_size);
+		retval = copy_to_user(buf + size, tmp_buf, mcif_emi_size);
+		if (retval != 0)
+			pr_notice("[%s] copy to user fail: %d", __func__, retval);
+		iounmap(mcif_emi_virt_addr_base);
+
+		osal_free(tmp_buf);
+
+		return (size + mcif_emi_size - retval);
 	}
 }
 
