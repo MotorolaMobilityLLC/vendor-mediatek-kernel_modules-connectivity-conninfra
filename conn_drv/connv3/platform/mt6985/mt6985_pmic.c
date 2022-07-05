@@ -63,8 +63,15 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6985,
 };
 
+unsigned int g_pmic_excep_irq_num = 0;
+unsigned int g_spurious_pmic_exception = 0;
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
+	if (g_spurious_pmic_exception) {
+		pr_info("%s, g_spurious_pmic_exception\n", __func__);
+		return IRQ_HANDLED;
+	}
+
 	/* Do nothing before whole chip reset ready */
 	pr_err("%s, Get PMIC FaultB interrupt\n", __func__);
 	return IRQ_HANDLED;
@@ -75,7 +82,6 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 	return IRQ_HANDLED;
 }
 
-unsigned int g_pmic_excep_irq_num = 0;
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
 {
 	struct pinctrl_state *pinctrl_init;
@@ -171,7 +177,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 
 		enable_irq(g_pmic_excep_irq_num);
 	} else {
-		disable_irq(g_pmic_excep_irq_num);
+		g_spurious_pmic_exception = 1;
 
 		faultb_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
@@ -197,6 +203,8 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
+		disable_irq(g_pmic_excep_irq_num);
+		g_spurious_pmic_exception = 0;
 	}
 
 	pr_info("[%s] enable=[%d]", __func__, enable);
