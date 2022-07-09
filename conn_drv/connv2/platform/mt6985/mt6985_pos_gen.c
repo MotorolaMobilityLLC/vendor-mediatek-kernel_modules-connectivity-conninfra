@@ -437,6 +437,7 @@ int consys_polling_chipid_mt6985_gen(unsigned int *pconsys_ver_id)
 	int check = 0;
 	int retry = 0;
 	unsigned int consys_ver_id = 0;
+	unsigned int bus_status;
 
 	if (CONN_CFG_BASE == 0) {
 		pr_notice("CONN_CFG_BASE is not defined\n");
@@ -447,6 +448,9 @@ int consys_polling_chipid_mt6985_gen(unsigned int *pconsys_ver_id)
 	/* (polling "10 times" for specific project code and each polling interval is "1ms") */
 	retry = 11;
 	while (retry-- > 0) {
+		bus_status = consys_is_bus_hang_mt6985();
+		pr_info("[%s] bus status=%d\n", __func__, bus_status);
+
 		consys_ver_id = CONSYS_REG_READ(
 			CONN_CFG_BASE +
 			CONSYS_GEN_IP_VERSION_OFFSET_ADDR);
@@ -834,6 +838,19 @@ int connsys_low_power_setting_mt6985_gen(void)
 			CONSYS_GEN_CONN_VON_BUS_DCM_CTL_1_OFFSET_ADDR, (0x1U << 16));
 	#endif
 
+	/* bus access protector: prevent gps mcu to access conninfra cmdbt
+	 * CONN_BUS_CR_M3_LIGHT_SECURITY_START_ADDR_2_R_M3_LIGHT_SECURITY_START_ADDR_2 = 0x18050
+	 * CONN_BUS_CR_M3_LIGHT_SECURITY_END_ADDR_2_R_M3_LIGHT_SECURITY_END_ADDR_2 = 0x18050
+	 * CONN_BUS_CR_LIGHT_SECURITY_CTRL_R_CONN_INFRA_GPS_PAIR2_EN = 1
+	 */
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_BUS_CR_M3_LIGHT_SECURITY_START_ADDR_2_R_M3_LIGHT_SECURITY_START_ADDR_2,
+		0x18050);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_BUS_CR_M3_LIGHT_SECURITY_END_ADDR_2_R_M3_LIGHT_SECURITY_END_ADDR_2,
+		0x18050);
+	CONSYS_REG_WRITE_HW_ENTRY(CONN_BUS_CR_LIGHT_SECURITY_CTRL_R_CONN_INFRA_GPS_PAIR2_EN, 1);
+
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 1 set timing */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
 		CONSYS_GEN_INFRA_BUS_1804B024_OFFSET, 0x110, 0x7F8);
@@ -947,6 +964,8 @@ int connsys_low_power_setting_mt6985_gen(void)
 int consys_conninfra_wakeup_mt6985_gen(void)
 {
 	int check = 0;
+	unsigned int cmdbt_done;
+	unsigned int dump1, dump2;
 
 	if (CONN_HOST_CSR_TOP_BASE == 0) {
 		pr_notice("CONN_HOST_CSR_TOP_BASE is not defined\n");
@@ -969,9 +988,37 @@ int consys_conninfra_wakeup_mt6985_gen(void)
 	if (consys_polling_chipid_mt6985_gen(NULL))
 		return -1;
 
+	check = consys_is_bus_hang_mt6985();
+	pr_info("[%s] bus status=%d\n", __func__, check);
+
 	/* check CONN_INFRA cmdbt restore done */
 	/* (polling "10 times" for specific project code and each polling interval is "0.5ms") */
+	/* 0x1800_1210[16]	1'b1	polling */
 	check = 0;
+	while (check < 10) {
+		cmdbt_done = CONSYS_REG_READ(
+				CONN_CFG_ON_BASE + CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR);
+		if ((cmdbt_done & (0x1U << 16)) != 0) {
+			pr_info("[%s] conninfra cmdbt restore done: 0x%08x", __func__, cmdbt_done);
+			return 0;
+		} else {
+			/* Debug dump
+			 * wirte 0x1806_015c[2:0] =3'b001
+			 * read 0x1806_0a04
+			 * read 0x1800_1344
+			 * read 0x1800_1210
+			 */
+			CONSYS_REG_WRITE_HW_ENTRY(
+				CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL,
+				0x1);
+			dump1 = CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR);
+			dump2 = CONSYS_REG_READ(CONN_CFG_ON_CONN_INFRA_CFG_RC_STATUS_ADDR);
+			pr_info("[%s][%d] check cmdbt restore done: [0x%08x][0x%08x][0x%08x]",
+				__func__, check, dump1, dump2, cmdbt_done);
+		}
+		check++;
+	}
+#if 0
 	CONSYS_REG_BIT_POLLING(CONN_CFG_ON_BASE +
 		CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR,
 		16, 1, 10, 500, check);
@@ -980,8 +1027,9 @@ int consys_conninfra_wakeup_mt6985_gen(void)
 			CONSYS_REG_READ(CONN_CFG_ON_BASE +
 				CONSYS_GEN_CONN_INFRA_CFG_PWRCTRL1_OFFSET_ADDR));
 	}
-
-	return 0;
+#endif
+	pr_notice("[%s] conninfra cmdbt restore FAIL: 0x%08x", __func__, cmdbt_done);
+	return -1;
 }
 
 int consys_conninfra_sleep_mt6985_gen(void)
