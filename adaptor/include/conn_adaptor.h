@@ -37,9 +37,6 @@ struct conn_adaptor_drv_gen_cb {
 	/* coredump */
 	void (*set_coredump_mode) (int mode);
 
-	/* mmap for coredump */
-	int (*coredump_mmap)(struct file *pFile, struct vm_area_struct *pVma);
-
 	/* read emi for coredump */
 	ssize_t (*coredump_emi_read)(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 

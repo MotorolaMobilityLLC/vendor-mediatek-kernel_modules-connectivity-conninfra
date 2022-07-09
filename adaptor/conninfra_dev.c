@@ -110,7 +110,6 @@ static long conn_adaptor_dev_unlocked_ioctl(
 static long conn_adaptor_dev_compat_ioctl(
 		struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
-static int conn_adaptor_mmap(struct file *pFile, struct vm_area_struct *pVma);
 
 static int conn_adaptor_dev_do_drv_init(void);
 
@@ -137,7 +136,6 @@ static const struct file_operations g_conn_adaptor_dev_fops = {
 #ifdef CONFIG_COMPAT
 	.compat_ioctl = conn_adaptor_dev_compat_ioctl,
 #endif
-	.mmap = conn_adaptor_mmap,
 };
 
 static int g_conn_adaptor_major = CONNINFRA_DEV_MAJOR;
@@ -282,16 +280,6 @@ static long conn_adaptor_dev_compat_ioctl(struct file *filp, unsigned int cmd, u
 	return ret;
 }
 #endif
-
-/* move to connv2 */
-static int conn_adaptor_mmap(struct file *pFile, struct vm_area_struct *pVma)
-{
-	if (atomic_read(&g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].enable) &&
-			g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].drv_gen_cb.coredump_mmap)
-			return (*(g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].drv_gen_cb.coredump_mmap))(pFile, pVma);
-
-	return -EINVAL;
-}
 
 static int conn_adaptor_dev_get_disp_blank_state(void)
 {
