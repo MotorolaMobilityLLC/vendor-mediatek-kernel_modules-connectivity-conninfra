@@ -97,15 +97,17 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret;
 
 	if ((curr_status & (~(0x1 << off_radio))) == 0) {
-		ret = connv3_pinctrl_mng_ext_32k_ctrl(false);
-		if (ret) {
-			pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
-			return ret;
-		}
-
 		ret = connv3_pinctrl_mng_remove();
 		if (ret) {
 			pr_err("[%s] remove pinctrl fail, ret = %d", __func__, ret);
+			return ret;
+		}
+	}
+
+	if (off_radio == CONNV3_DRV_TYPE_MAX) {
+		ret = connv3_pinctrl_mng_ext_32k_ctrl(false);
+		if (ret) {
+			pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
 			return ret;
 		}
 
