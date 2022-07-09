@@ -64,7 +64,7 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 };
 
 unsigned int g_pmic_excep_irq_num = 0;
-unsigned int g_spurious_pmic_exception = 0;
+unsigned int g_spurious_pmic_exception = 1;
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
 	if (g_spurious_pmic_exception) {
@@ -131,7 +131,6 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 		return ret;
 	}
 	g_pmic_excep_irq_num = irq_num;
-	disable_irq(g_pmic_excep_irq_num);
 
 	return 0;
 }
@@ -172,7 +171,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
 		}
 
-		enable_irq(g_pmic_excep_irq_num);
+		g_spurious_pmic_exception = 0;
 	} else {
 		g_spurious_pmic_exception = 1;
 
@@ -200,8 +199,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
-		disable_irq(g_pmic_excep_irq_num);
-		g_spurious_pmic_exception = 0;
 	}
 
 	pr_info("[%s] enable=[%d]", __func__, enable);
