@@ -370,6 +370,8 @@ do { \
 		"Task_DrvBT",
 		"Task_DrvGPS",
 	};
+	unsigned int emi_dump_start, emi_dump_end;
+	unsigned int emi_dump_size;
 
 	if (!buf) {
 		pr_err("Invalid input, buf = %p", buf);
@@ -481,6 +483,16 @@ do { \
 				ctx->dump_regions[idx].name);
 		}
 	}
+	/* Add emi region info */
+	coredump_mng_get_emi_dump_offset(&emi_dump_start, &emi_dump_end);
+	if (emi_dump_end > emi_dump_start)
+		emi_dump_size = emi_dump_end - emi_dump_start;
+	else
+		emi_dump_size = ctx->full_emi_size;
+	FORMAT_STRING(buf, len, max_len, sec_len,
+		"\t\t<%s>\n\t\t\t<offset>0x%x</offset>\n\t\t\t<size>0x%x</size>\n\t\t</%s>\n",
+		"EMI", 0xf0000000 + emi_dump_start, emi_dump_size, "EMI");
+
 	FORMAT_STRING(buf, len, max_len, sec_len, "\t</map>\n");
 	/* <map> section end @} */
 	FORMAT_STRING(buf, len, max_len, sec_len, "</main>\n");
