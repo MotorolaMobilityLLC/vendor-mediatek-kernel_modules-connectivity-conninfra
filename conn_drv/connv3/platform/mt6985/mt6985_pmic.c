@@ -72,10 +72,7 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 		return IRQ_HANDLED;
 	}
 
-	/* Do nothing before whole chip reset ready */
 	pr_err("%s, Get PMIC FaultB interrupt\n", __func__);
-	return IRQ_HANDLED;
-
 	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
 			g_dev_cb->connv3_pmic_event_notifier(0, 1);
 
