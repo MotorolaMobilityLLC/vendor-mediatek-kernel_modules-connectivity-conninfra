@@ -1513,6 +1513,15 @@ int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason)
 
 int connv3_core_pmic_event_cb(unsigned int id, unsigned int event)
 {
+	int r;
+
+	r = connv3_core_lock_rst();
+	if (r >= CHIP_RST_START) {
+		/* reset is ongoing */
+		pr_info("[%s] r=[%d] chip rst is ongoing\n", __func__, r);
+		return 1;
+	}
+
 	if (event == 1)
 		connv3_core_trg_chip_rst(CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
 
