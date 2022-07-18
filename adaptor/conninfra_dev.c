@@ -262,8 +262,13 @@ static long conn_adaptor_dev_unlocked_ioctl(struct file *filp, unsigned int cmd,
 		conn_adaptor_set_coredump_mode(arg);
 		break;
 	case CONNINFRA_IOCTL_GET_ADIE_CHIP_ID:
-		retval = conn_adaptor_detect_adie_chipid(arg);
-		pr_info("[%s] get adie [%s]=[0x%04x]", __func__, g_adp_drv_name[arg], retval);
+		if (arg >= CONN_ADAPTOR_DRV_SIZE)
+			pr_notice("[%s][CONNINFRA_IOCTL_GET_ADIE_CHIP_ID] invalid input: %lu",
+				__func__, arg);
+		else {
+			retval = conn_adaptor_detect_adie_chipid(arg);
+			pr_info("[%s] get adie [%s]=[0x%04x]", __func__, g_adp_drv_name[arg], retval);
+		}
 		break;
 	}
 
