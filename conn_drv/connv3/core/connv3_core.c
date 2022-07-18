@@ -24,6 +24,12 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+/* Control pmic and ext32k switch behavior when all radio off
+ * 1: pmic/ext32k would be turn off
+ * 0: pmic/ext32k keeps on
+ */
+#define CONNV3_PWR_OFF_MODE_PMIC_OFF			1
+
 #define CONNV3_EVENT_TIMEOUT				3000
 #define CONNV3_RESET_TIMEOUT				500
 #define CONNV3_PRE_CAL_TIMEOUT				500
@@ -452,6 +458,12 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 
 	connv3_core_wake_lock_get();
 	ret = connv3_hw_pwr_off(curr_status, drv_type);
+#if CONNV3_PWR_OFF_MODE_PMIC_OFF
+	if (try_power_off) {
+		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+		pr_info("Force PMIC off, ret = %d\n", ret);
+	}
+#endif
 	connv3_core_wake_lock_put();
 
 	if (ret) {
@@ -819,6 +831,12 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
 	if (ret)
 		pr_notice("[pre_cal] power off wifi fail, ret = %d", ret);
+
+#if CONNV3_PWR_OFF_MODE_PMIC_OFF
+	ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+	pr_info("Force PMIC off, ret = %d\n", ret);
+#endif
+
 	/* Check radio status */
 	ret = opfunc_get_current_status();
 	if (ret != 0)
