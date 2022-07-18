@@ -47,6 +47,7 @@
 
 static struct connv3_dev_cb* g_dev_cb;
 static struct pinctrl *g_pinctrl_ptr;
+static int g_first_dump = 1;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -174,6 +175,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		g_spurious_pmic_exception = 0;
 	} else {
 		g_spurious_pmic_exception = 1;
+		g_first_dump = 0;
 
 		faultb_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
@@ -369,7 +371,11 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	i2c_last_addr = register_dump[16];
 	i2c_last_wdata = register_dump[17];
 
-	if (pmic_stat
+	if (g_first_dump && pmic_stat == PMIC_SYSUV_EVT
+		&& buck_oc_stat == 0 && ldo_oc_stat == 0
+		&& buck_pg_stat == 0 && ldo_pg_stat == 0) {
+		pr_info("[%s] 1st time enable PMIC, UVLO happen before reboot.\n", __func__);
+	} else if (pmic_stat
 		|| buck_oc_stat || ldo_oc_stat
 		|| buck_pg_stat || ldo_pg_stat) {
 
@@ -417,6 +423,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 
 		if (ldo_pg_stat)
 			log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "LDO_PG %02X ", ldo_pg_stat);
+		log_len += snprintf(log_buf + log_len, TMP_LOG_SIZE - log_len, "\n");
 
 		aee_kernel_exception("Connv3", "%s", log_buf);
 	}
