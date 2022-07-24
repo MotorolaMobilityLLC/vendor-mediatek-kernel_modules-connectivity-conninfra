@@ -11,15 +11,16 @@
 #include <linux/jiffies.h>
 #include <linux/of_irq.h>
 #include <linux/of.h>
+#include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #include <linux/timer.h>
 #include <linux/vmalloc.h>
 #include <aee.h>
 
+#include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
-#include <linux/pinctrl/consumer.h>
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -48,6 +49,8 @@
 static struct connv3_dev_cb* g_dev_cb;
 static struct pinctrl *g_pinctrl_ptr;
 static int g_first_dump = 1;
+/* pmic for antenna */
+static struct regulator *g_reg_VANT18 = NULL;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -57,11 +60,13 @@ static int g_first_dump = 1;
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable);
 int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz);
+static int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 enable);
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6985,
 	.pmic_common_power_ctrl = connv3_plt_pmic_common_power_ctrl_mt6985,
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6985,
+	.pmic_antenna_power_ctrl = connv3_plt_pmic_antenna_power_ctrl_mt6985,
 };
 
 unsigned int g_pmic_excep_irq_num = 0;
@@ -88,6 +93,12 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 	unsigned int irq_num = 0;
 
 	g_dev_cb = dev_cb;
+
+	g_reg_VANT18 = devm_regulator_get(&pdev->dev, "mt6373_vant18");
+	if (IS_ERR(g_reg_VANT18)) {
+		pr_notice("Regulator_get VANT18 fail\n");
+		g_reg_VANT18 = NULL;
+	}
 
 	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
 	if (IS_ERR(g_pinctrl_ptr)) {
@@ -435,3 +446,48 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	return 0;
 }
 
+int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 enable)
+{
+	int ret = 0;
+	static bool is_on = false;
+
+	if (g_reg_VANT18 == NULL) {
+		pr_notice("[%s][%d] g_reg_VANT18 is NULL!\n", __func__, enable);
+		return -1;
+	}
+
+	if (!conn_adaptor_is_internal()) {
+		pr_notice("[%s] external project, ignore setting\n", __func__);
+		return 0;
+	}
+
+	/* Status check
+	 * because connv3_plt_pmic_antenna_power_ctrl_mt6985 off may be called multiple times,
+	 * we have to maintain the status to avoid incorrect status change.
+	 */
+	if (is_on && enable == 1) {
+		return 0;
+	}
+
+	if (!is_on && enable == 0) {
+		return 0;
+	}
+
+	if (enable) {
+		ret = regulator_enable(g_reg_VANT18); /* SW_EN = 1 */
+		if (ret)
+			pr_notice("[%s] enable VANT18 fail. ret=%d\n", __func__, ret);
+		else
+			pr_info("[%s] enable VANT18 successfully\n", __func__);
+		is_on = true;
+	} else {
+		ret = regulator_disable(g_reg_VANT18);
+		if (ret)
+			pr_notice("[%s] disable VANT18 fail. ret=%d\n", __func__, ret);
+		else
+			pr_info("[%s] disable VANT18 successfully\n", __func__);
+		is_on = false;
+	}
+
+	return ret;
+}

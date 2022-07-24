@@ -82,6 +82,17 @@ int connv3_pmic_mng_set_pmic_state(void)
 	return 0;
 }
 
+int connv3_pmic_mng_antenna_power_ctrl(unsigned int enable)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->pmic_antenna_power_ctrl)
+		ret = g_connv3_platform_pmic_ops->pmic_antenna_power_ctrl(enable);
+
+	return ret;
+}
+
 int connv3_pmic_mng_init(
 	struct platform_device *pdev,
 	struct connv3_dev_cb* dev_cb,

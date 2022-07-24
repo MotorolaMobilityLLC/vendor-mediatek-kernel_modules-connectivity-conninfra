@@ -97,6 +97,10 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret;
 
 	if ((curr_status & (~(0x1 << off_radio))) == 0) {
+		ret = connv3_pmic_mng_antenna_power_ctrl(0);
+		if (ret)
+			pr_notice("[%s] antenna power ctrl fail, ret = %d",
+				__func__, ret);
 		ret = connv3_pinctrl_mng_remove();
 		if (ret) {
 			pr_err("[%s] remove pinctrl fail, ret = %d", __func__, ret);
@@ -110,7 +114,6 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 			pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
 			return ret;
 		}
-
 		ret = connv3_pmic_mng_common_power_ctrl(0);
 		if (ret) {
 			pr_err("[%s] pmic off fail, ret = %d", __func__, ret);
@@ -133,6 +136,11 @@ int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		ret = connv3_pinctrl_mng_setup_pre();
 		if (ret)
 			return ret;
+
+		ret = connv3_pmic_mng_antenna_power_ctrl(1);
+		if (ret)
+			pr_notice("[%s] antenna power control fail, ret = %d",
+				__func__, ret);
 	}
 
 	return 0;
