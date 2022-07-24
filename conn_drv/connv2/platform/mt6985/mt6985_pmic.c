@@ -110,6 +110,7 @@ static int consys_plt_pmic_gps_power_ctl_legacy_mode(unsigned int enable)
 			MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR,   1 << 0, 1 << 0);
 		regmap_update_bits(g_regmap_mt6363,
 			MT6363_RG_LDO_VRFIO18_HW0_OP_CFG_ADDR,  1 << 0, 0 << 0);
+
 		/* 2. set PMIC VRFIO18 LDO SW_OP_EN =1, SW_EN = 1, SW_LP =0 */
 		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL); /* SW_LP = 0 */
 		ret = regulator_enable(reg_VRFIO18); /* SW_EN = 1 */
@@ -139,6 +140,9 @@ int consys_plt_pmic_gps_power_ctrl_mt6985(unsigned int enable)
 {
 	/* 1. set PMIC VRFIO18 LDO 1.8V */
 	regulator_set_voltage(reg_VRFIO18, 1800000, 1800000);
+	pr_info("[%s] set VRFIO18 to 1.8V\n", __func__);
+	/* VRFIO18 +0mV */
+	regmap_write(g_regmap_mt6363, MT6363_RG_VRFIO18_VOCAL_ADDR, 0);
 
 	if (consys_is_rc_mode_enable_mt6985())
 		return consys_plt_pmic_gps_power_ctl_rc_mode(enable);

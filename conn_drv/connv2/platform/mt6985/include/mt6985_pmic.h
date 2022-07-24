@@ -73,4 +73,6 @@
 #define MT6373_RG_LDO_VANT18_HW0_OP_CFG_ADDR        0x1c91
 #define MT6373_RG_LDO_VANT18_HW0_OP_MODE_ADDR       0x1c94
 
+#define MT6363_RG_VRFIO18_VOCAL_ADDR                0x1f2b
+
 #endif /* _PLATFORM_MT6985_PMIC_H_ */
