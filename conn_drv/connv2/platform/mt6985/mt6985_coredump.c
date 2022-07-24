@@ -235,6 +235,8 @@ void consys_plt_coredump_unmap_mt6985(void __iomem *vir_addr)
 
 char *consys_plt_coredump_get_tag_name_mt6985(int conn_type)
 {
+	if (conn_type != CONN_DEBUG_TYPE_GPS)
+		return "TAG_ERROR";
 	return g_coredump_config[conn_type].exception_tag_name;
 }
 
