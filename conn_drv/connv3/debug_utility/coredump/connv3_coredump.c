@@ -147,6 +147,7 @@ static int connv3_coredump_info_analysis(
 		"Task_DrvBT",
 		"Task_DrvWifi",
 		"Task_DrvMODEM",
+		"Task_DrvConnv3",
 	};
 	const char* parser_sub_string[] = {
 		"<ASSERT> ",

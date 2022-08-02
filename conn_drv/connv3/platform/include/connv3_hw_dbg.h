@@ -52,9 +52,9 @@ struct connv3_dbg_command {
 };
 
 struct connv3_dump_list {
-	char* tag;
+	char *tag;
 	unsigned int dump_size;
-	struct connv3_dbg_command *cmd_list;
+	const struct connv3_dbg_command *cmd_list;
 };
 
 /*******************************************************************************
@@ -77,7 +77,7 @@ int connv3_hw_dbg_init(struct platform_device *pdev,
 int connv3_hw_dbg_deinit(void);
 int connv3_hw_dbg_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
 int connv3_hw_dbg_dump_utility(
-	struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data);
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data);
 int connv3_hw_dbg_power_info_dump(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
 	char *buf, unsigned int size);
