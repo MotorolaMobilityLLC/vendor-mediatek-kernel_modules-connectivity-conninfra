@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Cxxxxxs_power_on_sequence_20220608.xlsx
+ * - Cxxxxxs_power_on_sequence_20220728.xlsx
  * - Cxxxxxs_conn_infra_sub_task_220328.xlsx
  * - conn_infra_cmdbt_instr_autogen_20220216.txt
  */
@@ -77,6 +77,7 @@ void connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6886_gen(void)
 void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6886_gen(
 		unsigned int hw_version,
 		unsigned int sleep_mode);
+void connsys_afe_sw_patch_mt6886_gen(void);
 int connsys_afe_wbg_cal_mt6886_gen(
 		unsigned int spi_semaphore_index,
 		unsigned int spi_semaphore_timeout_usec);
@@ -283,7 +284,9 @@ int consys_conninfra_sleep_mt6886_gen(void);
 #define CONSYS_GEN_RG_DIG_TOP_01_OFFSET_ADDR                                                0xC
 #define CONSYS_GEN_RG_WBG_BT0_TX_03_OFFSET_ADDR                                             0x58
 #define CONSYS_GEN_RG_WBG_WF0_TX_03_OFFSET_ADDR                                             0x78
+#define CONSYS_GEN_RG_WBG_WF0_TX_04_OFFSET_ADDR                                             0x7C
 #define CONSYS_GEN_RG_WBG_WF1_TX_03_OFFSET_ADDR                                             0x94
+#define CONSYS_GEN_RG_WBG_WF1_TX_04_OFFSET_ADDR                                             0x98
 #define CONSYS_GEN_RG_PLL_STB_TIME_OFFSET_ADDR                                              0xF4
 
 /****************************************************************************************************/

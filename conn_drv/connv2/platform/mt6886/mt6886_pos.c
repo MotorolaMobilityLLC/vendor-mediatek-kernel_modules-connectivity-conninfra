@@ -229,6 +229,7 @@ int connsys_a_die_cfg_mt6886(void)
 
 void connsys_afe_sw_patch_mt6886(void)
 {
+	connsys_afe_sw_patch_mt6886_gen();
 }
 
 int connsys_afe_wbg_cal_mt6886(void)

@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Cxxxxxs_power_on_sequence_20220608.xlsx
+ * - Cxxxxxs_power_on_sequence_20220728.xlsx
  * - Cxxxxxs_conn_infra_sub_task_220328.xlsx
  * - conn_infra_cmdbt_instr_autogen_20220216.txt
  */
@@ -1470,6 +1470,24 @@ void connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6886_gen(
 		else
 			connsys_wt_slp_top_power_saving_ctrl_adie6637_sleep_mode_3_mt6886_gen();
 	}
+}
+
+void connsys_afe_sw_patch_mt6886_gen(void)
+{
+	if (CONN_AFE_CTL_BASE == 0) {
+		pr_notice("CONN_AFE_CTL_BASE is not defined\n");
+		return;
+	}
+
+	/* default value update 1:   AFE WBG CR */
+	/* (if needed), */
+	/* note that this CR must be backuped and restored by command batch engine */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		CONSYS_CLR_BIT(CONN_AFE_CTL_BASE +
+			CONSYS_GEN_RG_WBG_WF0_TX_04_OFFSET_ADDR, (0x1U << 14));
+		CONSYS_CLR_BIT(CONN_AFE_CTL_BASE +
+			CONSYS_GEN_RG_WBG_WF1_TX_04_OFFSET_ADDR, (0x1U << 14));
+	#endif
 }
 
 int connsys_afe_wbg_cal_mt6886_gen(
