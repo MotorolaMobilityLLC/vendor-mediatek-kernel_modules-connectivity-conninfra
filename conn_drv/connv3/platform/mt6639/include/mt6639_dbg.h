@@ -248,6 +248,7 @@ const struct connv3_dbg_command mt6639_bus_extra[] = {
 	{false, 0x0, 0x0, 0x0, true, 0x7c01203c},
 	{false, 0x0, 0x0, 0x0, true, 0x7c012080},
 	{true, 0x7C023500, 0x0, 0xAEAA68, true, 0x7C023504},
+	{false, 0x0, 0x0, 0x0, true, 0x7c050D18},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_extra = {
