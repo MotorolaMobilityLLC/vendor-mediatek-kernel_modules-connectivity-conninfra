@@ -339,7 +339,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 
 	pr_info("[%s] data size=[%d]", __func__, data_size);
 
-	if (data_size < PMIC_STAT_SIZE) {
+	if (data_size != PMIC_STAT_SIZE) {
 		pr_notice("[MT6376] incorrect state size=[%d]", data_size);
 		return -1;
 	}
