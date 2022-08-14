@@ -119,9 +119,12 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
 		pr_notice("[%s] get conn_infra version fail, ret=[%d]", __func__, ret);
 		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
 	}
-	if (value != MT6639_CONN_INFRA_VERSION_ID) {
-		pr_notice("[%s] get conn_infra version fail, expect:0x%08x, get:0x%08x",
-			__func__, MT6639_CONN_INFRA_VERSION_ID, value);
+	if (value != MT6639_CONN_INFRA_VERSION_ID &&
+	    value != MT6639_CONN_INFRA_VERSION_ID_E2) {
+		pr_notice("[%s] get conn_infra version fail, expect:[0x%08x or 0x%08x], get:0x%08x",
+			__func__,
+			MT6639_CONN_INFRA_VERSION_ID, MT6639_CONN_INFRA_VERSION_ID_E2,
+			value);
 		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
 	}
 
@@ -132,7 +135,7 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
 		pr_notice("[%s] read irq status fail, ret=[%d]", __func__, ret);
 		return CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ;
 	}
-	if ((value & 0x7) != 0x0) {
+	if ((value & 0x3c2) != 0x0) {
 		pr_notice("[%s] bus time out irq detect, get:0x%08x", __func__, value);
 		return CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ;
 	}
@@ -152,6 +155,7 @@ int connv3_conninfra_bus_dump_mt6639(
 			return func_ret;
 	}
 
+	pr_info("[V3_BUS] version=%s\n", MT6639_CONN_INFRA_BUS_DUMP_VERSION);
 	/* Dump after conn_infra_on is ready
 	 * - Connsys power debug - dump list
 	 * - Conninfra bus debug - status result
