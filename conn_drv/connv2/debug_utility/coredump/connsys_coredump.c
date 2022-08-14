@@ -498,7 +498,7 @@ do { \
 	FORMAT_STRING(buf, len, max_len, sec_len, "</main>\n");
 
 format_finish:
-	pr_info("== Issue info ==\n", buf);
+	pr_info("== Issue info ==\n");
 	pr_info("%s\n", buf);
 	pr_info("===== END =====\n");
 	ret = conndump_netlink_send_to_native(ctx->conn_type, "INFO", buf, len);
@@ -1252,7 +1252,7 @@ static void conndump_coredump_end(void* handler)
 static int conndump_send_fake_coredump(struct connsys_dump_ctx* ctx)
 {
 	pr_info("Send fake coredump\n");
-	return conndump_netlink_send_to_native(ctx->conn_type, "[M]", "FORCE_COREDUMP", 13);
+	return conndump_netlink_send_to_native(ctx->conn_type, "[M]", "FORCE_COREDUMP", 14);
 }
 
 static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump)

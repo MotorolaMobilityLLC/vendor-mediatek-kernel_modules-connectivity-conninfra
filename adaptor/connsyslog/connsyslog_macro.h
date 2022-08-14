@@ -7,7 +7,7 @@
 #define _CONNSYSLOG_MACRO_H_
 
 #define DECLARE_FW_LOG_SYS(name) \
-int fw_log_##name##_mcu_init(struct connlog_to_user_cb *cb); \
+int fw_log_##name##_mcu_init(int conn_type, struct connlog_to_user_cb *cb); \
 void fw_log_##name##_mcu_deinit(void); \
 void fw_log_##name##_mcu_event_cb(void);
 
@@ -46,11 +46,11 @@ void fw_log_##name##_mcu_event_cb(void) \
 	wake_up_interruptible(&g_##name##_mcu_info.wq); \
 } \
 \
-int fw_log_##name##_mcu_init(struct connlog_to_user_cb *cb) \
+int fw_log_##name##_mcu_init(int conn_type, struct connlog_to_user_cb *cb) \
 { \
 	int ret = 0; \
 \
-	g_##name##_mcu_info.conn_type = CONN_ADAPTOR_DRV_WIFI; \
+	g_##name##_mcu_info.conn_type = conn_type; \
 	g_##name##_mcu_info.driver_name = "fw_log_" #name "mcu"; \
 	memcpy(&g_##name##_mcu_info.callback, cb, sizeof(*cb)); \
 	ret = fw_log_mcu_init(&g_##name##_mcu_info, &g_log_##name##_mcu_ops); \

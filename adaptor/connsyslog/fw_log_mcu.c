@@ -3,7 +3,6 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/module.h>
@@ -101,4 +100,3 @@ void fw_log_mcu_deinit(struct fw_log_mcu_info *info)
 		__func__, info->conn_type, MAJOR(info->dev_id));
 }
 EXPORT_SYMBOL(fw_log_mcu_deinit);
-#endif
