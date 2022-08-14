@@ -335,8 +335,8 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 		return -1;
 	}
 
+	/* 4 byte to describe number of PMIC registers */
 	memcpy(&data_size, buffer, 4);
-
 	pr_info("[%s] data size=[%d]", __func__, data_size);
 
 	if (data_size != PMIC_STAT_SIZE) {
@@ -345,7 +345,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	}
 
 	log_buf[0] = '\0';
-	for (i = 0; i < data_size; i++) {
+	for (i = 0; i < PMIC_DUMP_REGISTER_SIZE - 4; i++) {
 		if (snprintf(tmp, 4, "%02X ", buffer[i+4]) < 0)
 			pr_notice("[%s] snprintf error", __func__);
 
