@@ -191,22 +191,22 @@ int connv3_hw_ext_32k_onoff(bool on)
 	return connv3_pinctrl_mng_ext_32k_ctrl(on);
 }
 
-int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
-	return connv3_hw_dbg_bus_dump(drv_type, cb, priv_data);
+	return connv3_hw_dbg_bus_dump(drv_type, cb);
 }
 
 int connv3_hw_power_info_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size)
 {
-	return connv3_hw_dbg_power_info_dump(drv_type, cb, priv_data, buf, size);
+	return connv3_hw_dbg_power_info_dump(drv_type, cb, buf, size);
 }
 
 int connv3_hw_power_info_reset(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
-	return connv3_hw_dbg_power_info_reset(drv_type, cb, priv_data);
+	return connv3_hw_dbg_power_info_reset(drv_type, cb);
 }
 
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)

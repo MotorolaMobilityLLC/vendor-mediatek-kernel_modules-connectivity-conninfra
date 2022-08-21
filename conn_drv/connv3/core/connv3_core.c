@@ -1028,14 +1028,13 @@ static bool __power_dump(
 	static bool is_start = false;
 	bool cb_ok = false;
 	struct connv3_power_dump_cb *pwr_dump_cb;
-	struct connv3_cr_cb *cr_cb;
+	struct connv3_cr_cb *cr_cb = &drv_inst->ops_cb.cr_cb;
 
 	pwr_dump_cb = &drv_inst->ops_cb.pwr_dump_cb;
 	/* Check dump function first */
 	if (pwr_dump_cb != NULL &&
 	    pwr_dump_cb->power_dump_start != NULL &&
 	    pwr_dump_cb->power_dump_end != NULL) {
-		cr_cb = &pwr_dump_cb->cr_cb;
 		if (cr_cb->read != NULL &&
 		    cr_cb->write != NULL &&
 		    cr_cb->write_mask != NULL)
@@ -1045,24 +1044,24 @@ static bool __power_dump(
 	if (!cb_ok)
 		return false;
 
-	if (pwr_dump_cb->power_dump_start() == 0) {
+	if (pwr_dump_cb->power_dump_start(cr_cb->priv_data) == 0) {
 		if (dump_type == CONNV3_PWR_INFO_DUMP) {
 			if (is_start)
-				connv3_hw_power_info_dump(drv_type, cr_cb, pwr_dump_cb->priv_data, buf, size);
+				connv3_hw_power_info_dump(drv_type, cr_cb, buf, size);
 			else
 				pr_notice("[CONNV3] power dump not start\n");
 		} else if (dump_type == CONNV3_PWR_INFO_RESET) {
-			connv3_hw_power_info_reset(drv_type, cr_cb, pwr_dump_cb->priv_data);
+			connv3_hw_power_info_reset(drv_type, cr_cb);
 			is_start = true;
 		} else if (dump_type == CONNV3_PWR_INFO_DUMP_AND_RESET) {
 			if (is_start)
-				connv3_hw_power_info_dump(drv_type, cr_cb, pwr_dump_cb->priv_data, buf, size);
+				connv3_hw_power_info_dump(drv_type, cr_cb, buf, size);
 			else
 				pr_notice("[CONNV3] power dump not start\n");
-			connv3_hw_power_info_reset(drv_type, cr_cb, pwr_dump_cb->priv_data);
+			connv3_hw_power_info_reset(drv_type, cr_cb);
 			is_start = true;
 		}
-		pwr_dump_cb->power_dump_end();
+		pwr_dump_cb->power_dump_end(cr_cb->priv_data);
 	} else
 		return false;
 
@@ -1710,10 +1709,19 @@ int connv3_core_is_rst_locking(void)
 	return ret;
 }
 
-int connv3_core_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+int connv3_core_bus_dump(enum connv3_drv_type drv_type)
 {
 	int ret = 0;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
+	struct subsys_drv_inst *drv_inst = &ctx->drv_inst[drv_type];
+	struct connv3_cr_cb *cb = &drv_inst->ops_cb.cr_cb;
+
+	if (cb->read == NULL || cb->write == NULL || cb->write_mask == NULL) {
+		pr_notice("[%s] %s cr_cb is imcomplete:[%p][%p][%p]\n",
+			__func__, connv3_drv_name[drv_type],
+			cb->read, cb->write, cb->write_mask);
+		return -EINVAL;
+	}
 
 	ret = osal_lock_sleepable_lock(&ctx->core_lock);
 	if (ret) {
@@ -1723,7 +1731,7 @@ int connv3_core_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	}
 
 	if (ctx->core_status == DRV_STS_POWER_ON)
-		ret = connv3_hw_bus_dump(drv_type, cb, priv_data);
+		ret = connv3_hw_bus_dump(drv_type, cb);
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
 	return ret;
@@ -1791,6 +1799,174 @@ int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size)
 	}
 
 	return 0;
+}
+
+static int __check_hif_dump_cb(enum connv3_drv_type to_drv)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	struct subsys_drv_inst *drv_inst = &ctx->drv_inst[to_drv];
+	struct connv3_cr_cb *cb = &drv_inst->ops_cb.cr_cb;
+
+	if (cb->read == NULL || cb->write == NULL || cb->write_mask == NULL) {
+		pr_notice("[%s] %s cr_cb is imcomplete:[%p][%p][%p]\n",
+			__func__, connv3_drv_name[to_drv],
+			cb->read, cb->write, cb->write_mask);
+		return -EINVAL;
+	}
+
+	if (drv_inst->ops_cb.hif_dump_cb.hif_dump_start == NULL ||
+	    drv_inst->ops_cb.hif_dump_cb.hif_dump_end == NULL) {
+		pr_notice("[%s] %s hif_dump is  imcomplete:[%p][%p]\n",
+			__func__, connv3_drv_name[to_drv],
+			drv_inst->ops_cb.hif_dump_cb.hif_dump_start,
+			drv_inst->ops_cb.hif_dump_cb.hif_dump_end);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int connv3_core_hif_dbg_start(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv)
+{
+	int ret;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	struct subsys_drv_inst *drv_inst = &ctx->drv_inst[to_drv];
+	struct connv3_hif_dump_cb *cb = &drv_inst->ops_cb.hif_dump_cb;
+	struct connv3_cr_cb *cr_cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+
+	ret = __check_hif_dump_cb(to_drv);
+	if (ret)
+		return ret;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	pr_info("[%s] from %s to %s\n", __func__, connv3_drv_name[from_drv], connv3_drv_name[to_drv]);
+	ret = cb->hif_dump_start(from_drv, cr_cb->priv_data);
+	if (ret)
+		pr_notice("[%s] ret = %d", __func__, ret);
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
+}
+
+
+int connv3_core_hif_dbg_end(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv)
+{
+	int ret;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	struct subsys_drv_inst *drv_inst = &ctx->drv_inst[to_drv];
+	struct connv3_hif_dump_cb *cb = &drv_inst->ops_cb.hif_dump_cb;
+	struct connv3_cr_cb *cr_cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+
+	ret = __check_hif_dump_cb(to_drv);
+	if (ret)
+		return ret;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	pr_info("[%s] from %s to %s\n", __func__, connv3_drv_name[from_drv], connv3_drv_name[to_drv]);
+	ret = cb->hif_dump_end(from_drv, cr_cb->priv_data);
+	if (ret)
+		pr_notice("[%s] ret = %d", __func__, ret);
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
+}
+
+int connv3_core_hif_dbg_read(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int *value)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	int ret;
+	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+
+	ret = __check_hif_dump_cb(to_drv);
+	if (ret)
+		return ret;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	ret = cb->read(cb->priv_data, addr, value);
+	if (ret)
+		pr_notice("[%s] ret = %d", __func__, ret);
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
+}
+
+int connv3_core_hif_dbg_write(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int value)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	int ret;
+	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+
+	ret = __check_hif_dump_cb(to_drv);
+	if (ret)
+		return ret;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	ret = cb->write(cb->priv_data, addr, value);
+	if (ret)
+		pr_notice("[%s] ret = %d", __func__, ret);
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
+}
+
+int connv3_core_hif_dbg_write_mask(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int mask, unsigned int value)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+	int ret;
+	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+
+	ret = __check_hif_dump_cb(to_drv);
+	if (ret)
+		return ret;
+
+	ret = osal_lock_sleepable_lock(&ctx->core_lock);
+	if (ret) {
+		pr_err("[%s] get lock fail, ret = %d\n",
+			__func__, ret);
+		return -1;
+	}
+
+	ret = cb->write_mask(cb->priv_data, addr, mask, value);
+	if (ret)
+		pr_notice("[%s] ret = %d", __func__, ret);
+
+	osal_unlock_sleepable_lock(&ctx->core_lock);
+
+	return ret;
 }
 
 static void connv3_core_wake_lock_get(void)

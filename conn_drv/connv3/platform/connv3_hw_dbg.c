@@ -44,17 +44,17 @@ int connv3_hw_dbg_deinit(void)
 }
 
 int connv3_hw_dbg_bus_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	if (g_connv3_platform_dbg_ops &&
 		g_connv3_platform_dbg_ops->dbg_bus_dump)
-		return g_connv3_platform_dbg_ops->dbg_bus_dump(drv_type, cb, data);
+		return g_connv3_platform_dbg_ops->dbg_bus_dump(drv_type, cb);
 	return 0;
 }
 
 
 int connv3_hw_dbg_dump_utility(
-	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data)
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb)
 {
 #define LOG_TMP_BUF_SZ 32
 	int ret = 0, func_ret = 0;
@@ -64,6 +64,7 @@ int connv3_hw_dbg_dump_utility(
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	int dump_count = 0;
 	int dump_line = 0;
+	void *data = cb->priv_data;
 
 	memset(g_dump_buf, '\0', sizeof(char)*LOG_DUMP_BUF_SZ);
 	for (i = 0; i < dump_list->dump_size; i++) {
@@ -114,22 +115,22 @@ int connv3_hw_dbg_dump_utility(
 
 
 int connv3_hw_dbg_power_info_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size)
 {
 	if (g_connv3_platform_dbg_ops &&
 		g_connv3_platform_dbg_ops->dbg_power_info_dump)
-	return g_connv3_platform_dbg_ops->dbg_power_info_dump(drv_type, cb, data, buf, size);
+	return g_connv3_platform_dbg_ops->dbg_power_info_dump(drv_type, cb, buf, size);
 
 	return 0;
 }
 
 int connv3_hw_dbg_power_info_reset(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	if (g_connv3_platform_dbg_ops &&
 		g_connv3_platform_dbg_ops->dbg_power_info_reset)
-		return g_connv3_platform_dbg_ops->dbg_power_info_reset(drv_type, cb, data);
+		return g_connv3_platform_dbg_ops->dbg_power_info_reset(drv_type, cb);
 
 	return 0;
 }
