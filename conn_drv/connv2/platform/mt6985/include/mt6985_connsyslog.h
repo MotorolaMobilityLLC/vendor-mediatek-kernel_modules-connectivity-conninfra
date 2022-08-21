@@ -9,7 +9,7 @@
 #include "connsys_debug_utility.h"
 #include "connsyslog_hw_config.h"
 
-#define CONNLOG_EMI_OFFSET_GPS 0x5F0000
+#define CONNLOG_EMI_OFFSET_GPS 0x00490000
 
 #define CONNLOG_EMI_SIZE_GPS         (96*1024)
 #define CONNLOG_EMI_BLOCK_GPS        (64*1024)
