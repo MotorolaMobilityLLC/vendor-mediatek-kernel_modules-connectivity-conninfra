@@ -154,7 +154,7 @@ int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type)
 		return -EINVAL;
 	}
 
-	if (connv3_core_is_rst_locking()) {
+	if (connv3_core_is_rst_power_off_stage()) {
 		DUMP_LOG();
 		return CONNV3_ERR_RST_ONGOING;
 	}

@@ -209,7 +209,14 @@ int connv3_core_pre_cal_start(void);
 void connv3_core_pre_cal_blocking(void);
 #endif
 
+/* Check if L0 reset is ongoing.
+ */
 int connv3_core_is_rst_locking(void);
+/* Check if L0 reset is ongoing and in a stage that
+ * it may do power off in anytime.
+ * It is dangerous to access connsys chip.
+ */
+int connv3_core_is_rst_power_off_stage(void);
 
 int connv3_core_bus_dump(enum connv3_drv_type drv_type);
 

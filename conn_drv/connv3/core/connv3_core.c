@@ -1709,6 +1709,19 @@ int connv3_core_is_rst_locking(void)
 	return ret;
 }
 
+int connv3_core_is_rst_power_off_stage(void)
+{
+	unsigned long flag;
+	int ret = 0;
+
+	spin_lock_irqsave(&g_connv3_ctx.rst_lock, flag);
+
+	if (g_connv3_ctx.rst_status >= CHIP_RST_RESET)
+		ret = 1;
+	spin_unlock_irqrestore(&g_connv3_ctx.rst_lock, flag);
+	return ret;
+}
+
 int connv3_core_bus_dump(enum connv3_drv_type drv_type)
 {
 	int ret = 0;
