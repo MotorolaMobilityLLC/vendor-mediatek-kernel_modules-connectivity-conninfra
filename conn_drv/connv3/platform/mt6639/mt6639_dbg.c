@@ -47,29 +47,6 @@ unsigned long mt6639_power_state_dump_data[POWER_STATE_DUMP_DATA_SIZE];
 ********************************************************************************
 */
 
-static int connv3_bus_check_ap2conn_on(struct connv3_cr_cb *cb)
-{
-	unsigned int trx;
-	int ret;
-
-	ret = cb->read(data, MT6639_AP2CONN_INFRA_ON_SLP_PROT, &trx);
-	if (ret) {
-		pr_err("[%s] check tx/rx error, ret=[%d]", __func__, ret);
-		return false;
-	}
-
-	if ((trx & (0x1 << 6)) != 0) {
-		pr_info("[%s] ap2conn_infra on check tx fail, slp=[0x%08x]", __func__, trx);
-		return CONNV3_BUS_AP2CONN_TX_SLP_PROT_ERR;
-	}
-	if ((trx & (0x1 << 7)) != 0) {
-		pr_info("[%s] ap2conn_infra on check rx fail, slp=[0x%08x]", __func__, trx);
-		return CONNV3_BUS_AP2CONN_RX_SLP_PROT_ERR;
-	}
-
-	return 0;
-}
-
 static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb)
 {
 	unsigned int value;
@@ -136,7 +113,7 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb)
 		pr_notice("[%s] read irq status fail, ret=[%d]", __func__, ret);
 		return CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ;
 	}
-	if ((value & 0x3c2) != 0x0) {
+	if (value != 0x0) {
 		pr_notice("[%s] bus time out irq detect, get:0x%08x", __func__, value);
 		return CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ;
 	}
@@ -148,13 +125,6 @@ int connv3_conninfra_bus_dump_mt6639(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	int ret = 0, func_ret = 0;
-
-	/* AP2CONN_INFRA ON check */
-	if (drv_type == CONNV3_DRV_TYPE_WIFI) {
-		func_ret = connv3_bus_check_ap2conn_on(cb, data);
-		if (func_ret != 0)
-			return func_ret;
-	}
 
 	pr_info("[V3_BUS] version=%s\n", MT6639_CONN_INFRA_BUS_DUMP_VERSION);
 
