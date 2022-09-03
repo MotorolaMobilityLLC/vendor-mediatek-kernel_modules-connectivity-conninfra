@@ -241,7 +241,7 @@ static int v3_hif_dump_tc(int par1, int par2, int par3)
 #define TEST_ADDR	0x7C05B060
 #define TEST_WRITE_VALUE	0xffffffff
 	int ret, ret1, ret2;
-	unsigned int cr_read;
+	unsigned int cr_read = 0;
 
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI);
 	if (!ret) {
