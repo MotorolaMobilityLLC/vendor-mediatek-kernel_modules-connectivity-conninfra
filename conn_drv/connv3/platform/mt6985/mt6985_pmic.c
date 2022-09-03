@@ -152,8 +152,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 {
 	struct pinctrl_state *pinctrl_set;
 	struct pinctrl_state *faultb_set;
-	static u64 turn_off_time;
-	u64 duration;
 	int ret = 0;
 
 	if (enable) {
@@ -172,9 +170,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		pinctrl_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
 		if (!IS_ERR(pinctrl_set)) {
-			duration = jiffies_to_msecs(jiffies - turn_off_time);
-			if (duration < 20)
-				mdelay(20 - duration);
+			mdelay(30);
 			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
@@ -209,7 +205,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
 			else
 				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-low", __func__);
-			turn_off_time = jiffies;
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
