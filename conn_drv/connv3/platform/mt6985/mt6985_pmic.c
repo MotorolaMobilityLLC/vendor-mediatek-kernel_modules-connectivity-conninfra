@@ -155,18 +155,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 	int ret = 0;
 
 	if (enable) {
-		faultb_set = pinctrl_lookup_state(
-				g_pinctrl_ptr, "connsys-pin-pmic-faultb-enable");
-		if (!IS_ERR(faultb_set)) {
-			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
-			if (ret)
-				pr_err("[%s] faultb on fail, %d", __func__, ret);
-			else
-				pr_info("[%s] faultb on, expect GPIO#231 output-high", __func__);
-		} else {
-			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-enable\"",  __func__);
-		}
-
 		pinctrl_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
 		if (!IS_ERR(pinctrl_set)) {
@@ -178,6 +166,19 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-high", __func__);
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
+		}
+		mdelay(20);
+
+		faultb_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-faultb-enable");
+		if (!IS_ERR(faultb_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
+			if (ret)
+				pr_err("[%s] faultb on fail, %d", __func__, ret);
+			else
+				pr_info("[%s] faultb on, expect GPIO#231 output-high", __func__);
+		} else {
+			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-enable\"",  __func__);
 		}
 
 		g_spurious_pmic_exception = 0;
