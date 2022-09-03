@@ -1906,6 +1906,10 @@ int connv3_core_hif_dbg_read(
 	int ret;
 	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
 
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
+
 	ret = __check_hif_dump_cb(to_drv);
 	if (ret)
 		return ret;
@@ -1918,7 +1922,7 @@ int connv3_core_hif_dbg_read(
 	}
 
 	ret = cb->read(cb->priv_data, addr, value);
-	if (ret)
+	if (ret && __ratelimit(&_rs))
 		pr_notice("[%s] ret = %d", __func__, ret);
 
 	osal_unlock_sleepable_lock(&ctx->core_lock);
@@ -1933,6 +1937,9 @@ int connv3_core_hif_dbg_write(
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	int ret;
 	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 
 	ret = __check_hif_dump_cb(to_drv);
 	if (ret)
@@ -1946,7 +1953,7 @@ int connv3_core_hif_dbg_write(
 	}
 
 	ret = cb->write(cb->priv_data, addr, value);
-	if (ret)
+	if (ret && __ratelimit(&_rs))
 		pr_notice("[%s] ret = %d", __func__, ret);
 
 	osal_unlock_sleepable_lock(&ctx->core_lock);
@@ -1961,6 +1968,9 @@ int connv3_core_hif_dbg_write_mask(
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	int ret;
 	struct connv3_cr_cb *cb = &ctx->drv_inst[to_drv].ops_cb.cr_cb;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 
 	ret = __check_hif_dump_cb(to_drv);
 	if (ret)
@@ -1974,7 +1984,7 @@ int connv3_core_hif_dbg_write_mask(
 	}
 
 	ret = cb->write_mask(cb->priv_data, addr, mask, value);
-	if (ret)
+	if (ret && __ratelimit(&_rs))
 		pr_notice("[%s] ret = %d", __func__, ret);
 
 	osal_unlock_sleepable_lock(&ctx->core_lock);
