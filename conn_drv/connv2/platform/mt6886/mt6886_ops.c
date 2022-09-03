@@ -132,6 +132,8 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6886_atf = {
 	.consys_plt_spi_read = consys_spi_read_mt6886_atf,
 	.consys_plt_spi_write = consys_spi_write_mt6886_atf,
 	.consys_plt_spi_update_bits = consys_spi_update_bits_mt6886_atf,
+	.consys_plt_adie_top_ck_en_on = consys_adie_top_ck_en_on_mt6886_atf,
+	.consys_plt_adie_top_ck_en_off = consys_adie_top_ck_en_off_mt6886_atf,
 	.consys_plt_spi_clock_switch = consys_spi_clock_switch_mt6886_atf,
 	.consys_plt_subsys_status_update = consys_subsys_status_update_mt6886_atf,
 

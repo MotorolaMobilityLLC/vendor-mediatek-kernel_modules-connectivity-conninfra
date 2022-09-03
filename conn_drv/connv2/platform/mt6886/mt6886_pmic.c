@@ -688,6 +688,10 @@ static int consys_plt_pmic_event_notifier_mt6886(unsigned int id, unsigned int e
 
 	/* dump a-die cr */
 	dump_adie_cr(SYS_SPI_TOP, adie_top_cr_list, ATOP_DUMP_NUM, "A-die TOP");
+	consys_hw_adie_top_ck_en_on(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
+	consys_hw_spi_update_bits(SYS_SPI_TOP, 0x580, 0x00, 0x10);
+	consys_hw_adie_top_ck_en_off(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
+	dump_adie_cr(SYS_SPI_TOP, adie_top_cr_list, ATOP_DUMP_NUM, "A-die TOP");
 	dump_adie_cr(SYS_SPI_WF, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF0");
 	dump_adie_cr(SYS_SPI_WF1, adie_wf_cr_list, AWF_DUMP_NUM, "A-die WF1");
 

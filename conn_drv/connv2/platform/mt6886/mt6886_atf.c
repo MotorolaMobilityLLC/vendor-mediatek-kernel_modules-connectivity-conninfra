@@ -261,6 +261,20 @@ int consys_pre_cal_clean_data_mt6886_atf(void)
 	return ret;
 }
 
+int consys_adie_top_ck_en_on_mt6886_atf(enum consys_adie_ctl_type type)
+{
+	int ret = 0;
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_ADIE_CLK_ENABLE_OPID, 1, 0, 0, 0, 0, 0, ret);
+	return ret;
+}
+
+int consys_adie_top_ck_en_off_mt6886_atf(enum consys_adie_ctl_type type)
+{
+	int ret = 0;
+	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_ADIE_CLK_ENABLE_OPID, 0, 0, 0, 0, 0, 0, ret);
+	return ret;
+}
+
 unsigned int consys_emi_set_remapping_reg_mt6886_atf(
 	phys_addr_t con_emi_base_addr,
 	phys_addr_t md_shared_emi_base_addr,

@@ -30,5 +30,7 @@ int consys_power_state_dump_mt6886_atf(char *buf, unsigned int size);
 void consys_set_mcu_control_mt6886_atf(int type, bool onoff);
 int consys_pre_cal_backup_mt6886_atf(unsigned int offset, unsigned int size);
 int consys_pre_cal_clean_data_mt6886_atf(void);
+int consys_adie_top_ck_en_on_mt6886_atf(enum consys_adie_ctl_type type);
+int consys_adie_top_ck_en_off_mt6886_atf(enum consys_adie_ctl_type type);
 
 #endif /* MT6886_ATF_H */
