@@ -18,6 +18,7 @@
 #include <linux/vmalloc.h>
 #include <aee.h>
 
+#include "connv3.h"
 #include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
@@ -60,7 +61,7 @@ static struct regulator *g_reg_VANT18 = NULL;
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable);
 int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz);
-static int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 enable);
+static int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 radio, u32 enable);
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6985,
@@ -446,7 +447,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	return 0;
 }
 
-int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 enable)
+int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 radio, u32 enable)
 {
 	int ret = 0;
 	static bool is_on = false;
@@ -460,6 +461,9 @@ int connv3_plt_pmic_antenna_power_ctrl_mt6985(u32 enable)
 		pr_notice("[%s] external project, ignore setting\n", __func__);
 		return 0;
 	}
+
+	if (radio != CONNV3_DRV_TYPE_WIFI)
+		return 0;
 
 	/* Status check
 	 * because connv3_plt_pmic_antenna_power_ctrl_mt6985 off may be called multiple times,
