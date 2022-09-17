@@ -7,8 +7,10 @@
 
 #include <asm/atomic.h>
 #include <linux/delay.h>
+#include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
 #include <linux/jiffies.h>
+#include <linux/of_gpio.h>
 #include <linux/of_irq.h>
 #include <linux/of.h>
 #include <linux/pinctrl/consumer.h>
@@ -70,8 +72,11 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6985 = {
 	.pmic_antenna_power_ctrl = connv3_plt_pmic_antenna_power_ctrl_mt6985,
 };
 
+struct work_struct g_pmic_faultb_work;
 unsigned int g_pmic_excep_irq_num = 0;
 unsigned int g_spurious_pmic_exception = 1;
+unsigned int faultb_immidately = 0;
+int g_faultb_gpio = 0, g_pmic_en_gpio = 0;
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
 	if (g_spurious_pmic_exception) {
@@ -80,10 +85,27 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 	}
 
 	pr_err("%s, Get PMIC FaultB interrupt\n", __func__);
-	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
-			g_dev_cb->connv3_pmic_event_notifier(0, 1);
+	schedule_work(&g_pmic_faultb_work);
 
 	return IRQ_HANDLED;
+}
+
+static void check_faultb_status(struct work_struct *work)
+{
+	unsigned int faultb_level;
+
+	if (faultb_immidately == 0) {
+		mdelay(10);
+
+		faultb_level = gpio_get_value(g_faultb_gpio);
+		pr_info("%s, PMIC_EN=%d, faultb=%d\n",
+			__func__, gpio_get_value(g_pmic_en_gpio), faultb_level);
+		if (faultb_level == 1)
+			return;
+	}
+
+	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
+		g_dev_cb->connv3_pmic_event_notifier(0, 1);
 }
 
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
@@ -94,6 +116,10 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 	unsigned int irq_num = 0;
 
 	g_dev_cb = dev_cb;
+	g_faultb_gpio = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 0);
+	g_pmic_en_gpio = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 1);
+
+	INIT_WORK(&g_pmic_faultb_work, check_faultb_status);
 
 	g_reg_VANT18 = devm_regulator_get(&pdev->dev, "mt6373_vant18");
 	if (IS_ERR(g_reg_VANT18)) {
@@ -132,6 +158,12 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 		pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-default\"",  __func__);
 		return -1;
 	}
+
+	ret = of_property_read_u32(pdev->dev.of_node, "faultb-immediately", &faultb_immidately);
+	if(ret)
+		pr_info("%s[%d], there is no faultb-immediately node, ret=%d, faultb_immidately=%d\n", __func__, __LINE__, ret, faultb_immidately);
+	else
+		pr_info("%s[%d], faultb-immediately=%d\n", __func__, __LINE__, faultb_immidately);
 
 	irq_num = irq_of_parse_and_map(pdev->dev.of_node, 0);
 	pr_info("%s[%d], irqNum of CONNSYS = %d", __func__, __LINE__, irq_num);
