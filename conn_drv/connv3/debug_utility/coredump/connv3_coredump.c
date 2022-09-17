@@ -666,8 +666,16 @@ format_finish:
 int connv3_coredump_get_issue_info(void *handler, struct connv3_issue_info *issue_info, char *xml_str, unsigned int xml_str_size)
 {
 	struct connv3_dump_ctx *ctx = (struct connv3_dump_ctx*)handler;
+	enum connv3_coredump_state state;
+
 	if (issue_info == NULL || ctx == NULL)
 		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+
+	state = connv3_dump_get_dump_state(ctx);
+	if (state < CONNV3_COREDUMP_STATE_START) {
+		pr_notice("[%s] state(%d) wrong", __func__, state);
+		return CONNV3_COREDUMP_ERR_WRONG_STATUS;
+	}
 	memcpy(issue_info, &ctx->issue_info, sizeof(struct connv3_issue_info));
 	if (xml_str != NULL && xml_str_size > 0)
 		connv3_coredump_gen_issue_info_xml(ctx, xml_str, xml_str_size);
@@ -755,9 +763,16 @@ int connv3_coredump_end(void *handler, char *customized_string)
 {
 	struct connv3_dump_ctx *ctx = (struct connv3_dump_ctx*)handler;
 	struct timespec64 pre_end, end;
+	enum connv3_coredump_state state;
 
 	if (ctx == NULL)
 		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+
+	state = connv3_dump_get_dump_state(ctx);
+	if (state < CONNV3_COREDUMP_STATE_START) {
+		pr_notice("[%s] state(%d) wrong", __func__, state);
+		return CONNV3_COREDUMP_ERR_WRONG_STATUS;
+	}
 
 	osal_gettimeofday(&pre_end);
 	/* Send EMI dump or end command to native */
@@ -826,6 +841,7 @@ enum connv3_coredump_mode connv3_coredump_get_mode(void)
 
 void connv3_coredump_set_dump_mode(enum connv3_coredump_mode mode)
 {
+	pr_info("[%s] mode=%d\n", __func__, mode);
 	if (mode < CONNV3_DUMP_MODE_MAX)
 		atomic_set(&g_dump_mode, mode);
 }
