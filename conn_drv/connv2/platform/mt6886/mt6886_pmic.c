@@ -663,12 +663,16 @@ static void dump_adie_cr(enum sys_spi_subsystem subsystem, const unsigned int *a
 static int consys_plt_pmic_event_notifier_mt6886(unsigned int id, unsigned int event)
 {
 #define ATOP_DUMP_NUM 12
+#define ABT_DUMP_NUM 6
 #define AWF_DUMP_NUM 3
 	int ret;
 	const unsigned int adie_top_cr_list[ATOP_DUMP_NUM] = {
 		0x03C, 0x090, 0x094, 0x0A0,
 		0x0C8, 0x0FC, 0xA10, 0xB00,
 		0xAFC, 0x160, 0xC54, 0xC58,
+	};
+	const unsigned int adie_bt_cr_list[ABT_DUMP_NUM] = {
+		0xFF, 0xA4, 0x41, 0x42, 0x18, 0x15,
 	};
 	const unsigned int adie_wf_cr_list[AWF_DUMP_NUM] = {
 		0xFFF, 0x81, 0x80,
@@ -688,6 +692,7 @@ static int consys_plt_pmic_event_notifier_mt6886(unsigned int id, unsigned int e
 
 	/* dump a-die cr */
 	dump_adie_cr(SYS_SPI_TOP, adie_top_cr_list, ATOP_DUMP_NUM, "A-die TOP");
+	dump_adie_cr(SYS_SPI_BT, adie_bt_cr_list, ABT_DUMP_NUM, "A-die BT");
 	consys_hw_adie_top_ck_en_on(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
 	consys_hw_spi_update_bits(SYS_SPI_TOP, 0x580, 0x00, 0x10);
 	consys_hw_adie_top_ck_en_off(CONNSYS_ADIE_CTL_HOST_CONNINFRA);
