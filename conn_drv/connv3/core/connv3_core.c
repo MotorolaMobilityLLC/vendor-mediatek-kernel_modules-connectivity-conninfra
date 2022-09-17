@@ -280,7 +280,6 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		pr_info("[CONNV3_PWR_ON] pre vvvvvvvvvvvvv");
 		while (atomic_read(&g_connv3_ctx.pre_pwr_state) != subdrv_all_done) {
 			ret = down_timeout(&g_connv3_ctx.pre_pwr_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
-			pr_info("sema ret=[%d]", ret);
 			if (ret == 0)
 				continue;
 			cur_pre_on_state = atomic_read(&g_connv3_ctx.pre_pwr_state);
@@ -331,7 +330,6 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		pr_info("[CONNV3_PWR_ON][%s] pre vvvvvvvvvvvvv", connv3_drv_name[drv_type]);
 		while (atomic_read(&g_connv3_ctx.pre_pwr_state) != subdrv_preon_done) {
 			ret = down_timeout(&g_connv3_ctx.pre_pwr_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
-			pr_info("sema ret=[%d]", ret);
 			if (ret == 0)
 				continue;
 			cur_pre_on_state = atomic_read(&g_connv3_ctx.pre_pwr_state);
@@ -526,7 +524,6 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	pr_info("[chip_rst] pre vvvvvvvvvvvvv");
 	while (atomic_read(&g_connv3_ctx.rst_state) != subdrv_all_done) {
 		ret = down_timeout(&g_connv3_ctx.rst_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
-		pr_info("sema ret=[%d]", ret);
 		if (ret == 0)
 			continue;
 		cur_rst_state = atomic_read(&g_connv3_ctx.rst_state);
@@ -551,8 +548,8 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	/*******************************************************/
 	/* Special power-off function, turn off connsys directly */
 	ret = opfunc_power_off_internal(CONNV3_DRV_TYPE_MAX);
-	pr_info("Force connv3 power off, ret=%d\n", ret);
-	pr_info("connv3 status should be power off. Status=%d", g_connv3_ctx.core_status);
+	pr_info("Force connv3 power off, ret=%d. Status should be off. Status=%d\n",
+		ret, g_connv3_ctx.core_status);
 
 	_connv3_core_update_rst_status(CHIP_RST_POST_CB);
 

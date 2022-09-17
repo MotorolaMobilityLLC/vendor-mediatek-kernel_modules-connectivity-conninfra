@@ -156,14 +156,8 @@ static void _dump_uart_gpio_state(char* tag)
 	coex_pd = CONSYS_REG_READ(vir_0x11B2_0000 + 0x0040);
 	coex_pu = CONSYS_REG_READ(vir_0x11B2_0000 + 0x0060);
 
-	pr_info("[%s][%s]", __func__, tag);
-	pr_info("[0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x]", aux, dir, scp_pd, scp_pu, coex_pd, coex_pu);
-	pr_info("GPIO 226 COEX_UTXD\taux=[%d]\tdir=[%s]\tPD/PU=[%d/%d]",
-		((aux & 0x700) >> 8), (GET_BIT(dir, 2) ? "OUT" : "IN"),
-		GET_BIT(coex_pd, 3), GET_BIT(coex_pu, 3));
-	pr_info("GPIO 227 COEX_URXD\taux=[%d]\tdir=[%s]\tPD/PU=[%d/%d]",
-		((aux & 0x7000) >> 12), (GET_BIT(dir, 3) ? "OUT" : "IN"),
-		GET_BIT(coex_pd, 2), GET_BIT(coex_pu, 2));
+	pr_info("[%s][%s][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x]",
+		__func__, tag, aux, dir, scp_pd, scp_pu, coex_pd, coex_pu);
 	pr_info("GPIO 228 SCP_WB_UTXD\taux=[%d]\tdir=[%s]\tPD/PU=[%d/%d]",
 		((aux & 0x70000) >> 16), (GET_BIT(dir, 4)? "OUT" : "IN"),
 		GET_BIT(scp_pd, 10), GET_BIT(scp_pu, 10));
@@ -267,8 +261,6 @@ int connv3_plt_pinctrl_setup_pre_mt6985(void)
 		pr_notice("[%s] uart init fail, skip setting", __func__);
 		return 0;
 	}
-
-	_dump_uart_gpio_state("pre before");
 
 	ret = pinctrl_select_state(g_pinctrl_ptr, g_combo_uart_pin_pre_on);
 	if (ret)

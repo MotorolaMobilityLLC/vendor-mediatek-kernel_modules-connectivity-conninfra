@@ -282,7 +282,6 @@ int connv3_sub_drv_ops_register(enum connv3_drv_type type, struct connv3_sub_drv
 		pr_err("[%s] incorrect drv type [%d]", __func__, type);
 		return -EINVAL;
 	}
-	pr_info("[%s] ----", __func__);
 	connv3_core_subsys_ops_reg(type, cb);
 	return 0;
 }
@@ -295,7 +294,6 @@ int connv3_sub_drv_ops_unregister(enum connv3_drv_type type)
 		pr_err("[%s] incorrect drv type [%d]", __func__, type);
 		return -EINVAL;
 	}
-	pr_info("[%s] ----", __func__);
 	connv3_core_subsys_ops_unreg(type);
 	return 0;
 }
