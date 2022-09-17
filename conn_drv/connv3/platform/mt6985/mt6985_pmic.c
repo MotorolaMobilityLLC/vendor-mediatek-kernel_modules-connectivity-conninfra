@@ -162,8 +162,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
-			else
-				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-high", __func__);
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
 		}
@@ -175,8 +173,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
 			if (ret)
 				pr_err("[%s] faultb on fail, %d", __func__, ret);
-			else
-				pr_info("[%s] faultb on, expect GPIO#231 output-high", __func__);
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-enable\"",  __func__);
 		}
@@ -192,8 +188,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			ret = pinctrl_select_state(g_pinctrl_ptr, faultb_set);
 			if (ret)
 				pr_err("[%s] faultb off fail, %d", __func__, ret);
-			else
-				pr_info("[%s] faultb off, expect GPIO#231 output-low", __func__);
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-faultb-default\"",  __func__);
 		}
@@ -204,8 +198,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
-			else
-				pr_info("[%s] pinctrl_select_state, expect GPIO#241 output-low", __func__);
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
@@ -348,7 +340,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 
 		strncat(log_buf, tmp, remain_size);
 		remain_size -= 3;
-		if (i > 0 && (i % 8 == 7)) {
+		if (i > 0 && (i % 24 == 23)) {
 			pr_info("[MT6376-State] %s", log_buf);
 			log_buf[0] = '\0';
 			remain_size = TMP_LOG_SIZE;
