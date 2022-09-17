@@ -125,6 +125,11 @@ struct connv3_cr_cb {
 
 /* Call from connv3 driver to subsys.
  * - power_dump_start
+ * 	Parameter
+ * 		- priv_data
+ * 		- force_dump
+ * 			- 0: normal dump
+ * 			- 1: force dump
  * 	Return
  * 		- 0 if it is ok to dump (FW is wakeup).
  * 		    Driver has to make FW wakeup until power_dump_end is called.
@@ -134,8 +139,8 @@ struct connv3_cr_cb {
  * - cr_cb: callback function to access CR through HIF
  */
 struct connv3_power_dump_cb {
-	int (*power_dump_start)(void *priv_data);
-	void (*power_dump_end)(void *priv_data);
+	int (*power_dump_start)(void *priv_data, unsigned int force_dump);
+	int (*power_dump_end)(void *priv_data);
 };
 
 /* Return value:

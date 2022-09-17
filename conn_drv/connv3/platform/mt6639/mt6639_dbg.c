@@ -167,6 +167,7 @@ int connv3_conninfra_bus_dump_mt6639(
 	return func_ret;
 }
 
+#if 0
 static int connv3_26m_dump(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
@@ -209,6 +210,8 @@ static int connv3_26m_dump(
 
 	return 0;
 }
+#endif
+
 
 static inline void __sleep_count_trigger_read(struct connv3_cr_cb *cb)
 {
@@ -399,11 +402,13 @@ int connv3_conninfra_power_info_dump_mt6639(
 {
 	int ret;
 
+#if 0 // remove 26M info because the dump flow would wakeup subsys
 	ret = connv3_26m_dump(drv_type, cb);
 	if (ret) {
 		pr_notice("[%s][%d] dump 26M fail, ret = %d", __func__, drv_type, ret);
 		return -1;
 	}
+#endif
 
 	ret = connv3_conninfra_sleep_count_dump(drv_type, cb, buf, size);
 	if (ret) {
