@@ -227,6 +227,11 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		pinctrl_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-en-clr");
 		if (!IS_ERR(pinctrl_set)) {
+			/* Add a delay before pmic_en = 0 to make sure reset task is completed.
+			 * According to experiment, 1 ms is enough.
+			 * Use 20ms because the api is not accurate.
+			 */
+			mdelay(20);
 			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
 			if (ret)
 				pr_err("[%s] pinctrl on fail, %d", __func__, ret);
