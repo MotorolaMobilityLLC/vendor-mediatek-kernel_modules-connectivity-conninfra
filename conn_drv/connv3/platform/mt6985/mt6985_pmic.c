@@ -147,7 +147,6 @@ static void _dump_pmic_gpio_state(void)
 
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
 {
-	struct pinctrl_state *pinctrl_init;
 	struct pinctrl_state *pinctrl_faultb_init;
 	int ret = 0;
 	unsigned int irq_num = 0;
@@ -171,19 +170,6 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 	}
 
 	_dump_pmic_gpio_state();
-
-	pinctrl_init = pinctrl_lookup_state(
-			g_pinctrl_ptr, "connsys-pin-pmic-en-default");
-	if (!IS_ERR(pinctrl_init)) {
-		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_init);
-		if (ret) {
-			pr_err("[%s] pinctrl on fail, %d", __func__, ret);
-			return -1;
-		}
-	} else {
-		pr_err("[%s] fail to get \"connsys-pin-pmic-en-default\"",  __func__);
-		return -1;
-	}
 
 	pinctrl_faultb_init = pinctrl_lookup_state(
 			g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
