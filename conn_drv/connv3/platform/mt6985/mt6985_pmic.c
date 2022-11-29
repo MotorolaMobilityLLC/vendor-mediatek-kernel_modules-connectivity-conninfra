@@ -24,6 +24,7 @@
 #include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
+#include "consys_reg_util.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -108,9 +109,44 @@ static void check_faultb_status(struct work_struct *work)
 		g_dev_cb->connv3_pmic_event_notifier(0, 1);
 }
 
+
+static void __iomem *vir_0x1000_5000 = NULL; /* GPIO */
+static void __iomem *vir_0x11B2_0000 = NULL; /* IOCFG_RT */
+
+static void _dump_pmic_gpio_state(void)
+{
+#define GET_BIT(V, INDEX) ((V & (0x1U << INDEX)) >> INDEX)
+	unsigned int aux, dir, pu, pd, dout;
+
+	if (vir_0x1000_5000 == NULL)
+		vir_0x1000_5000 = ioremap(0x10005000, 0x1000);
+
+	if (vir_0x11B2_0000 == NULL)
+		vir_0x11B2_0000 = ioremap(0x11B20000, 0x1000);
+
+	if (vir_0x1000_5000 == NULL || vir_0x11B2_0000 == NULL) {
+		pr_notice("[%s] vir_0x1000_5000=%lx vir_0x11C0_0000=%lx vir_0x11B2_0000=%lx",
+			__func__, vir_0x1000_5000, vir_0x11B2_0000);
+		return;
+	}
+
+	aux = CONSYS_REG_READ(vir_0x1000_5000 + 0x04E0);
+	dir = CONSYS_REG_READ(vir_0x1000_5000 + 0x0070);
+	dout = CONSYS_REG_READ(vir_0x1000_5000 + 0x0170);
+
+
+	pd = CONSYS_REG_READ(vir_0x11B2_0000 + 0x0040);
+	pu = CONSYS_REG_READ(vir_0x11B2_0000 + 0x0060);
+
+	pr_info("[%s] =GPIO 241= \taux=[%d]\tdir=[%s]\tDOUT=[%d] PD/PU=[%d/%d]", __func__,
+		((aux & 0x70) >> 4), (GET_BIT(dir, 17)? "OUT" : "IN"), GET_BIT(dout, 17),
+		GET_BIT(pd, 4), GET_BIT(pu, 4));
+
+
+}
+
 int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
 {
-	struct pinctrl_state *pinctrl_init;
 	struct pinctrl_state *pinctrl_faultb_init;
 	int ret = 0;
 	unsigned int irq_num = 0;
@@ -133,18 +169,7 @@ int connv3_plt_pmic_initial_setting_mt6985(struct platform_device *pdev, struct 
 		return -1;
 	}
 
-	pinctrl_init = pinctrl_lookup_state(
-			g_pinctrl_ptr, "connsys-pin-pmic-en-default");
-	if (!IS_ERR(pinctrl_init)) {
-		ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_init);
-		if (ret) {
-			pr_err("[%s] pinctrl on fail, %d", __func__, ret);
-			return -1;
-		}
-	} else {
-		pr_err("[%s] fail to get \"connsys-pin-pmic-en-default\"",  __func__);
-		return -1;
-	}
+	_dump_pmic_gpio_state();
 
 	pinctrl_faultb_init = pinctrl_lookup_state(
 			g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
