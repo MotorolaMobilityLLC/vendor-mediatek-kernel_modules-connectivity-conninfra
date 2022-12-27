@@ -22,6 +22,8 @@
 #define CONN_DEBUG_INFO_SIZE 256
 #define DEBUG_TAG_SIZE 10
 
+#define MT6985_CONN_INFRA_BUS_DUMP_VERSION	"20221221"
+
 struct conn_debug_info_mt6985 {
 	char tag[CONN_DEBUG_INFO_SIZE][DEBUG_TAG_SIZE];
 	unsigned int wr_addr[CONN_DEBUG_INFO_SIZE];

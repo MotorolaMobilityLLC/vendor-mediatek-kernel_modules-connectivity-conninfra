@@ -34,6 +34,8 @@ mapped_addr vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6985;
 mapped_addr vir_addr_consys_dbg_gen_conn_infra_sysram_offset_mt6985;
 mapped_addr vir_addr_0x1804c000_mt6985;
 mapped_addr vir_addr_consys_dbg_gen_ifrbus_ao_reg_base_mt6985;
+mapped_addr vir_addr_consys_dbg_gen_0x1020d000;
+mapped_addr vir_addr_consys_dbg_gen_0x10272000;
 
 void consys_debug_init_mt6985_debug_gen(void)
 {
@@ -49,6 +51,10 @@ void consys_debug_init_mt6985_debug_gen(void)
 		= ioremap(0x1804c000, 0x20);
 	vir_addr_consys_dbg_gen_ifrbus_ao_reg_base_mt6985
 		= ioremap(CONSYS_DBG_GEN_IFRBUS_AO_REG_BASE_ADDR, 0x10);
+	vir_addr_consys_dbg_gen_0x1020d000
+		= ioremap(0x1020d000, 0x1000);
+	vir_addr_consys_dbg_gen_0x10272000
+		= ioremap(0x10272000, 0x1000);
 }
 
 void consys_debug_deinit_mt6985_debug_gen(void)
@@ -874,6 +880,22 @@ void consys_print_bus_debug_dbg_level_1_mt6985_debug_gen(
 		return;
 	}
 
+	if (!vir_addr_consys_dbg_gen_0x1020d000) {
+		pr_notice("vir_addr_consys_dbg_gen_0x1020d000(%x) ioremap fail\n", 0x1020d000);
+		return;
+	}
+
+	if (!vir_addr_consys_dbg_gen_0x10272000) {
+		pr_notice("vir_addr_consys_dbg_gen_0x10272000(%x) ioremap fail\n", 0x10272000);
+		return;
+	}
+
+	if (!vir_addr_consys_dbg_gen_ifrbus_ao_reg_base_mt6985) {
+		pr_notice("vir_addr_consys_dbg_gen_ifrbus_ao_reg_base_mt6985(%x) ioremap fail\n",
+				CONSYS_DBG_GEN_IFRBUS_AO_REG_BASE_ADDR);
+		return;
+	}
+
 	/* write 0x18023408[31:0] = 0x0 */
 	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6985 +
 		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x0);
@@ -1261,6 +1283,27 @@ void consys_print_bus_debug_dbg_level_1_mt6985_debug_gen(
 		"32", 0x18023000 + CONSYS_DBG_GEN_CONN_VON_BUS_APB_TIMEOUT_WDATA_OFFSET_ADDR,
 		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6985 +
 			CONSYS_DBG_GEN_CONN_VON_BUS_APB_TIMEOUT_WDATA_OFFSET_ADDR));
+
+	/* TOP-1 0x1020_D830 */
+	update_debug_read_info_mt6985_debug_gen(pdbg_level_1_info,
+		"TOP-1", 0x1020D830,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_0x1020d000 + 0x830));
+
+	/* TOP-2 0x1002_C00C */
+	update_debug_read_info_mt6985_debug_gen(pdbg_level_1_info,
+		"TOP-2", 0x1002C000 + CONSYS_DBG_GEN_SLEEP_PROT_RDY_0_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_ifrbus_ao_reg_base_mt6985 +
+			CONSYS_DBG_GEN_SLEEP_PROT_RDY_0_OFFSET_ADDR));
+
+	/* TOP-3 0x1027_219C */
+	update_debug_read_info_mt6985_debug_gen(pdbg_level_1_info,
+		"TOP-3", 0x1027219C,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_0x10272000 + 0x19c));
+
+	/* TOP-4 0x1027_2204 */
+	update_debug_read_info_mt6985_debug_gen(pdbg_level_1_info,
+		"TOP-4", 0x10272204,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_0x10272000 + 0x204));
 }
 
 void consys_print_bus_debug_dbg_level_2_mt6985_debug_gen(

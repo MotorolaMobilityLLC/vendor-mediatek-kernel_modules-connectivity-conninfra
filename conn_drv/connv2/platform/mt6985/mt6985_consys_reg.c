@@ -246,6 +246,7 @@ int consys_is_bus_hang_mt6985(void)
 		return -1;
 	}
 
+	pr_info("[CONN_BUS] version=%s\n", MT6985_CONN_INFRA_BUS_DUMP_VERSION);
 	consys_print_power_debug_dbg_level_0_mt6985_debug_gen(
 		CONNINFRA_BUS_LOG_LEVEL_HOST_ONLY, g_debug_info_ptr);
 	consys_print_log("[CONN_POWER_A]", g_debug_info_ptr);
