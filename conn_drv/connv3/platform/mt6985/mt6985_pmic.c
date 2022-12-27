@@ -52,7 +52,6 @@
 
 static struct connv3_dev_cb* g_dev_cb;
 static struct pinctrl *g_pinctrl_ptr;
-static int g_first_dump = 1;
 /* pmic for antenna */
 static struct regulator *g_reg_VANT18 = NULL;
 
@@ -237,7 +236,6 @@ int connv3_plt_pmic_common_power_ctrl_mt6985(u32 enable)
 		g_spurious_pmic_exception = 0;
 	} else {
 		g_spurious_pmic_exception = 1;
-		g_first_dump = 0;
 
 		faultb_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-faultb-default");
@@ -375,6 +373,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 	char tmp[4];
 	char log_buf[TMP_LOG_SIZE];
 	int remain_size = TMP_LOG_SIZE - 1;
+	static int g_first_dump = 1;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
@@ -489,6 +488,7 @@ int connv3_plt_pmic_parse_state_mt6985(char *buffer, int buf_sz)
 
 		aee_kernel_exception("Connv3", "%s", log_buf);
 	}
+	g_first_dump = 0;
 
 	/* print UDS and I2C command for more info */
 	pr_info("[%s] UDS status=[%d], Last i2c write to %s, write 0x%x by 0x%x\n",
