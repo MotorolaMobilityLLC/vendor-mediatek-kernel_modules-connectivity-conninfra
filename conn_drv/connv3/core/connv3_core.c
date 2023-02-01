@@ -314,6 +314,8 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 			drv_inst = &g_connv3_ctx.drv_inst[i];
 			ret = msg_thread_send_1(&drv_inst->msg_ctx,
 					CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY, i);
+			if (drv_inst->ops_cb.pwr_on_cb.power_on_notify)
+				drv_inst->drv_status = DRV_STS_PRE_POWER_ON;
 		}
 	} else {
 		/* second/third radio power on */
