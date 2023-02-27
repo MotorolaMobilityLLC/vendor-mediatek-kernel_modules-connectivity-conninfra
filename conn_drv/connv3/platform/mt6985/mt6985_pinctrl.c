@@ -61,6 +61,7 @@ static struct pinctrl_state *g_ext32k_pin_state_off = NULL;
 static struct pinctrl_state *g_combo_uart_pin_init = NULL;
 static struct pinctrl_state *g_combo_uart_pin_pre_on = NULL;
 static struct pinctrl_state *g_combo_uart_pin_on = NULL;
+static bool g_ext32k_pin_init_done = false;
 static bool g_uart_init_done = false;
 static void __iomem *vir_0x1000_5000 = NULL; /* GPIO */
 static void __iomem *vir_0x11C0_0000 = NULL; /* IOCFG_RM */
@@ -210,6 +211,7 @@ int connv3_plt_pinctrl_init_mt6985(struct platform_device *pdev)
 				CONNSYS_PIN_NAME_EXT_32K_EN_CLR,
 				g_ext32k_pin_state_off);
 		else {
+			g_ext32k_pin_init_done = true;
 			ret = pinctrl_select_state(g_pinctrl_ptr, g_ext32k_pin_state_init);
 			if (ret)
 				pr_notice("[%s] ext32k init fail, %d", __func__, ret);
@@ -298,9 +300,10 @@ int connv3_plt_pinctrl_ext_32k_ctrl(bool on)
 {
 	int ret = 0;
 
-	if (IS_ERR_OR_NULL(g_ext32k_pin_state_on) || IS_ERR_OR_NULL(g_ext32k_pin_state_off))
-		ret = -1;
-	else {
+	if (!g_ext32k_pin_init_done) {
+		pr_info("[%s] no ext32k pin\n", __func__);
+		return 0;
+	} else {
 		if (on)
 			ret = pinctrl_select_state(g_pinctrl_ptr, g_ext32k_pin_state_on);
 		else
