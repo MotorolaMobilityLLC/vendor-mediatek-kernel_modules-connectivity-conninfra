@@ -55,6 +55,7 @@ int consys_conninfra_on_power_ctrl_mt6985(unsigned int enable)
 
 #if MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE
 	ret = consys_platform_spm_conn_ctrl_mt6985(enable);
+	mdelay(5);
 #else
 	ret = consys_conninfra_on_power_ctrl_mt6985_gen(enable);
 #endif /* MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE */
