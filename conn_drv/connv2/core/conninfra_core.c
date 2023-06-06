@@ -1423,6 +1423,11 @@ int conninfra_core_screen_on(void)
 	unsigned long flag;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
+	if (g_pre_cal_mode == PRE_CAL_ALL_DISABLED
+		|| g_pre_cal_mode == PRE_CAL_SCREEN_ON_DISABLED) {
+		return 0;
+	}
+
 	spin_lock_irqsave(&infra_ctx->rst_lock, flag);
 	rst_status = g_conninfra_ctx.rst_status;
 	spin_unlock_irqrestore(&infra_ctx->rst_lock, flag);
@@ -1445,6 +1450,11 @@ int conninfra_core_screen_off(void)
 {
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+	if (g_pre_cal_mode == PRE_CAL_ALL_DISABLED
+		|| g_pre_cal_mode == PRE_CAL_SCREEN_ON_DISABLED) {
+		return 0;
+	}
 
 	ret = msg_thread_send(&infra_ctx->msg_ctx,
 				CONNINFRA_OPID_PRE_CAL_CHECK);
