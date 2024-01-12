@@ -796,7 +796,7 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 
 	consys_hw_tcxo_parser(pdev);
 
-	coredump_mng_init(g_conninfra_plat_data);
+	coredump_mng_init((void*)(g_conninfra_plat_data->platform_coredump_ops));
 
 	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	g_pdev = pdev;
