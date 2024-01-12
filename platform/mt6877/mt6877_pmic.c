@@ -190,6 +190,8 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable)
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 		}
 	} else {
+		/* Add 1ms sleep to delay make sure that VCN13/18 would be turned off later then VCN33. */
+		msleep(1);
 		regulator_disable(reg_VCN13);
 		regulator_disable(reg_VCN18);
 	}
