@@ -51,8 +51,6 @@ struct consys_emi_addr_info {
 	/* This include BT/WF FW and WFDMA */
 	phys_addr_t emi_ap_phy_addr;
 	unsigned int emi_size;
-	unsigned int fw_emi_size;
-	unsigned int wfdma_emi_size;
 	/* MCIF EMI get from MD */
 	phys_addr_t md_emi_phy_addr;
 	unsigned int md_emi_size;
@@ -61,13 +59,11 @@ struct consys_emi_addr_info {
 typedef int(*CONSYS_IC_EMI_MPU_SET_REGION_PROTECTION) (void);
 typedef unsigned int(*CONSYS_IC_EMI_SET_REMAPPING_REG) (phys_addr_t, phys_addr_t);
 typedef void(*CONSYS_IC_EMI_GET_MD_SHARED_EMI) (phys_addr_t* phy_addr, unsigned int *size);
-typedef unsigned int (*CONSYS_IC_GET_FW_EMI_SIZE)(void);
 
 struct consys_platform_emi_ops {
 	CONSYS_IC_EMI_MPU_SET_REGION_PROTECTION consys_ic_emi_mpu_set_region_protection;
 	CONSYS_IC_EMI_SET_REMAPPING_REG consys_ic_emi_set_remapping_reg;
 	CONSYS_IC_EMI_GET_MD_SHARED_EMI consys_ic_emi_get_md_shared_emi;
-	CONSYS_IC_GET_FW_EMI_SIZE consys_ic_emi_get_fw_emi_size;
 };
 
 /*******************************************************************************
