@@ -480,7 +480,6 @@ static int conninfra_dev_do_drv_init()
 	iret = conninfra_conf_init();
 	if (iret)
 		pr_warn("init conf fail\n");
-	pr_info("Skip config init");
 
 	iret = consys_hw_init(&g_conninfra_dev_cb);
 	if (iret) {
