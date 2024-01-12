@@ -133,6 +133,7 @@ struct conn_adaptor_drv_gen_cb g_connv3_drv_gen = {
 	.dump_power_state = connv3_dump_power_state,
 };
 
+static atomic_t g_connv3_hw_init_done = ATOMIC_INIT(0);
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -284,12 +285,16 @@ int mtk_connv3_probe(struct platform_device *pdev)
 		pr_notice("init connv3_test_setup fail, ret = %d\n", ret);
 #endif
 
+	atomic_set(&g_connv3_hw_init_done, 1);
+
 	pr_info("[%s] --------------", __func__);
 	return 0;
 }
 
 int mtk_connv3_remove(struct platform_device *pdev)
 {
+	atomic_set(&g_connv3_hw_init_done, 0);
+
 	connv3_hw_deinit();
 
 	if (g_connv3_drv_dev)
@@ -423,16 +428,26 @@ exit:
 
 int connv3_drv_init(void)
 {
-	int iret = 0;
+	int iret = 0, retry = 0;
+	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 	static const struct proc_ops connv3_log_node_fops = {
 		.proc_read = connv3_log_node_read,
 		.proc_write = connv3_log_node_write,
 	};
 
-	iret = platform_driver_register(&g_mtk_connv3_dev_drv);
+	iret = platform_driver_probe(&g_mtk_connv3_dev_drv, mtk_connv3_probe);
 	pr_info("[%s] driver register [%d]", __func__, iret);
-	if (iret)
-		pr_err("Conninfra platform driver registered failed(%d)\n", iret);
+	if (iret) {
+		pr_err("Connv3 platform driver registered failed(%d)\n", iret);
+		return -1;
+	} else {
+		while (atomic_read(&g_connv3_hw_init_done) == 0) {
+			osal_sleep_ms(50);
+			retry++;
+			if (__ratelimit(&_rs))
+				pr_info("g_connv3_hw_init_done = 0, retry = %d", retry);
+		}
+	}
 
 	INIT_WORK(&g_connv3_pmic_work.pmic_work, connv3_dev_pmic_event_handler);
 
