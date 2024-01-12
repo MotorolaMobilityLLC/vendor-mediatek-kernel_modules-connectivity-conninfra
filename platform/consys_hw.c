@@ -224,10 +224,11 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
 			if (ret)
 				pr_info("Conninfra bus error, code=%d", ret);
 		case CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL:
-			if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
+			if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl) {
 				ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
-			if (ret)
-				pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
+				if (ret)
+					pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
+			}
 		case CONNINFRA_PWR_ON_PMIC_ON_FAIL:
 			ret = pmic_mng_common_power_ctrl(0);
 			if (ret)
