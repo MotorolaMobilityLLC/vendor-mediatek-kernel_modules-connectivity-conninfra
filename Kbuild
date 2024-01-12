@@ -5,6 +5,10 @@ ifneq ($(KERNEL_OUT),)
     ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
 endif
 
+ifndef TOP
+    TOP := $(srctree)/..
+endif
+
 # Force build fail on modpost warning
 KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 
@@ -182,6 +186,13 @@ $(MODULE_NAME)-objs += adaptor/conn_kern_adaptor.o
 $(MODULE_NAME)-objs += adaptor/connsyslog/fw_log_mcu.o
 $(MODULE_NAME)-objs += adaptor/connsyslog/connsyslog_to_user.o
 $(MODULE_NAME)-objs += adaptor/coredump/conndump_netlink.o
+# Check internal and external project
+ifneq ($(wildcard $(TOP)/vendor/mediatek/internal/connfem_enable),)
+    $(info ConnInfra: MTK internal load)
+    $(MODULE_NAME)-objs += adaptor/connadp_internal.o
+else
+    $(info ConnInfra: Customer load)
+endif
 
 ############################
 # connv2 core

@@ -150,6 +150,11 @@ static atomic_t g_es_lr_flag_for_blank = ATOMIC_INIT(0); /* for ctrl blank flag 
 ********************************************************************************
 */
 
+bool __weak conn_adaptor_is_internal(void)
+{
+	return false;
+}
+
 static u32 conn_adaptor_get_chipid(void)
 {
 	int i;
