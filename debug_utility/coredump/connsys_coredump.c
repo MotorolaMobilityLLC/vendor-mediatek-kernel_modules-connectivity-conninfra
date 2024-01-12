@@ -232,12 +232,12 @@ bool __weak is_host_view_cr(unsigned int addr, unsigned int* host_view)
 /*----------------------------------------------------------------------------*/
 
 
-static unsigned long timeval_to_ms(struct timeval *begin, struct timeval *end)
+static unsigned long timespec64_to_ms(struct timespec64 *begin, struct timespec64 *end)
 {
 	unsigned long time_diff;
 
-	time_diff = (end->tv_sec - begin->tv_sec) * 1000;
-	time_diff += (end->tv_usec - begin->tv_usec) / 1000;
+	time_diff = (end->tv_sec - begin->tv_sec) * MSEC_PER_SEC;
+	time_diff += (end->tv_nsec - begin->tv_nsec) / NSEC_PER_MSEC;
 
 	return time_diff;
 }
@@ -958,7 +958,7 @@ static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, u
 	}
 
 	/* Expand to request size */
-	vir_addr = ioremap_nocache(ctx->hw_config.seg1_cr, 4);
+	vir_addr = ioremap(ctx->hw_config.seg1_cr, 4);
 	if (vir_addr) {
 		iowrite32(ctx->hw_config.seg1_phy_addr + map_len, vir_addr);
 		iounmap(vir_addr);
@@ -966,7 +966,7 @@ static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, u
 		return 0;
 	}
 	/* Setup map base */
-	vir_addr = ioremap_nocache(ctx->hw_config.seg1_start_addr, 4);
+	vir_addr = ioremap(ctx->hw_config.seg1_start_addr, 4);
 	if (vir_addr) {
 		iowrite32(base, vir_addr);
 		iounmap(vir_addr);
@@ -993,9 +993,9 @@ static void __iomem* conndump_remap(struct connsys_dump_ctx* ctx, unsigned int b
 
 	if (is_host_view_cr(base, &host_cr)) {
 		pr_info("Map 0x%x to 0x%x\n", base, host_cr);
-		vir_addr = ioremap_nocache(host_cr, length);
+		vir_addr = ioremap(host_cr, length);
 	} else {
-		vir_addr = ioremap_nocache(ctx->hw_config.seg1_phy_addr, length);
+		vir_addr = ioremap(ctx->hw_config.seg1_phy_addr, length);
 	}
 	return vir_addr;
 }
@@ -1408,8 +1408,8 @@ int connsys_coredump_start(
 	struct connsys_dump_ctx* ctx = (struct connsys_dump_ctx*)handler;
 	int ret = 0;
 	bool full_dump = false;
-	struct timeval begin, end, put_done;
-	struct timeval mem_start, mem_end, cr_start, cr_end, emi_dump_start, emi_dump_end;
+	struct timespec64 begin, end, put_done;
+	struct timespec64 mem_start, mem_end, cr_start, cr_end, emi_dump_start, emi_dump_end;
 
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
@@ -1513,18 +1513,18 @@ partial_dump:
 	if (full_dump) {
 		pr_info("%s coredump summary: full dump total=[%lu] put_done=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
 			g_type_name[ctx->conn_type],
-			timeval_to_ms(&begin, &end),
-			timeval_to_ms(&begin, &put_done),
-			timeval_to_ms(&cr_start, &cr_end),
-			timeval_to_ms(&mem_start, &mem_end),
-			timeval_to_ms(&emi_dump_start, &emi_dump_end));
+			timespec64_to_ms(&begin, &end),
+			timespec64_to_ms(&begin, &put_done),
+			timespec64_to_ms(&cr_start, &cr_end),
+			timespec64_to_ms(&mem_start, &mem_end),
+			timespec64_to_ms(&emi_dump_start, &emi_dump_end));
 	} else {
 		pr_info("%s coredump summary: partial dump total=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
 			g_type_name[ctx->conn_type],
-			timeval_to_ms(&begin, &end),
-			timeval_to_ms(&cr_start, &cr_end),
-			timeval_to_ms(&mem_start, &mem_end),
-			timeval_to_ms(&emi_dump_start, &emi_dump_end));
+			timespec64_to_ms(&begin, &end),
+			timespec64_to_ms(&cr_start, &cr_end),
+			timespec64_to_ms(&mem_start, &mem_end),
+			timespec64_to_ms(&emi_dump_start, &emi_dump_end));
 	}
 	return 0;
 }
@@ -1608,7 +1608,7 @@ void* connsys_coredump_init(
 	ctx->mcif_emi_size = mcif_emi_size;
 
 	ctx->emi_virt_addr_base =
-		ioremap_nocache(ctx->emi_phy_addr_base, ctx->emi_size);
+		ioremap(ctx->emi_phy_addr_base, ctx->emi_size);
 	if (ctx->emi_virt_addr_base == 0) {
 		pr_err("Remap emi fail (0x%08x) size=%d",
 			ctx->emi_phy_addr_base, ctx->emi_size);

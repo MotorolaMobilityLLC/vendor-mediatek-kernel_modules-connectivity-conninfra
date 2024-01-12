@@ -392,7 +392,7 @@ int osal_test_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 int osal_test_and_clear_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 int osal_test_and_set_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 
-int osal_gettimeofday(struct timeval *tv);
+int osal_gettimeofday(struct timespec64 *tv);
 //int osal_printtimeofday(const unsigned char *prefix);
 void osal_get_local_time(unsigned long long *sec, unsigned long *nsec);
 unsigned long long osal_elapsed_us(unsigned long long ts, unsigned long usec);
