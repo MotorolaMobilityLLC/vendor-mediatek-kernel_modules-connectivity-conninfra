@@ -3,6 +3,8 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
+#include <connectivity_build_in_adapter.h>
+
 #include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/of_device.h>
@@ -10,40 +12,37 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/suspend.h>
 
-#include <connectivity_build_in_adapter.h>
-
-#include "osal.h"
-#include "consys_hw.h"
-#include "emi_mng.h"
-#include "pmic_mng.h"
 #include "clock_mng.h"
-#include "consys_reg_mng.h"
-#include "connsys_debug_utility.h"
-#include "coredump_mng.h"
 #include "conn_power_throttling.h"
+#include "connsys_debug_utility.h"
+#include "consys_hw.h"
+#include "consys_reg_mng.h"
+#include "coredump_mng.h"
+#include "emi_mng.h"
+#include "osal.h"
+#include "pmic_mng.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ ********************************************************************************
+ */
 
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
-enum conninfra_pwr_on_rollback_type
-{
+ *                              C O N S T A N T S
+ ********************************************************************************
+ */
+enum conninfra_pwr_on_rollback_type {
 	CONNINFRA_PWR_ON_PMIC_ON_FAIL,
 	CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL,
 	CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL,
@@ -51,14 +50,14 @@ enum conninfra_pwr_on_rollback_type
 	CONNINFRA_PWR_ON_MAX
 };
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ********************************************************************************
+ */
 
 static int get_consys_platform_ops(struct platform_device *pdev);
 
@@ -67,15 +66,15 @@ static void _consys_hw_conninfra_sleep(void);
 /* drv_type: who want to raise voltage
  * raise: upgrade(1) or downgrad(0) voltage
  * onoff: the request is send during power on/off duration
- * 	1: Yes, the request is send during power on/off
- * 	0: No, the request is from sub-radio
+ * 1: Yes, the request is send during power on/off
+ * 0: No, the request is from sub-radio
  */
 static int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff);
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ ********************************************************************************
+ */
 
 struct consys_hw_env conn_hw_env;
 
@@ -83,27 +82,27 @@ const struct consys_hw_ops_struct *consys_hw_ops;
 struct platform_device *g_pdev;
 int g_conninfra_wakeup_ref_cnt;
 
-const struct conninfra_plat_data *g_conninfra_plat_data = NULL;
+const struct conninfra_plat_data *g_conninfra_plat_data;
 
-struct pinctrl *g_conninfra_pinctrl_ptr = NULL;
+struct pinctrl *g_conninfra_pinctrl_ptr;
 
-static unsigned int g_adie_chipid = 0;
+static unsigned int g_adie_chipid;
 static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
 
 /* this config is defined by each platform, used to change setting by dbg command. */
 /* MT6983: for sleep mode control */
 static int g_platform_config;
 
-static unsigned int g_support_drv = 0;
+static unsigned int g_support_drv;
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ ********************************************************************************
+ */
 
 struct platform_device *get_consys_device(void)
 {
@@ -114,8 +113,8 @@ int consys_hw_get_clock_schematic(void)
 {
 	if (consys_hw_ops->consys_plt_co_clock_type)
 		return consys_hw_ops->consys_plt_co_clock_type();
-	else
-		pr_err("consys_hw_ops->consys_co_clock_type not supported\n");
+
+	pr_err("consys_hw_ops->consys_co_clock_type not supported\n");
 
 	return -1;
 }
@@ -124,8 +123,8 @@ unsigned int consys_hw_chipid_get(void)
 {
 	if (consys_hw_ops->consys_plt_soc_chipid_get)
 		return consys_hw_ops->consys_plt_soc_chipid_get();
-	else
-		pr_err("consys_plt_soc_chipid_get not supported\n");
+
+	pr_err("consys_plt_soc_chipid_get not supported\n");
 
 	return 0;
 }
@@ -163,7 +162,8 @@ int consys_hw_dump_bus_status(void)
 	return consys_reg_mng_dump_bus_status();
 }
 
-int consys_hw_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times, unsigned long interval_us)
+int consys_hw_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times,
+				   unsigned long interval_us)
 {
 	return consys_reg_mng_dump_cpupcr(dump_type, times, interval_us);
 }
@@ -210,26 +210,26 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
 	int ret;
 
 	switch (type) {
-		case CONNINFRA_PWR_ON_A_DIE_FAIL:
-		case CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL:
-			ret = consys_hw_is_bus_hang();
-			consys_hw_clock_fail_dump();
+	case CONNINFRA_PWR_ON_A_DIE_FAIL:
+	case CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL:
+		ret = consys_hw_is_bus_hang();
+		consys_hw_clock_fail_dump();
+		if (ret)
+			pr_info("Conninfra bus error, code=%d", ret);
+	case CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL:
+		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl) {
+			ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
 			if (ret)
-				pr_info("Conninfra bus error, code=%d", ret);
-		case CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL:
-			if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl) {
-				ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
-				if (ret)
-					pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
-			}
-		case CONNINFRA_PWR_ON_PMIC_ON_FAIL:
-			ret = pmic_mng_common_power_ctrl(0);
-			if (ret)
-				pr_err("[%s] turn off VCN control fail, ret=%d\n", __func__, ret);
-			break;
-		default:
-			pr_err("[%s] wrong type: %d", type);
-			break;
+				pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
+		}
+	case CONNINFRA_PWR_ON_PMIC_ON_FAIL:
+		ret = pmic_mng_common_power_ctrl(0);
+		if (ret)
+			pr_err("[%s] turn off VCN control fail, ret=%d\n", __func__, ret);
+		break;
+	default:
+		pr_err("[%s] wrong type: %d", type);
+		break;
 	}
 	return 0;
 }
@@ -433,6 +433,7 @@ int consys_hw_enable_power_dump(void)
 {
 	/* If not supported (no implement), assume it works fine. */
 	int ret = 0;
+
 	if (consys_hw_ops && consys_hw_ops->consys_plt_enable_power_dump)
 		ret = consys_hw_ops->consys_plt_enable_power_dump();
 	return ret;
@@ -442,6 +443,7 @@ int consys_hw_reset_power_state(void)
 {
 	/* If not supported (no implement), assume it works fine. */
 	int ret = 0;
+
 	if (consys_hw_ops && consys_hw_ops->consys_plt_reset_power_state)
 		ret = consys_hw_ops->consys_plt_reset_power_state();
 	return ret;
@@ -468,7 +470,8 @@ int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 	return -1;
 }
 
-int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
+					 unsigned int data, unsigned int mask)
 {
 	if (consys_hw_ops->consys_plt_spi_update_bits)
 		return consys_hw_ops->consys_plt_spi_update_bits(subsystem, addr, data, mask);
@@ -489,7 +492,8 @@ int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type)
 	return -1;
 }
 
-int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff) {
+int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff)
+{
 	return pmic_mng_raise_voltage(drv_type, raise, onoff);
 }
 
@@ -590,7 +594,8 @@ int get_consys_platform_ops(struct platform_device *pdev)
 				(pdev->dev.of_node != NULL ? pdev->dev.of_node->name : ""),
 				(pdev->dev.of_node != NULL ? pdev->dev.of_node->full_name : ""));
 
-	g_conninfra_plat_data = (const struct conninfra_plat_data*)of_device_get_match_data(&pdev->dev);
+	g_conninfra_plat_data
+		= (const struct conninfra_plat_data *)of_device_get_match_data(&pdev->dev);
 	if (g_conninfra_plat_data == NULL) {
 		pr_err("[%s] Get platform data fail.", __func__);
 		return -1;
@@ -599,7 +604,7 @@ int get_consys_platform_ops(struct platform_device *pdev)
 	pr_info("[%s] chipid=[%x] [%x]", __func__, g_conninfra_plat_data->chip_id,
 						g_conninfra_plat_data->hw_ops);
 	if (consys_hw_ops == NULL)
-		consys_hw_ops = (const struct consys_hw_ops_struct*)g_conninfra_plat_data->hw_ops;
+		consys_hw_ops = (const struct consys_hw_ops_struct *)g_conninfra_plat_data->hw_ops;
 
 	if (consys_hw_ops == NULL) {
 		pr_err("Get HW op fail");
@@ -615,7 +620,7 @@ int consys_hw_tcxo_parser(struct platform_device *pdev)
 	struct device_node *pinctrl_node;
 	struct device_node *pins_node;
 	unsigned int pin_num = 0xffffffff;
-	const char* tcxo_support;
+	const char *tcxo_support;
 
 	/* Get tcxo status */
 	/* Set default value */
@@ -754,7 +759,7 @@ unsigned int consys_hw_get_support_drv(void)
 int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb)
 {
 	int ret = 0;
-	struct consys_emi_addr_info* emi_info = NULL;
+	struct consys_emi_addr_info *emi_info = NULL;
 
 	ret = get_consys_platform_ops(pdev);
 	if (ret) {
@@ -795,7 +800,7 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 	emi_info = emi_mng_get_phy_addr();
 	if (emi_info) {
 		connsys_dedicated_log_path_apsoc_init((phys_addr_t)emi_info->emi_ap_phy_addr,
-                                        g_conninfra_plat_data->connsyslog_config);
+						      g_conninfra_plat_data->connsyslog_config);
 		connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID),
 						   (phys_addr_t)emi_info->emi_ap_phy_addr);
 	} else {
@@ -807,12 +812,12 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 
 	consys_hw_tcxo_parser(pdev);
 
-	coredump_mng_init((void*)(g_conninfra_plat_data->platform_coredump_ops));
+	coredump_mng_init((void *)(g_conninfra_plat_data->platform_coredump_ops));
 
 	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	g_pdev = pdev;
 
-	pr_info("[consys_hw_init] successfully\n");
+	pr_info("[%s] successfully\n", __func__);
 
 	return 0;
 }
