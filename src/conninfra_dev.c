@@ -184,9 +184,8 @@ struct wmt_platform_bridge g_plat_bridge = {
 #else
 	.conninfra_reg_is_bus_hang_cb = conninfra_conn_is_bus_hang,
 #endif
-#if CONNINFRA_DBG_SUPPORT
-	.debug_cb = conninfra_dbg_write,
-#endif
+	.debug_write_cb = conninfra_dbg_write,
+	.debug_read_cb = conninfra_dbg_read,
 };
 
 
@@ -576,7 +575,7 @@ static int conninfra_dev_suspend_cb(void)
 
 static int conninfra_dev_resume_cb(void)
 {
-	conninfra_core_dump_power_state();
+	conninfra_core_dump_power_state(NULL, 0);
 	connsys_dedicated_log_set_ap_state(1);
 	return 0;
 }

@@ -68,7 +68,7 @@ static int consys_thermal_query_mt6877(void);
 /* Power state relative */
 static int consys_enable_power_dump_mt6877(void);
 static int consys_reset_power_state_mt6877(void);
-static int consys_power_state_dump_mt6877(void);
+static int consys_power_state_dump_mt6877(char *buf, unsigned int size);
 
 static unsigned long long consys_soc_timestamp_get_mt6877(void);
 
@@ -320,7 +320,7 @@ void consys_power_state(void)
 
 }
 
-int consys_power_state_dump_mt6877(void)
+int consys_power_state_dump_mt6877(char *buf, unsigned int size)
 {
 	unsigned int conninfra_sleep_cnt, conninfra_sleep_time;
 	unsigned int wf_sleep_cnt, wf_sleep_time;

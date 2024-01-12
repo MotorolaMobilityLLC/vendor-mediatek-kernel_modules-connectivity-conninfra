@@ -461,10 +461,10 @@ int consys_hw_reset_power_state(void)
 	return ret;
 }
 
-int consys_hw_dump_power_state(void)
+int consys_hw_dump_power_state(char *buf, unsigned int size)
 {
 	if (consys_hw_ops && consys_hw_ops->consys_plt_power_state)
-		consys_hw_ops->consys_plt_power_state();
+		consys_hw_ops->consys_plt_power_state(buf, size);
 	return 0;
 }
 

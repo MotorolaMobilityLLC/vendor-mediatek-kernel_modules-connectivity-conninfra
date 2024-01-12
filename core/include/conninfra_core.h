@@ -254,7 +254,7 @@ int conninfra_core_force_conninfra_sleep(void);
 int conninfra_core_spi_clock_switch(enum connsys_spi_speed_type type);
 
 int conninfra_core_reset_power_state(void);
-int conninfra_core_dump_power_state(void);
+int conninfra_core_dump_power_state(char *buf, unsigned int size);
 int conninfra_core_pmic_event_cb(unsigned int, unsigned int);
 
 void conninfra_core_config_setup(void);
