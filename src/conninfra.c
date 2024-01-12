@@ -249,8 +249,7 @@ int conninfra_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsi
 		pr_err("[%s] wrong subsys %d", __func__, subsystem);
 		return -EINVAL;
 	}
-	conninfra_core_spi_read(subsystem, addr, data);
-	return 0;
+	return conninfra_core_spi_read(subsystem, addr, data);;
 }
 EXPORT_SYMBOL(conninfra_spi_read);
 
@@ -265,8 +264,8 @@ int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 		pr_err("[%s] wrong subsys %d", __func__, subsystem);
 		return -EINVAL;
 	}
-	conninfra_core_spi_write(subsystem, addr, data);
-	return 0;
+	return conninfra_core_spi_write(subsystem, addr, data);
+;
 }
 EXPORT_SYMBOL(conninfra_spi_write);
 

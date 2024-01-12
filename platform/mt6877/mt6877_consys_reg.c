@@ -182,7 +182,7 @@ static inline unsigned int __consys_bus_hang_clock_detect(void)
 
 	while (count < 4) {
 		CONSYS_SET_BIT(CONN_HOST_CSR_TOP_BUS_MCU_STAT_ADDR, (0x1 << 0));
-		udelay(1);
+		udelay(20);
 		r = CONSYS_REG_READ_BIT(CONN_HOST_CSR_TOP_BUS_MCU_STAT_ADDR, ((0x1 << 2) | (0x1 << 1)));
 		if (r == 0x6)
 			break;
