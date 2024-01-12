@@ -15,6 +15,7 @@
 #include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_core.h"
+#include "connv3_debug_utility.h"
 
 #ifdef CFG_CONNINFRA_UT_SUPPORT
 #include "connv3_test.h"
@@ -153,6 +154,7 @@ u32 connv3_chipid_get(void)
 
 void connv3_set_coredump_mode(int mode)
 {
+	connv3_coredump_set_dump_mode(mode);
 }
 
 u32 connv3_detect_adie_chipid(void)
