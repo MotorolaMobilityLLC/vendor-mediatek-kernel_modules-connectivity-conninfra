@@ -1759,9 +1759,14 @@ int conninfra_core_init(void)
 	}
 	/* init subsys drv state */
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
-		msg_thread_init(&infra_ctx->drv_inst[i].msg_ctx,
-				drv_thread_name[i],	infra_subdrv_opfunc,
+		ret += msg_thread_init(&infra_ctx->drv_inst[i].msg_ctx,
+				drv_thread_name[i], infra_subdrv_opfunc,
 				INFRA_SUBDRV_OPID_MAX);
+	}
+
+	if (ret) {
+		pr_err("subsys callback thread init fail.\n");
+		return -1;
 	}
 
 	INIT_WORK(&infra_ctx->cal_info.pre_cal_work, conninfra_core_pre_cal_work_handler);
