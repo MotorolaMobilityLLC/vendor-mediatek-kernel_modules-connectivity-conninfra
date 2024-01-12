@@ -883,7 +883,6 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	if (ret != 0)
 		pr_notice("[pre_cal] all radio should be off, but get 0x%x", ret);
 
-	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 	pr_info(">>>>>>>> Power off bt/wifi done");
 
 	osal_gettimeofday(&end);
