@@ -163,7 +163,6 @@ $(MODULE_NAME)-objs += conn_drv/connv2/platform/clock_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/pmic_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/emi_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/consys_reg_mng.o
-$(MODULE_NAME)-objs += conn_drv/connv2/platform/coredump_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/conninfra_dbg.o
 
 ############################
@@ -256,6 +255,7 @@ endif
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/connsyslog.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/connsys_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/coredump_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/metlog/metlog.o
 
 # Drv init
