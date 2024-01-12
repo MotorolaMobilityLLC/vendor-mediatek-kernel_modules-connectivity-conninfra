@@ -183,6 +183,8 @@ int consys_reg_mng_is_bus_hang(void)
 
 		if (consys_hw_force_conninfra_wakeup() == 0)
 			wakeup_conninfra = 1;
+		else
+			return fp_ret;
 		ret = fp_ret;
 	}
 	/* Check IRQ status */
