@@ -20,10 +20,12 @@
 #ifndef _OSAL_H_
 #define _OSAL_H_
 
+#include <linux/version.h>
 #include <linux/workqueue.h>
 #include <linux/mutex.h>
 #include <linux/completion.h>
 #include <linux/wait.h>
+#include <linux/time.h>
 #include "ring.h"
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -125,7 +127,19 @@ do { \
 	} \
 } while (0)
 
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+typedef void(*P_TIMEOUT_HANDLER) (struct timer_list *t);
+typedef struct timer_list *timer_handler_arg;
+#define GET_HANDLER_DATA(arg, data) \
+do { \
+	P_OSAL_TIMER osal_timer = from_timer(osal_timer, arg, timer); \
+	data = osal_timer->timeroutHandlerData; \
+} while (0)
+#else
+typedef void(*P_TIMEOUT_HANDLER) (unsigned long);
+typedef unsigned long timer_handler_arg;
+#define GET_HANDLER_DATA(arg, data) (data = arg)
+#endif
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -144,7 +158,6 @@ do { \
 
 typedef int MTK_CONN_BOOL;
 
-typedef void(*P_TIMEOUT_HANDLER) (unsigned long);
 typedef int(*P_COND) (void *);
 
 typedef struct _OSAL_TIMER_ {
@@ -379,7 +392,7 @@ int osal_test_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 int osal_test_and_clear_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 int osal_test_and_set_bit(unsigned int bitOffset, P_OSAL_BIT_OP_VAR pData);
 
-int osal_gettimeofday(int *sec, int *usec);
+int osal_gettimeofday(struct timeval *tv);
 //int osal_printtimeofday(const unsigned char *prefix);
 void osal_get_local_time(unsigned long long *sec, unsigned long *nsec);
 unsigned long long osal_elapsed_us(unsigned long long ts, unsigned long usec);

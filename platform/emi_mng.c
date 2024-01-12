@@ -16,9 +16,11 @@
 *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
 */
 
+#include <linux/version.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/io.h>
 #include <linux/types.h>
+#include <linux/of.h>
 #include "osal.h"
 
 #include "emi_mng.h"
@@ -27,6 +29,9 @@
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+#define ALLOCATE_CONNSYS_EMI_FROM_KO 1
+#endif
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -60,8 +65,15 @@
 */
 
 
+#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
+phys_addr_t gConEmiPhyBase;
+EXPORT_SYMBOL(gConEmiPhyBase);
+unsigned long long gConEmiSize;
+EXPORT_SYMBOL(gConEmiSize);
+#else
 extern unsigned long long gConEmiSize;
 extern phys_addr_t gConEmiPhyBase;
+#endif
 
 struct consys_platform_emi_ops* consys_platform_emi_ops = NULL;
 
@@ -113,8 +125,38 @@ struct consys_platform_emi_ops* __weak get_consys_platform_emi_ops(void)
 	return NULL;
 }
 
-int emi_mng_init(void)
+#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
+static int emi_mng_allocate_connsys_emi(struct platform_device *pdev)
 {
+	struct device_node *np;
+	struct reserved_mem *rmem;
+
+	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
+	if (!np) {
+		pr_info("no memory-region, np is NULL\n");
+		return -1;
+	}
+
+	rmem = of_reserved_mem_lookup(np);
+	of_node_put(np);
+
+	if (!rmem) {
+		pr_info("no memory-region\n");
+		return -1;
+	}
+
+	gConEmiPhyBase = rmem->base;
+	gConEmiSize = rmem->size;
+
+	return 0;
+}
+#endif
+
+int emi_mng_init(struct platform_device *pdev)
+{
+#ifdef ALLOCATE_CONNSYS_EMI_FROM_KO
+	emi_mng_allocate_connsys_emi(pdev);
+#endif
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = get_consys_platform_emi_ops();
 
@@ -145,3 +187,4 @@ int emi_mng_deinit(void)
 {
 	return 0;
 }
+

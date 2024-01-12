@@ -23,6 +23,13 @@
 
 #include "consys_hw.h"
 
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#define COMMON_KERNEL_PMIC_SUPPORT	1
+#else
+#define COMMON_KERNEL_PMIC_SUPPORT	0
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -78,6 +85,9 @@ typedef struct _CONSYS_PLATFORM_PMIC_OPS_ {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+#if COMMON_KERNEL_PMIC_SUPPORT
+extern struct regmap *g_regmap;
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A

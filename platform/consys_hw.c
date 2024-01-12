@@ -5,6 +5,7 @@
 
 #include <linux/of_reserved_mem.h>
 #include <linux/delay.h>
+#include <linux/of.h>
 #include "osal.h"
 
 #include "consys_hw.h"
@@ -443,7 +444,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	}
 
 	/* emi mng init */
-	ret = emi_mng_init();
+	ret = emi_mng_init(pdev);
 	if (ret) {
 		pr_err("emi_mng init fail, %d\n", ret);
 		return -3;
@@ -471,6 +472,11 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 
 int mtk_conninfra_remove(struct platform_device *pdev)
 {
+	if (consys_hw_ops->consys_plt_clk_detach)
+		consys_hw_ops->consys_plt_clk_detach();
+	else
+		pr_info("consys_plt_clk_detach is null");
+
 	if (g_pdev)
 		g_pdev = NULL;
 

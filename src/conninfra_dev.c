@@ -37,7 +37,11 @@
 #include "conninfra_test.h"
 #endif
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
 #include <devapc_public.h>
+#endif
+
+#include <linux/thermal.h>
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -183,6 +187,12 @@ static struct conninfra_dev_cb g_conninfra_dev_cb = {
 	.conninfra_resume_cb = conninfra_dev_resume_cb,
 	.conninfra_pmic_event_notifier = conninfra_dev_pmic_event_cb,
 };
+
+static int conninfra_thermal_get_temp_cb(void *data, int *temp);
+static const struct thermal_zone_of_device_ops tz_conninfra_thermal_ops = {
+	.get_temp = conninfra_thermal_get_temp_cb,
+};
+
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -340,7 +350,7 @@ int conninfra_dev_fb_notifier_callback(struct notifier_block *self,
 	pr_debug("conninfra_dev_fb_notifier_callback event=[%u]\n", event);
 
 	/* If we aren't interested in this event, skip it immediately ... */
-	if (event != FB_EARLY_EVENT_BLANK)
+	if (event != FB_EVENT_BLANK)
 		return 0;
 
 	blank = *(int *)evdata->data;
@@ -391,6 +401,57 @@ static int conninfra_thermal_query_cb(void)
 		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "Query thermal wakeup fail");
 
 	return last_thermal_value;
+}
+
+/* for Linux thermal framework */
+static int conninfra_thermal_get_temp_cb(void *data, int *temp)
+{
+	int ret;
+
+	if (!temp)
+		return 0;
+
+	/* if rst is ongoing, return THERMAL_TEMP_INVALID */
+	if (conninfra_core_is_rst_locking()) {
+		pr_info("[%s] rst is locking, return invalid value ", __func__);
+		*temp = THERMAL_TEMP_INVALID;
+		return 0;
+	}
+
+	pr_info("[%s] query thermal", __func__);
+	ret = conninfra_core_thermal_query(&g_temp_thermal_value);
+	if (ret == 0)
+		*temp = g_temp_thermal_value * 1000;
+	else if (ret == CONNINFRA_ERR_WAKEUP_FAIL) {
+		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "Query thermal wakeup fail");
+		*temp = THERMAL_TEMP_INVALID;
+	} else if (ret == CONNINFRA_ERR_POWER_OFF)
+		*temp = THERMAL_TEMP_INVALID;
+
+	return 0;
+}
+
+static void conninfra_register_thermal_callback(void)
+{
+	struct thermal_zone_device *tz;
+	struct platform_device *pdev = get_consys_device();
+	int ret;
+
+	if (!pdev) {
+		pr_info("get_consys_device return NULL\n");
+		return;
+	}
+
+	/* register thermal zone */
+	tz = devm_thermal_zone_of_sensor_register(
+		&pdev->dev, 0, NULL, &tz_conninfra_thermal_ops);
+
+	if (IS_ERR(tz)) {
+		ret = PTR_ERR(tz);
+		pr_info("Failed to register thermal zone device %d\n", ret);
+		return;
+	}
+	pr_info("Register thermal zone device.\n");
 }
 
 static void conninfra_clock_fail_dump_cb(void)
@@ -467,7 +528,7 @@ static void conninfra_dev_pmic_event_handler(struct work_struct *work)
 		event = pmic_work->event;
 		conninfra_core_pmic_event_cb(id, event);
 	} else
-		pr_err("[%s] pmic_work is null (id, event)=(%d, %d)", __func__, id, event);
+		pr_info("[%s] pmic_work is null", __func__);
 
 }
 
@@ -529,6 +590,7 @@ static int conninfra_dev_do_drv_init()
 
 	conninfra_register_devapc_callback();
 	conninfra_register_pmic_callback();
+	conninfra_register_thermal_callback();
 
 	pr_info("ConnInfra Dev: init (%d)\n", iret);
 	g_conninfra_init_status = CONNINFRA_INIT_DONE;

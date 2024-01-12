@@ -25,6 +25,7 @@
 #include "connsys_coredump_emi.h"
 #include "connsys_coredump_hw_config.h"
 #include "conndump_netlink.h"
+#include "osal.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -93,7 +94,7 @@ struct connsys_dump_ctx {
 	unsigned int emi_size;
 	unsigned int mcif_emi_size;
 	struct coredump_event_cb callback;
-	struct timer_list dmp_timer;
+	OSAL_TIMER dmp_timer;
 	struct completion emi_dump;
 	enum core_dump_state sm;
 	char* page_dump_buf;
@@ -166,7 +167,7 @@ static const char* g_type_name[] = {
 */
 static void conndump_set_dump_state(struct connsys_dump_ctx* ctx, enum core_dump_state state);
 static enum core_dump_state conndump_get_dump_state(struct connsys_dump_ctx* ctx);
-static void conndump_timeout_handler(unsigned long data);
+static void conndump_timeout_handler(timer_handler_arg arg);
 static inline int conndump_get_dmp_info(struct connsys_dump_ctx* ctx, unsigned int offset, bool log);
 /* Dynamic remap relative function */
 static unsigned int conndump_setup_dynamic_remap(struct connsys_dump_ctx* ctx, unsigned int base, unsigned int length);
@@ -298,12 +299,17 @@ static enum core_dump_state conndump_get_dump_state(struct connsys_dump_ctx* ctx
 	return CORE_DUMP_INVALID;
 }
 
-static void conndump_timeout_handler(unsigned long data)
+static void conndump_timeout_handler(timer_handler_arg arg)
 {
-	struct connsys_dump_ctx* ctx = (struct connsys_dump_ctx*)data;
+	unsigned long data;
+	struct connsys_dump_ctx* ctx;
 
-	pr_info("[%s] coredump timeout\n", ctx->conn_type);
-	conndump_set_dump_state(ctx, CORE_DUMP_TIMEOUT);
+	GET_HANDLER_DATA(arg, data);
+	ctx = (struct connsys_dump_ctx*)data;
+	if (ctx) {
+		pr_info("[%s] coredump timeout\n", ctx->conn_type);
+		conndump_set_dump_state(ctx, CORE_DUMP_TIMEOUT);
+	}
 }
 
 static inline void conndump_get_dmp_char(struct connsys_dump_ctx* ctx, unsigned int offset, unsigned int byte_num, char* dest)
@@ -1273,12 +1279,14 @@ static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump
 		ctx->hw_config.exception_tag_name,
 		ctx->info.exception_log,
 		strlen(ctx->info.exception_log));
+#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 	/* Call AEE API */
 	aed_common_exception_api(
 		ctx->hw_config.exception_tag_name,
 		NULL, 0,
 		(const int*)ctx->info.exception_log, strlen(ctx->info.exception_log),
 		ctx->info.exception_log, 0);
+#endif
 #endif
 }
 
@@ -1415,7 +1423,7 @@ int connsys_coredump_start(
 	}
 
 	pr_info("[COREDUMP] dump_property=[0x%x] drv=[%d] reason=[%s]\n", dump_property, drv, reason);
-	do_gettimeofday(&begin);
+	osal_gettimeofday(&begin);
 	conndump_set_dump_state(ctx, CORE_DUMP_START);
 	/* Reset assert info */
 	memset(&ctx->info, 0, sizeof(struct connsys_dump_info));
@@ -1426,13 +1434,13 @@ int connsys_coredump_start(
 	}
 
 	/* Start coredump timer */
-	mod_timer(&ctx->dmp_timer, jiffies + (CONNSYS_COREDUMP_TIMEOUT) / (1000 / HZ));
+	osal_timer_modify(&ctx->dmp_timer, jiffies + (CONNSYS_COREDUMP_TIMEOUT) / (1000 / HZ));
 
 	/* Check coredump status */
 	while (1) {
 		if (conndump_get_dmp_info(ctx, CONNSYS_DUMP_CTRL_BLOCK_OFFSET + EXP_CTRL_DUMP_STATE, false) == FW_DUMP_STATE_PUT_DONE) {
 			pr_info("coredump put done\n");
-			del_timer(&ctx->dmp_timer);
+			osal_timer_stop(&ctx->dmp_timer);
 			full_dump = true;
 			break;
 		} else if (conndump_get_dump_state(ctx) == CORE_DUMP_TIMEOUT) {
@@ -1460,7 +1468,7 @@ int connsys_coredump_start(
 		}
 		msleep(1);
 	}
-	do_gettimeofday(&put_done);
+	osal_gettimeofday(&put_done);
 	conndump_set_dump_state(ctx, CORE_DUMP_DOING);
 
 	/* Get print_buff */
@@ -1478,29 +1486,29 @@ partial_dump:
 	conndump_set_dump_state(ctx, CORE_DUMP_DOING);
 	/* Memory region and CR region should be setup when MCU init */
 	/* Parse CR region and send to pack it */
-	do_gettimeofday(&cr_start);
+	osal_gettimeofday(&cr_start);
 	conndump_dump_cr_regions(ctx);
-	do_gettimeofday(&cr_end);
+	osal_gettimeofday(&cr_end);
 
 	/* Construct assert info and send to native */
 	conndump_info_format(ctx, ctx->page_dump_buf, CONNSYS_DUMP_BUFF_SIZE, full_dump);
 
 	/* Read memory region on ctrl block */
-	do_gettimeofday(&mem_start);
+	osal_gettimeofday(&mem_start);
 	conndump_dump_mem_regions(ctx);
-	do_gettimeofday(&mem_end);
+	osal_gettimeofday(&mem_end);
 
 
 	/* Start EMI dump */
-	do_gettimeofday(&emi_dump_start);
+	osal_gettimeofday(&emi_dump_start);
 	conndump_dump_emi(ctx);
-	do_gettimeofday(&emi_dump_end);
+	osal_gettimeofday(&emi_dump_end);
 
 	/* All process finished, set to init status */
 	conndump_set_dump_state(ctx, CORE_DUMP_INIT);
 
 	conndump_exception_show(ctx, full_dump);
-	do_gettimeofday(&end);
+	osal_gettimeofday(&end);
 	pr_info("Coredump end\n");
 	if (full_dump) {
 		pr_info("%s coredump summary: full dump total=[%lu] put_done=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
@@ -1611,9 +1619,9 @@ void* connsys_coredump_init(
 	memset_io(ctx->emi_virt_addr_base, 0, ctx->emi_size);
 
 	/* Setup timer */
-	init_timer(&ctx->dmp_timer);
-	ctx->dmp_timer.function = conndump_timeout_handler;
-	ctx->dmp_timer.data = (unsigned long)ctx;
+	ctx->dmp_timer.timeoutHandler = conndump_timeout_handler;
+	ctx->dmp_timer.timeroutHandlerData = (unsigned long)ctx;
+	osal_timer_create(&ctx->dmp_timer);
 	init_completion(&ctx->emi_dump);
 
 	conndump_set_dump_state(ctx, CORE_DUMP_INIT);

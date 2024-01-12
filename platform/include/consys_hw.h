@@ -54,6 +54,7 @@
 */
 
 typedef int(*CONSYS_PLT_CLK_GET_FROM_DTS) (struct platform_device *pdev);
+typedef int(*CONSYS_PLT_CLK_DETACH) (void);
 typedef int(*CONSYS_PLT_READ_REG_FROM_DTS) (struct platform_device *pdev);
 
 typedef int(*CONSYS_PLT_CLOCK_BUFFER_CTRL) (unsigned int enable);
@@ -103,6 +104,7 @@ typedef int(*CONSYS_PLT_BUS_CLOCK_CTRL)(enum consys_drv_type drv_type, unsigned 
 struct consys_hw_ops_struct {
 	/* load from dts */
 	CONSYS_PLT_CLK_GET_FROM_DTS consys_plt_clk_get_from_dts;
+	CONSYS_PLT_CLK_DETACH consys_plt_clk_detach;
 
 	/* clock */
 	CONSYS_PLT_CLOCK_BUFFER_CTRL consys_plt_clock_buffer_ctrl;

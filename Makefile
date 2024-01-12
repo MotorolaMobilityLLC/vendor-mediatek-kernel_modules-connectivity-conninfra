@@ -62,6 +62,7 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(CONNSYS_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/mmc/core
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/include/
+ccflags-y += -I$(srctree)/include/linux/soc/mediatek/
 ###############################################################################
 
 

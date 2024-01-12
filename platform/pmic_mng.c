@@ -19,6 +19,14 @@
 #include "pmic_mng.h"
 
 #include "osal.h"
+#if COMMON_KERNEL_PMIC_SUPPORT
+#include <linux/regulator/consumer.h>
+#include <linux/mfd/mt6397/core.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
+#include <linux/regmap.h>
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -56,6 +64,9 @@
 */
 
 P_CONSYS_PLATFORM_PMIC_OPS consys_platform_pmic_ops;
+#if COMMON_KERNEL_PMIC_SUPPORT
+struct regmap *g_regmap;
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -73,9 +84,45 @@ P_CONSYS_PLATFORM_PMIC_OPS __weak get_consys_platform_pmic_ops(void)
 	return NULL;
 }
 
+#if COMMON_KERNEL_PMIC_SUPPORT
+static void pmic_mng_get_regmap(struct platform_device *pdev)
+{
+	struct device_node *pmic_node;
+	struct platform_device *pmic_pdev;
+	struct mt6397_chip *chip;
+
+	pmic_node = of_parse_phandle(pdev->dev.of_node, "pmic", 0);
+	if (!pmic_node) {
+		pr_info("get pmic_node fail\n");
+		return;
+	}
+
+	pmic_pdev = of_find_device_by_node(pmic_node);
+	if (!pmic_pdev) {
+		pr_info("get pmic_pdev fail\n");
+		return;
+	}
+
+	chip = dev_get_drvdata(&(pmic_pdev->dev));
+	if (!chip) {
+		pr_info("get chip fail\n");
+		return;
+	}
+
+	g_regmap = chip->regmap;
+	if (IS_ERR_VALUE(g_regmap)) {
+		g_regmap = NULL;
+		pr_info("get regmap fail\n");
+	}
+}
+#endif
 
 int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
 {
+#if COMMON_KERNEL_PMIC_SUPPORT
+	pmic_mng_get_regmap(pdev);
+#endif
+
 	if (consys_platform_pmic_ops == NULL)
 		consys_platform_pmic_ops = get_consys_platform_pmic_ops();
 
