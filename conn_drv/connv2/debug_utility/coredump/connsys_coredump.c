@@ -1611,7 +1611,14 @@ void* connsys_coredump_init(
 	/* EMI init */
 	coredump_mng_get_emi_phy_addr(&emi_base, &emi_size);
 	coredump_mng_get_mcif_emi_phy_addr(NULL, &mcif_emi_size);
-	pr_info("[%s][%s] Connsys emi_base=0x%x emi_size=%d\n", __func__, g_type_name[conn_type], emi_base, emi_size);
+	pr_info("[%s][%s] Connsys emi_base=0x%x emi_size=%d\n",
+			__func__, g_type_name[conn_type], emi_base, emi_size);
+
+	if (emi_size == 0) {
+		pr_notice("[%s] emi size is zero\n", __func__);
+		goto error_exit;
+	}
+
 	ctx->full_emi_size = emi_size;
 	ctx->emi_phy_addr_base = config->start_offset + emi_base;
 	ctx->emi_size = config->size;
