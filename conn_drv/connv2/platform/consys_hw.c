@@ -94,6 +94,7 @@ static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
 /* MT6983: for sleep mode control */
 static int g_platform_config;
 
+static unsigned int g_support_drv = 0;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -688,6 +689,57 @@ void consys_hw_set_mcu_control(int type, bool onoff)
 		pr_notice("consys_plt_set_mcu_control not supported\n");
 }
 
+unsigned int consys_hw_drv_support(struct platform_device *pdev)
+{
+	int ret = 0;
+	const char *drv_list[CONNDRV_TYPE_MAX];
+	int count = 0, i;
+	unsigned int radio_support = 0;
+
+	count = of_property_count_strings(pdev->dev.of_node, "radio-support");
+	pr_info("[%s] count=%d", __func__, count);
+	/* If no radio-support tag, legacy project. Support: BT/GPS/FM/WIFI */
+	if (count <= 0) {
+		radio_support = (0xF | ((0x1 << CONNDRV_TYPE_CONNINFRA)));
+		pr_info("[%s] use default radio: [0x%x]", __func__, radio_support);
+		return radio_support;
+	}
+
+	/* Example:
+	 * radio-support = "bt", "fm", "gps", "wifi";
+	 * bt: BT
+	 * fm: FM radio
+	 * gps: GPS
+	 * wifi: Wi-Fi
+	 * mawd: MAWD
+	 */
+	ret = of_property_read_string_array(
+		pdev->dev.of_node, "radio-support", drv_list, CONNDRV_TYPE_MAX);
+	for (i = 0; i < count; i++) {
+		pr_info("[%s][%d] get: %s", __func__, i, drv_list[i]);
+		if (strcmp("bt", drv_list[i]) == 0)
+			radio_support |= (0x1 << CONNDRV_TYPE_BT);
+		if (strcmp("fm", drv_list[i]) == 0)
+			radio_support |= (0x1 << CONNDRV_TYPE_FM);
+		if (strcmp("gps", drv_list[i]) == 0)
+			radio_support |= (0x1 << CONNDRV_TYPE_GPS);
+		if (strcmp("wifi", drv_list[i]) == 0)
+			radio_support |= (0x1 << CONNDRV_TYPE_WIFI);
+		if (strcmp("mawd", drv_list[i]) == 0)
+			radio_support |= (0x1 << CONNDRV_TYPE_MAWD);
+	}
+	/* Always add conninfra */
+	radio_support |= (0x1 << CONNDRV_TYPE_CONNINFRA);
+	pr_info("[%s] radio support = 0x%x", __func__, radio_support);
+
+	return radio_support;
+}
+
+unsigned int consys_hw_get_support_drv(void)
+{
+	return g_support_drv;
+}
+
 int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb)
 {
 	int ret = 0;
@@ -699,7 +751,10 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 		return -2;
 	}
 
-	/* Read device node */
+	/* Get supported drv from DTS */
+	g_support_drv = consys_hw_drv_support(pdev);
+
+	/* Register mng init */
 	if (consys_reg_mng_init(pdev, g_conninfra_plat_data) != 0) {
 		pr_err("consys_plt_read_reg_from_dts fail");
 		return -3;
