@@ -180,6 +180,8 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 
 	if (next_status == 0) {
 		pr_info("Last power off: %d\n", off_radio);
+		pmic_mng_event_cb(0, 0);
+		pr_info("Force dump OC debug log\n");
 		pr_info("Power off CONNSYS PART 1\n");
 		consys_hw_raise_voltage(off_radio, false, true);
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
