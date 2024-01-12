@@ -24,7 +24,7 @@
 #include "wmt_build_in_adapter.h"
 #include "emi_mng.h"
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if IS_ENABLED(CONFIG_DEVICE_MODULES_MTK_DEVAPC)
 #include <devapc_public.h>
 #endif
 
@@ -139,7 +139,7 @@ static int conninfra_conn_bus_dump(void);
 /* Disable DEVAPC on FPGA */
 #define CFG_CONNINFRA_DEVAPC_SUPPORT	0
 #else
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if IS_ENABLED(CONFIG_DEVICE_MODULES_MTK_DEVAPC)
 #define CFG_CONNINFRA_DEVAPC_SUPPORT	1
 #else
 #define CFG_CONNINFRA_DEVAPC_SUPPORT	0
