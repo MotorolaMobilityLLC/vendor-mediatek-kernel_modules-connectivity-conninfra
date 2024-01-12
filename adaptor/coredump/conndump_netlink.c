@@ -100,7 +100,6 @@ CONN_COREDUMP_SYS_LIST(DECLARE_COREDUMP_NETLINK_FUNC)
 ********************************************************************************
 */
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0))
 /* attribute policy */
 static struct nla_policy conndump_genl_policy[CONNDUMP_ATTR_MAX + 1] = {
 	[CONNDUMP_ATTR_MSG] = {.type = NLA_NUL_STRING},
@@ -109,7 +108,6 @@ static struct nla_policy conndump_genl_policy[CONNDUMP_ATTR_MAX + 1] = {
 	[CONNDUMP_ATTR_MSG_SIZE] = {.type = NLA_U32},
 	[CONNDUMP_ATTR_LAST] = {.type = NLA_U32},
 };
-#endif
 
 CONN_COREDUMP_SYS_LIST(DECLARE_COREDUMP_NETLINK_OPS)
 
