@@ -74,7 +74,15 @@ struct connv3_plat_data {
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 int connv3_hw_deinit(void);
 
-int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio);
+/* Parameter:
+ * - curr_status: current power on status
+ * - off_radio: the radio to turn off
+ * Output:
+ * - *pmic_state: pmic state change after this function call
+ *     - 0: no change
+ *     - 1: pmic shutdown
+ */
+int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio, unsigned int *pmic_state);
 int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
 int connv3_hw_ext_32k_onoff(bool);

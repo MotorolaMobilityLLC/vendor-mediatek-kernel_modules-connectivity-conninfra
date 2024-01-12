@@ -86,6 +86,7 @@ static int opfunc_subdrv_pre_pwr_on(struct msg_op_data *op);
 static int opfunc_subdrv_pwr_on_notify(struct msg_op_data *op);
 static int opfunc_subdrv_efuse_on(struct msg_op_data *op);
 static int opfunc_subdrv_pre_cal_fail(struct msg_op_data *op);
+static int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op);
 
 static void _connv3_core_update_rst_status(enum chip_rst_status status);
 
@@ -149,6 +150,7 @@ typedef enum {
 	CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY= 6,
 	CONNV3_SUBDRV_OPID_CAL_EFUSE_ON = 7,
 	CONNV3_SUBDRV_OPID_PRE_CAL_FAIL = 8,
+	CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY = 9,
 
 	CONNV3_SUBDRV_OPID_MAX
 } connv3_subdrv_op;
@@ -164,6 +166,7 @@ static const msg_opid_func connv3_subdrv_opfunc[] = {
 	[CONNV3_SUBDRV_OPID_PWR_ON_NOTIFY] = opfunc_subdrv_pwr_on_notify,
 	[CONNV3_SUBDRV_OPID_CAL_EFUSE_ON] = opfunc_subdrv_efuse_on,
 	[CONNV3_SUBDRV_OPID_PRE_CAL_FAIL] = opfunc_subdrv_pre_cal_fail,
+	[CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY] = opfunc_subdrv_pwr_down_notify,
 };
 
 enum pre_cal_type {
@@ -224,6 +227,24 @@ static void dump_curr_status(char *tag)
 		ctx->drv_inst[CONNV3_DRV_TYPE_MODEM].drv_status);
 }
 
+static int opfunc_power_down_notify(void)
+{
+	unsigned int drv_type;
+	struct subsys_drv_inst *drv_inst;
+	int ret;
+
+	pr_info("[%s] called\n", __func__);
+	for (drv_type = 0; drv_type < CONNV3_DRV_TYPE_MAX; drv_type++) {
+		drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+		ret = msg_thread_send_1(
+			&drv_inst->msg_ctx,
+			CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY, drv_type);
+	}
+
+	return 0;
+}
+
+
 static int opfunc_power_on_internal(unsigned int drv_type)
 {
 	int ret, i;
@@ -262,7 +283,7 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
 		/* power recycle */
-		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX, NULL);
 
 		if (ret) {
 			pr_err("[%s] connv3 power recycle fail. drv=[%d] ret=[%d]\n",
@@ -425,6 +446,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 	bool try_power_off = true;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	unsigned int curr_status = opfunc_get_current_status();
+	unsigned int pmic_state = 0;
 
 	/* Check abnormal type */
 	/* Special case: use CONNV3_DRV_TYPE_MAX for force off (turn off pmic_en directly */
@@ -478,7 +500,10 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 			try_power_off = false;
 
 	connv3_core_wake_lock_get();
-	ret = connv3_hw_pwr_off(curr_status, drv_type);
+	ret = connv3_hw_pwr_off(curr_status, drv_type, &pmic_state);
+	/* Notify subsys driver that pmic has been shutdown */
+	if (pmic_state == 1)
+		opfunc_power_down_notify();
 	connv3_core_wake_lock_put();
 
 	if (ret) {
@@ -605,7 +630,9 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	return 0;
 }
 
-static int pre_cal_drv_onoff_internal(enum connv3_drv_type drv_type, bool on)
+static int pre_cal_drv_onoff_internal(
+	enum connv3_drv_type drv_type,
+	bool on, unsigned int *pmic_state)
 {
 	int ret;
 	unsigned int status;
@@ -622,7 +649,7 @@ static int pre_cal_drv_onoff_internal(enum connv3_drv_type drv_type, bool on)
 			goto PRE_CAL_ONOFF_END;
 		} else {
 			connv3_core_wake_lock_get();
-			ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+			ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX, pmic_state);
 			connv3_core_wake_lock_put();
 			if (ret)
 				pr_notice("[%s] CONNV3_DRV_TYPE_MAX off fail, ret = %d\n",
@@ -646,7 +673,7 @@ static int pre_cal_drv_onoff_internal(enum connv3_drv_type drv_type, bool on)
 				goto PRE_CAL_ONOFF_END;
 			}
 			connv3_core_wake_lock_get();
-			ret = connv3_hw_pwr_off(opfunc_get_current_status(), drv_type);
+			ret = connv3_hw_pwr_off(opfunc_get_current_status(), drv_type, pmic_state);
 			connv3_core_wake_lock_put();
 			g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_OFF;
 			status = opfunc_get_current_status();
@@ -669,7 +696,7 @@ static int opfunc_pre_cal_efuse_on(void)
 
 	/* force power off */
 	pr_info("[pre_cal][efuse_on] force power off");
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false, NULL);
 	if (ret)
 		pr_notice("[%s] force Connv3 power off fail, ret(%d)", __func__, ret);
 
@@ -694,7 +721,7 @@ static int opfunc_pre_cal_efuse_on(void)
 	osal_gettimeofday(&efuse_pre_on);
 
 	/* Do HW on directly. Don't call core function. */
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true, NULL);
 	if (ret) {
 		pr_notice("[%s] Connv3 power on fail, ret=(%d)", __func__, ret);
 		ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
@@ -718,12 +745,12 @@ static int opfunc_pre_cal_efuse_on(void)
 	pr_info("[pre_cal][efuse_on] efuse_on_cb done");
 	osal_gettimeofday(&efuse_on);
 
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false, NULL);
 	if (ret)
 		pr_notice("[efuse_on] power off wifi fail, ret = %d", ret);
 
 	/* use CONNV3_DRV_TYPE_MAX to trigger PMIC en off */
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false, NULL);
 	if (ret)
 		pr_notice("[%s] Connv3 power off fail, ret(%d)", __func__, ret);
 	if (opfunc_get_current_status() != 0)
@@ -749,6 +776,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	struct subsys_drv_inst *drv_inst;
 	int pre_cal_done_state = (0x1 << CONNV3_DRV_TYPE_BT) | (0x1 << CONNV3_DRV_TYPE_WIFI);
 	struct timespec64 efuse_on_start, begin, pwr_on_begin, bt_cal_begin, wf_cal_begin, end;
+	int pmic_state;
 
 	/* Check BT/WIFI status again */
 	ret = osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
@@ -806,8 +834,8 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	osal_gettimeofday(&pwr_on_begin);
 
 	/* Common part POS */
-	bt_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, true);
-	wf_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true);
+	bt_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, true, NULL);
+	wf_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true, NULL);
 	/* Pre-cal fail, inform subsys driver and rollback to power off state */
 	if (bt_cal_ret || wf_cal_ret) {
 		pr_notice("[%s] Connv3 power on fail. ret=(%d, %d)\n",
@@ -816,14 +844,14 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 		drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT];
 		ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			CONNV3_SUBDRV_OPID_PRE_CAL_FAIL, 0, CONNV3_DRV_TYPE_BT);
-		bt_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, false);
+		bt_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, false, NULL);
 		pr_notice("[%s] inform bt pre-cal fail, ret=(%d, %d)\n",
 			__func__, ret, bt_cal_ret);
 
 		drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI];
 		ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			CONNV3_SUBDRV_OPID_PRE_CAL_FAIL, 0, CONNV3_DRV_TYPE_WIFI);
-		wf_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
+		wf_cal_ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false, NULL);
 		pr_notice("[%s] inform wifi pre-cal fail, ret=(%d, %d)\n",
 			__func__, ret, wf_cal_ret);
 		return -1;
@@ -883,10 +911,10 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	pr_info(">>>>>>>> WF do cal done");
 
 	/* Power off */
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, false);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, false, NULL);
 	if (ret)
 		pr_notice("[pre_cal] power off bt fail, ret = %d", ret);
-	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false, &pmic_state);
 	if (ret)
 		pr_notice("[pre_cal] power off wifi fail, ret = %d", ret);
 
@@ -905,6 +933,10 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 			timespec64_to_ms(&pwr_on_begin, &bt_cal_begin),
 			bt_cal_ret, timespec64_to_ms(&bt_cal_begin, &wf_cal_begin),
 			wf_cal_ret, timespec64_to_ms(&wf_cal_begin, &end));
+
+	if (pmic_state == 1) {
+		opfunc_power_down_notify();
+	}
 
 	return 0;
 }
@@ -1307,6 +1339,24 @@ static int opfunc_subdrv_efuse_on(struct msg_op_data *op) {
 	up(&g_connv3_ctx.pre_cal_sema);
 
 	pr_info("[pre_cal][%s] [%s] DONE", __func__, connv3_drv_thread_name[drv_type]);
+
+	return 0;
+}
+
+int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op) {
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+
+	if (drv_type >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid type=[%d]", __func__, drv_type);
+		return -EINVAL;
+	}
+
+	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+	if (drv_inst->ops_cb.pwr_on_cb.chip_power_down_notify) {
+		pr_info("[%s] drv=[%s]", __func__, connv3_drv_thread_name[drv_type]);
+		(drv_inst->ops_cb.pwr_on_cb.chip_power_down_notify)(0);
+	}
 
 	return 0;
 }

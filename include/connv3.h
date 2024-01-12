@@ -111,6 +111,7 @@ struct connv3_pre_calibration_cb {
 struct connv3_power_on_cb {
 	int (*pre_power_on)(void);
 	int (*power_on_notify)(void);
+	int (*chip_power_down_notify)(unsigned int);
 };
 
 /* CR relative callback function

@@ -114,7 +114,7 @@ unsigned int connv3_hw_get_pmic_ic_info(uint8_t *buf, u32 buf_sz)
 	return ret;
 }
 
-int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
+int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio, unsigned int *pmic_state)
 {
 	/*
 	 * +------+---------------- +------------+-----------+-------------------+
@@ -130,6 +130,10 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	 * +------+---------------- +------------+-----------+-------------------+
 	 */
 	int ret;
+
+	/* Init return value */
+	if (pmic_state)
+		*pmic_state = 0;
 
 	ret = connv3_pmic_mng_antenna_power_ctrl(off_radio, 0);
 	if (ret)
@@ -155,6 +159,8 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 				pr_err("[%s] pmic off fail, ret = %d", __func__, ret);
 				return ret;
 			}
+			if (pmic_state != NULL)
+				*pmic_state = 1;
 			pr_info("[%s] force PMIC off, ret = %d\n", __func__, ret);
 		}
 
@@ -210,7 +216,7 @@ int connv3_hw_pmic_parse_state(char *buffer, int buf_sz)
 int get_connv3_platform_ops(struct platform_device *pdev)
 {
 
-	pr_info("[%s] --- [%x]of_node[%s][%s]", __func__,
+	pr_info("[%s] --- [%p] of_node[%s][%s]", __func__,
 				pdev->dev.driver->of_match_table,
 				(pdev->dev.of_node != NULL ? pdev->dev.of_node->name : ""),
 				(pdev->dev.of_node != NULL ? pdev->dev.of_node->full_name : ""));
