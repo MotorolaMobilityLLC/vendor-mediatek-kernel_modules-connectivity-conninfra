@@ -49,7 +49,7 @@ enum vcn13_state {
 ********************************************************************************
 */
 static atomic_t g_voltage_change_status = ATOMIC_INIT(0);
-static struct timer_list g_voltage_change_timer;
+static OSAL_TIMER g_voltage_change_timer;
 
 static struct regulator *reg_VCN13;
 static struct regulator *reg_VCN18;
@@ -77,7 +77,7 @@ static int consys_pmic_vcn33_1_power_ctl_mt6877(bool, struct regulator*);
 static int consys_pmic_vcn33_2_power_ctl_mt6877(bool);
 
 static int consys_plt_pmic_raise_voltage_mt6877(unsigned int, bool, bool);
-static void consys_plt_pmic_raise_voltage_timer_handler_mt6877(unsigned long);
+static void consys_plt_pmic_raise_voltage_timer_handler_mt6877(timer_handler_arg);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6877 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6877,
@@ -110,8 +110,8 @@ int consys_plt_pmic_get_from_dts_mt6877(struct platform_device *pdev, struct con
 	if (!reg_VCN33_2_WIFI)
 		pr_err("Regulator_get VCN33_WIFI fail\n");
 
-	init_timer(&g_voltage_change_timer);
-	g_voltage_change_timer.function = consys_plt_pmic_raise_voltage_timer_handler_mt6877;
+	g_voltage_change_timer.timeoutHandler = consys_plt_pmic_raise_voltage_timer_handler;
+	osal_timer_create(&g_voltage_change_timer);
 	return 0;
 }
 
@@ -359,7 +359,7 @@ static void consys_raise_vcn13_vs2_voltage_mt6877(enum vcn13_state next_state)
 
 	/* start timer */
 	atomic_set(&g_voltage_change_status, 1);
-	mod_timer(&g_voltage_change_timer, jiffies + HZ/1000);
+	osal_timer_modify(&g_voltage_change_timer, 1);
 #endif
 }
 
@@ -381,7 +381,7 @@ int consys_plt_pmic_raise_voltage_mt6877(unsigned int drv_type, bool raise, bool
 	return 0;
 }
 
-void consys_plt_pmic_raise_voltage_timer_handler_mt6877(unsigned long data)
+void consys_plt_pmic_raise_voltage_timer_handler_mt6877(timer_handler_arg data)
 {
 	atomic_set(&g_voltage_change_status, 0);
 }

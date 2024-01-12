@@ -1460,7 +1460,7 @@ int connsys_coredump_start(
 	}
 
 	/* Start coredump timer */
-	osal_timer_modify(&ctx->dmp_timer, jiffies + (CONNSYS_COREDUMP_TIMEOUT) / (1000 / HZ));
+	osal_timer_modify(&ctx->dmp_timer, CONNSYS_COREDUMP_TIMEOUT);
 
 	/* Check coredump status */
 	while (1) {

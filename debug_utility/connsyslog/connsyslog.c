@@ -685,7 +685,7 @@ static void connlog_log_data_handler(struct work_struct *work)
 
 	spin_lock_irqsave(&handler->irq_lock, handler->flags);
 	if (handler->eirqOn)
-		osal_timer_modify(&handler->workTimer, jiffies + 1);
+		osal_timer_modify(&handler->workTimer, 1);
 	spin_unlock_irqrestore(&handler->irq_lock, handler->flags);
 }
 
