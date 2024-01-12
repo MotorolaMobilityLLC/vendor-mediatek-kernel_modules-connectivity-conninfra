@@ -264,14 +264,18 @@ static int connlog_emi_init(struct connlog_dev* handler, phys_addr_t emiaddr, un
 			(unsigned int)handler->phyAddrEmiBase,
 			handler->emi_size);
 
-		if (conn_type == CONN_DEBUG_TYPE_WIFI || conn_type == CONN_DEBUG_TYPE_BT)
+		if (conn_type == CONN_DEBUG_TYPE_WIFI || conn_type == CONN_DEBUG_TYPE_BT) {
 			memset_io(handler->virAddrEmiLogBase, 0xff, handler->emi_size);
+			/* Set state to resume initially */
+			EMI_WRITE32(handler->virAddrEmiLogBase + 32, 1);
+		}
 
 		/* Clean control block as 0; subheader */
 		memset_io(handler->virAddrEmiLogBase + handler->log_offset.emi_read, 0x0, CONNLOG_EMI_32_BYTE_ALIGNED);
 		/* Setup header */
 		EMI_WRITE32(handler->virAddrEmiLogBase + (handler->log_offset.emi_idx * 8), handler->log_offset.emi_base_offset);
 		EMI_WRITE32(handler->virAddrEmiLogBase + (handler->log_offset.emi_idx * 8) + 4, handler->log_offset.emi_size);
+
 		/* Setup end pattern */
 		memcpy_toio(handler->virAddrEmiLogBase + handler->log_offset.emi_guard_pattern_offset,
 			CONNLOG_EMI_END_PATTERN, CONNLOG_EMI_END_PATTERN_SIZE);
@@ -1528,3 +1532,39 @@ int connsys_dedicated_log_path_apsoc_deinit(void)
 	return 0;
 }
 EXPORT_SYMBOL(connsys_dedicated_log_path_apsoc_deinit);
+
+/*****************************************************************************
+* FUNCTION
+*  connsys_dedicated_log_set_ap_state
+* DESCRIPTION
+*  set ap state
+* PARAMETERS
+*  int state  0:suspend, 1:resume
+* RETURNS
+*  0: successfuly, negative if error
+*****************************************************************************/
+int connsys_dedicated_log_set_ap_state(int state)
+{
+	int i;
+	struct connlog_dev* handler;
+
+	if (state < 0 || state > 1) {
+		pr_notice("%s state = %d is unexpected\n", __func__, state);
+		return -1;
+	}
+
+	for (i = CONN_DEBUG_TYPE_WIFI; i < CONN_DEBUG_PRIMARY_END; i++) {
+		handler = gLogDev[i];
+
+		if (handler == NULL || handler->virAddrEmiLogBase == 0) {
+			pr_notice("[%s][%s] didn't init\n", __func__, type_to_title[i]);
+			continue;
+		}
+
+		EMI_WRITE32(handler->virAddrEmiLogBase + 32, state);
+		pr_info("%s state: drv:%s %d\n", __func__,  type_to_title[i], state);
+	}
+
+	return 0;
+}
+

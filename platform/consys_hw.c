@@ -8,6 +8,7 @@
 #include <linux/of_device.h>
 #include <linux/of_reserved_mem.h>
 #include <linux/pinctrl/consumer.h>
+#include <linux/suspend.h>
 
 #include <connectivity_build_in_adapter.h>
 
@@ -61,8 +62,8 @@ enum conninfra_pwr_on_rollback_type
 
 static int mtk_conninfra_probe(struct platform_device *pdev);
 static int mtk_conninfra_remove(struct platform_device *pdev);
-static int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state);
-static int mtk_conninfra_resume(struct platform_device *pdev);
+static int mtk_conninfra_suspend(void);
+static int mtk_conninfra_resume(void);
 static int get_consys_platform_ops(struct platform_device *pdev);
 
 static int _consys_hw_conninfra_wakeup(void);
@@ -85,8 +86,6 @@ extern const struct of_device_id apconninfra_of_ids[];
 static struct platform_driver mtk_conninfra_dev_drv = {
 	.probe = mtk_conninfra_probe,
 	.remove = mtk_conninfra_remove,
-	.suspend = mtk_conninfra_suspend,
-	.resume = mtk_conninfra_resume,
 	.driver = {
 		   .name = "mtk_conninfra",
 		   .owner = THIS_MODULE,
@@ -118,6 +117,9 @@ static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
 /* this config is defined by each platform, used to change setting by dbg command. */
 /* MT6983: for sleep mode control */
 static int g_platform_config;
+
+static struct notifier_block conninfra_pm_notifier;
+
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -750,7 +752,7 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 	return 0;
 }
 
-int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state)
+static int mtk_conninfra_suspend(void)
 {
 	int ret = 0;
 
@@ -763,7 +765,7 @@ int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state)
 	return ret;
 }
 
-int mtk_conninfra_resume(struct platform_device *pdev)
+static int mtk_conninfra_resume(void)
 {
 	/* suspend callback is in atomic context */
 	schedule_work(&ap_resume_work);
@@ -791,6 +793,22 @@ int consys_hw_get_platform_config(void)
 	return g_platform_config;
 }
 
+static int conninfra_pm_notifier_callback(struct notifier_block *nb,
+		unsigned long event, void *dummy)
+{
+	switch (event) {
+		case PM_SUSPEND_PREPARE:
+			mtk_conninfra_suspend();
+			break;
+		case PM_POST_SUSPEND:
+			mtk_conninfra_resume();
+			break;
+		default:
+			break;
+	}
+	return NOTIFY_DONE;
+}
+
 void consys_hw_set_mcu_control(int type, bool onoff)
 {
 	if (consys_hw_ops->consys_plt_set_mcu_control)
@@ -801,7 +819,7 @@ void consys_hw_set_mcu_control(int type, bool onoff)
 
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
-	int iRet = 0, retry = 0;
+	int iRet = 0, retry = 0, ret = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 	unsigned int emi_addr = 0;
 	unsigned int emi_size = 0;
@@ -827,6 +845,12 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 	connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID), emi_addr);
 
 	INIT_WORK(&ap_resume_work, consys_hw_ap_resume_handler);
+
+	conninfra_pm_notifier.notifier_call = conninfra_pm_notifier_callback;
+	ret = register_pm_notifier(&conninfra_pm_notifier);
+	if (ret < 0)
+		pr_notice("%s register_pm_notifier fail %d\n", ret);
+
 	pr_info("[consys_hw_init] result [%d]\n", iRet);
 
 	return iRet;
@@ -835,6 +859,7 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 int consys_hw_deinit(void)
 {
 	platform_driver_unregister(&mtk_conninfra_dev_drv);
+	unregister_pm_notifier(&conninfra_pm_notifier);
 	g_conninfra_dev_cb = NULL;
 	return 0;
 }
