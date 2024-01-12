@@ -1749,6 +1749,12 @@ static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned in
 	 * 4. Wait busy_cr[polling_bit] as 0
 	 */
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	if (subsystem == SYS_SPI_TOP && addr == 0x380 && data == 0) {
+		pr_info("check who writes 0x380 to 0\n");
+		BUG_ON(1);
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
 	CONSYS_REG_BIT_POLLING(
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr,
 		op->polling_bit, 0, 100, 50, check);
@@ -1781,6 +1787,7 @@ static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned in
 int consys_spi_write_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	int ret = 0;
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6877(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI WRITE] Require semaphore fail\n");
