@@ -3,22 +3,11 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_CONSYS_REG_UTIL_H_
-#define _PLATFORM_CONSYS_REG_UTIL_H_
+#ifndef CONSYS_REG_UTIL_H
+#define CONSYS_REG_UTIL_H
 
-/*******************************************************************************
- *                         C O M P I L E R   F L A G S
- ********************************************************************************
- */
-
-/*******************************************************************************
- *                                 M A C R O S
- ********************************************************************************
- */
-#include <linux/io.h>
-
-/* platform dependent */
 #include "plat_def.h"
+#include "plat_library.h"
 
 #define KBYTE (1024*sizeof(char))
 
@@ -140,4 +129,4 @@
  ********************************************************************************
  */
 
-#endif				/* _PLATFORM_CONSYS_REG_UTIL_H_ */
+#endif	/* CONSYS_REG_UTIL_H */

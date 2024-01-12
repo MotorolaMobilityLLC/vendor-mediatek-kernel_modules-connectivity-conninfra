@@ -3,8 +3,8 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_CLOCK_MNG_H_
-#define _PLATFORM_CLOCK_MNG_H_
+#ifndef CLOCK_MNG_H
+#define CLOCK_MNG_H
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -70,4 +70,4 @@ const char* clock_mng_get_schematic_name(enum connsys_clock_schematic type);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_CLOCK_MNG_H_ */
+#endif	/* CLOCK_MNG_H */
