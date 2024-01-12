@@ -103,6 +103,7 @@ int pmic_mng_gps_power_ctrl(unsigned int enable);
 int pmic_mng_fm_power_ctrl(unsigned int enable);
 int pmic_mng_event_cb(unsigned int id, unsigned int event);
 int pmic_mng_raise_voltage(unsigned int, bool, bool);
+bool pmic_mng_is_support_raise_voltage(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

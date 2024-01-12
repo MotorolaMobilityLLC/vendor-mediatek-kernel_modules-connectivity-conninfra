@@ -198,7 +198,11 @@ static void _conninfra_core_drv_status_dump(char* tag)
 
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		drv_status = g_conninfra_ctx.drv_inst[i].drv_status;
-		str_len = snprintf(tmp, DUMP_BUFF_SIZE, " %s:[%s]", g_drv_name[i], drv_status_str[drv_status]);
+		/* ignore not support radio */
+		if (drv_status == DRV_STS_NONE)
+			continue;
+		str_len = snprintf(tmp, DUMP_BUFF_SIZE, " %s:[%s]",
+				g_drv_name[i], drv_status_str[drv_status]);
 		if (buf_len + str_len < DUMP_BUFF_SIZE) {
 			strncat(buf, tmp, str_len);
 			buf_len += str_len;
