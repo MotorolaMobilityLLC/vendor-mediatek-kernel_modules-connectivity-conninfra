@@ -8,7 +8,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6639_CONN_INFRA_BUS_DUMP_VERSION	"20220809"
+#define MT6639_CONN_INFRA_BUS_DUMP_VERSION	"20220811"
 
 #define MT6639_AP2CONN_INFRA_ON_SLP_PROT	0x70028730
 #define MT6639_CONN_INFRA_CLK_DETECT		0x7c023000
@@ -19,7 +19,13 @@
 
 const struct connv3_dbg_command mt6639_pwr_b[] = {
 	/* Write, addr, mask, value, Read, addr*/
-	{ false, 0, 0, 0, true, 0x7C060A10},
+	/* B02 */ {false, 0, 0, 0, true, 0x7C060A10},
+	/* B05 */ {false, 0, 0, 0, true, 0x7C060014},
+	/* B06 */ {false, 0, 0, 0, true, 0x7C060054},
+	/* B07 */ {false, 0, 0, 0, true, 0x7C060010},
+	/* B08 */ {false, 0, 0, 0, true, 0x7C060050},
+	/* B09 */ {false, 0, 0, 0, true, 0x7C060018},
+	/* B10 */ {false, 0, 0, 0, true, 0x7C060058},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_pwr_b = {
@@ -29,16 +35,16 @@ const struct connv3_dump_list mt6639_dmp_list_pwr_b = {
 
 const struct connv3_dbg_command mt6639_pwr_c[] = {
 	/* Write, addr, mask, value, Read, addr*/
-	/* C0 */ {false, 0, 0, 0, true, 0x7C011030},
-	/* C1 */ {false, 0, 0, 0, true, 0x7C012050},
-	/* C2 */ {false, 0, 0, 0, true, 0x7C001344},
-	/* C3 */ {false, 0, 0, 0, true, 0x7C000400},
-	/* C4 */ {false, 0, 0, 0, true, 0x7C000404},
-	/* C5 */ {false, 0, 0, 0, true, 0x7C0910A8},
-	/* C6 */ {false, 0, 0, 0, true, 0x7C091120},
-	/* C7 */ {false, 0, 0, 0, true, 0x7C091124},
-	/* C8 */ {false, 0, 0, 0, true, 0x7C091128},
-	/* C9 */ {false, 0, 0, 0, true, 0x7C09112C},
+	/* C00 */ {false, 0, 0, 0, true, 0x7C011030},
+	/* C01 */ {false, 0, 0, 0, true, 0x7C012050},
+	/* C02 */ {false, 0, 0, 0, true, 0x7C001344},
+	/* C03 */ {false, 0, 0, 0, true, 0x7C000400},
+	/* C04 */ {false, 0, 0, 0, true, 0x7C000404},
+	/* C05 */ {false, 0, 0, 0, true, 0x7C0910A8},
+	/* C06 */ {false, 0, 0, 0, true, 0x7C091120},
+	/* C07 */ {false, 0, 0, 0, true, 0x7C091124},
+	/* C08 */ {false, 0, 0, 0, true, 0x7C091128},
+	/* C09 */ {false, 0, 0, 0, true, 0x7C09112C},
 	/* C10 */ {false, 0, 0, 0, true, 0x7C091130},
 	/* C11 */ {false, 0, 0, 0, true, 0x7C091134},
 	/* C12 */ {true, 0x7c011100, 0x00600000, 0x0, true, 0x7C011134},
@@ -57,6 +63,9 @@ const struct connv3_dbg_command mt6639_pwr_c[] = {
 	/* C25 */ {false, 0, 0, 0, true, 0x7C098058},
 	/* C26 */ {false, 0, 0, 0, true, 0x7C098108},
 	/* C27 */ {false, 0, 0, 0, true, 0x7C098004},
+	/* C28 */ {false, 0, 0, 0, true, 0x7C001620},
+	/* C29 */ {false, 0, 0, 0, true, 0x7C001610},
+	/* C30 */ {false, 0, 0, 0, true, 0x7C001600},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_pwr_c = {
@@ -246,25 +255,27 @@ const struct connv3_dump_list mt6639_dmp_list_cfg_clk_b = {
  */
 const struct connv3_dbg_command mt6639_bus_extra[] = {
 	/* For RFSPI timeout */
-	{false, 0x0, 0x0, 0x0, true, 0x7c012038},
-	{false, 0x0, 0x0, 0x0, true, 0x7c01203c},
-	{false, 0x0, 0x0, 0x0, true, 0x7c012080},
-	{true, 0x7C023500, 0x0, 0xAEAA68, true, 0x7C023504},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050D18},
-	{false, 0x0, 0x0, 0x0, true, 0x7c011050},
-	{false, 0x0, 0x0, 0x0, true, 0x7c011080},
-	{false, 0x0, 0x0, 0x0, true, 0x7c011084},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050060},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050064},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050068},
-	{false, 0x0, 0x0, 0x0, true, 0x7c05006C},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050200},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050204},
-	{false, 0x0, 0x0, 0x0, true, 0x7c050208},
-	{false, 0x0, 0x0, 0x0, true, 0x7c05020C},
-	{false, 0x0, 0x0, 0x0, true, 0x7c049000},
-	{false, 0x0, 0x0, 0x0, true, 0x7C05B2EC},
-	{true, 0x7C05B2EC, 0x0, 0x12345678, true, 0x7C05B2EC},
+	/* 00 */ {false, 0x0, 0x0, 0x0, true, 0x7c012038},
+	/* 01 */ {false, 0x0, 0x0, 0x0, true, 0x7c01203c},
+	/* 02 */ {false, 0x0, 0x0, 0x0, true, 0x7c012080},
+	/* 03 */ {true, 0x7C023500, 0x0, 0xAEAA68, true, 0x7C023504},
+	/* 04 */ {false, 0x0, 0x0, 0x0, true, 0x7c050D18},
+	/* 05 */ {false, 0x0, 0x0, 0x0, true, 0x7c011050},
+	/* 06 */ {false, 0x0, 0x0, 0x0, true, 0x7c011080},
+	/* 07 */ {false, 0x0, 0x0, 0x0, true, 0x7c011084},
+	/* 08 */ {false, 0x0, 0x0, 0x0, true, 0x7c050060},
+	/* 09 */ {false, 0x0, 0x0, 0x0, true, 0x7c050064},
+	/* 10 */ {false, 0x0, 0x0, 0x0, true, 0x7c050068},
+	/* 11 */ {false, 0x0, 0x0, 0x0, true, 0x7c05006C},
+	/* 12 */ {false, 0x0, 0x0, 0x0, true, 0x7c050200},
+	/* 13 */ {false, 0x0, 0x0, 0x0, true, 0x7c050204},
+	/* 14 */ {false, 0x0, 0x0, 0x0, true, 0x7c050208},
+	/* 15 */ {false, 0x0, 0x0, 0x0, true, 0x7c05020C},
+	/* 16 */ {false, 0x0, 0x0, 0x0, true, 0x7c049000},
+	/* 17 */ {false, 0x0, 0x0, 0x0, true, 0x7C05B2EC},
+	/* 18 */ {true, 0x7C05B2EC, 0x0, 0x12345678, true, 0x7C05B2EC},
+	/* For conn2ap timeout */
+	/* 19 */ {false, 0x0, 0x0, 0x0, true, 0x7c023C00},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_extra = {
