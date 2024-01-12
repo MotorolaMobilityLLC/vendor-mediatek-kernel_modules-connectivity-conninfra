@@ -223,6 +223,12 @@ int conn_adaptor_dev_close(struct inode *inode, struct file *file)
 ssize_t conn_adaptor_dev_read(struct file *filp, char __user *buf,
 					size_t count, loff_t *f_pos)
 {
+
+	if (atomic_read(&g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].enable) &&
+		g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].drv_gen_cb.coredump_emi_read)
+		return (*(g_drv_gen_inst[CONN_ADAPTOR_DRV_GEN_CONNAC_2].drv_gen_cb.coredump_emi_read))(filp, buf, count, f_pos);
+
+
 	return 0;
 }
 
