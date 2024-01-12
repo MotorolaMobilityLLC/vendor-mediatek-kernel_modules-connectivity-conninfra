@@ -473,7 +473,7 @@ int conn_adaptor_unregister_drv_gen(enum conn_adaptor_drv_gen drv_gen)
 
 
 /************************************************************************/
-static int conn_adaptor_dev_do_drv_init()
+static int conn_adaptor_dev_do_drv_init(void)
 {
 	static int init_done = 0;
 	int iret = 0;
