@@ -199,13 +199,18 @@ int conninfra_reg_readable_no_lock(void);
 int conninfra_is_bus_hang(void);
 
 /* chip reset
-* return:
-*    <0: error
-*    =0: triggered
-*    =1: ongoing
-*/
+ * return:
+ *    <0: error
+ *    =0: triggered
+ *    =1: ongoing
+ */
 int conninfra_trigger_whole_chip_rst(enum consys_drv_type drv, char *reason);
 
+/* whole chip reset callback
+ * return:
+ *    =0: success
+ *    !0: fail
+ */
 struct whole_chip_rst_cb {
 	int (*pre_whole_chip_rst)(enum consys_drv_type drv, char *reason);
 	int (*post_whole_chip_rst)(void);
