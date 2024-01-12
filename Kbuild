@@ -224,6 +224,7 @@ $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_consys_reg_atf.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_pos_gen.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_coredump_atf.o
 $(MODULE_NAME)-objs += conn_drv/connv2/platform/mt6983/mt6983_debug_gen.o
 endif
 endif
