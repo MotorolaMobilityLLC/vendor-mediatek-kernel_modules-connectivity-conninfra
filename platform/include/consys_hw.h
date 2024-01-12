@@ -167,9 +167,6 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_CLOCK_FAIL_DUMP consys_plt_clock_fail_dump;
 	CONSYS_PLT_GET_HW_VER consys_plt_get_hw_ver;
 
-	/* debug, used by STEP */
-	CONSYS_PLT_IS_CONNSYS_REG consys_plt_is_connsys_reg;
-
 	/* for semaphore */
 	CONSYS_PLT_SEMA_ACQUIRE_TIMEOUT consys_plt_sema_acquire_timeout;
 	CONSYS_PLT_SEMA_RELEASE consys_plt_sema_release;
@@ -241,10 +238,6 @@ unsigned int consys_hw_chipid_get(void);
 int consys_hw_get_clock_schematic(void);
 unsigned int consys_hw_get_hw_ver(void);
 
-/*******************************************************************************
-* tempoary for STEP
-********************************************************************************
-*/
 /*
  * return
  * 1 : can read

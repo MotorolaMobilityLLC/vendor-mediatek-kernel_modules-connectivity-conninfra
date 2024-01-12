@@ -79,56 +79,6 @@ int consys_reg_mng_dump_cpupcr(enum conn_dump_cpupcr_type dump_type, int times, 
 	return -1;
 }
 
-unsigned long consys_reg_mng_validate_idx_n_offset(unsigned int idx, unsigned long offset)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_validate_idx_n_offset)
-		return g_consys_reg_ops->consys_reg_mng_validate_idx_n_offset(idx, offset);
-	return -1;
-}
-
-int consys_reg_mng_find_can_write_reg(unsigned int *idx, unsigned long* offset)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_find_can_write_reg)
-		return g_consys_reg_ops->consys_reg_mng_find_can_write_reg(idx, offset);
-	return -1;
-}
-
-unsigned long consys_reg_mng_get_phy_addr_by_idx(unsigned int idx)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_get_phy_addr_by_idx)
-		return g_consys_reg_ops->consys_reg_mng_get_phy_addr_by_idx(idx);
-	return -1;
-}
-
-unsigned long consys_reg_mng_get_virt_addr_by_idx(unsigned int idx)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_get_virt_addr_by_idx)
-		return g_consys_reg_ops->consys_reg_mng_get_virt_addr_by_idx(idx);
-	return -1;
-}
-
-
-int consys_reg_mng_get_chip_id_idx_offset(unsigned int *idx, unsigned long *offset)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_get_chip_id_idx_offset)
-		return g_consys_reg_ops->consys_reg_mng_get_chip_id_idx_offset(idx, offset);
-	return -1;
-}
-
-int consys_reg_mng_get_reg_symbol_num(void)
-{
-	if (g_consys_reg_ops&&
-		g_consys_reg_ops->consys_reg_mng_get_reg_symbol_num)
-		return g_consys_reg_ops->consys_reg_mng_get_reg_symbol_num();
-	return -1;
-}
-
-
 int consys_reg_mng_init(struct platform_device *pdev)
 {
 	int ret = 0;

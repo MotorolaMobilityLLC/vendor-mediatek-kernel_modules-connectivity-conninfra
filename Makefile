@@ -87,7 +87,6 @@ ccflags-y += -I$(src)/debug_utility/connsyslog
 ccflags-y += -I$(src)/debug_utility/connsyslog/platform/include
 ccflags-y += -I$(src)/debug_utility/coredump
 ccflags-y += -I$(src)/debug_utility/coredump/platform/include
-ccflags-y += -I$(src)/debug_utility/step/include
 
 # By Plaftfrom
 ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)/include
@@ -97,19 +96,6 @@ ifneq ($(TARGET_BUILD_VARIANT), user)
     ccflags-y += -D CONNINFRA_DBG_SUPPORT=1
 else
     ccflags-y += -D CONNINFRA_DBG_SUPPORT=0
-endif
-
-# STEP: (Support Connac)
-# MTK eng/userdebug/user load: Support
-# Customer eng/userdebug load: Support
-# Customer user load: Not support
-
-ifeq ($(wildcard vendor/mediatek/proprietary/external/aee_config_internal/init.aee.mtk.system.rc),)
-	ccflags-y += -D CFG_CONNINFRA_STEP
-else
-	ifneq ($(TARGET_BUILD_VARIANT),user)
-		ccflags-y += -D CFG_CONNINFRA_STEP
-	endif
 endif
 
 #ifeq ($(findstring evb, $(MTK_PROJECT)), evb)
@@ -146,11 +132,6 @@ $(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pos.o
 #$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
 #$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_clock.o
 
-# STEP
-$(MODULE_NAME)-objs += debug_utility/step/conninfra_step.o
-$(MODULE_NAME)-objs += debug_utility/step/conninfra_step_parse.o
-$(MODULE_NAME)-objs += debug_utility/step/conninfra_step_parse_act.o
-
 # Debug utility
 $(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
@@ -174,8 +155,6 @@ $(MODULE_NAME)-objs += test/chip_rst_test.o
 $(MODULE_NAME)-objs += test/conninfra_test.o
 $(MODULE_NAME)-objs += test/mailbox_test.o
 $(MODULE_NAME)-objs += test/connsyslog_test.o
-$(MODULE_NAME)-objs += test/conninfra_step_test.o
-$(MODULE_NAME)-objs += test/conninfra_step_test_util.o
 $(MODULE_NAME)-objs += test/dump_test.o
 endif
 

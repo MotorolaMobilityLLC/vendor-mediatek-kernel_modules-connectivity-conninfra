@@ -67,7 +67,6 @@ static int conninfra_dbg_fw_log_ctrl(int par1, int onoff, int level);
 
 static int conninfra_dbg_thermal_query(int par1, int count, int interval);
 static int conninfra_dbg_thermal_ctrl(int par1, int par2, int par3);
-static int conninfra_dbg_step_ctrl(int par1, int par2, int par3);
 
 static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3);
 
@@ -92,7 +91,6 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0xb] = conninfra_dbg_fw_log_ctrl,
 	[0xc] = conninfra_dbg_thermal_query,
 	[0xd] = conninfra_dbg_thermal_ctrl,
-	[0xe] = conninfra_dbg_step_ctrl,
 
 	[0xf] = conninfra_dbg_suspend_debug,
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -352,21 +350,6 @@ int conninfra_dbg_thermal_ctrl(int par1, int par2, int par3)
 			return -1;
 		}
 		wmt_dev_set_temp_threshold(par3);
-	}
-#endif
-	return 0;
-}
-
-static int conninfra_dbg_step_ctrl(int par1, int par2, int par3)
-{
-#if 0
-	if (par2 == 0)
-		wmt_step_print_version();
-	else if (par2 == 1) {
-		pr_info("STEP show: Start to change config\n");
-		wmt_step_deinit();
-		wmt_step_init();
-		pr_info("STEP show: End to change config\n");
 	}
 #endif
 	return 0;

@@ -34,7 +34,6 @@
 #include "msg_evt_test.h"
 #include "chip_rst_test.h"
 #include "mailbox_test.h"
-#include "conninfra_step_test.h"
 #include "coredump_test.h"
 #include "consys_hw.h"
 
@@ -82,7 +81,6 @@ static int mailbox_tc(int par1, int par2, int par3);
 static int emi_tc(int par1, int par2, int par3);
 static int log_tc(int par1, int par2, int par3);
 static int thermal_tc(int par1, int par2, int par3);
-static int step_tc(int par1, int par2, int par3);
 static int bus_hang_tc(int par1, int par2, int par3);
 static int dump_tc(int par1, int par2, int par3);
 static int is_bus_hang_tc(int par1, int par2, int par3);
@@ -111,11 +109,10 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 	[0x07] = emi_tc,
 	[0x08] = log_tc,
 	[0x09] = thermal_tc,
-	[0x0a] = step_tc,
-	[0x0b] = bus_hang_tc,
-	[0x0c] = dump_tc,
-	[0x0d] = is_bus_hang_tc,
-	[0x0e] = ap_resume_tc,
+	[0x0a] = bus_hang_tc,
+	[0x0b] = dump_tc,
+	[0x0c] = is_bus_hang_tc,
+	[0x0d] = ap_resume_tc,
 };
 
 /*******************************************************************************
@@ -274,22 +271,6 @@ static int thermal_tc(int par1, int par2, int par3)
 	pr_info("[%s] thermal res=[%d][%d]", __func__, ret, temp);
 
 	return ret;
-}
-
-static int step_tc(int par1, int par2, int par3)
-{
-	int ret;
-
-	ret = core_tc_pwr_on();
-	if (ret) {
-		pr_err("pwr on fail");
-		return -1;
-	}
-
-	conninfra_core_force_conninfra_wakeup();
-	conninfra_step_test_all();
-	conninfra_core_force_conninfra_sleep();
-	return 0;
 }
 
 static int log_tc(int par1, int par2, int par3)

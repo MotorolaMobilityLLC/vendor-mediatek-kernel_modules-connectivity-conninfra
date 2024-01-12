@@ -25,8 +25,6 @@
 #include "pmic_mng.h"
 #include "consys_reg_mng.h"
 #include "connsys_debug_utility.h"
-#include "connsys_step.h"
-#include "conninfra_step.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -185,9 +183,6 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret = 0;
 
 	if (next_status == 0) {
-
-		CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_BEFORE_POWER_OFF);
-
 		pr_info("Last pwoer off: %d\n", off_radio);
 		pr_info("Power off CONNSYS PART 1\n");
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
@@ -219,8 +214,6 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 
 	/* first power on */
 	if (curr_status == 0) {
-
-		CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_POWER_ON_START);
 		/* POS PART 1:
 		 * Set PMIC to turn on the power that AFE WBG circuit in D-die,
 		 * OSC or crystal component, and A-die need.
@@ -244,7 +237,6 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		/* Wait 5ms for CONNSYS XO clock ready */
 		mdelay(6);
 
-		CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_POWER_ON_BEFORE_GET_CONNSYS_ID);
 		if (consys_hw_ops->consys_plt_polling_consys_chipid)
 			consys_hw_ops->consys_plt_polling_consys_chipid();
 
@@ -273,8 +265,6 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 			consys_hw_ops->consys_plt_subsys_status_update(true, on_radio);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
-
-		CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_POWER_ON_END);
 	} else {
 		ret = _consys_hw_conninfra_wakeup();
 		/* Record SW status on shared sysram */
@@ -321,7 +311,6 @@ int consys_hw_therm_query(int *temp_ptr)
 		ret = _consys_hw_conninfra_wakeup();
 		if (ret)
 			return CONNINFRA_ERR_WAKEUP_FAIL;
-		CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_BEFORE_READ_THERMAL);
 		*temp_ptr = consys_hw_ops->consys_plt_thermal_query();
 		_consys_hw_conninfra_sleep();
 	} else
@@ -517,15 +506,12 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	/* suspend callback is in atomic context */
-	CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_WHEN_AP_SUSPEND);
-
 	return 0;
 }
 
 int mtk_conninfra_resume(struct platform_device *pdev)
 {
-	/* suspend callback is in atomic context, use schedule work to execute STEP */
-
+	/* suspend callback is in atomic context */
 	schedule_work(&ap_resume_work);
 	return 0;
 }
@@ -533,8 +519,6 @@ int mtk_conninfra_resume(struct platform_device *pdev)
 
 static void consys_hw_ap_resume_handler(struct work_struct *work)
 {
-	CONNINFRA_STEP_DO_ACTIONS_FUNC(STEP_CONNINFRA_TP_WHEN_AP_RESUME);
-
 	if (g_conninfra_dev_cb && g_conninfra_dev_cb->conninfra_resume_cb)
 		(*g_conninfra_dev_cb->conninfra_resume_cb)();
 }
