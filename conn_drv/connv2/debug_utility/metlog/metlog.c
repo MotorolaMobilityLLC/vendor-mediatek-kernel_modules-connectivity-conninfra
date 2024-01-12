@@ -16,6 +16,7 @@
 #include <linux/io.h>
 
 #include "conninfra.h"
+#include "consys_hw.h"
 #include "metlog.h"
 #include "osal.h"
 
@@ -68,30 +69,76 @@ static unsigned int met_get_next_ptr(unsigned int addr, struct conn_metlog_info 
 	return next_addr;
 }
 
-static void met_print_data(unsigned int addr, struct conn_metlog_info *info, unsigned char *met_base)
+static void met_print_data(unsigned int *buf1, unsigned int *buf2, unsigned int len, struct conn_metlog_info *info)
+{
+	int k;
+	char str[DBG_LOG_STR_SIZE] = {""};
+	int strlen = 0;
+	char *p = NULL;
+	int count = 0;
+	int count_per_line = 8;
+
+	if (info->output_len == 64)
+		count_per_line = count_per_line / 2;
+
+	p = str;
+	for (k = 0; k < len; k++) {
+		count++;
+		if (count % count_per_line != 0) {
+			if (info->output_len == 32)
+				strlen = osal_sprintf(p, "%08x,", buf1[k]);
+			else if (info->output_len == 64)
+				strlen = osal_sprintf(p, "%08x%08x,", buf2[k], buf1[k]);
+			p += strlen;
+		} else {
+			if (info->output_len == 32)
+				strlen = osal_sprintf(p, "%08x\n", buf1[k]);
+			else
+				strlen = osal_sprintf(p, "%08x%08x\n", buf2[k], buf1[k]);
+			pr_info("MCU_MET_DATA:%02x%04x%08x,%s", info->type, consys_hw_chipid_get(),
+				conn_hw_env.adie_hw_version, str);
+			p = str;
+		}
+	}
+	if (count % count_per_line != 0) {
+			pr_info("MCU_MET_DATA:%02x%04x%08x,%s", info->type, consys_hw_chipid_get(),
+				conn_hw_env.adie_hw_version, str);
+	}
+}
+
+int met_raw_data(unsigned int addr, struct conn_metlog_info *info, unsigned char *met_base,
+		unsigned int *pvalue1, unsigned int *pvalue2)
 {
 	unsigned int value = 0, value2 = 0;
 
 	if (info->output_len == 32) {
 		if (!met_addr_is_valid(addr + 3, info)) {
 			pr_info("%s, addr(0x%08x) is invalid", __func__, addr + 4);
-			return;
+			return -1;
 		}
 		value = readl(met_base + addr - info->met_base_fw);
-		pr_info("MCU_MET_DATA:0x%08x", value);
+		if(pvalue1)
+			*pvalue1 = value;
+		return 0;
 	} else if (info->output_len == 64) {
 		if (!met_addr_is_valid(addr + 7, info)) {
 			pr_info("%s, addr(0x%08x) is invalid", __func__, addr + 8);
-			return;
+			return -1;
 		}
 		value = readl(met_base + addr - info->met_base_fw);
 		value2 = readl(met_base + addr - info->met_base_fw + 4);
-		pr_info("MCU_MET_DATA:0x%08x%08x", value2, value);
+		if(pvalue1)
+			*pvalue1 = value;
+		if(pvalue2)
+			*pvalue2 = value2;
+		return 0;
 	}
+	return -1;
 }
 
 static int met_thread(void *pvData)
 {
+#define MET_DUMP_MAX_NUM 8192
 	struct conn_metlog_data *data = (struct conn_metlog_data *) pvData;
 	struct conn_metlog_info *info;
 	unsigned char *met_read_cr = NULL;
@@ -99,6 +146,9 @@ static int met_thread(void *pvData)
 	unsigned char *met_base = NULL;
 	unsigned int read_ptr = 0, next_read_ptr = 0;
 	unsigned int write_ptr = 0;
+	unsigned int met_buf_offset = 0;
+	unsigned int *met_dump_buf1 = NULL;
+	unsigned int *met_dump_buf2 = NULL;
 	int ret = -1;
 
 	if (data == NULL) {
@@ -141,6 +191,18 @@ static int met_thread(void *pvData)
 		goto met_exit;
 	}
 
+	met_dump_buf1 = osal_malloc(MET_DUMP_MAX_NUM);
+	if (!met_dump_buf1) {
+		pr_notice("alloc dump met_dump_buf1 fail\n");
+		goto met_exit;
+	}
+
+	met_dump_buf2 = osal_malloc(MET_DUMP_MAX_NUM);
+	if (!met_dump_buf2) {
+		pr_notice("alloc dump met_dump_buf2 fail\n");
+		goto met_exit;
+	}
+
 	/* We have to check whether write_ptr is valid which means HW starts to write MET data. */
 	/* write_cr: recording the address for "next" write */
 	/* read_cr: recording the address for "last" read */
@@ -175,19 +237,40 @@ static int met_thread(void *pvData)
 			if (next_read_ptr == write_ptr)
 				pr_info("no met data need to dump!!!\n");
 			else {
+				osal_memset(met_dump_buf1, 0, MET_DUMP_MAX_NUM);
+				osal_memset(met_dump_buf2, 0, MET_DUMP_MAX_NUM);
+				met_buf_offset = 0;
 				if (next_read_ptr > write_ptr) {
 					while (next_read_ptr < (info->met_base_fw + info->met_size)) {
-						met_print_data(next_read_ptr, info, met_base);
+						met_raw_data(next_read_ptr, info, met_base,
+							&(met_dump_buf1[met_buf_offset]),
+							&(met_dump_buf2[met_buf_offset]));
+						met_buf_offset++;
+						if (met_buf_offset >= MET_DUMP_MAX_NUM) {
+							met_buf_offset = 0;
+							met_print_data(met_dump_buf1, met_dump_buf2,
+								met_buf_offset, info);
+						}
 						read_ptr = next_read_ptr;
 						next_read_ptr = met_get_next_ptr(next_read_ptr, info);
 					}
 					next_read_ptr = info->met_base_fw;
 				}
 				while (next_read_ptr <= (write_ptr - info->output_len / 8)) {
-					met_print_data(next_read_ptr, info, met_base);
+					met_raw_data(next_read_ptr, info, met_base,
+						&(met_dump_buf1[met_buf_offset]),
+						&(met_dump_buf2[met_buf_offset]));
+					met_buf_offset++;
+					if (met_buf_offset >= MET_DUMP_MAX_NUM) {
+						met_buf_offset = 0;
+						met_print_data(met_dump_buf1, met_dump_buf2,
+							met_buf_offset, info);
+					}
 					read_ptr = next_read_ptr;
 					next_read_ptr = met_get_next_ptr(next_read_ptr, info);
 				}
+				if (met_buf_offset > 0)
+					met_print_data(met_dump_buf1, met_dump_buf2, met_buf_offset, info);
 				writel(read_ptr, met_read_cr);
 			}
 		}
@@ -198,6 +281,10 @@ static int met_thread(void *pvData)
 	ret = 0;
 
 met_exit:
+	if (met_dump_buf1)
+		osal_free(met_dump_buf1);
+	if (met_dump_buf2)
+		osal_free(met_dump_buf2);
 	if (met_read_cr)
 		iounmap(met_read_cr);
 	if (met_write_cr)
