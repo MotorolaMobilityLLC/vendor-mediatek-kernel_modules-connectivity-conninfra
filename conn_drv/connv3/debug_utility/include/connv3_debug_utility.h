@@ -8,7 +8,7 @@
 #include <linux/types.h>
 #include <linux/compiler.h>
 
-//#include "coredump/connsys_coredump.h"
+#include "coredump/connv3_coredump.h"
 #include "connsyslog/connv3_mcu_log.h"
 
 /*******************************************************************************

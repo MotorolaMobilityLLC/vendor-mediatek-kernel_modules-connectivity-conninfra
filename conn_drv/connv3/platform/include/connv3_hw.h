@@ -48,6 +48,7 @@ struct connv3_plat_data {
 	const void* hw_ops;
 	const void* platform_pmic_ops;
 	const void* platform_pinctrl_ops;
+	const void* platform_coredump_ops;
 };
 
 /*******************************************************************************

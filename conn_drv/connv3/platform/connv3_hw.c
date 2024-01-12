@@ -13,6 +13,7 @@
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
 #include "connv3_pinctrl_mng.h"
+#include "coredump/connv3_dump_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -182,6 +183,7 @@ int connv3_hw_init(struct platform_device *pdev)
 		return -3;
 	}
 
+	ret = connv3_dump_mng_init((void*)g_connv3_plat_data->platform_coredump_ops);
 
 	g_connv3_pdev = pdev;
 

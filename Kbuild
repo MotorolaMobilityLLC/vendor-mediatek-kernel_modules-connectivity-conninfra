@@ -176,7 +176,8 @@ $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw_plat_data.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pmic_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pinctrl_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/connsyslog/connv3_mcu_log.o
-
+$(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/coredump/connv3_coredump.o
+$(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/coredump/connv3_dump_mng.o
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
@@ -303,4 +304,5 @@ $(MODULE_NAME)-objs += test/connv2/dump_test.o
 # v3
 ccflags-y += -I$(KO_CODE_PATH)/test/connv3/include
 $(MODULE_NAME)-objs += test/connv3/connv3_test.o
+$(MODULE_NAME)-objs += test/connv3/connv3_dump_test.o
 endif

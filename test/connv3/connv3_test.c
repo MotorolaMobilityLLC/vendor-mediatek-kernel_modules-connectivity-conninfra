@@ -9,23 +9,12 @@
 #include <linux/uaccess.h>
 #include <linux/proc_fs.h>
 #include <linux/delay.h>
+
+#include "connv3.h"
 #include "connv3_test.h"
 #include "osal.h"
-#include "connv3.h"
 
-#if 0
-//#include "conninfra.h"
-//#include "conninfra_core.h"
-//#include "consys_reg_mng.h"
-
-#include "connsyslog_test.h"
-#include "conf_test.h"
-#include "cal_test.h"
-#include "msg_evt_test.h"
-#include "chip_rst_test.h"
-#include "coredump_test.h"
-#include "consys_hw.h"
-#endif
+#include "connv3_dump_test.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -62,21 +51,9 @@ static ssize_t connv3_test_write(struct file *filp, const char __user *buf, size
 static ssize_t connv3_test_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
 static int core_tc(int par1, int par2, int par3);
-#if 0
-static int conf_tc(int par1, int par2, int par3);
-static int msg_evt_tc(int par1, int par2, int par3);
-#endif
 static int cal_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
-#if 0
-static int emi_tc(int par1, int par2, int par3);
-static int log_tc(int par1, int par2, int par3);
-static int thermal_tc(int par1, int par2, int par3);
-static int bus_hang_tc(int par1, int par2, int par3);
-static int dump_tc(int par1, int par2, int par3);
-static int is_bus_hang_tc(int par1, int par2, int par3);
-static int ap_resume_tc(int par1, int par2, int par3);
-#endif
+static int v3_dump_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -102,7 +79,7 @@ static const CONNINFRA_TEST_FUNC connv3_test_func[] = {
 	//[0x08] = log_tc,
 	//[0x09] = thermal_tc,
 	//[0x0a] = bus_hang_tc,
-	//[0x0b] = dump_tc,
+	[0x0b] = v3_dump_tc,
 	//[0x0c] = is_bus_hang_tc,
 	//[0x0d] = ap_resume_tc,
 };
@@ -246,6 +223,14 @@ static int cal_tc(int par1, int par2, int par3)
 {
 	pr_info("test start");
 	//return calibration_test();
+	return 0;
+}
+
+static int v3_dump_tc(int par1, int par2, int par3)
+{
+	pr_info("[%s][%d][%d][%d]", __func__, par1, par2, par3);
+
+	connv3_dump_test(par1, par2, par3);
 	return 0;
 }
 
@@ -424,8 +409,8 @@ ssize_t connv3_test_write(struct file *filp, const char __user *buffer, size_t c
 
 	pr_info("x(0x%08x), y(0x%08x), z(0x%08x)\n\r", x, y, z);
 
-	/* For eng and userdebug load, have to enable wmt_dbg by
-	 * writing 0xDB9DB9 to * "/proc/driver/wmt_dbg" to avoid
+	/* For eng and userdebug load, have to enable connv3_test by
+	 * writing 0xDB9DB9 to "/proc/driver/connv3_test" to avoid
 	 * some malicious use
 	 */
 	if (x == 0xDB9DB9) {
