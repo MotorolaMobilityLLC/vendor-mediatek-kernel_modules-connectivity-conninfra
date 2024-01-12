@@ -50,6 +50,9 @@
 /* =====================================================================================
   ---EMI_CTL_0 (0x18001000 + 0x400)---
  =====================================================================================*/
+#define CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_ADDR            CONN_CFG_EMI_CTL_0_ADDR
+#define CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_MASK            0x00600000                // EMI_CTL_DEBUG_1_SEL[22..21]
+#define CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL_SHFT            21
 #define CONN_CFG_EMI_CTL_0_DDR_CNT_LIMIT_ADDR                  CONN_CFG_EMI_CTL_0_ADDR
 #define CONN_CFG_EMI_CTL_0_DDR_CNT_LIMIT_MASK                  0x00007FF0                // DDR_CNT_LIMIT[14..4]
 #define CONN_CFG_EMI_CTL_0_DDR_CNT_LIMIT_SHFT                  4
