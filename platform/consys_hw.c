@@ -67,8 +67,11 @@ static int mtk_conninfra_resume(struct platform_device *pdev);
 
 #ifdef CONFIG_OF
 const struct of_device_id apconninfra_of_ids[] = {
+#if 0
 	{.compatible = "mediatek,mt6765-consys",},
 	{.compatible = "mediatek,mt6761-consys",},
+#endif
+	{.compatible = "mediatek,mt6789-consys",},
 	{}
 };
 #endif
@@ -145,33 +148,40 @@ int consys_hw_pwr_on(void)
 {
 	int ret;
 
+	/* POS PART 1:
+	 * Set PMIC to turn on the power that AFE WBG circuit in D-die,
+	 * OSC or crystal component, and A-die need.
+	 */
 	ret = pmic_mng_common_power_ctrl(1);
-
-	if (consys_hw_ops->consys_plt_set_if_pinmux)
-		consys_hw_ops->consys_plt_set_if_pinmux(1);
-
 	if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
 		consys_hw_ops->consys_plt_clock_buffer_ctrl(1);
 
+	/* POS PART 2:
+	 * 1. Pinmux setting
+	 * 2. Turn on MTCMOS
+	 * 3. Enable AXI bus (AP2CONN slpprot)
+	 */
+	if (consys_hw_ops->consys_plt_set_if_pinmux)
+		consys_hw_ops->consys_plt_set_if_pinmux(1);
+
 	udelay(150);
-	/* co-clock control */
+	if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
+		consys_hw_ops->consys_plt_conninfra_on_power_ctrl(1);
 
-	/* efuse */
-
-	if (consys_hw_ops->consys_plt_hw_reset_bit_set)
-		consys_hw_ops->consys_plt_hw_reset_bit_set(1);
-
-	if (consys_hw_ops->consys_plt_hw_power_ctrl)
-		consys_hw_ops->consys_plt_hw_power_ctrl(1);
-
-	udelay(10);
+	/* Wait 5ms for CONNSYS XO clock ready */
+	mdelay(5);
 
 	if (consys_hw_ops->consys_plt_polling_consys_chipid)
 		consys_hw_ops->consys_plt_polling_consys_chipid();
 
-	if (consys_hw_ops->consys_plt_hw_reset_bit_set)
-		consys_hw_ops->consys_plt_hw_reset_bit_set(1);
-
+	/* POS PART 3:
+	 * 1. d_die_cfg
+	 * 2. spi_master_cfg
+	 * 3. a_die_cfg
+	 * 4. afe_wbg_cal
+	 * 5. patch default value
+	 * 6. CONN_INFRA low power setting (srcclken wait time, mtcmos HW ctl...)
+	 */
 #if 0
 	if (wmt_consys_ic_ops->consys_ic_reset_emi_coredump)
 			wmt_consys_ic_ops->consys_ic_reset_emi_coredump(pEmibaseaddr);
@@ -260,87 +270,37 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
 
-	/* emi mng init */
-	ret = emi_mng_init();
-	if (ret) {
-		pr_err("emi_mng init fail, %d\n", ret);
-		return -1;
-	}
-
-	ret = pmic_mng_init(pdev);
-	if (ret) {
-		pr_err("pmic_mng init fail, %d\n", ret);
-		return -2;
-	}
-
-	if (pdev)
-		g_pdev = pdev;
-
+	/* Read device node */
 	if (consys_hw_ops->consys_plt_read_reg_from_dts)
 		consys_hw_ops->consys_plt_read_reg_from_dts(pdev);
 	else {
 		pr_err("consys_plt_read_reg_from_dts fail");
-		return -3;
+		return -1;
 	}
 
 	if (consys_hw_ops->consys_plt_clk_get_from_dts)
 		consys_hw_ops->consys_plt_clk_get_from_dts(pdev);
 	else {
 		pr_err("consys_plt_clk_get_from_dtsfail");
+		return -2;
+	}
+
+	/* emi mng init */
+	ret = emi_mng_init();
+	if (ret) {
+		pr_err("emi_mng init fail, %d\n", ret);
+		return -3;
+	}
+
+	ret = pmic_mng_init(pdev);
+	if (ret) {
+		pr_err("pmic_mng init fail, %d\n", ret);
 		return -4;
 	}
 
-#if 0
-	if (wmt_consys_ic_ops->consys_ic_clk_get_from_dts)
-		iRet = wmt_consys_ic_ops->consys_ic_clk_get_from_dts(pdev);
-	else
-		iRet = -1;
+	if (pdev)
+		g_pdev = pdev;
 
-	if (iRet)
-		return iRet;
-
-	if (gConEmiPhyBase) {
-		pConnsysEmiStart = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
-		pr_info("Clearing Connsys EMI (virtual(0x%p) physical(0x%pa)) %llu bytes\n",
-				   pConnsysEmiStart, &gConEmiPhyBase, gConEmiSize);
-		memset_io(pConnsysEmiStart, 0, gConEmiSize);
-		iounmap(pConnsysEmiStart);
-		pConnsysEmiStart = NULL;
-
-		if (wmt_consys_ic_ops->consys_ic_emi_mpu_set_region_protection)
-			wmt_consys_ic_ops->consys_ic_emi_mpu_set_region_protection();
-		if (wmt_consys_ic_ops->consys_ic_emi_set_remapping_reg)
-			wmt_consys_ic_ops->consys_ic_emi_set_remapping_reg();
-		if (wmt_consys_ic_ops->consys_ic_emi_coredump_remapping)
-			wmt_consys_ic_ops->consys_ic_emi_coredump_remapping(&pEmibaseaddr, 1);
-		if (wmt_consys_ic_ops->consys_ic_dedicated_log_path_init)
-			wmt_consys_ic_ops->consys_ic_dedicated_log_path_init(pdev);
-	} else {
-		pr_err("consys emi memory address gConEmiPhyBase invalid\n");
-	}
-
-#ifdef CONFIG_MTK_HIBERNATION
-	pr_info("register connsys restore cb for complying with IPOH function\n");
-	register_swsusp_restore_noirq_func(ID_M_CONNSYS, mtk_wcn_consys_hw_restore, NULL);
-#endif
-
-	if (wmt_consys_ic_ops->ic_bt_wifi_share_v33_spin_lock_init)
-		wmt_consys_ic_ops->ic_bt_wifi_share_v33_spin_lock_init();
-
-
-	if (wmt_consys_ic_ops->consys_ic_pmic_get_from_dts)
-		wmt_consys_ic_ops->consys_ic_pmic_get_from_dts(pdev);
-
-	consys_pinctrl = devm_pinctrl_get(&pdev->dev);
-	if (IS_ERR(consys_pinctrl)) {
-		pr_err("cannot find consys pinctrl.\n");
-		consys_pinctrl = NULL;
-	}
-
-
-	if (wmt_consys_ic_ops->consys_ic_store_reset_control)
-		wmt_consys_ic_ops->consys_ic_store_reset_control(pdev);
-#endif
 	return 0;
 }
 

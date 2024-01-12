@@ -49,30 +49,21 @@
 
 
 struct CONSYS_BASE_ADDRESS {
-	size_t mcu_base;
-	size_t ap_rgu_base;
-	size_t topckgen_base;
+	size_t conn_infra_rgu;
+	size_t conn_infra_cfg;
+	size_t conn_host_csr_top_base;
+	size_t infracfg_ao;
+	size_t toprgu_base;
 	size_t spm_base;
-	size_t mcu_conn_hif_on_base;
-	size_t mcu_top_misc_off_base;
-	size_t mcu_cfg_on_base;
-	size_t mcu_cirq_base;
-	size_t da_xobuf_base;
-	size_t mcu_top_misc_on_base;
-	size_t mcu_conn_hif_pdma_base;
 };
 
 enum CONSYS_BASE_ADDRESS_INDEX {
-	MCU_BASE_INDEX = 0,
-	TOP_RGU_BASE_INDEX,
+	CONN_INFRA_RGU_BASE_INDEX = 0,
+	CONN_INFRA_CFG_BASE_INDEX,
+	CONN_HOST_CSR_TOP_BASE_INDEX,
 	INFRACFG_AO_BASE_INDEX,
+	TOPRGU_BASE_INDEX,
 	SPM_BASE_INDEX,
-	MCU_CONN_HIF_ON_BASE_INDEX,
-	MCU_TOP_MISC_OFF_BASE_INDEX,
-	MCU_CFG_ON_BASE_INDEX,
-	MCU_CIRQ_BASE_INDEX,
-	MCU_TOP_MISC_ON_BASE_INDEX,
-	MCU_CONN_HIF_PDMA_BASE_INDEX,
 };
 
 
@@ -80,9 +71,7 @@ typedef int(*CONSYS_PLT_CLK_GET_FROM_DTS) (struct platform_device *pdev);
 typedef int(*CONSYS_PLT_READ_REG_FROM_DTS) (struct platform_device *pdev);
 
 typedef int(*CONSYS_PLT_CLOCK_BUFFER_CTRL) (unsigned int enable);
-typedef void(*CONSYS_PLT_HW_RESET_BIT_SET) (unsigned int enable);
-//typedef void(*CONSYS_IC_HW_SPM_CLK_GATING_ENABLE) (VOID);
-typedef int(*CONSYS_PLT_HW_POWER_CTRL) (unsigned int enable);
+typedef int(*CONSYS_PLT_CONNINFRA_ON_POWER_CTRL) (unsigned int enable);
 typedef void(*CONSYS_PLT_SET_IF_PINMUX) (unsigned int enable);
 
 typedef int(*CONSYS_PLT_POLLING_CONSYS_CHIPID) (void);
@@ -113,10 +102,8 @@ typedef struct _CONSYS_HW_OPS_ {
 	CONSYS_PLT_CO_CLOCK_TYPE consys_plt_co_clock_type;
 
 	/* POS */
-	CONSYS_PLT_HW_RESET_BIT_SET consys_plt_hw_reset_bit_set;
 	/*CONSYS_IC_HW_SPM_CLK_GATING_ENABLE consys_ic_hw_spm_clk_gating_enable;*/
-	CONSYS_PLT_HW_POWER_CTRL consys_plt_hw_power_ctrl;
-
+	CONSYS_PLT_CONNINFRA_ON_POWER_CTRL consys_plt_conninfra_on_power_ctrl;
 	CONSYS_PLT_SET_IF_PINMUX consys_plt_set_if_pinmux;
 
 	/*CONSYS_IC_AHB_CLOCK_CTRL consys_ic_ahb_clock_ctrl;*/

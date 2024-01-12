@@ -53,6 +53,11 @@ enum consys_drv_type {
 	CONNDRV_TYPE_MAX
 };
 
+#define CONNINFRA_CB_RET_CAL_PASS_POWER_OFF 0x0
+#define CONNINFRA_CB_RET_CAL_PASS_POWER_ON  0x2
+#define CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF 0x1
+#define CONNINFRA_CB_RET_CAL_FAIL_POWER_ON  0x3
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************

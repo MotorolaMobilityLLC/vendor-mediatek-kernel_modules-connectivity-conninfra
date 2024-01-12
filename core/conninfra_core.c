@@ -99,7 +99,7 @@ static char *drv_thread_name[] = {
 };
 
 typedef enum {
-	INFRA_SUBDRV_OPID_PRE_RESET		= 0,
+	INFRA_SUBDRV_OPID_PRE_RESET	= 0,
 	INFRA_SUBDRV_OPID_POST_RESET	= 1,
 	INFRA_SUBDRV_OPID_CAL_PWR_ON	= 2,
 	INFRA_SUBDRV_OPID_CAL_DO_CAL	= 3,
@@ -309,13 +309,13 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			INFRA_SUBDRV_OPID_CAL_DO_CAL, 0, CONNDRV_TYPE_BT);
 	if (ret)
-		pr_warn("driver [%d] power on fail\n", CONNDRV_TYPE_BT);
+		pr_warn("driver [%d] calibration fail\n", CONNDRV_TYPE_BT);
 	pr_info(">>>>>>>> BT do cal done");
 	drv_inst = &g_conninfra_ctx.drv_inst[CONNDRV_TYPE_WIFI];
 	ret = msg_thread_send_wait_1(&drv_inst->msg_ctx,
 			INFRA_SUBDRV_OPID_CAL_DO_CAL, 0, CONNDRV_TYPE_WIFI);
 	if (ret)
-		pr_warn("driver [%d] power on fail\n", CONNDRV_TYPE_WIFI);
+		pr_warn("driver [%d] calibration fail\n", CONNDRV_TYPE_WIFI);
 
 	pr_info(">>>>>>>> WF do cal done");
 
