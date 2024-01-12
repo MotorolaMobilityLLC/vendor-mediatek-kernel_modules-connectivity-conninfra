@@ -25,6 +25,8 @@
 #include <linux/regmap.h>
 #include "clock_mng.h"
 
+#include "connectivity_build_in_adapter.h"
+
 #define CONNINFRA_DBG_PROCNAME "driver/conninfra_dbg"
 
 #define BUF_LEN_MAX 384
@@ -85,6 +87,7 @@ static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
 static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_dump_power_state(int par1, int par2, int par3);
+static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
@@ -130,6 +133,7 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	/* The following command ids should be used by WMT as well. */
 	/* Check the usage of WMT before add a new one */
 	[0x40] = conninfra_dbg_dump_power_state,
+	[0x50] = conninfra_dbg_conap_trg_cmd,
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -650,6 +654,13 @@ static int conninfra_dbg_dump_power_state(int par1, int par2, int par3)
 	}
 
 	osal_unlock_sleepable_lock(&g_dump_lock);
+	return 0;
+}
+
+static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3)
+{
+	connectivity_export_conap_scp_trigger_cmd(par2, par3, 0);
+
 	return 0;
 }
 
