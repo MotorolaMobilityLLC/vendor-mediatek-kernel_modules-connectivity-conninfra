@@ -649,6 +649,10 @@ static int connv3_dump_end_dump(struct connv3_dump_ctx *ctx)
 	/* EMI is invalid, send end command */
 	if (strlen(ctx->cb.dev_node) == 0 || ctx->cb.emi_size == 0) {
 		cmd_tag = "[COREDUMP_END]";
+		if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "coredump_end") < 0) {
+			pr_notice("[%s][%s] coredump end snprintf failed", __func__, g_type_name[ctx->conn_type]);
+			return -1;
+		}
 		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_WAIT_DONE);
 	} else {
 		cmd_tag = "[EMI]";
