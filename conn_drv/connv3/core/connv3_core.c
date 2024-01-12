@@ -27,7 +27,8 @@
 #define CONNV3_EVENT_TIMEOUT				3000
 #define CONNV3_RESET_TIMEOUT				500
 #define CONNV3_PRE_CAL_TIMEOUT				500
-#define CONNV3_MAX_PRE_CAL_BLOCKING_TIME 60000
+#define CONNV3_MAX_PRE_CAL_BLOCKING_TIME		60000
+#define CONNV3_PRE_CAL_OP_TIMEOUT			60000 /* 60 sec */
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -148,7 +149,7 @@ typedef enum {
 static const msg_opid_func connv3_subdrv_opfunc[] = {
 	[CONNV3_SUBDRV_OPID_PRE_RESET] = opfunc_subdrv_pre_reset,
 	[CONNV3_SUBDRV_OPID_POST_RESET] = opfunc_subdrv_post_reset,
-	[CONNV3_SUBDRV_OPID_CAL_PWR_ON] = opfunc_subdrv_cal_pre_on,
+	[CONNV3_SUBDRV_OPID_CAL_PRE_ON] = opfunc_subdrv_cal_pre_on,
 	[CONNV3_SUBDRV_OPID_CAL_PWR_ON] = opfunc_subdrv_cal_pwr_on,
 	[CONNV3_SUBDRV_OPID_CAL_DO_CAL] = opfunc_subdrv_cal_do_cal,
 	[CONNV3_SUBDRV_OPID_PRE_PWR_ON] = opfunc_subdrv_pre_pwr_on,
@@ -157,13 +158,14 @@ static const msg_opid_func connv3_subdrv_opfunc[] = {
 };
 
 enum pre_cal_type {
-	PRE_CAL_ALL_ENABLED = 0,
-	PRE_CAL_ALL_DISABLED = 1,
-	PRE_CAL_PWR_ON_DISABLED = 2,
-	PRE_CAL_SCREEN_ON_DISABLED = 3
+	PRE_CAL_MODE_DEFAULT = 0,
+	PRE_CAL_ALL_ENABLED = 1,
+	PRE_CAL_ALL_DISABLED = 2,
+	PRE_CAL_PWR_ON_DISABLED = 3,
+	PRE_CAL_SCREEN_ON_DISABLED = 4
 };
 
-static unsigned int g_pre_cal_mode = PRE_CAL_ALL_DISABLED;
+static unsigned int g_pre_cal_mode = PRE_CAL_SCREEN_ON_DISABLED;
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -197,6 +199,20 @@ static unsigned int opfunc_get_current_status(void)
 			ret |= (0x1 << i);
 
 	return ret;
+}
+
+static void dump_curr_status(char *tag)
+{
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	if (tag == NULL)
+		tag = "Connv3 Pwr status";
+
+	pr_info("[%s] core_status=[%d] BT=[%d] WF=[%d] MD=[%d]",
+		tag, ctx->core_status,
+		ctx->drv_inst[CONNV3_DRV_TYPE_BT].drv_status,
+		ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status,
+		ctx->drv_inst[CONNV3_DRV_TYPE_MODEM].drv_status);
 }
 
 static int opfunc_power_on_internal(unsigned int drv_type)
@@ -236,6 +252,11 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	}
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
+		/* Power recycle
+		 * when 1st power on, power off to make state clean
+		 * use CONNV3_DRV_TYPE_MAX to do pmic and ex32k off
+		 */
+		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
 
 		/* pre_power_on flow */
 		atomic_set(&g_connv3_ctx.pre_pwr_state, 0);
@@ -312,10 +333,7 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 
 	g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_PRE_POWER_ON;
 
-	pr_info("[Connv3 Pwr On] BT=[%d] WF=[%d] MD=[%d]",
-			ctx->drv_inst[CONNV3_DRV_TYPE_BT].drv_status,
-			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status,
-			ctx->drv_inst[CONNV3_DRV_TYPE_MODEM].drv_status);
+	dump_curr_status("Connv3 Pwr On");
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
 	return 0;
@@ -368,6 +386,8 @@ static int opfunc_power_on_done(struct msg_op_data *op)
 		else if (drv_type == CONNV3_DRV_TYPE_WIFI)
 			connectivity_export_conap_scp_state_change(conn_wifi_on);
 	}
+	dump_curr_status("Connv3 Pwr done");
+
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
 	return 0;
@@ -426,7 +446,8 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 	}
 	/* is there subsys on ? */
 	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++)
-		if (g_connv3_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON)
+		if (g_connv3_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON ||
+		    g_connv3_ctx.drv_inst[i].drv_status == DRV_STS_PRE_POWER_ON)
 			try_power_off = false;
 
 	connv3_core_wake_lock_get();
@@ -443,10 +464,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 	if (try_power_off)
 		g_connv3_ctx.core_status = DRV_STS_POWER_OFF;
 
-	pr_info("[Connv3 Pwr Off] state=[%d] BT=[%d] WF=[%d]",
-			ctx->core_status,
-			ctx->drv_inst[CONNV3_DRV_TYPE_BT].drv_status,
-			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status);
+	dump_curr_status("Connv3 Pwr Off");
 
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
@@ -561,6 +579,32 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	return 0;
 }
 
+static int pre_cal_drv_onoff_internal(enum connv3_drv_type drv_type, bool on)
+{
+	int ret;
+
+	if (on) {
+		if (g_connv3_ctx.drv_inst[drv_type].drv_status == DRV_STS_POWER_ON) {
+			pr_notice("[%s] drv(%d) already on", __func__, drv_type);
+			return -1;
+		}
+		connv3_core_wake_lock_get();
+		ret = connv3_hw_pwr_on(opfunc_get_current_status(), drv_type);
+		connv3_core_wake_lock_put();
+		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
+	} else {
+		if (g_connv3_ctx.drv_inst[drv_type].drv_status == DRV_STS_POWER_OFF) {
+			pr_notice("[%s] drv(%d) already off", __func__, drv_type);
+			return -1;
+		}
+		connv3_core_wake_lock_get();
+		ret = connv3_hw_pwr_off(opfunc_get_current_status(), drv_type);
+		connv3_core_wake_lock_put();
+		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_OFF;
+	}
+	return 0;
+}
+
 static int opfunc_pre_cal_efuse_on(void)
 {
 	int pre_cal_done_state = (0x1 << CONNV3_DRV_TYPE_WIFI);
@@ -588,8 +632,15 @@ static int opfunc_pre_cal_efuse_on(void)
 	pr_info("[pre_cal][efuse_on] wifi on done");
 	osal_gettimeofday(&efuse_pre_on);
 
-	ret = connv3_core_power_on(CONNV3_DRV_TYPE_WIFI);
+	/* Do HW on directly. Don't call core function. */
+	ret = osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
 	if (ret) {
+		pr_notice("[efuse_on] core_lock fail!!, ret = %d", ret);
+		return ret;
+	}
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true);
+	if (ret) {
+		osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 		pr_notice("[%s] Connv3 power on fail, ret=(%d)", __func__, ret);
 		return ret;
 	}
@@ -610,16 +661,24 @@ static int opfunc_pre_cal_efuse_on(void)
 	pr_info("[pre_cal][efuse_on] efuse_on_cb done");
 	osal_gettimeofday(&efuse_on);
 
-	ret = connv3_core_power_off(CONNV3_DRV_TYPE_WIFI);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
+	if (ret)
+		pr_notice("[efuse_on] power off wifi fail, ret = %d", ret);
+	/* use CONNV3_DRV_TYPE_MAX to trigger PMIC en off */
+	ret = connv3_hw_pwr_off(opfunc_get_current_status(), CONNV3_DRV_TYPE_MAX);
 	if (ret)
 		pr_notice("[%s] Connv3 power off fail, ret(%d)", __func__, ret);
+	if (opfunc_get_current_status() != 0)
+		pr_notice("[pre_cal][efuse_on] all radio should be off, but get 0x%x",
+			opfunc_get_current_status());
+
 	osal_gettimeofday(&efuse_end);
 
+	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 	pr_info("[efuse_on] summary pre_on=[%lu] pwr=[%lu] pwr off=[%lu]",
 		timespec64_to_ms(&efuse_begin, &efuse_pre_on),
 		timespec64_to_ms(&efuse_pre_on, &efuse_on),
 		timespec64_to_ms(&efuse_on, &efuse_end));
-
 
 	return ret;
 }
@@ -632,7 +691,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	int bt_cal_ret, wf_cal_ret;
 	struct subsys_drv_inst *drv_inst;
 	int pre_cal_done_state = (0x1 << CONNV3_DRV_TYPE_BT) | (0x1 << CONNV3_DRV_TYPE_WIFI);
-	struct timespec64 begin, pwr_on_begin, bt_cal_begin, wf_cal_begin, end;
+	struct timespec64 efuse_on_start, begin, pwr_on_begin, bt_cal_begin, wf_cal_begin, end;
 
 	/* Check BT/WIFI status again */
 	ret = osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
@@ -650,6 +709,7 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	}
 	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 
+	osal_gettimeofday(&efuse_on_start);
 	opfunc_pre_cal_efuse_on();
 
 	osal_gettimeofday(&begin);
@@ -684,11 +744,18 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	pr_info("[pre_cal] >>>>>>> pre on DONE!!");
 	osal_gettimeofday(&pwr_on_begin);
 
+	ret = osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
+	if (ret) {
+		pr_notice("[pre_cal] get core_lock fail, ret = %d", ret);
+		return ret;
+	}
+
 	/* POWER ON SEQUENCE */
-	ret = connv3_core_power_on(CONNV3_DRV_TYPE_BT);
-	ret |= connv3_core_power_on(CONNV3_DRV_TYPE_WIFI);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, true);
+	ret += pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, true);
 	/* TODO: need to rollback to power off state? */
 	if (ret) {
+		osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 		pr_err("[%s] Connv3 power on fail. ret=(%d)\n",
 			__func__, ret);
 		return ret;
@@ -734,7 +801,9 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 			(bt_cal_ret == CONNV3_CB_RET_CAL_FAIL) ? "fail" : "success",
 			bt_cal_ret);
 
-	connv3_core_power_off(CONNV3_DRV_TYPE_BT);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_BT, false);
+	if (ret)
+		pr_notice("[pre_cal] power off bt fail, ret = %d", ret);
 
 	pr_info("[pre_cal] >>>>>>>> BT do cal done");
 
@@ -747,14 +816,21 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	pr_info("[pre_cal] driver [%s] calibration %s, ret=[%d]\n", connv3_drv_name[CONNV3_DRV_TYPE_WIFI],
 			(wf_cal_ret == CONNV3_CB_RET_CAL_FAIL) ? "fail" : "success",
 			wf_cal_ret);
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
+	if (ret)
+		pr_notice("[pre_cal] power off wifi fail, ret = %d", ret);
+	/* Check radio status */
+	ret = opfunc_get_current_status();
+	if (ret != 0)
+		pr_notice("[pre_cal] all radio should be off, but get 0x%x", ret);
 
-	connv3_core_power_off(CONNV3_DRV_TYPE_WIFI);
-
+	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 	pr_info(">>>>>>>> WF do cal done");
 
 	osal_gettimeofday(&end);
 
-	pr_info("[pre_cal] summary pre_on=[%lu] pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
+	pr_info("[pre_cal] summary efuse_on=[%lu] pre_on=[%lu] pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
+			timespec64_to_ms(&efuse_on_start, &begin),
 			timespec64_to_ms(&begin, &pwr_on_begin),
 			timespec64_to_ms(&pwr_on_begin, &bt_cal_begin),
 			bt_cal_ret, timespec64_to_ms(&bt_cal_begin, &wf_cal_begin),
@@ -1203,7 +1279,6 @@ int connv3_core_ext_32k_on(void)
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
-
 	return 0;
 }
 
@@ -1260,7 +1335,7 @@ int connv3_core_pre_cal_start(void)
 
 	cal_info->status = PRE_CAL_EXECUTING;
 	ret = msg_thread_send_wait(&ctx->cb_ctx,
-				CONNV3_CB_OPID_PRE_CAL, 0);
+				CONNV3_CB_OPID_PRE_CAL, CONNV3_PRE_CAL_OP_TIMEOUT);
 	if (ret) {
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 	}
@@ -1378,7 +1453,7 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	unsigned long flag;
 	struct subsys_drv_inst *drv_inst;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
-	int trigger_pre_cal = 0;
+	int trigger_pre_cal = 0, ret = 0;
 
 	if (type < CONNV3_DRV_TYPE_BT || type >= CONNV3_DRV_TYPE_MAX)
 		return -1;
@@ -1393,9 +1468,11 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 			cb->rst_cb.pre_whole_chip_rst, cb->rst_cb.post_whole_chip_rst,
 			cb->pre_cal_cb.pwr_on_cb, cb->pre_cal_cb.do_cal_cb);
 
-	pr_info("[%s] [pre_cal] type=[%d] bt=[%p] wf=[%p]", __func__, type,
+	pr_info("[%s] [pre_cal] type=[%d] bt=[%p][%p] wf=[%p][%p]", __func__, type,
 			ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.pwr_on_cb,
-			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.pwr_on_cb);
+			ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.do_cal_cb,
+			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.pwr_on_cb,
+			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.do_cal_cb);
 
 	/* trigger pre-cal if BT and WIFI are registered */
 	if (ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.do_cal_cb != NULL &&
@@ -1404,7 +1481,6 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 
 	spin_unlock_irqrestore(&g_connv3_ctx.infra_lock, flag);
 
-#if 0
 	if (trigger_pre_cal) {
 		pr_info("[%s] [pre_cal] trigger pre-cal BT/WF are registered", __func__);
 		ret = msg_thread_send_1(&ctx->msg_ctx,
@@ -1412,7 +1488,6 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 		if (ret)
 			pr_err("send pre_cal_prepare msg fail, ret = %d\n", ret);
 	}
-#endif
 
 	return 0;
 }
@@ -1660,7 +1735,10 @@ int connv3_core_init(void)
 	const struct conninfra_conf *conf = NULL;
 	conf = conninfra_conf_get_cfg();
 	if (conf != NULL) {
-		g_pre_cal_mode = conf->pre_cal_mode;
+		if (conf->pre_cal_mode == PRE_CAL_MODE_DEFAULT)
+			g_pre_cal_mode = PRE_CAL_SCREEN_ON_DISABLED;
+		else
+			g_pre_cal_mode = conf->pre_cal_mode;
 	}
 	pr_info("[%s] [pre_cal] Init g_pre_cal_mode = %u", __func__, g_pre_cal_mode);
 
