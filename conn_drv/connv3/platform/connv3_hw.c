@@ -320,6 +320,17 @@ int connv3_hw_dfd_trigger(bool enable)
 	return connv3_pinctrl_mng_dfd_trigger(enable);
 }
 
+u8* connv3_hw_get_custom_option(u32 *size)
+{
+	if (connv3_hw_ops->connsys_plt_get_custom_option)
+		return connv3_hw_ops->connsys_plt_get_custom_option(size);
+
+	if (size)
+		*size = 0;
+
+	return NULL;
+}
+
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 {
 	int ret = 0;

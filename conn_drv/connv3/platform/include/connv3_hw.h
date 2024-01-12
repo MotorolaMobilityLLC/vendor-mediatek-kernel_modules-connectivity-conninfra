@@ -46,6 +46,7 @@ struct connv3_hw_ops_struct {
 	 * - 1: POR_RESET is supported
 	 */
 	u32 (*connsys_plt_reset_type_support) (void);
+	u8* (*connsys_plt_get_custom_option)(u32* size);
 };
 
 struct connv3_dev_cb {
@@ -117,6 +118,8 @@ int connv3_hw_power_info_reset(
 
 /* DFD relative function */
 int connv3_hw_dfd_trigger(bool);
+
+u8* connv3_hw_get_custom_option(u32 *size);
 
 /*******************************************************************************
 *                              F U N C T I O N S

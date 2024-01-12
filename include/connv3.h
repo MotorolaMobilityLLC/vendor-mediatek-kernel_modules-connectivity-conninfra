@@ -6,6 +6,8 @@
 #ifndef _CONNV3_H_
 #define _CONNV3_H_
 
+#include <linux/delay.h>
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -187,6 +189,17 @@ int connv3_hif_dbg_write(
 int connv3_hif_dbg_write_mask(
 	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
 	unsigned int addr, unsigned int mask, unsigned int value);
+
+/* Get platform customized config
+ * Parameter:
+ * - u32* size
+ * 	- type: input/output
+ * 	- size of return u8 array
+ * Return:
+ * - u8* customized data
+ * 	- Data need pass to FW. Content is defined by project.
+ */
+u8* connv3_get_plat_config(u32 *size);
 
 struct connv3_sub_drv_ops_cb {
 	/* power on */

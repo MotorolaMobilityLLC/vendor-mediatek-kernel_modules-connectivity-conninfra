@@ -13,6 +13,7 @@
 #include <linux/delay.h>
 #include "connv3.h"
 #include "connv3_core.h"
+#include "connv3_hw.h"
 #include <linux/ratelimit.h>
 
 /*******************************************************************************
@@ -288,6 +289,11 @@ int connv3_hif_dbg_write_mask(
 }
 EXPORT_SYMBOL(connv3_hif_dbg_write_mask);
 
+u8* connv3_get_plat_config(u32 *size)
+{
+	return connv3_hw_get_custom_option(size);
+}
+EXPORT_SYMBOL(connv3_get_plat_config);
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type type, struct connv3_sub_drv_ops_cb *cb)
 {

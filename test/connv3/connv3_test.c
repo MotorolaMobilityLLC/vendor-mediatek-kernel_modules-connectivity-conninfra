@@ -56,6 +56,7 @@ static int chip_rst_tc(int par1, int par2, int par3);
 static int v3_coredump_tc(int par1, int par2, int par3);
 static int v3_hif_dump_tc(int par1, int par2, int par3);
 static int v3_dfd_rst_tc(int par1, int par2, int par3);
+static int v3_custom_config_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -86,6 +87,7 @@ static const CONNINFRA_TEST_FUNC connv3_test_func[] = {
 	//[0x0d] = ap_resume_tc,
 	[0xe] = v3_hif_dump_tc,
 	[0xf] = v3_dfd_rst_tc,
+	[0x10] = v3_custom_config_tc,
 };
 
 /*******************************************************************************
@@ -306,6 +308,23 @@ static int v3_dfd_rst_tc(int par1, int par2, int par3)
 		}
 	}
 
+	return 0;
+}
+
+static int v3_custom_config_tc(int par1, int par2, int par3)
+{
+	u32 size = 0;
+	u8 *data = NULL;
+	u32 i;
+
+	data = connv3_get_plat_config(&size);
+
+	pr_info("[%s] data = %p size = %d\n", __func__, data, size);
+	if (size > 0 && data != NULL) {
+		for (i = 0; i < size; i++) {
+			pr_info("data[%d]=%x\n", i, data[i]);
+		}
+	}
 	return 0;
 }
 
