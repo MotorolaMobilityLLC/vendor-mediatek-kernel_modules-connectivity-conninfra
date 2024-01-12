@@ -17,6 +17,7 @@
 #include "pmic_mng.h"
 #include "consys_reg_mng.h"
 #include "connsys_debug_utility.h"
+#include "coredump_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -700,13 +701,15 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	/* Setup connsys log emi base */
 	emi_info = emi_mng_get_phy_addr();
 	if (emi_info) {
-		connsys_dedicated_log_path_apsoc_init((phys_addr_t)emi_info->emi_ap_phy_addr);
+		connsys_dedicated_log_path_apsoc_init((phys_addr_t)emi_info->emi_ap_phy_addr,
+                                        g_conninfra_plat_data->connsyslog_config);
 	} else {
 		pr_err("Connsys log didn't init because EMI is invalid\n");
 	}
 
 	consys_hw_tcxo_parser(pdev);
 
+	coredump_mng_init(g_conninfra_plat_data);
 	g_pdev = pdev;
 
 	atomic_set(&g_hw_init_done, 1);

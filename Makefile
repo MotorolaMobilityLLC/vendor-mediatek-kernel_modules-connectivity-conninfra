@@ -5,55 +5,25 @@ ifneq ($(KERNEL_OUT),)
     ccflags-y += -imacros $(KERNEL_OUT)/include/generated/autoconf.h
 endif
 
-ifeq ($(CONFIG_MTK_COMBO_CHIP),)
-    $(error CONFIG_MTK_COMBO_CHIP not defined)
-endif
-
-#ifeq ($(TARGET_BUILD_VARIANT),$(filter $(TARGET_BUILD_VARIANT),userdebug user))
-#    ldflags-y += -s
-#endif
-
 # Force build fail on modpost warning
 KBUILD_MODPOST_FAIL_ON_WARNINGS := y
+
 ###############################################################################
-
-# replace CONSYS_XXXX to mtXXXX
-CONNSYS_PLATFORM := $(patsubst CONSYS_%,mt%,$(subst ",,$(CONFIG_MTK_COMBO_CHIP)))
-$(info $$CONNSYS_PLATFORM is [${CONNSYS_PLATFORM}])
-
-#ccflags-y += -D MTK_WCN_REMOVE_KERNEL_MODULE
-ifeq ($(CONFIG_ARM64), y)
-    ccflags-y += -D CONFIG_MTK_WCN_ARM64
-endif
-
 # Option for some ALPS specific feature, ex: AEE.
 ccflags-y += -D CONNINFRA_PLAT_ALPS=1
-
-ccflags-y += -D MTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
 ccflags-y += -D MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE=1
 
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(CONNSYS_PLATFORM)/include
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(CONNSYS_PLATFORM)/include/mach
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(CONNSYS_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1/$(CONNSYS_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci/$(CONNSYS_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/eemcs
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/mach/$(CONNSYS_PLATFORM)/include/mach
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(CONNSYS_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/mmc/core
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/clkbuf/src/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/include/
 ccflags-y += -I$(srctree)/include/linux/soc/mediatek/
 ccflags-y += -I$(srctree)/drivers/gpu/drm/mediatek/mediatek_v2
+ccflags-y += -I$(srctree)/drivers/memory/mediatek/
+
 ###############################################################################
-
-
 ccflags-y += -Werror
 ccflags-y += -Wno-error=format
 ccflags-y += -Wno-error=format-extra-args
@@ -69,7 +39,7 @@ obj-m += $(MODULE_NAME).o
 endif
 
 ###############################################################################
-# common_main
+# Common_main
 ###############################################################################
 ccflags-y += -I$(src)/include
 ccflags-y += -I$(src)/base/include
@@ -86,8 +56,21 @@ ccflags-y += -I$(src)/debug_utility/coredump/platform/include
 ccflags-y += -I$(src)/debug_utility/metlog
 
 # By Plaftfrom
-ccflags-y += -I$(src)/platform/$(CONNSYS_PLATFORM)/include
-ccflags-y += -I$(src)/platform/$(CONNSYS_PLATFORM)/include/CODA
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
+ccflags-y += -I$(src)/platform/mt6885/include
+ccflags-y += -I$(src)/platform/mt6885/include/CODA
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
+$(warning $(MODULE_NAME) build mt6893)
+ccflags-y += -I$(src)/platform/mt6893/include
+ccflags-y += -I$(src)/platform/mt6893/include/CODA
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
+ccflags-y += -I$(src)/platform/mt6877/include
+ccflags-y += -I$(src)/platform/mt6877/include/CODA
+endif
 
 ifneq ($(TARGET_BUILD_VARIANT), user)
     ccflags-y += -D CONNINFRA_DBG_SUPPORT=1
@@ -107,18 +90,8 @@ else
     ccflags-y += -D CONNINFRA_PLAT_BUILD_MODE=0
 endif
 
-
-#ifeq ($(findstring evb, $(MTK_PROJECT)), evb)
-#ccflags-y += -D CFG_WMT_EVB
-#endif
-
-#ifneq ($(filter "CONSYS_%",$(CONFIG_MTK_COMBO_CHIP)),)
-#$(MODULE_NAME)-objs += common_main/platform/$(CONNSYS_PLATFORM).o
-#endif
-
 $(MODULE_NAME)-objs += base/ring.o
 $(MODULE_NAME)-objs += base/osal.o
-#$(MODULE_NAME)-objs += base/log.o
 $(MODULE_NAME)-objs += base/msg_thread.o
 $(MODULE_NAME)-objs += core/conninfra_core.o
 $(MODULE_NAME)-objs += src/conninfra_dev.o
@@ -130,26 +103,43 @@ $(MODULE_NAME)-objs += platform/clock_mng.o
 $(MODULE_NAME)-objs += platform/pmic_mng.o
 $(MODULE_NAME)-objs += platform/emi_mng.o
 $(MODULE_NAME)-objs += platform/consys_reg_mng.o
-
+$(MODULE_NAME)-objs += platform/coredump_mng.o
 $(MODULE_NAME)-objs += debug_utility/conninfra_dbg.o
 
 # By Plaftfrom
-$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
-$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pmic.o
-$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_emi.o
-$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_consys_reg.o
-$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pos.o
-#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
-#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pmic.o
-#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_clock.o
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
+$(MODULE_NAME)-objs += platform/mt6885/mt6885.o
+$(MODULE_NAME)-objs += platform/mt6885/mt6885_pmic.o
+$(MODULE_NAME)-objs += platform/mt6885/mt6885_emi.o
+$(MODULE_NAME)-objs += platform/mt6885/mt6885_consys_reg.o
+$(MODULE_NAME)-objs += platform/mt6885/mt6885_pos.o
+$(MODULE_NAME)-objs += platform/mt6885/mt6885_coredump.o
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
+$(MODULE_NAME)-objs += platform/mt6893/mt6893.o
+$(MODULE_NAME)-objs += platform/mt6893/mt6893_pmic.o
+$(MODULE_NAME)-objs += platform/mt6893/mt6893_emi.o
+$(MODULE_NAME)-objs += platform/mt6893/mt6893_consys_reg.o
+$(MODULE_NAME)-objs += platform/mt6893/mt6893_pos.o
+$(MODULE_NAME)-objs += platform/mt6893/mt6893_coredump.o
+endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
+$(MODULE_NAME)-objs += platform/mt6877/mt6877.o
+$(MODULE_NAME)-objs += platform/mt6877/mt6877_pmic.o
+$(MODULE_NAME)-objs += platform/mt6877/mt6877_emi.o
+$(MODULE_NAME)-objs += platform/mt6877/mt6877_consys_reg.o
+$(MODULE_NAME)-objs += platform/mt6877/mt6877_pos.o
+$(MODULE_NAME)-objs += platform/mt6877/mt6877_coredump.o
+endif
 
 # Debug utility
 $(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
 $(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
-$(MODULE_NAME)-objs += debug_utility/coredump/platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
+$(MODULE_NAME)-objs += debug_utility/metlog/metlog.o
 
 # Drv init
 $(MODULE_NAME)-objs += drv_init/bluetooth_drv_init.o
@@ -158,9 +148,8 @@ $(MODULE_NAME)-objs += drv_init/fm_drv_init.o
 $(MODULE_NAME)-objs += drv_init/gps_drv_init.o
 $(MODULE_NAME)-objs += drv_init/wlan_drv_init.o
 
-$(MODULE_NAME)-objs += debug_utility/metlog/metlog.o
 ###############################################################################
-# test
+# Test
 ###############################################################################
 ifneq ($(TARGET_BUILD_VARIANT), user)
 ccflags-y += -D CFG_CONNINFRA_UT_SUPPORT
@@ -176,4 +165,3 @@ $(MODULE_NAME)-objs += test/mailbox_test.o
 $(MODULE_NAME)-objs += test/connsyslog_test.o
 $(MODULE_NAME)-objs += test/dump_test.o
 endif
-

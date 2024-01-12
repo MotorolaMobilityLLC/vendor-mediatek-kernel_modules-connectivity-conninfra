@@ -60,7 +60,6 @@
 */
 
 #define CONNINFRA_DEV_MAJOR 164
-//#define WMT_DETECT_MAJOR 154
 #define CONNINFRA_DEV_NUM 1
 #define CONNINFRA_DRVIER_NAME "conninfra_drv"
 #define CONNINFRA_DEVICE_NAME "conninfra_dev"

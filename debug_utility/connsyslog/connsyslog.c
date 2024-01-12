@@ -18,7 +18,6 @@
 #include "osal.h"
 #include "connsyslog.h"
 #include "connsyslog_emi.h"
-#include "connsyslog_hw_config.h"
 #include "ring.h"
 #include "ring_emi.h"
 
@@ -108,6 +107,7 @@ static phys_addr_t gPhyEmiBase;
 /* alarm timer for suspend */
 struct connlog_alarm gLogAlarm;
 
+const struct connlog_emi_config* g_connsyslog_config = NULL;
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -130,10 +130,13 @@ static void connlog_dump_emi(struct connlog_dev* handler, int offset, int size);
 ********************************************************************************
 */
 
-struct connlog_emi_config* __weak get_connsyslog_platform_config(int conn_type)
+const struct connlog_emi_config* get_connsyslog_platform_config(int conn_type)
 {
-	pr_err("Miss platform ops !!\n");
-	return NULL;
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_err("Incorrect type: %d\n", conn_type);
+		return NULL;
+	}
+	return &g_connsyslog_config[conn_type];
 }
 
 void *connlog_cache_allocate(size_t size)
@@ -995,7 +998,7 @@ int connsys_log_init(int conn_type)
 	struct connlog_dev* handler;
 	phys_addr_t log_start_addr;
 	unsigned int log_size;
-	struct connlog_emi_config* emi_config;
+	const struct connlog_emi_config* emi_config;
 
 	if (conn_type < CONN_DEBUG_TYPE_WIFI || conn_type >= CONN_DEBUG_TYPE_END) {
 		pr_err("[%s] invalid type:%d\n", __func__, conn_type);
@@ -1261,10 +1264,11 @@ EXPORT_SYMBOL(connsys_dedicated_log_path_blank_state_changed);
 *  for APSOC platform
 * PARAMETERS
 *  emiaddr      [IN]        EMI physical base address
+*  config       [IN]        platform config
 * RETURNS
 *  void
 ****************************************************************************/
-int connsys_dedicated_log_path_apsoc_init(phys_addr_t emiaddr)
+int connsys_dedicated_log_path_apsoc_init(phys_addr_t emiaddr, const struct connlog_emi_config* config)
 {
 	if (gPhyEmiBase != 0 || emiaddr == 0) {
 		pr_err("Connsys log double init or invalid parameter(emiaddr=%p)\n", emiaddr);
@@ -1274,6 +1278,15 @@ int connsys_dedicated_log_path_apsoc_init(phys_addr_t emiaddr)
 	gPhyEmiBase = emiaddr;
 
 	connlog_alarm_init();
+
+	// Set up connsyslog config
+	if (config == NULL) {
+		pr_err("Fail to set up connsys log platform config\n");
+		return -1;
+	} else {
+		g_connsyslog_config = config;
+	}
+
 	return 0;
 }
 EXPORT_SYMBOL(connsys_dedicated_log_path_apsoc_init);
@@ -1303,6 +1316,7 @@ int connsys_dedicated_log_path_apsoc_deinit(void)
 	}
 
 	gPhyEmiBase = 0;
+	g_connsyslog_config = NULL;
 	return 0;
 }
 EXPORT_SYMBOL(connsys_dedicated_log_path_apsoc_deinit);
