@@ -20,7 +20,7 @@ int connsys_d_die_cfg_mt6991(void);
 int connsys_spi_master_cfg_mt6991(unsigned int curr_status, unsigned int next_status);
 int consys_conninfra_wakeup_mt6991(void);
 int consys_conninfra_sleep_mt6991(void);
-void connsys_afe_sw_patch_mt6991(void);
+void connsys_afe_sw_patch_mt6991_atf(void);
 int connsys_subsys_pll_initial_mt6991(void);
 int connsys_low_power_setting_mt6991(unsigned int curr_status, unsigned int next_status);
 int consys_subsys_status_update_mt6991(bool on, int radio);

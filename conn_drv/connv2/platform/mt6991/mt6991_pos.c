@@ -16,6 +16,7 @@
 #include "mt6991.h"
 #include "mt6991_pos.h"
 #include "mt6991_pos_gen.h"
+#include "../include/connsys_smc.h"
 
 static u64 g_sema_get_time[CONN_SEMA_NUM_MAX];
 
@@ -106,9 +107,9 @@ int connsys_spi_master_cfg_mt6991(unsigned int curr_status, unsigned int next_st
 	return 0;
 }
 
-void connsys_afe_sw_patch_mt6991(void)
+void connsys_afe_sw_patch_mt6991_atf(void)
 {
-	connsys_afe_sw_patch_mt6991_gen();
+	CONNSYS_SMC_CALL_VOID(SMC_CONNSYS_AFE_SW_PATCH_OPID, 0, 0, 0, 0, 0, 0);
 }
 
 int connsys_subsys_pll_initial_mt6991(void)

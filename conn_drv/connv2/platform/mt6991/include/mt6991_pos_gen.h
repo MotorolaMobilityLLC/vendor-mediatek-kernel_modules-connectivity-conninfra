@@ -38,7 +38,6 @@ void connsys_wt_slp_top_ctrl_adie6686_mt6991_gen(void);
 int connsys_subsys_pll_initial_xtal_26000k_mt6991_gen(void);
 int connsys_low_power_setting_mt6991_gen(void);
 int consys_conninfra_wakeup_mt6991_gen(void);
-void connsys_afe_sw_patch_mt6991_gen(void);
 
 /****************************************************************************************************/
 /* Base: CONSYS_GEN_CKSYS_BASE_ADDR (0x1000_0000)                                                   */
