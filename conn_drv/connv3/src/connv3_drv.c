@@ -76,6 +76,25 @@ static struct platform_driver g_mtk_connv3_dev_drv = {
 
 struct platform_device *g_connv3_drv_dev;
 
+/* PMIC */
+/*
+ * event:
+ * 1: chip reset
+ */
+struct connv3_pmic_work {
+	unsigned int id;
+	unsigned int event;
+	struct work_struct pmic_work;
+};
+
+/* For PMIC callback */
+static struct connv3_pmic_work g_connv3_pmic_work;
+
+static int connv3_dev_pmic_event_cb(unsigned int, unsigned int);
+static struct connv3_dev_cb g_connv3_dev_cb = {
+	.connv3_pmic_event_notifier = connv3_dev_pmic_event_cb,
+};
+
 /* suspend/resume */
 struct work_struct g_connv3_ap_resume_work;
 void connv3_suspend_notify(void);
@@ -141,6 +160,30 @@ u32 connv3_detect_adie_chipid(void)
 	return connv3_hw_get_adie_chipid();
 }
 
+static int connv3_dev_pmic_event_cb(unsigned int id, unsigned int event)
+{
+	g_connv3_pmic_work.id = id;
+	g_connv3_pmic_work.event = event;
+	schedule_work(&g_connv3_pmic_work.pmic_work);
+
+	return 0;
+}
+
+static void connv3_dev_pmic_event_handler(struct work_struct *work)
+{
+	unsigned int id, event;
+	struct connv3_pmic_work *pmic_work =
+		container_of(work, struct connv3_pmic_work, pmic_work);
+
+	if (pmic_work) {
+		id = pmic_work->id;
+		event = pmic_work->event;
+		connv3_core_pmic_event_cb(id, event);
+	} else
+		pr_info("[%s] pmic_work is null", __func__);
+
+}
+
 void connv3_suspend_notify(void)
 {
 }
@@ -176,7 +219,7 @@ int connv3_dump_power_state(uint8_t *buf, u32 buf_sz)
 /* BT, WIFI, GPS, FM */
 const int radio_support_map[CONNV3_DRV_TYPE_MAX] = {CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI, -1};
 
-const char *radio_match_str[CONNV3_DRV_TYPE_MAX] = {"bt", "wifi", "md"};
+const char *radio_match_str[CONNV3_DRV_TYPE_MAX] = {"bt", "wifi", "md", "connv3"};
 
 int mtk_connv3_probe(struct platform_device *pdev)
 {
@@ -206,7 +249,7 @@ int mtk_connv3_probe(struct platform_device *pdev)
 	g_connv3_drv_gen.drv_radio_support = support;
 
 	/* hw init */
-	ret = connv3_hw_init(pdev);
+	ret = connv3_hw_init(pdev, &g_connv3_dev_cb);
 
 	g_connv3_drv_dev = pdev;
 
@@ -247,6 +290,8 @@ int connv3_drv_init(void)
 	pr_info("[%s] driver register [%d]", __func__, iret);
 	if (iret)
 		pr_err("Conninfra platform driver registered failed(%d)\n", iret);
+
+	INIT_WORK(&g_connv3_pmic_work.pmic_work, connv3_dev_pmic_event_handler);
 
 	pr_info("[%s] result [%d]\n", __func__, iret);
 	return iret;
