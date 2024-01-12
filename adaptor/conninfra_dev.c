@@ -522,7 +522,9 @@ static int conn_adaptor_dev_do_drv_init(void)
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #if IS_ENABLED(CONFIG_DEVICE_MODULES_DRM_MEDIATEK)
+#ifndef CONFIG_FPGA_EARLY_PORTING
 	iret = mtk_disp_notifier_register("conninfra_driver", &conn_adaptor_fb_notifier);
+#endif
 #endif
 #else
 	iret = fb_register_client(&conn_adaptor_fb_notifier);
@@ -639,7 +641,9 @@ static void conninfra_dev_deinit(void)
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #if IS_ENABLED(CONFIG_DEVICE_MODULES_DRM_MEDIATEK)
+#ifndef CONFIG_FPGA_EARLY_PORTING
 	mtk_disp_notifier_unregister(&conn_adaptor_fb_notifier);
+#endif
 #endif
 #else
 	fb_unregister_client(&conn_adaptor_fb_notifier);
