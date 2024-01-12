@@ -79,7 +79,7 @@ struct conninfra_rst_data rst_data;
 
 void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size)
 {
-	P_CONSYS_EMI_ADDR_INFO  addr_info = emi_mng_get_phy_addr();
+	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
 
 	if (!addr_info) {
 		pr_err("Get EMI info fail!");
@@ -123,7 +123,7 @@ static void conninfra_rst_handler(struct work_struct *work)
 	pr_info("[%s] -----------", __func__);
 }
 
-int trigger_whole_chip_rst(enum consys_drv_type who, char *reason)
+int conninfra_trigger_whole_chip_rst(enum consys_drv_type who, char *reason)
 {
 	/* use schedule worker to trigger ??? */
 	/* so that function can be returned immediately */
@@ -148,7 +148,7 @@ int trigger_whole_chip_rst(enum consys_drv_type who, char *reason)
 
 	return 0;
 }
-EXPORT_SYMBOL(trigger_whole_chip_rst);
+EXPORT_SYMBOL(conninfra_trigger_whole_chip_rst);
 
 int conninfra_sub_drv_ops_register(enum consys_drv_type type,
 				struct sub_drv_ops_cb *cb)

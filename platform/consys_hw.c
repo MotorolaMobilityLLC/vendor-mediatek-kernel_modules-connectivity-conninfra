@@ -23,6 +23,7 @@
 #include "consys_hw.h"
 #include "emi_mng.h"
 #include "pmic_mng.h"
+#include "consys_reg_mng.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -67,10 +68,6 @@ static int mtk_conninfra_resume(struct platform_device *pdev);
 
 #ifdef CONFIG_OF
 const struct of_device_id apconninfra_of_ids[] = {
-#if 0
-	{.compatible = "mediatek,mt6765-consys",},
-	{.compatible = "mediatek,mt6761-consys",},
-#endif
 	{.compatible = "mediatek,mt6789-consys",},
 	{}
 };
@@ -90,7 +87,7 @@ static struct platform_driver mtk_conninfra_dev_drv = {
 		   },
 };
 
-P_CONSYS_HW_OPS consys_hw_ops;
+struct consys_hw_ops_struct *consys_hw_ops;
 struct platform_device *g_pdev;
 
 /*******************************************************************************
@@ -102,9 +99,9 @@ struct platform_device *g_pdev;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-P_CONSYS_HW_OPS __weak get_consys_platform_ops(void)
+struct consys_hw_ops_struct* __weak get_consys_platform_ops(void)
 {
-	pr_warn("Does not support on combo\n");
+	pr_err("Miss platform ops !!\n");
 	return NULL;
 }
 
@@ -182,67 +179,16 @@ int consys_hw_pwr_on(void)
 	 * 5. patch default value
 	 * 6. CONN_INFRA low power setting (srcclken wait time, mtcmos HW ctl...)
 	 */
-#if 0
-	if (wmt_consys_ic_ops->consys_ic_reset_emi_coredump)
-			wmt_consys_ic_ops->consys_ic_reset_emi_coredump(pEmibaseaddr);
-
-		if (wmt_consys_ic_ops->consys_ic_hw_vcn18_ctrl)
-			wmt_consys_ic_ops->consys_ic_hw_vcn18_ctrl(ENABLE);
-
-		if (wmt_consys_ic_ops->consys_ic_set_if_pinmux)
-			wmt_consys_ic_ops->consys_ic_set_if_pinmux(ENABLE);
-
-		udelay(150);
-
-		if (co_clock_type) {
-			pr_info("co clock type(%d),turn on clk buf\n", co_clock_type);
-			if (wmt_consys_ic_ops->consys_ic_clock_buffer_ctrl)
-				wmt_consys_ic_ops->consys_ic_clock_buffer_ctrl(ENABLE);
-		}
-
-		if (co_clock_type) {
-			/*if co-clock mode: */
-			/*1.set VCN28 to SW control mode (with PMIC_WRAP API) */
-			if (wmt_consys_ic_ops->consys_ic_vcn28_hw_mode_ctrl)
-				wmt_consys_ic_ops->consys_ic_vcn28_hw_mode_ctrl(DISABLE);
-		} else {
-			/*if NOT co-clock: */
-			/*1.set VCN28 to HW control mode (with PMIC_WRAP API) */
-			/*2.turn on VCN28 LDO (with PMIC_WRAP API)" */
-			if (wmt_consys_ic_ops->consys_ic_vcn28_hw_mode_ctrl)
-				wmt_consys_ic_ops->consys_ic_vcn28_hw_mode_ctrl(ENABLE);
-			if (wmt_consys_ic_ops->consys_ic_hw_vcn28_ctrl)
-				wmt_consys_ic_ops->consys_ic_hw_vcn28_ctrl(ENABLE);
-		}
-
-		/* turn on VCN28 LDO for reading efuse usage */
-		mtk_wcn_consys_hw_efuse_paldo_ctrl(ENABLE, co_clock_type);
-
-		if (wmt_consys_ic_ops->consys_ic_hw_reset_bit_set)
-			wmt_consys_ic_ops->consys_ic_hw_reset_bit_set(ENABLE);
-		if (wmt_consys_ic_ops->consys_ic_hw_spm_clk_gating_enable)
-			wmt_consys_ic_ops->consys_ic_hw_spm_clk_gating_enable();
-		if (wmt_consys_ic_ops->consys_ic_hw_power_ctrl)
-			wmt_consys_ic_ops->consys_ic_hw_power_ctrl(ENABLE);
-
-		udelay(10);
-
-		if (wmt_consys_ic_ops->consys_ic_ahb_clock_ctrl)
-			wmt_consys_ic_ops->consys_ic_ahb_clock_ctrl(ENABLE);
-
-		WMT_STEP_DO_ACTIONS_FUNC(STEP_TRIGGER_POINT_POWER_ON_BEFORE_GET_CONNSYS_ID);
-
-		if (wmt_consys_ic_ops->polling_consys_ic_chipid)
-			wmt_consys_ic_ops->polling_consys_ic_chipid();
-		if (wmt_consys_ic_ops->update_consys_rom_desel_value)
-			wmt_consys_ic_ops->update_consys_rom_desel_value();
-		if (wmt_consys_ic_ops->consys_ic_acr_reg_setting)
-			wmt_consys_ic_ops->consys_ic_acr_reg_setting();
-		if (wmt_consys_ic_ops->consys_ic_afe_reg_setting)
-			wmt_consys_ic_ops->consys_ic_afe_reg_setting();
-		if (wmt_consys_ic_ops->consys_ic_hw_reset_bit_set)
-			wmt_consys_ic_ops->consys_ic_hw_reset_bit_set(DISABLE);
-#endif
+	if (consys_hw_ops->consys_plt_d_die_cfg)
+		consys_hw_ops->consys_plt_d_die_cfg();
+	if (consys_hw_ops->consys_plt_spi_master_cfg)
+		consys_hw_ops->consys_plt_spi_master_cfg();
+	if (consys_hw_ops->consys_plt_a_die_cfg)
+		consys_hw_ops->consys_plt_a_die_cfg();
+	if (consys_hw_ops->consys_plt_afe_wbg_cal)
+		consys_hw_ops->consys_plt_afe_wbg_cal();
+	if (consys_hw_ops->consys_plt_low_power_setting)
+		consys_hw_ops->consys_plt_low_power_setting();
 	return 0;
 }
 
@@ -271,9 +217,8 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	int ret = -1;
 
 	/* Read device node */
-	if (consys_hw_ops->consys_plt_read_reg_from_dts)
-		consys_hw_ops->consys_plt_read_reg_from_dts(pdev);
-	else {
+
+	if (consys_reg_mng_init(pdev) != 0) {
 		pr_err("consys_plt_read_reg_from_dts fail");
 		return -1;
 	}

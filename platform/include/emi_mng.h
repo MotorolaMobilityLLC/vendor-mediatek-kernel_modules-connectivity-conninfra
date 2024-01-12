@@ -86,7 +86,7 @@ typedef struct _EMI_CTRL_STATE_OFFSET_ {
 } EMI_CTRL_STATE_OFFSET, *P_EMI_CTRL_STATE_OFFSET;
 
 
-typedef struct _CONSYS_EMI_ADDR_INFO_ {
+struct consys_emi_addr_info {
 	unsigned int emi_ap_phy_addr;
 	unsigned int emi_size;
 #if 0
@@ -103,29 +103,29 @@ typedef struct _CONSYS_EMI_ADDR_INFO_ {
 	unsigned int emi_met_data_offset;
 	unsigned int emi_core_dump_offset;
 #endif
-} CONSYS_EMI_ADDR_INFO, *P_CONSYS_EMI_ADDR_INFO;
+};
 
 typedef int(*CONSYS_IC_EMI_MPU_SET_REGION_PROTECTION) (void);
-typedef unsigned int(*CONSYS_IC_EMI_SET_REMAPPING_REG) (void);
+typedef unsigned int(*CONSYS_IC_EMI_SET_REMAPPING_REG) (unsigned int);
 typedef int(*CONSYS_IC_EMI_COREDUMP_REMAPPING) (unsigned char __iomem **addr, unsigned int enable);
 typedef int(*CONSYS_IC_EMI_COREDUMP_RESET) (unsigned char __iomem *addr);
-typedef P_CONSYS_EMI_ADDR_INFO(*CONSYS_IC_EMI_GET_PHY_ADDR) (void);
+//typedef P_CONSYS_EMI_ADDR_INFO(*CONSYS_IC_EMI_GET_PHY_ADDR) (void);
 
-typedef struct _CONSYS_PLATFORM_EMI_OPS_ {
+struct consys_platform_emi_ops {
 	CONSYS_IC_EMI_MPU_SET_REGION_PROTECTION consys_ic_emi_mpu_set_region_protection;
 	CONSYS_IC_EMI_SET_REMAPPING_REG consys_ic_emi_set_remapping_reg;
-	CONSYS_IC_EMI_GET_PHY_ADDR consys_ic_emi_get_phy_addr;
+	//CONSYS_IC_EMI_GET_PHY_ADDR consys_ic_emi_get_phy_addr;
 	CONSYS_IC_EMI_COREDUMP_REMAPPING consys_ic_emi_coredump_remapping;
 	CONSYS_IC_EMI_COREDUMP_RESET consys_ic_reset_emi_coredump;
-} CONSYS_PLATFORM_EMI_OPS, *P_CONSYS_PLATFORM_EMI_OPS;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
 
-extern unsigned long long gConEmiSize;
-extern phys_addr_t gConEmiPhyBase;
+//extern unsigned long long gConEmiSize;
+//extern phys_addr_t gConEmiPhyBase;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -142,7 +142,7 @@ int emi_mng_deinit(void);
 
 int emi_mng_set_region_protection(void);
 int emi_mng_set_remapping_reg(void);
-P_CONSYS_EMI_ADDR_INFO emi_mng_get_phy_addr(void);
+struct consys_emi_addr_info* emi_mng_get_phy_addr(void);
 
 
 /*******************************************************************************

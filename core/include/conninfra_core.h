@@ -20,6 +20,8 @@
 #define _CONNINFRA_CORE_H_
 
 #include <linux/semaphore.h>
+#include <linux/platform_device.h>
+
 #include "osal.h"
 #include "msg_thread.h"
 #include "conninfra.h"
@@ -136,7 +138,14 @@ int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
 						struct sub_drv_ops_cb *cb);
 int conninfra_core_subsys_ops_unreg(enum consys_drv_type type);
 
-int connfinfra_core_pre_cal_start(void);
+int conninfra_core_pre_cal_start(void);
+
+/* NOTE: NOT thread-safe
+ * return value
+ * 1 : Yes, 0: NO
+ */
+int conninfra_core_reg_readable(void);
+int conninfra_core_is_consys_reg(phys_addr_t addr);
 
 /*******************************************************************************
 *                              F U N C T I O N S

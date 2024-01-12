@@ -148,9 +148,14 @@ int core_tc(int par1, int par2, int par3)
 {
 	int iret = 0;
 
-	iret = core_tc_pwr_on();
-	iret = core_tc_pwr_off();
-
+	if (par2 == 0) {
+		iret = core_tc_pwr_on();
+		iret = core_tc_pwr_off();
+	} else if (par2 == 1) {
+		iret = core_tc_pwr_on();
+	} else if (par2 == 2) {
+		iret = core_tc_pwr_off();
+	}
 	//pr_info("core_tc %s (result = %d)", iret? "fail" : "pass", iret);
 	return 0;
 }

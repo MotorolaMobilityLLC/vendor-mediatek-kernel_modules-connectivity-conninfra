@@ -92,7 +92,7 @@ int conninfra_pwr_off(enum consys_drv_type drv_type);
 *    =0: triggered
 *    =1: ongoing
 */
-int trigger_whole_chip_rst(enum consys_drv_type drv, char *reason);
+int conninfra_trigger_whole_chip_rst(enum consys_drv_type drv, char *reason);
 
 struct whole_chip_rst_cb {
 	int (*pre_whole_chip_rst)(void);
