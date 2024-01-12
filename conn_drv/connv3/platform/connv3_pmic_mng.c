@@ -63,6 +63,7 @@ int connv3_pmic_mng_common_power_ctrl(unsigned int enable)
 	if (g_connv3_platform_pmic_ops &&
 		g_connv3_platform_pmic_ops->pmic_common_power_ctrl)
 		ret = g_connv3_platform_pmic_ops->pmic_common_power_ctrl(enable);
+
 	return ret;
 }
 
@@ -83,14 +84,20 @@ int connv3_pmic_mng_set_pmic_state(void)
 
 int connv3_pmic_mng_init(
 	struct platform_device *pdev,
+	struct connv3_dev_cb* dev_cb,
 	const struct connv3_plat_data* plat_data)
 {
+	int ret = 0;
 
 	if (g_connv3_platform_pmic_ops == NULL)
 		g_connv3_platform_pmic_ops =
 			(const struct connv3_platform_pmic_ops*)plat_data->platform_pmic_ops;
 
-	return 0;
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->pmic_initial_setting)
+		ret = g_connv3_platform_pmic_ops->pmic_initial_setting(pdev, dev_cb);
+
+	return ret;
 }
 
 int connv3_pmic_mng_deinit(void)

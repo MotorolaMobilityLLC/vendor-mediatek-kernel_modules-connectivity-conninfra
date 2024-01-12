@@ -33,7 +33,7 @@
 */
 
 struct connv3_platform_pmic_ops {
-
+	int (*pmic_initial_setting) (struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 	int (*pmic_common_power_ctrl) (u32 enable);
 	int (*pmic_parse_state) (char *buffer, int buf_sz);
 
@@ -56,6 +56,7 @@ struct connv3_platform_pmic_ops {
 */
 
 int connv3_pmic_mng_init(struct platform_device *pdev,
+			struct connv3_dev_cb* dev_cb,
 			const struct connv3_plat_data* plat_data);
 int connv3_pmic_mng_deinit(void);
 

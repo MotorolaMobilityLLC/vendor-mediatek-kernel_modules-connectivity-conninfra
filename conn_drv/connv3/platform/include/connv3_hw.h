@@ -41,6 +41,10 @@ struct connv3_hw_ops_struct {
 	u32 (*connsys_plt_get_adie_chipid) (void);
 };
 
+struct connv3_dev_cb {
+	int (*connv3_pmic_event_notifier) (unsigned int, unsigned int);
+};
+
 #define DRV_GEN_SUPPORT_FULL 0x7
 struct connv3_plat_data {
 	const u32 chip_id;
@@ -66,7 +70,7 @@ struct connv3_plat_data {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-int connv3_hw_init(struct platform_device *pdev);
+int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 int connv3_hw_deinit(void);
 
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio);
