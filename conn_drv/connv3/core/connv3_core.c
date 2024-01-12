@@ -1657,7 +1657,6 @@ int connv3_core_subsys_ops_unreg(enum connv3_drv_type type)
 	return 0;
 }
 
-#if ENABLE_PRE_CAL_BLOCKING_CHECK
 static int connv3_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *start)
 {
 	struct timespec64 now;
@@ -1700,6 +1699,11 @@ void connv3_core_pre_cal_blocking(void)
 	struct timespec64 start, end;
 	unsigned long diff;
 	static bool ever_pre_cal = false;
+
+	if (connv3_hw_pre_cal_blocking_enable() == 0) {
+		pr_info("[%s] pre-cal blocking is disable\n", __func__);
+		return;
+	}
 
 	if (g_pre_cal_mode == PRE_CAL_ALL_DISABLED) {
 		pr_info("g_pre_cal_mode == PRE_CAL_ALL_DISABLED\n");
@@ -1746,7 +1750,6 @@ void connv3_core_pre_cal_blocking(void)
 	if (diff > BLOCKING_CHECK_MONITOR_THREAD)
 		pr_info("blocking spent [%lu]", diff);
 }
-#endif
 
 
 static void _connv3_core_update_rst_status(enum chip_rst_status status)

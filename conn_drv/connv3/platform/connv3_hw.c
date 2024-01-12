@@ -114,6 +114,19 @@ unsigned int connv3_hw_get_pmic_ic_info(uint8_t *buf, u32 buf_sz)
 	return ret;
 }
 
+unsigned int connv3_hw_pre_cal_blocking_enable(void)
+{
+#if defined(CONFIG_FPGA_EARLY_PORTING)
+	/* For FPGA environment (host), disable pre-cal blocking */
+	return 0;
+#else
+	/* ASIC, default enable */
+	if (connv3_hw_ops->connsys_plt_pre_cal_blocking_enable)
+		return connv3_hw_ops->connsys_plt_pre_cal_blocking_enable();
+	return 1;
+#endif
+}
+
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio, unsigned int *pmic_state)
 {
 	/*

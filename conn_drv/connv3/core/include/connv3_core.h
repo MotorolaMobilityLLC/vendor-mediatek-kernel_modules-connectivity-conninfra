@@ -24,12 +24,6 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-/* Disable pre-cal check on FPGA because FPGA may not have BT and WIFI together */
-#if defined(CONFIG_FPGA_EARLY_PORTING)
-#define ENABLE_PRE_CAL_BLOCKING_CHECK	0
-#else
-#define ENABLE_PRE_CAL_BLOCKING_CHECK	1
-#endif
 #define CHIP_RST_REASON_MAX_LEN			128
 
 /*******************************************************************************
@@ -210,9 +204,7 @@ int connv3_core_screen_off(void);
 /* pre_cal */
 int connv3_core_pre_cal_start(void);
 
-#if ENABLE_PRE_CAL_BLOCKING_CHECK
 void connv3_core_pre_cal_blocking(void);
-#endif
 
 /* Check if L0 reset is ongoing.
  */

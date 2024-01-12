@@ -76,9 +76,7 @@ int connv3_pwr_on(enum connv3_drv_type drv_type)
 		return CONNV3_ERR_RST_ONGOING;
 	}
 
-#if ENABLE_PRE_CAL_BLOCKING_CHECK
 	connv3_core_pre_cal_blocking();
-#endif
 
 	return connv3_core_power_on(drv_type);
 }
@@ -92,9 +90,7 @@ int connv3_pwr_on_done(enum connv3_drv_type drv_type)
 		return CONNV3_ERR_RST_ONGOING;
 	}
 
-#if ENABLE_PRE_CAL_BLOCKING_CHECK
 	connv3_core_pre_cal_blocking();
-#endif
 
 	return connv3_core_power_on_done(drv_type);
 }
@@ -109,9 +105,7 @@ int connv3_pwr_off(enum connv3_drv_type drv_type)
 		return CONNV3_ERR_RST_ONGOING;
 	}
 
-#if ENABLE_PRE_CAL_BLOCKING_CHECK
 	connv3_core_pre_cal_blocking();
-#endif
 
 	return connv3_core_power_off(drv_type);
 }

@@ -37,9 +37,9 @@
 */
 
 struct connv3_hw_ops_struct {
-
 	u32 (*connsys_plt_get_chipid) (void);
 	u32 (*connsys_plt_get_adie_chipid) (void);
+	u32 (*connsys_plt_pre_cal_blocking_enable) (void);
 };
 
 struct connv3_dev_cb {
@@ -94,6 +94,7 @@ unsigned int connv3_hw_get_adie_chipid(void);
 
 unsigned int connv3_hw_get_connsys_ic_info(uint8_t *buf, u32 buf_sz);
 unsigned int connv3_hw_get_pmic_ic_info(uint8_t *buf, u32 buf_sz);
+unsigned int connv3_hw_pre_cal_blocking_enable(void);
 
 int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 /* power dump */
