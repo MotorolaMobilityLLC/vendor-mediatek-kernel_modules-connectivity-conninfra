@@ -1358,19 +1358,22 @@ void osal_op_raise_signal(P_OSAL_OP pOp, int result)
 
 int osal_ftrace_print(const char *str, ...)
 {
+	int ret = 0;
 #ifdef CONFIG_TRACING
 	va_list args;
 	char tempString[DBG_LOG_STR_SIZE];
 
 	if (ftrace_flag) {
 		va_start(args, str);
-		vsnprintf(tempString, DBG_LOG_STR_SIZE, str, args);
+		ret = vsnprintf(tempString, DBG_LOG_STR_SIZE, str, args);
 		va_end(args);
-
-		trace_printk("%s\n", tempString);
+		if (ret < 0)
+			pr_notice("%s ret = %d failed\n", __func__, ret);
+		else
+			trace_printk("%s\n", tempString);
 	}
 #endif
-	return 0;
+	return ret;
 }
 
 int osal_ftrace_print_ctrl(int flag)

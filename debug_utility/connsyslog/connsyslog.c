@@ -343,6 +343,11 @@ static int connlog_ring_buffer_init(struct connlog_dev* handler)
 	void *pBuffer = NULL;
 	unsigned int cache_size = 0;
 
+	if (handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s invalid conn_type %d\n", __func__, handler->conn_type);
+		return -1;
+	}
+
 	if (!handler->virAddrEmiLogBase) {
 		pr_err("[%s] consys emi memory address phyAddrEmiBase invalid\n",
 			type_to_title[handler->conn_type]);
@@ -434,7 +439,10 @@ void connsys_log_dump_buf(const char *title, const char *buf, ssize_t sz)
 	i = 0;
 	line[LOG_LINE_SIZE-1] = 0;
 	while (sz--) {
-		snprintf(line + i*3, 3, "%02x", *buf);
+		if (snprintf(line + i*3, 3, "%02x", *buf) < 0) {
+			pr_notice("%s snprint failed\n", __func__);
+			return;
+		}
 		line[i*3 + 2] = ' ';
 
 		if (IS_VISIBLE_CHAR(*buf))
@@ -472,7 +480,8 @@ void connlog_dump_emi(struct connlog_dev* handler, int offset, int size)
 {
 	char title[100];
 	memset(title, 0, 100);
-	sprintf(title, "%s(%p)", "emi", handler->virAddrEmiLogBase + offset);
+	if (sprintf(title, "%s(%p)", "emi", handler->virAddrEmiLogBase + offset) < 0)
+		pr_notice("%s snprintf failed\n", __func__);
 	connsys_log_dump_buf(title, handler->virAddrEmiLogBase + offset, size);
 }
 
@@ -490,6 +499,11 @@ static bool connlog_ring_emi_check(struct connlog_dev* handler)
 {
 	struct ring_emi *ring_emi = &handler->log_buffer.ring_emi;
 	char line[CONNLOG_EMI_END_PATTERN_SIZE + 1];
+
+	if (handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, handler->conn_type);
+		return false;
+	}
 
 	memcpy_fromio(
 		line,
@@ -540,6 +554,10 @@ static void connlog_ring_emi_to_cache(struct connlog_dev* handler)
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 	static DEFINE_RATELIMIT_STATE(_rs2, HZ, 1);
 #endif
+	if (handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, handler->conn_type);
+		return;
+	}
 
 	if (RING_FULL(ring_cache)) {
 	#ifndef DEBUG_LOG_ON
@@ -620,6 +638,11 @@ static void connlog_fw_log_parser(struct connlog_dev* handler, ssize_t sz)
 	const char* buf = handler->log_data;
 	int conn_type = handler->conn_type;
 
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, conn_type);
+		return;
+	}
+
 	while (sz > LOG_HEAD_LENG) {
 		if (*buf == log_head[0]) {
 			if (!memcmp(buf, log_head, sizeof(log_head))) {
@@ -665,6 +688,11 @@ static void connlog_ring_print(struct connlog_dev* handler)
 	struct ring_emi_segment ring_emi_seg;
 	struct ring_emi *ring_emi = &handler->log_buffer.ring_emi;
 	int conn_type = handler->conn_type;
+
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, conn_type);
+		return;
+	}
 
 	if (RING_EMI_EMPTY(ring_emi) || !ring_emi_read_all_prepare(&ring_emi_seg, ring_emi)) {
 		pr_err("type(%s) no data, possibly taken by concurrent reader.\n", type_to_title[conn_type]);
@@ -713,6 +741,10 @@ static void connlog_log_data_handler(struct work_struct *work)
 
 	for (i = 0; i < handler->block_num; i++) {
 		conn_type_block = handler->block_type[i];
+		if (conn_type_block < 0 || conn_type_block >= CONN_DEBUG_TYPE_END) {
+			pr_notice("%s conn_type %d is invalid\n", __func__, conn_type_block);
+			return;
+		}
 
 		if (!RING_EMI_EMPTY(&gLogDev[conn_type_block]->log_buffer.ring_emi)) {
 			if (atomic_read(&g_log_mode) == LOG_TO_FILE)
@@ -806,6 +838,11 @@ static ssize_t connlog_read_internal(
 	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 	static DEFINE_RATELIMIT_STATE(_rs2, 1 * HZ, 1);
 #endif
+
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s conn_type %d is invalid\n", __func__, conn_type);
+		return 0;
+	}
 
 	size = count < RING_SIZE(ring) ? count : RING_SIZE(ring);
 	if (RING_EMPTY(ring) || !ring_read_prepare(size, &ring_seg, ring)) {

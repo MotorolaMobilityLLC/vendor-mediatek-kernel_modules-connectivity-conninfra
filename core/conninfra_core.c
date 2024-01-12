@@ -1790,13 +1790,14 @@ static int conninfra_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *
 			pr_notice("%s [pre_cal][timeout!!] bt=[%p] wf=[%p]\n", __func__, bt_cb, wifi_cb);
 #if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 			exception_title_index = (bt_cb == NULL ? 0 : 1);
-			snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
-				exception_title[exception_title_index]);
+			if (snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
+				exception_title[exception_title_index]) > 0) {
 				aed_common_exception_api(
-				exception_title[exception_title_index],
-				NULL, 0,
-				(const int*)exception_log, strlen(exception_log),
-				exception_log, 0);
+					exception_title[exception_title_index],
+					NULL, 0,
+					(const int*)exception_log, strlen(exception_log),
+					exception_log, 0);
+			}
 #endif
 			return 1;
 		}
