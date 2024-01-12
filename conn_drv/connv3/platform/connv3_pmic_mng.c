@@ -66,6 +66,15 @@ int connv3_pmic_mng_common_power_ctrl(unsigned int enable)
 	return ret;
 }
 
+int connv3_pmic_mng_parse_state(char *buffer, int buf_sz)
+{
+	int ret = 0;
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->pmic_parse_state)
+		ret = g_connv3_platform_pmic_ops->pmic_parse_state(buffer, buf_sz);
+	return ret;
+}
+
 int connv3_pmic_mng_set_pmic_state(void)
 {
 

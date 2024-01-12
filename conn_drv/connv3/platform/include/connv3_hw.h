@@ -74,6 +74,8 @@ int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
 int connv3_hw_ext_32k_onoff(bool);
 
+int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
+
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
 

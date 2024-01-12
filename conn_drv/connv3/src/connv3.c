@@ -164,6 +164,12 @@ int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb
 }
 EXPORT_SYMBOL(connv3_conninfra_bus_dump);
 
+void connv3_update_pmic_state(enum connv3_drv_type drv, char *buffer, int buf_sz)
+{
+	connv3_core_update_pmic_status(drv, buffer, buf_sz);
+}
+EXPORT_SYMBOL(connv3_update_pmic_state);
+
 int connv3_sub_drv_ops_register(enum connv3_drv_type type, struct connv3_sub_drv_ops_cb *cb)
 {
 	/* type validation */

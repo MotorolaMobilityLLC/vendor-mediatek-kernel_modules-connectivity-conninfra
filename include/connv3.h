@@ -91,7 +91,7 @@ struct connv3_whole_chip_rst_cb {
 
 
 /* PMIC state */
-void connv3_update_pmic_state(enum connv3_drv_type drv);
+void connv3_update_pmic_state(enum connv3_drv_type drv, char *buffer, int buf_sz);
 
 /* Conninfra bus dump
  * addr is connsys view
