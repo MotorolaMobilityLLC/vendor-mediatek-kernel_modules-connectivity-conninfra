@@ -16,6 +16,10 @@
 #include "connv3_hw.h"
 #include "connv3_core.h"
 
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+#include "connv3_test.h"
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -253,12 +257,13 @@ int mtk_connv3_probe(struct platform_device *pdev)
 
 	ret = conn_adaptor_register_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_3, &g_connv3_drv_gen);
 
-	/*************** for debug *********************/
-	// before enabling connlog_test should remove connlog_to_user_register in connv2
-	//connlog_test_init();
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+	ret = connv3_test_setup();
+	if (ret)
+		pr_notice("init connv3_test_setup fail, ret = %d\n", ret);
+#endif
 
 	pr_info("[%s] --------------", __func__);
-
 	return 0;
 }
 
@@ -289,6 +294,9 @@ int connv3_drv_deinit(void)
 {
 	int ret;
 
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+	ret = connv3_test_remove();
+#endif
 	ret = conn_adaptor_unregister_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_3);
 	ret = connv3_core_deinit();
 

@@ -28,6 +28,10 @@
 #include <devapc_public.h>
 #endif
 
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+#include "conninfra_test.h"
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -541,20 +545,30 @@ int connv2_drv_init(void)
 
 	g_connv2_drv_gen.drv_radio_support = consys_hw_get_support_drv();
 	iret = conn_adaptor_register_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_2, &g_connv2_drv_gen);
+	if (iret)
+		pr_notice("Register to conn_adap fail, ret = %d", iret);
 
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
 	conninfra_register_devapc_callback();
 #endif
 	conninfra_register_thermal_callback();
 	conninfra_register_power_throttling_callback();
-	pr_info("[consys_hw_init] result [%d]\n", iret);
-
-	return iret;
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+	iret = conninfra_test_setup();
+	if (iret)
+		pr_notice("init conninfra_test fail, ret = %d\n", iret);
+#endif
+	pr_info("[%s] init successfully", __func__);
+	return 0;
 }
 
 int connv2_drv_deinit(void)
 {
 	int ret;
+
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+	ret = conninfra_test_remove();
+#endif
 
 	conn_pwr_deinit();
 	ret = conn_adaptor_unregister_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_2);

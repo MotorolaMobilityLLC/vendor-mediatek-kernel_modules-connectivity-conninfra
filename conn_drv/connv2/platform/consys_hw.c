@@ -796,6 +796,12 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 		return -6;
 	}
 
+	ret = clock_mng_init(pdev, g_conninfra_plat_data);
+	if (ret) {
+		pr_notice("[%s] clock_mng init fail, %d", __func__, ret);
+		return -7;
+	}
+
 	/* Init connsys log and scp, they need EMI information */
 	emi_info = emi_mng_get_phy_addr();
 	if (emi_info) {
@@ -807,14 +813,12 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 		pr_err("Connsys and scp didn't init because EMI is invalid\n");
 	}
 
-	pmic_mng_register_device();
-	clock_mng_register_device();
-
 	consys_hw_tcxo_parser(pdev);
 
 	coredump_mng_init((void *)(g_conninfra_plat_data->platform_coredump_ops));
 
 	osal_sleepable_lock_init(&g_adie_chipid_lock);
+
 	g_pdev = pdev;
 
 	pr_info("[%s] successfully\n", __func__);
@@ -828,6 +832,9 @@ int consys_hw_deinit(void)
 		consys_hw_ops->consys_plt_clk_detach();
 	else
 		pr_info("consys_plt_clk_detach is null");
+
+	clock_mng_deinit();
+	pmic_mng_deinit();
 
 	if (g_pdev)
 		g_pdev = NULL;
