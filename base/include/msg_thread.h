@@ -65,7 +65,7 @@ struct msg_op {
 
 
 struct msg_op_q {
-	OSAL_SLEEPABLE_LOCK lock;
+	spinlock_t lock;
 	unsigned int write;
 	unsigned int read;
 	unsigned int size;
