@@ -22,6 +22,13 @@ ccflags-y += -imacros $(AUTOCONF_H)
 KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 ###############################################################################
 
+
+CONNSYS_PLATFORM := $(TARGET_BOARD_PLATFORM_CONNINFRA)
+
+ifeq ($(CONNSYS_PLATFORM),)
+CONNSYS_PLATFORM := $(MTK_PLATFORM)
+endif
+
 #ccflags-y += -D MTK_WCN_REMOVE_KERNEL_MODULE
 ifeq ($(CONFIG_ARM64), y)
     ccflags-y += -D CONFIG_MTK_WCN_ARM64
@@ -40,19 +47,19 @@ ccflags-y += -D MTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
 ccflags-y += -D MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE=1
 
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(CONNSYS_PLATFORM)/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(CONNSYS_PLATFORM)/include/mach
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/$(CONNSYS_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/clkbuf_v1/$(CONNSYS_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/eccci/$(CONNSYS_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/eemcs
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/mach/$(MTK_PLATFORM)/include/mach
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/mach/$(CONNSYS_PLATFORM)/include/mach
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
-ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(MTK_PLATFORM)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/$(CONNSYS_PLATFORM)
 ccflags-y += -I$(srctree)/drivers/mmc/core
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/include/
@@ -89,7 +96,7 @@ ccflags-y += -I$(src)/debug_utility/coredump
 ccflags-y += -I$(src)/debug_utility/coredump/platform/include
 
 # By Plaftfrom
-ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)/include
+ccflags-y += -I$(src)/platform/$(CONNSYS_PLATFORM)/include
 
 
 ifneq ($(TARGET_BUILD_VARIANT), user)
@@ -103,7 +110,7 @@ endif
 #endif
 
 #ifneq ($(filter "CONSYS_%",$(CONFIG_MTK_COMBO_CHIP)),)
-#$(MODULE_NAME)-objs += common_main/platform/$(MTK_PLATFORM).o
+#$(MODULE_NAME)-objs += common_main/platform/$(CONNSYS_PLATFORM).o
 #endif
 
 $(MODULE_NAME)-objs += base/ring.o
@@ -123,22 +130,22 @@ $(MODULE_NAME)-objs += platform/consys_reg_mng.o
 $(MODULE_NAME)-objs += debug_utility/conninfra_dbg.o
 
 # By Plaftfrom
-$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
-$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
-$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_emi.o
-$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_consys_reg.o
-$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pos.o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_pmic.o
-#$(MODULE_NAME)-objs += platform/$(MTK_PLATFORM)/$(MTK_PLATFORM)_clock.o
+$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
+$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pmic.o
+$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_emi.o
+$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_consys_reg.o
+$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pos.o
+#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
+#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_pmic.o
+#$(MODULE_NAME)-objs += platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM)_clock.o
 
 # Debug utility
 $(MODULE_NAME)-objs += debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += debug_utility/connsyslog/connsyslog.o
-$(MODULE_NAME)-objs += debug_utility/connsyslog/platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
+$(MODULE_NAME)-objs += debug_utility/connsyslog/platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
 $(MODULE_NAME)-objs += debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += debug_utility/coredump/conndump_netlink.o
-$(MODULE_NAME)-objs += debug_utility/coredump/platform/$(MTK_PLATFORM)/$(MTK_PLATFORM).o
+$(MODULE_NAME)-objs += debug_utility/coredump/platform/$(CONNSYS_PLATFORM)/$(CONNSYS_PLATFORM).o
 
 ###############################################################################
 # test
