@@ -351,8 +351,6 @@ int conndump_netlink_send_to_native(int conn_type, char* tag, char* buf, unsigne
 	unsigned int remain_len = length;
 	int ret;
 
-	pr_info("[%s] conn_type=%d tag=%s buf=0x%x length=%d\n",
-		__func__, conn_type, tag, buf, length);
 	if ((conn_type < CONN_ADAPTOR_DRV_WIFI || conn_type >= CONN_ADAPTOR_DRV_SIZE) || tag == NULL) {
 		pr_err("Incorrect type (%d), tag = %s\n", conn_type, tag);
 		return -1;
