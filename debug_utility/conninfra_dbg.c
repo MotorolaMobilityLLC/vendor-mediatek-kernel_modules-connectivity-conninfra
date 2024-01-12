@@ -76,11 +76,11 @@ static int conninfra_dbg_thermal_query(int par1, int count, int interval);
 static int conninfra_dbg_thermal_ctrl(int par1, int par2, int par3);
 
 static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3);
+static int conninfra_dbg_set_platform_config(int par1, int par2, int par3);
 #endif /* CONNINFRA_DBG_SUPPORT */
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
-static int conninfra_dbg_set_platform_config(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
