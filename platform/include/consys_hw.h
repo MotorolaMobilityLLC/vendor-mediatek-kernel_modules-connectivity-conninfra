@@ -109,6 +109,8 @@ typedef u64(*CONSYS_PLT_SOC_TIMESTAMP_GET)(void);
 
 typedef unsigned int (*CONSYS_PLT_ADIE_DETECTION)(void);
 
+typedef void (*CONSYS_PLT_SET_MCU_CONTROL)(int type, bool onoff);
+
 struct consys_hw_ops_struct {
 	/* load from dts */
 	CONSYS_PLT_CLK_GET_FROM_DTS consys_plt_clk_get_from_dts;
@@ -171,6 +173,8 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_SOC_TIMESTAMP_GET consys_plt_soc_timestamp_get;
 
 	CONSYS_PLT_ADIE_DETECTION consys_plt_adie_detection;
+
+	CONSYS_PLT_SET_MCU_CONTROL consys_plt_set_mcu_control;
 };
 
 struct conninfra_dev_cb {
@@ -290,6 +294,7 @@ unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type);
 int consys_hw_set_platform_config(int value);
 int consys_hw_get_platform_config(void);
 
+void consys_hw_set_mcu_control(int type, bool onoff);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

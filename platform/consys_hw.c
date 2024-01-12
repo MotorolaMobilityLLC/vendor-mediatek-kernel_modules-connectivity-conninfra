@@ -791,6 +791,14 @@ int consys_hw_get_platform_config(void)
 	return g_platform_config;
 }
 
+void consys_hw_set_mcu_control(int type, bool onoff)
+{
+	if (consys_hw_ops->consys_plt_set_mcu_control)
+		consys_hw_ops->consys_plt_set_mcu_control(type, onoff);
+	else
+		pr_notice("consys_plt_set_mcu_control not supported\n");
+}
+
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
 	int iRet = 0, retry = 0;
