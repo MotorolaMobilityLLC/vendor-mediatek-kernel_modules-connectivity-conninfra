@@ -1,20 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (C) 2016 MediaTek Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ * Copyright (c) 2020 MediaTek Inc.
  */
-/*! \file
-*    \brief  Declaration of library functions
-*
-*    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
-*/
 
 #include <linux/of_reserved_mem.h>
 #include <linux/delay.h>
@@ -73,6 +60,7 @@ static void _consys_hw_conninfra_sleep(void);
 #ifdef CONFIG_OF
 const struct of_device_id apconninfra_of_ids[] = {
 	{.compatible = "mediatek,mt6885-consys",},
+	{.compatible = "mediatek,mt6893-consys",},
 	{}
 };
 #endif
