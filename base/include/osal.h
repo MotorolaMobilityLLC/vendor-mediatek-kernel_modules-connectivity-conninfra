@@ -404,10 +404,6 @@ int osal_gettimeofday(struct timespec64 *tv);
 void osal_get_local_time(unsigned long long *sec, unsigned long *nsec);
 unsigned long long osal_elapsed_us(unsigned long long ts, unsigned long usec);
 
-void osal_buffer_dump(const unsigned char *buf, const unsigned char *title, unsigned int len, unsigned int limit);
-void osal_buffer_dump_data(const unsigned int *buf, const unsigned char *title, const unsigned int len, const unsigned int limit,
-			   const int flag);
-
 unsigned int osal_op_get_id(P_OSAL_OP pOp);
 MTK_CONN_BOOL osal_op_is_wait_for_signal(P_OSAL_OP pOp);
 void osal_op_raise_signal(P_OSAL_OP pOp, int result);
@@ -416,20 +412,10 @@ void osal_opq_dump(const char *qName, P_OSAL_OP_Q pOpQ);
 void osal_opq_dump_locked(const char *qName, P_OSAL_OP_Q pOpQ);
 MTK_CONN_BOOL osal_opq_has_op(P_OSAL_OP_Q pOpQ, P_OSAL_OP pOp);
 
-int osal_ftrace_print(const char *str, ...);
-int osal_ftrace_print_ctrl(int flag);
-
 void osal_dump_thread_state(const unsigned char *name);
 void osal_op_history_init(struct osal_op_history *log_history, int queue_size);
 void osal_op_history_save(struct osal_op_history *log_history, P_OSAL_OP pOp);
 void osal_op_history_print(struct osal_op_history *log_history, char *name);
-
-void osal_systrace_major_b(const char *name, ...);
-void osal_systrace_major_e(void);
-
-void osal_systrace_minor_b(const char *name, ...);
-void osal_systrace_minor_e(void);
-void osal_systrace_minor_c(int val, const char *name, ...);
 
 int osal_wake_lock_init(struct osal_wake_lock *plock);
 int osal_wake_lock(struct osal_wake_lock *plock);
