@@ -77,25 +77,34 @@ struct conninfra_rst_data {
 
 struct conninfra_rst_data rst_data;
 
-unsigned int conninfra_get_phy_addr(void)
+void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size)
 {
 	P_CONSYS_EMI_ADDR_INFO  addr_info = emi_mng_get_phy_addr();
 
-	if (!addr_info)
-		return 0;
+	if (!addr_info) {
+		pr_err("Get EMI info fail!");
+		return;
+	}
 
-	return addr_info->emi_ap_phy_addr;
+	if (addr)
+		*addr = addr_info->emi_ap_phy_addr;
+	if (size)
+		*size = addr_info->emi_size;
+	return;
 }
+EXPORT_SYMBOL(conninfra_get_phy_addr);
 
 int conninfra_pwr_on(enum consys_drv_type drv_type)
 {
 	return conninfra_core_power_on(drv_type);
 }
+EXPORT_SYMBOL(conninfra_pwr_on);
 
 int conninfra_pwr_off(enum consys_drv_type drv_type)
 {
 	return conninfra_core_power_off(drv_type);
 }
+EXPORT_SYMBOL(conninfra_pwr_off);
 
 static void conninfra_rst_handler(struct work_struct *work)
 {
@@ -139,6 +148,7 @@ int trigger_whole_chip_rst(enum consys_drv_type who, char *reason)
 
 	return 0;
 }
+EXPORT_SYMBOL(trigger_whole_chip_rst);
 
 int conninfra_sub_drv_ops_register(enum consys_drv_type type,
 				struct sub_drv_ops_cb *cb)
@@ -152,6 +162,7 @@ int conninfra_sub_drv_ops_register(enum consys_drv_type type,
 	conninfra_core_subsys_ops_reg(type, cb);
 	return 0;
 }
+EXPORT_SYMBOL(conninfra_sub_drv_ops_register);
 
 int conninfra_sub_drv_ops_unregister(enum consys_drv_type type)
 {
@@ -164,6 +175,6 @@ int conninfra_sub_drv_ops_unregister(enum consys_drv_type type)
 	conninfra_core_subsys_ops_unreg(type);
 	return 0;
 }
-
+EXPORT_SYMBOL(conninfra_sub_drv_ops_unregister);
 
 

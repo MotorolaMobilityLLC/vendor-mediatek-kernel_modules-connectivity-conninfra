@@ -81,10 +81,14 @@ struct conninfra_ctx g_conninfra_ctx;
 static const msg_opid_func conninfra_core_opfunc[] = {
 	[CONNINFRA_OPID_PWR_ON] = opfunc_power_on,
 	[CONNINFRA_OPID_PWR_OFF] = opfunc_power_off,
-	[CONNINFRA_OPID_CHIP_RST] = opfunc_chip_rst,
-	[CONNINFRA_OPID_PRE_CAL] = opfunc_pre_cal,
 	[CONNINFRA_OPID_THERM_CTRL] = opfunc_therm_ctrl,
 };
+
+static const msg_opid_func conninfra_core_cb_opfunc[] = {
+	[CONNINFRA_CB_OPID_CHIP_RST] = opfunc_chip_rst,
+	[CONNINFRA_CB_OPID_PRE_CAL] = opfunc_pre_cal,
+};
+
 
 /* subsys ops */
 static char *drv_thread_name[] = {
@@ -376,8 +380,8 @@ static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op)
 	/* TODO: should be locked, to avoid cb was reset */
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
 	if (/*drv_inst->drv_status == DRV_ST_POWER_ON &&*/
-			drv_inst->ops_cb.pre_cal_cb.pre_cal_pwr_on_cb) {
-		ret = drv_inst->ops_cb.pre_cal_cb.pre_cal_pwr_on_cb();
+			drv_inst->ops_cb.pre_cal_cb.pwr_on_cb) {
+		ret = drv_inst->ops_cb.pre_cal_cb.pwr_on_cb();
 		if (ret)
 			pr_warn("[%s] fail [%d]", __func__, ret);
 	}
@@ -399,8 +403,8 @@ static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op)
 
 	drv_inst = &g_conninfra_ctx.drv_inst[drv_type];
 	if (/*drv_inst->drv_status == DRV_ST_POWER_ON &&*/
-			drv_inst->ops_cb.pre_cal_cb.pre_cal_do_cal_cb) {
-		ret = drv_inst->ops_cb.pre_cal_cb.pre_cal_do_cal_cb();
+			drv_inst->ops_cb.pre_cal_cb.do_cal_cb) {
+		ret = drv_inst->ops_cb.pre_cal_cb.do_cal_cb();
 		if (ret)
 			pr_warn("[%s] fail [%d]", __func__, ret);
 	}
@@ -451,8 +455,8 @@ int connfinfra_core_pre_cal_start(void)
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
-	ret = msg_thread_send(&infra_ctx->msg_ctx,
-				CONNINFRA_OPID_PRE_CAL);
+	ret = msg_thread_send(&infra_ctx->cb_ctx,
+				CONNINFRA_CB_OPID_PRE_CAL);
 	if (ret) {
 		pr_err("[%s] send msg fail", __func__, ret);
 		return -1;
@@ -484,8 +488,8 @@ int conninfra_core_trg_chip_rst(enum consys_drv_type drv, char *reason)
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 
-	ret = msg_thread_send_wait_1(&infra_ctx->msg_ctx,
-				CONNINFRA_OPID_CHIP_RST, 0, drv);
+	ret = msg_thread_send_wait_1(&infra_ctx->cb_ctx,
+				CONNINFRA_CB_OPID_CHIP_RST, 0, drv);
 	if (ret) {
 		pr_err("[%s] send msg fail", __func__, ret);
 		return -1;
@@ -538,6 +542,12 @@ int conninfra_core_init(void)
 		return -1;
 	}
 
+	ret = msg_thread_init(&infra_ctx->cb_ctx, "conninfra_cb",
+                               conninfra_core_cb_opfunc, CONNINFRA_CB_OPID_MAX);
+	if (ret) {
+		pr_err("callback msg thread init fail(%d)\n", ret);
+		return -1;
+	}
 	/* init subsys drv state */
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		msg_thread_init(&infra_ctx->drv_inst[i].msg_ctx,

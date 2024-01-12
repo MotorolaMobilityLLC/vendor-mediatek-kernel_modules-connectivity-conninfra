@@ -109,25 +109,20 @@ int emi_mng_init(void)
 	if (consys_platform_emi_ops == NULL)
 		consys_platform_emi_ops = get_consys_platform_emi_ops();
 
-	pr_info("[emi_mng_init] gConEmiPhyBase = [%p] ops=[%p]",
-			gConEmiPhyBase, consys_platform_emi_ops);
+	pr_info("[emi_mng_init] gConEmiPhyBase = [%p] size = [%d] ops=[%p]",
+			gConEmiPhyBase, gConEmiSize, consys_platform_emi_ops);
 
 	if (gConEmiPhyBase) {
-#if 0
-		pConnsysEmiStart = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
-		pr_info("Clearing Connsys EMI (virtual(0x%p) physical(0x%pa)) %llu bytes\n",
-				   pConnsysEmiStart, &gConEmiPhyBase, gConEmiSize);
-		memset_io(pConnsysEmiStart, 0, gConEmiSize);
-		iounmap(pConnsysEmiStart);
-		pConnsysEmiStart = NULL;
-
+	#if 0
 		if (consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection)
 			consys_platform_emi_ops->consys_ic_emi_mpu_set_region_protection();
+	#endif
 		if (consys_platform_emi_ops->consys_ic_emi_set_remapping_reg)
 			consys_platform_emi_ops->consys_ic_emi_set_remapping_reg();
+	#if 0
 		if (consys_platform_emi_ops->consys_ic_emi_coredump_remapping)
 			consys_platform_emi_ops->consys_ic_emi_coredump_remapping(&pEmibaseaddr, 1);
-#endif
+	#endif
 	} else {
 		pr_err("consys emi memory address gConEmiPhyBase invalid\n");
 	}

@@ -82,6 +82,7 @@ struct conninfra_ctx {
 	atomic_t pre_cal_state;
 
 	struct msg_thread_ctx msg_ctx;
+	struct msg_thread_ctx cb_ctx;
 
 	unsigned int hw_ver;
 	unsigned int fw_ver;
@@ -95,11 +96,16 @@ struct conninfra_ctx {
 typedef enum {
 	CONNINFRA_OPID_PWR_ON 		= 0,
 	CONNINFRA_OPID_PWR_OFF		= 1,
-	CONNINFRA_OPID_CHIP_RST		= 3,
-	CONNINFRA_OPID_PRE_CAL		= 4,
-	CONNINFRA_OPID_THERM_CTRL	= 5,
+	CONNINFRA_OPID_THERM_CTRL	= 2,
 	CONNINFRA_OPID_MAX
 } conninfra_core_opid;
+
+/* For the operation which may callback subsys driver */
+typedef enum {
+	CONNINFRA_CB_OPID_CHIP_RST         = 0,
+	CONNINFRA_CB_OPID_PRE_CAL          = 1,
+	CONNINFRA_CB_OPID_MAX
+} conninfra_core_cb_opid;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
