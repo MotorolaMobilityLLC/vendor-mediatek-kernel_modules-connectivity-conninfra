@@ -54,12 +54,12 @@ int connv3_hw_dbg_bus_dump(
 
 
 int connv3_hw_dbg_dump_utility(
-	struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data)
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data)
 {
 #define LOG_TMP_BUF_SZ 32
 	int ret = 0, func_ret = 0;
 	int i;
-	struct connv3_dbg_command *command;
+	const struct connv3_dbg_command *command;
 	unsigned int value;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	int dump_count = 0;

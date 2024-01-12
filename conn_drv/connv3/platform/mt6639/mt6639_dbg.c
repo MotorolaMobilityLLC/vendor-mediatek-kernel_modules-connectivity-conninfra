@@ -143,13 +143,13 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
 int connv3_conninfra_bus_dump_mt6639(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
 {
-	int ret = 0;
+	int ret = 0, func_ret = 0;
 
 	/* AP2CONN_INFRA ON check */
 	if (drv_type == CONNV3_DRV_TYPE_WIFI) {
-		ret = connv3_bus_check_ap2conn_on(cb, data);
-		if (ret != 0)
-			return ret;
+		func_ret = connv3_bus_check_ap2conn_on(cb, data);
+		if (func_ret != 0)
+			return func_ret;
 	}
 
 	/* Dump after conn_infra_on is ready
@@ -168,10 +168,11 @@ int connv3_conninfra_bus_dump_mt6639(
 		pr_notice("[%s] mt6639_dmp_list_cfg_clk_a dump err=[%d]", __func__, ret);
 
 	/* AP2CONN_INFRA OFF check */
-	ret = connv3_bus_check_ap2conn_off(cb, data);
-	if (ret)
-		return ret;
+	func_ret = connv3_bus_check_ap2conn_off(cb, data);
+	if (func_ret == CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR)
+		return func_ret;
 
+	/* Dump conninfra off CR even timeout irq is triggerred. */
 	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_pwr_c, cb, data);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_pwr_c dump err=[%d]", __func__, ret);
@@ -182,7 +183,12 @@ int connv3_conninfra_bus_dump_mt6639(
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_cfg_clk_b dump err=[%d]", __func__, ret);
 
-	return 0;
+	/* Extra information dump */
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_extra, cb, data);
+	if (ret)
+		pr_notice("[%s] &mt6639_dmp_list_bus_extra dump err=[%d]", __func__, ret);
+
+	return func_ret;
 }
 
 static int connv3_26m_dump(
