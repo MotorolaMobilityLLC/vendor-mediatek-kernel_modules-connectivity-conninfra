@@ -226,7 +226,7 @@ int connv3_core_dump_power_state(char *buf, unsigned int size);
  * 1. Dump power state if has started.
  * 2. Reset power state
  */
-int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size);
+int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size, bool force_dump);
 
 /* HIF dump
  */

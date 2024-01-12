@@ -198,7 +198,7 @@ void connv3_resume_notify(void)
 
 static void connv3_hw_ap_resume_handler(struct work_struct *work)
 {
-	connv3_core_reset_and_dump_power_state(NULL, 0);
+	connv3_core_reset_and_dump_power_state(NULL, 0, 0);
 }
 
 void connv3_power_on_off_notify(int on_off)
@@ -218,7 +218,7 @@ int connv3_dump_power_state(uint8_t *buf, u32 buf_sz)
 	char tmp_buf[CONN_DUMP_STATE_BUF_SIZE];
 
 	memset(tmp_buf, '\0', CONN_DUMP_STATE_BUF_SIZE);
-	ret = connv3_core_reset_and_dump_power_state(tmp_buf, CONN_DUMP_STATE_BUF_SIZE);
+	ret = connv3_core_reset_and_dump_power_state(tmp_buf, CONN_DUMP_STATE_BUF_SIZE, 1);
 	if (ret) {
 		return ret;
 	}
