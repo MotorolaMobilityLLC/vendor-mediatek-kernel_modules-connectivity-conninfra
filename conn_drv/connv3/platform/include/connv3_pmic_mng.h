@@ -46,6 +46,8 @@ struct connv3_platform_pmic_ops {
 	int (*pmic_vsel_ctrl) (u32 enable);
 	int (*pmic_parse_state) (char *buffer, int buf_sz);
 	int (*pmic_antenna_power_ctrl) (u32 radio, u32 enable);
+	int (*pmic_get_connsys_chip_info) (char *connsys_ecid, int connsys_ecid_size);
+	int (*pmic_get_pmic_chip_info) (char *pmic_ecid, int pmic_ecid_size);
 };
 
 
@@ -78,7 +80,8 @@ int connv3_pmic_mng_vsel_ctrl(u32 enable);
 int connv3_pmic_mng_parse_state(char *buffer, int buf_sz);
 int connv3_pmic_mng_set_pmic_state(void);
 int connv3_pmic_mng_antenna_power_ctrl(u32 radio, u32 enable);
-
+int connv3_pmic_mng_get_connsys_chip_info(char *connsys_ecid, int connsys_ecid_size);
+int connv3_pmic_mng_get_pmic_chip_info(char *pmic_ecid, int pmic_ecid_size);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
