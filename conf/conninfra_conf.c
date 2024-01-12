@@ -618,27 +618,15 @@ const struct conninfra_conf *conninfra_conf_get_cfg(void)
 int conninfra_conf_deinit(void)
 {
 	int i;
-	struct conninfra_conf *conf = &g_conninfra_conf;
 
-	if (conf == NULL)
+	if (g_conninfra_conf.cfg_exist == 0)
 		return -1;
 
 	for (i = 0; i < NUM_CFG_FIELDS; i++) {
 		const struct parse_data *field = &cfg_fields[i];
-
 		field->relase_mem(field);
 	}
-
-#if 0
-	if (pWmtGenConf->coex_wmt_epa_elna != NULL) {
-		if (pWmtGenConf->coex_wmt_epa_elna->data != NULL) {
-			osal_free(pWmtGenConf->coex_wmt_epa_elna->data);
-			pWmtGenConf->coex_wmt_epa_elna->data = NULL;
-		}
-		osal_free(pWmtGenConf->coex_wmt_epa_elna);
-		pWmtGenConf->coex_wmt_epa_elna = NULL;
-	}
-#endif
+	g_conninfra_conf.cfg_exist = 0;
 	return 0;
 }
 
