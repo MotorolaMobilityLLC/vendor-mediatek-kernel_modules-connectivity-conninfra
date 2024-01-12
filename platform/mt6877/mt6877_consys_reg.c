@@ -279,7 +279,7 @@ static void consys_bus_hang_dump_b(void)
 
 static void consys_bus_hang_dump_c(bool offclock)
 {
-	unsigned int c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11;
+	unsigned int c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14;
 	unsigned int r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15;
 	unsigned int timeout1, timeout2, timeout3, timeout4, timeout5, timeout6, timeout7;
 	unsigned int i;
@@ -447,8 +447,27 @@ static void consys_bus_hang_dump_c(bool offclock)
 		c9 = CONSYS_REG_READ(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_3_ADDR);
 		c10 = CONSYS_REG_READ(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_4_ADDR);
 		c11 = CONSYS_REG_READ(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_5_ADDR);
-		pr_info("[CONN_BUS_C]power:[0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x]",
-			c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11);
+		/* EMI CTL
+		 * C12	Write 0x1800_1400[22:21]=2'b00 Write 0x1806_015C[2:0]=3'b111 Read 0x1806_02C8
+		 * C13	Write 0x1800_1400[22:21]=2'b01 Write 0x1806_015C[2:0]=3'b111 Read 0x1806_02C8
+		 * C14	Write 0x1800_1400[22:21]=2'b10 Write 0x1806_015C[2:0]=3'b111 Read 0x1806_02C8
+		 */
+		CONSYS_REG_WRITE_HW_ENTRY(CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL, 0x0);
+		CONSYS_REG_WRITE_HW_ENTRY(
+			CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL, 0x7);
+		c12 = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+
+		CONSYS_REG_WRITE_HW_ENTRY(CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL, 0x1);
+		CONSYS_REG_WRITE_HW_ENTRY(
+			CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL, 0x7);
+		c13 = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+
+		CONSYS_REG_WRITE_HW_ENTRY(CONN_CFG_EMI_CTL_0_EMI_CTL_DEBUG_1_SEL, 0x2);
+		CONSYS_REG_WRITE_HW_ENTRY(
+			CONN_HOST_CSR_TOP_CONN_INFRA_CFG_DBG_SEL_CONN_INFRA_CFG_DBG_SEL, 0x7);
+		c14 = CONSYS_REG_READ(CONN_HOST_CSR_TOP_DBG_DUMMY_2_ADDR);
+		pr_info("[CONN_BUS_C]power:[0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x][0x%08x]",
+			c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14);
 		/* File: conn_infra_bus_debug
 		 * sheet: 12. low_power_layer_information
 		 * Read: 0x1800_E370
