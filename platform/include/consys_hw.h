@@ -95,6 +95,9 @@ typedef int(*CONSYS_PLT_SUBSYS_STATUS_UPDATE)(bool on, int radio);
 
 typedef unsigned int(*CONSYS_PLT_GET_HW_VER)(void);
 typedef int(*CONSYS_PLT_THERMAL_QUERY)(void);
+
+typedef int(*CONSYS_PLT_ENABLE_POWER_DUMP)(void);
+typedef int(*CONSYS_PLT_RESET_POWER_STATE)(void);
 typedef int(*CONSYS_PLT_POWER_STATE)(void);
 
 typedef void(*CONSYS_PLT_CONFIG_SETUP)(void);
@@ -150,6 +153,8 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_THERMAL_QUERY consys_plt_thermal_query;
 
 	/* power state */
+	CONSYS_PLT_ENABLE_POWER_DUMP consys_plt_enable_power_dump;
+	CONSYS_PLT_RESET_POWER_STATE consys_plt_reset_power_state;
 	CONSYS_PLT_POWER_STATE consys_plt_power_state;
 
 	CONSYS_PLT_CONFIG_SETUP consys_plt_config_setup;
@@ -166,10 +171,21 @@ struct conninfra_dev_cb {
 struct consys_hw_env {
 	unsigned int adie_hw_version;
 	int is_rc_mode;
+	bool tcxo_support;
+};
+
+struct conninfra_plat_data {
+	const unsigned int chip_id;
+	const unsigned int consys_hw_version;
+	const void* hw_ops;
+	const void* reg_ops;
+	const void* platform_emi_ops;
+	const void* platform_pmic_ops;
 };
 
 extern struct consys_hw_env conn_hw_env;
 extern struct consys_base_addr conn_reg;
+extern struct pinctrl *g_conninfra_pinctrl_ptr;
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -234,9 +250,20 @@ struct consys_base_addr *get_conn_reg_base_addr(void);
 int consys_hw_therm_query(int *temp_ptr);
 void consys_hw_clock_fail_dump(void);
 
+/* Low debug */
+int consys_hw_enable_power_dump(void);
+int consys_hw_reset_power_state(void);
 int consys_hw_dump_power_state(void);
+
+
 void consys_hw_config_setup(void);
 int consys_hw_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock, int status);
+/* raise: raise voltage or not
+ * onoff: raise voltage because of power on/off or not
+ * 	true: yes, raise voltage because power on/off
+ * 	false: no, raise voltage by scenario
+ */
+int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff);
 
 /*******************************************************************************
 *                              F U N C T I O N S

@@ -21,6 +21,8 @@
 
 #include <linux/platform_device.h>
 
+#include "consys_hw.h"
+
 enum conn_dump_cpupcr_type
 {
 	CONN_DUMP_CPUPCR_TYPE_BT = 1,
@@ -43,7 +45,7 @@ struct consys_reg_mng_ops {
 	int(*consys_reg_mng_is_host_csr) (unsigned long addr);
 };
 
-int consys_reg_mng_init(struct platform_device *pdev);
+int consys_reg_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data);
 int consys_reg_mng_deinit(void);
 
 int consys_reg_mng_reg_readable(void);

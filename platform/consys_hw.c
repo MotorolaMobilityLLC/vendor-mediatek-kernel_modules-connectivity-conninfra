@@ -3,11 +3,15 @@
  * Copyright (c) 2020 MediaTek Inc.
  */
 
-#include <linux/of_reserved_mem.h>
 #include <linux/delay.h>
 #include <linux/of.h>
-#include "osal.h"
+#include <linux/of_device.h>
+#include <linux/of_reserved_mem.h>
+#include <linux/pinctrl/consumer.h>
 
+#include <connectivity_build_in_adapter.h>
+
+#include "osal.h"
 #include "consys_hw.h"
 #include "emi_mng.h"
 #include "pmic_mng.h"
@@ -34,7 +38,14 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-
+enum conninfra_pwr_on_rollback_type
+{
+	CONNINFRA_PWR_ON_PMIC_ON_FAIL,
+	CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL,
+	CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL,
+	CONNINFRA_PWR_ON_A_DIE_FAIL,
+	CONNINFRA_PWR_ON_MAX
+};
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -49,22 +60,24 @@ static int mtk_conninfra_probe(struct platform_device *pdev);
 static int mtk_conninfra_remove(struct platform_device *pdev);
 static int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state);
 static int mtk_conninfra_resume(struct platform_device *pdev);
+static int get_consys_platform_ops(struct platform_device *pdev);
 
 static int _consys_hw_conninfra_wakeup(void);
 static void _consys_hw_conninfra_sleep(void);
+/* drv_type: who want to raise voltage
+ * raise: upgrade(1) or downgrad(0) voltage
+ * onoff: the request is send during power on/off duration
+ * 	1: Yes, the request is send during power on/off
+ * 	0: No, the request is from sub-radio
+ */
+static int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
 
-#ifdef CONFIG_OF
-const struct of_device_id apconninfra_of_ids[] = {
-	{.compatible = "mediatek,mt6885-consys",},
-	{.compatible = "mediatek,mt6893-consys",},
-	{}
-};
-#endif
+extern const struct of_device_id apconninfra_of_ids[];
 
 static struct platform_driver mtk_conninfra_dev_drv = {
 	.probe = mtk_conninfra_probe,
@@ -83,7 +96,7 @@ static struct platform_driver mtk_conninfra_dev_drv = {
 
 struct consys_hw_env conn_hw_env;
 
-struct consys_hw_ops_struct *consys_hw_ops;
+const struct consys_hw_ops_struct *consys_hw_ops;
 struct platform_device *g_pdev;
 
 int g_conninfra_wakeup_ref_cnt;
@@ -91,6 +104,9 @@ int g_conninfra_wakeup_ref_cnt;
 struct work_struct ap_resume_work;
 
 struct conninfra_dev_cb *g_conninfra_dev_cb;
+const struct conninfra_plat_data *g_conninfra_plat_data = NULL;
+
+struct pinctrl *g_conninfra_pinctrl_ptr = NULL;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -101,12 +117,6 @@ struct conninfra_dev_cb *g_conninfra_dev_cb;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-struct consys_hw_ops_struct* __weak get_consys_platform_ops(void)
-{
-	pr_err("Miss platform ops !!\n");
-	return NULL;
-}
-
 
 struct platform_device *get_consys_device(void)
 {
@@ -172,8 +182,9 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	int ret = 0;
 
 	if (next_status == 0) {
-		pr_info("Last pwoer off: %d\n", off_radio);
+		pr_info("Last power off: %d\n", off_radio);
 		pr_info("Power off CONNSYS PART 1\n");
+		consys_hw_raise_voltage(off_radio, false, true);
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
 			consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
 		pr_info("Power off CONNSYS PART 2\n");
@@ -189,6 +200,7 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 		ret = _consys_hw_conninfra_wakeup();
 		if (consys_hw_ops->consys_plt_subsys_status_update)
 			consys_hw_ops->consys_plt_subsys_status_update(false, off_radio);
+		_consys_hw_raise_voltage(off_radio, false, true);
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
 			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
 		if (consys_hw_ops->consys_plt_low_power_setting)
@@ -197,6 +209,34 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 			_consys_hw_conninfra_sleep();
 	}
 
+	return 0;
+}
+
+int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
+{
+	int ret;
+
+	switch (type) {
+		case CONNINFRA_PWR_ON_A_DIE_FAIL:
+		case CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL:
+			ret = consys_hw_is_bus_hang();
+			consys_hw_clock_fail_dump();
+			if (ret)
+				pr_info("Conninfra bus error, code=%d", ret);
+		case CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL:
+			if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
+				ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
+			if (ret)
+				pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
+		case CONNINFRA_PWR_ON_PMIC_ON_FAIL:
+			ret = pmic_mng_common_power_ctrl(0);
+			if (ret)
+				pr_err("[%s] turn off VCN control fail, ret=%d\n", __func__, ret);
+			break;
+		default:
+			pr_err("[%s] wrong type: %d", type);
+			break;
+	}
 	return 0;
 }
 
@@ -214,6 +254,11 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		ret = pmic_mng_common_power_ctrl(1);
 		if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
 			consys_hw_ops->consys_plt_clock_buffer_ctrl(1);
+		if (ret) {
+			pr_err("[%s] turn on PMIC error, ret=%d\n", __func__, ret);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_PMIC_ON_FAIL);
+			return CONNINFRA_POWER_ON_D_DIE_FAIL;
+		}
 
 		/* POS PART 2:
 		 * 1. Pinmux setting
@@ -224,10 +269,20 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 			consys_hw_ops->consys_plt_set_if_pinmux(1);
 
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
-			consys_hw_ops->consys_plt_conninfra_on_power_ctrl(1);
+			ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(1);
+		if (ret) {
+			pr_err("[%s] Conninfra HW power on fail, ret=%d\n", __func__, ret);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL);
+			return CONNINFRA_POWER_ON_D_DIE_FAIL;
+		}
 
 		if (consys_hw_ops->consys_plt_polling_consys_chipid)
 			ret = consys_hw_ops->consys_plt_polling_consys_chipid();
+		if (ret) {
+			pr_err("[%s] polling d-die id fail, ret=%d\n", __func__, ret);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL);
+			return CONNINFRA_POWER_ON_D_DIE_FAIL;
+		}
 
 		/* POS PART 3:
 		 * 1. Set connsys EMI mapping
@@ -244,7 +299,12 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
 			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
 		if (consys_hw_ops->consys_plt_a_die_cfg)
-			consys_hw_ops->consys_plt_a_die_cfg();
+			ret = consys_hw_ops->consys_plt_a_die_cfg();
+		if (ret) {
+			pr_err("[%s] a-die config error, ret=%d\n", __func__, ret);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_A_DIE_FAIL);
+			return CONNINFRA_POWER_ON_A_DIE_FAIL;
+		}
 		if (consys_hw_ops->consys_plt_afe_wbg_cal)
 			consys_hw_ops->consys_plt_afe_wbg_cal();
 		if (consys_hw_ops->consys_plt_subsys_pll_initial)
@@ -252,20 +312,27 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		/* Record SW status on shared sysram */
 		if (consys_hw_ops->consys_plt_subsys_status_update)
 			consys_hw_ops->consys_plt_subsys_status_update(true, on_radio);
+		_consys_hw_raise_voltage(on_radio, true, true);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
+		/* Enable low power mode */
+		pmic_mng_common_power_low_power_mode(1);
 	} else {
 		ret = _consys_hw_conninfra_wakeup();
+		if (ret) {
+			pr_err("[%s] wakeup conninfra fail, ret=%d\n", __func__, ret);
+			return CONNINFRA_POWER_ON_CONFIG_FAIL;
+		}
 		/* Record SW status on shared sysram */
 		if (consys_hw_ops->consys_plt_subsys_status_update)
 			consys_hw_ops->consys_plt_subsys_status_update(true, on_radio);
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
 			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
+		_consys_hw_raise_voltage(on_radio, true, true);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
 
-		if (ret == 0)
-			_consys_hw_conninfra_sleep();
+		_consys_hw_conninfra_sleep();
 	}
 	return 0;
 }
@@ -314,6 +381,23 @@ void consys_hw_clock_fail_dump(void)
 		consys_hw_ops->consys_plt_clock_fail_dump();
 }
 
+int consys_hw_enable_power_dump(void)
+{
+	/* If not supported (no implement), assume it works fine. */
+	int ret = 0;
+	if (consys_hw_ops && consys_hw_ops->consys_plt_enable_power_dump)
+		ret = consys_hw_ops->consys_plt_enable_power_dump();
+	return ret;
+}
+
+int consys_hw_reset_power_state(void)
+{
+	/* If not supported (no implement), assume it works fine. */
+	int ret = 0;
+	if (consys_hw_ops && consys_hw_ops->consys_plt_reset_power_state)
+		ret = consys_hw_ops->consys_plt_reset_power_state();
+	return ret;
+}
 
 int consys_hw_dump_power_state(void)
 {
@@ -350,6 +434,24 @@ int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type)
 	return -1;
 }
 
+int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff) {
+	return pmic_mng_raise_voltage(drv_type, raise, onoff);
+}
+
+int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff)
+{
+	int ret;
+
+	ret = _consys_hw_conninfra_wakeup();
+	if (ret == 0) {
+		ret = _consys_hw_raise_voltage(drv_type, raise, onoff);
+		_consys_hw_conninfra_sleep();
+	} else {
+		pr_err("[%s] wake up fail. drv={%d] raise=[%d] ret=[%d]\n",
+			__func__, drv_type, raise, ret);
+	}
+	return 0;
+}
 
 static int _consys_hw_conninfra_wakeup(void)
 {
@@ -425,35 +527,114 @@ int consys_hw_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clo
 		return -1;
 }
 
+int get_consys_platform_ops(struct platform_device *pdev)
+{
+	g_conninfra_plat_data = (const struct conninfra_plat_data*)of_device_get_match_data(&pdev->dev);
+	if (g_conninfra_plat_data == NULL) {
+		pr_err("[%s] Get platform data fail.", __func__);
+		return -1;
+	}
+	if (consys_hw_ops == NULL)
+		consys_hw_ops = (const struct consys_hw_ops_struct*)g_conninfra_plat_data->hw_ops;
+
+	if (consys_hw_ops == NULL) {
+		pr_err("Get HW op fail");
+		return -1;
+	}
+	return 0;
+}
+
+int consys_hw_tcxo_parser(struct platform_device *pdev)
+{
+	int ret = 0;
+	int pinmux = 0;
+	struct device_node *pinctrl_node;
+	struct device_node *pins_node;
+	unsigned int pin_num = 0xffffffff;
+	const char* tcxo_support;
+
+	/* Get tcxo status */
+	/* Set default value */
+	conn_hw_env.tcxo_support = false;
+	ret = of_property_read_string(pdev->dev.of_node, "tcxo_support", &tcxo_support);
+	if (!ret) {
+		if (strcmp(tcxo_support, "true") == 0) {
+			conn_hw_env.tcxo_support = true;
+			pr_info("[%s] Support TCXO", __func__);
+		}
+	} else {
+		pr_warn("Get tcxo property fail: %d", ret);
+	}
+
+	/* Set up gpio for TCXO */
+	g_conninfra_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+
+	if (IS_ERR(g_conninfra_pinctrl_ptr)) {
+		pr_err("Fail to get conninfra pinctrl");
+	} else {
+		pinctrl_node = of_parse_phandle(pdev->dev.of_node, "pinctrl-1", 0);
+
+		if (pinctrl_node) {
+			pins_node = of_get_child_by_name(pinctrl_node, "pins_cmd_dat");
+
+			if (pins_node) {
+				ret = of_property_read_u32(pins_node, "pinmux", &pinmux);
+
+				if (ret == 0) {
+					pin_num = (pinmux >> 8) & 0xff;
+					pr_info("Conninfra gpio pin number[%d]\n", pin_num);
+				} else {
+					pr_err("Fail to get conninfra gpio pin number");
+				}
+			}
+		}
+	}
+
+	pr_info("[%s] tcxo=%d pintctrl=%p", __func__,
+		conn_hw_env.tcxo_support, g_conninfra_pinctrl_ptr);
+	return 0;
+}
+
 int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
 	struct consys_emi_addr_info* emi_info = NULL;
 
-	/* Read device node */
-	if (consys_reg_mng_init(pdev) != 0) {
-		pr_err("consys_plt_read_reg_from_dts fail");
+	if (pdev == NULL) {
+		pr_err("[%s] invalid input", __func__);
 		return -1;
+	}
+
+	ret = get_consys_platform_ops(pdev);
+	if (ret) {
+		pr_err("[%s] get platform ops fail", __func__);
+		return -2;
+	}
+
+	/* Read device node */
+	if (consys_reg_mng_init(pdev, g_conninfra_plat_data) != 0) {
+		pr_err("consys_plt_read_reg_from_dts fail");
+		return -3;
 	}
 
 	if (consys_hw_ops->consys_plt_clk_get_from_dts)
 		consys_hw_ops->consys_plt_clk_get_from_dts(pdev);
 	else {
 		pr_err("consys_plt_clk_get_from_dtsfail");
-		return -2;
+		return -4;
 	}
 
 	/* emi mng init */
-	ret = emi_mng_init(pdev);
+	ret = emi_mng_init(pdev, g_conninfra_plat_data);
 	if (ret) {
 		pr_err("emi_mng init fail, %d\n", ret);
-		return -3;
+		return -5;
 	}
 
-	ret = pmic_mng_init(pdev, g_conninfra_dev_cb);
+	ret = pmic_mng_init(pdev, g_conninfra_dev_cb, g_conninfra_plat_data);
 	if (ret) {
 		pr_err("pmic_mng init fail, %d\n", ret);
-		return -4;
+		return -6;
 	}
 
 	/* Setup connsys log emi base */
@@ -464,8 +645,9 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 		pr_err("Connsys log didn't init because EMI is invalid\n");
 	}
 
-	if (pdev)
-		g_pdev = pdev;
+	consys_hw_tcxo_parser(pdev);
+
+	g_pdev = pdev;
 
 	return 0;
 }
@@ -485,8 +667,12 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 
 int mtk_conninfra_suspend(struct platform_device *pdev, pm_message_t state)
 {
+	int ret = 0;
+
 	/* suspend callback is in atomic context */
-	return 0;
+	if (g_conninfra_dev_cb && g_conninfra_dev_cb->conninfra_suspend_cb)
+		ret = (*g_conninfra_dev_cb->conninfra_suspend_cb)();
+	return ret;
 }
 
 int mtk_conninfra_resume(struct platform_device *pdev)
@@ -503,13 +689,9 @@ static void consys_hw_ap_resume_handler(struct work_struct *work)
 		(*g_conninfra_dev_cb->conninfra_resume_cb)();
 }
 
-
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
 	int iRet = 0;
-
-	if (consys_hw_ops == NULL)
-		consys_hw_ops = get_consys_platform_ops();
 
 	g_conninfra_dev_cb = dev_cb;
 

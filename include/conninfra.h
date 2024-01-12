@@ -133,7 +133,11 @@ enum connsys_emi_type
 
 #define CONNINFRA_ERR_RST_ONGOING			-0x7788
 #define CONNINFRA_ERR_WAKEUP_FAIL			-0x5566
-#define CONNINFRA_ERR_POWER_OFF				-0x3344
+
+#define CONNINFRA_POWER_ON_D_DIE_FAIL	-0x1111
+#define CONNINFRA_POWER_ON_A_DIE_FAIL	-0x2222
+#define CONNINFRA_POWER_ON_CONFIG_FAIL	-0x3333
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -247,6 +251,8 @@ struct sub_drv_ops_cb {
 	/* thermal query */
 	int (*thermal_qry)(void);
 
+	/* UTC time change callback */
+	void (*time_change_notify)(void);
 };
 
 int conninfra_sub_drv_ops_register(enum consys_drv_type drv_type, struct sub_drv_ops_cb *cb);

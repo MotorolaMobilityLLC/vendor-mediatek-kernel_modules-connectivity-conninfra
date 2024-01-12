@@ -63,7 +63,7 @@
 ********************************************************************************
 */
 
-P_CONSYS_PLATFORM_PMIC_OPS consys_platform_pmic_ops;
+const struct consys_platform_pmic_ops* consys_platform_pmic_ops = NULL;
 #if COMMON_KERNEL_PMIC_SUPPORT
 struct regmap *g_regmap;
 #endif
@@ -77,12 +77,6 @@ struct regmap *g_regmap;
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
-P_CONSYS_PLATFORM_PMIC_OPS __weak get_consys_platform_pmic_ops(void)
-{
-	pr_err("No specify project\n");
-	return NULL;
-}
 
 #if COMMON_KERNEL_PMIC_SUPPORT
 static void pmic_mng_get_regmap(struct platform_device *pdev)
@@ -117,14 +111,18 @@ static void pmic_mng_get_regmap(struct platform_device *pdev)
 }
 #endif
 
-int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
+int pmic_mng_init(
+	struct platform_device *pdev,
+	struct conninfra_dev_cb* dev_cb,
+	const struct conninfra_plat_data* plat_data)
 {
 #if COMMON_KERNEL_PMIC_SUPPORT
 	pmic_mng_get_regmap(pdev);
 #endif
 
 	if (consys_platform_pmic_ops == NULL)
-		consys_platform_pmic_ops = get_consys_platform_pmic_ops();
+		consys_platform_pmic_ops =
+			(const struct consys_platform_pmic_ops*)plat_data->platform_pmic_ops;
 
 	if (consys_platform_pmic_ops && consys_platform_pmic_ops->consys_pmic_get_from_dts)
 		consys_platform_pmic_ops->consys_pmic_get_from_dts(pdev, dev_cb);
@@ -134,6 +132,7 @@ int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
 
 int pmic_mng_deinit(void)
 {
+	consys_platform_pmic_ops = NULL;
 	return 0;
 }
 
@@ -143,6 +142,15 @@ int pmic_mng_common_power_ctrl(unsigned int enable)
 	if (consys_platform_pmic_ops &&
 		consys_platform_pmic_ops->consys_pmic_common_power_ctrl)
 		ret = consys_platform_pmic_ops->consys_pmic_common_power_ctrl(enable);
+	return ret;
+}
+
+int pmic_mng_common_power_low_power_mode(unsigned int enable)
+{
+	int ret = 0;
+	if (consys_platform_pmic_ops &&
+		consys_platform_pmic_ops->consys_pmic_common_power_low_power_mode)
+		ret = consys_platform_pmic_ops->consys_pmic_common_power_low_power_mode(enable);
 	return ret;
 }
 
@@ -190,4 +198,14 @@ int pmic_mng_event_cb(unsigned int id, unsigned int event)
 		consys_platform_pmic_ops->consys_pmic_event_notifier)
 		consys_platform_pmic_ops->consys_pmic_event_notifier(id, event);
 	return 0;
+}
+
+int pmic_mng_raise_voltage(unsigned int drv_type, bool raise, bool onoff)
+{
+	int ret = 0;
+
+	if (consys_platform_pmic_ops &&
+		consys_platform_pmic_ops->consys_pmic_raise_voltage)
+		ret = consys_platform_pmic_ops->consys_pmic_raise_voltage(drv_type, raise, onoff);
+	return ret;
 }

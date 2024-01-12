@@ -23,6 +23,8 @@
 #include <linux/platform_device.h>
 
 #include "osal.h"
+#include "consys_hw.h"
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -83,7 +85,7 @@ struct consys_platform_emi_ops {
 ********************************************************************************
 */
 
-int emi_mng_init(struct platform_device *pdev);
+int emi_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data);
 int emi_mng_deinit(void);
 
 int emi_mng_set_region_protection(void);

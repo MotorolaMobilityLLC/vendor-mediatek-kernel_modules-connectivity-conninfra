@@ -6,6 +6,7 @@
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
 #include <linux/clk.h>
+#include <linux/delay.h>
 #include <linux/of.h>
 #include <mtk_clkbuf_ctl.h>
 
@@ -246,6 +247,16 @@ int consys_reset_power_state_mt6877(void)
 	return 0;
 }
 
+static inline void __sleep_count_trigger_read(void)
+{
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_RD_TRIGGER, 0x1);
+	udelay(150);
+	CONSYS_REG_WRITE_HW_ENTRY(
+		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_RD_TRIGGER, 0x0);
+
+}
+
 int consys_power_state_dump_mt6877(void)
 {
 	unsigned int conninfra_sleep_cnt, conninfra_sleep_time;
@@ -267,6 +278,7 @@ int consys_power_state_dump_mt6877(void)
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
 		0x0);
+	__sleep_count_trigger_read();
 	conninfra_sleep_time = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	conninfra_sleep_cnt = CONSYS_REG_READ(
@@ -275,6 +287,7 @@ int consys_power_state_dump_mt6877(void)
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
 		0x1);
+	__sleep_count_trigger_read();
 	wf_sleep_time = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	wf_sleep_cnt = CONSYS_REG_READ(
@@ -283,6 +296,7 @@ int consys_power_state_dump_mt6877(void)
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
 		0x2);
+	__sleep_count_trigger_read();
 	bt_sleep_time = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	bt_sleep_cnt = CONSYS_REG_READ(
@@ -291,11 +305,12 @@ int consys_power_state_dump_mt6877(void)
 	CONSYS_REG_WRITE_HW_ENTRY(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_HOST_SLP_COUNTER_SEL,
 		0x3);
+	__sleep_count_trigger_read();
 	gps_sleep_time = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER_ADDR);
 	gps_sleep_cnt = CONSYS_REG_READ(
 		CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER_ADDR);
-	pr_info("[consys_power_state][sleep time/count]: conninfra[%x,%x] wf[%x,%x] bt[%x,%x] gps[%x,%x]",
+	pr_info("[consys_power_state]conninfra:%u,%u;wf:%u,%u;bt:%u,%u;gps:%u,%u;",
 		conninfra_sleep_time, conninfra_sleep_cnt,
 		wf_sleep_time, wf_sleep_cnt,
 		bt_sleep_time, bt_sleep_cnt,
