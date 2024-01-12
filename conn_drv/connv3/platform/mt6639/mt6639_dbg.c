@@ -3,6 +3,8 @@
  * Copyright (c) 2022 MediaTek Inc.
  */
 
+#include <linux/delay.h>
+
 #include "connv3.h"
 #include "connv3_hw.h"
 #include "connv3_hw_dbg.h"
@@ -83,12 +85,13 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
 			pr_notice("[%s] clock detect read fail, ret = %d", __func__, ret);
 			break;
 		}
-		if ((value & 0x3) == 0x3)
+		if ((value & 0x6) == 0x6)
 			break;
+		udelay(1000);
 	}
 	if (ret)
 		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
-	if ((value & 0x3) != 0x3) {
+	if ((value & 0x6) != 0x6) {
 		pr_notice("[%s] clock detect fail, get: [0x%08x]", __func__, value);
 		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
 	}
