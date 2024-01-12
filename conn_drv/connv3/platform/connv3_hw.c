@@ -122,6 +122,14 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 		}
 	}
 
+	if ((curr_status & (~(0x1 << off_radio))) == 0) {
+		ret = connv3_pmic_mng_vsel_ctrl(0);
+		if (ret) {
+			pr_err("[%s] pmic vsel fail, ret = %d", __func__, ret);
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -130,6 +138,10 @@ int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 	int ret;
 
 	if (curr_status == 0) {
+		ret = connv3_pmic_mng_vsel_ctrl(1);
+		if (ret)
+			return ret;
+
 		ret = connv3_pmic_mng_common_power_ctrl(1);
 		if (ret)
 			return ret;
@@ -146,7 +158,6 @@ int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 
 	return 0;
 }
-
 
 int connv3_hw_pwr_on_done(unsigned int radio)
 {
