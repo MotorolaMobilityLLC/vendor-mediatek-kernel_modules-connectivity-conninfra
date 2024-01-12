@@ -6,6 +6,14 @@
 #ifndef _CONNV3_PMIC_MNG_H_
 #define _CONNV3_PMIC_MNG_H_
 
+#include <linux/version.h>
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#define COMMON_KERNEL_PMIC_SUPPORT	1
+#else
+#define COMMON_KERNEL_PMIC_SUPPORT	0
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -38,7 +46,6 @@ struct connv3_platform_pmic_ops {
 	int (*pmic_vsel_ctrl) (u32 enable);
 	int (*pmic_parse_state) (char *buffer, int buf_sz);
 	int (*pmic_antenna_power_ctrl) (u32 radio, u32 enable);
-
 };
 
 
@@ -46,6 +53,10 @@ struct connv3_platform_pmic_ops {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+
+#if COMMON_KERNEL_PMIC_SUPPORT
+extern struct regmap *g_connv3_regmap_mt6373;
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A

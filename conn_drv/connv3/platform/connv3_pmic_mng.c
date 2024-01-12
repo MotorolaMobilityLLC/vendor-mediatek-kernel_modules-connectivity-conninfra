@@ -4,6 +4,7 @@
  */
 
 #include <linux/of_device.h>
+#include <linux/regmap.h>
 
 #include "connv3_hw.h"
 #include "connv3_pmic_mng.h"
@@ -39,18 +40,47 @@
 ********************************************************************************
 */
 
+#if COMMON_KERNEL_PMIC_SUPPORT
+static int connv3_mt6373_probe(struct platform_device *pdev);
+#endif
+
+static int pmic_mng_register_device(void);
+static int pmic_mng_unregister_device(void);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
 
 const struct connv3_platform_pmic_ops* g_connv3_platform_pmic_ops = NULL;
+#if COMMON_KERNEL_PMIC_SUPPORT
+struct regmap *g_connv3_regmap_mt6373;
+#endif
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
 
+#if COMMON_KERNEL_PMIC_SUPPORT
+#ifdef CONFIG_OF
+const struct of_device_id connv3_pmic_mt6373_of_ids[] = {
+	{.compatible = "mediatek,mt6373-connv3",},
+	{}
+};
+#endif
+
+static struct platform_driver connv3_mt6373_dev_drv = {
+	.probe = connv3_mt6373_probe,
+	.driver = {
+		.name = "mt6373-connv3",
+#ifdef CONFIG_OF
+		.of_match_table = connv3_pmic_mt6373_of_ids,
+#endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+		},
+};
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -103,6 +133,45 @@ int connv3_pmic_mng_antenna_power_ctrl(u32 radio, unsigned int enable)
 	return ret;
 }
 
+#if COMMON_KERNEL_PMIC_SUPPORT
+static int connv3_mt6373_probe(struct platform_device *pdev)
+{
+	g_connv3_regmap_mt6373 = dev_get_regmap(pdev->dev.parent, NULL);
+
+	if (!g_connv3_regmap_mt6373)
+		pr_notice("[%s] fail to get g_connv3_regmap_mt6373\n", __func__);
+	else
+		pr_info("[%s] get g_connv3_regmap_mt6373 successfully!\n", __func__);
+
+	return 0;
+}
+#endif
+
+static int pmic_mng_register_device(void)
+{
+#if COMMON_KERNEL_PMIC_SUPPORT
+	int ret;
+
+	ret = platform_driver_register(&connv3_mt6373_dev_drv);
+	if (ret)
+		pr_notice("[%s] connv3 pmic mt6373 registered failed(%d)\n", __func__, ret);
+	else
+		pr_info("[%s] connv3 pmic mt6373 registered successfully!\n", __func__);
+#endif
+	return 0;
+}
+
+static int pmic_mng_unregister_device(void)
+{
+#if COMMON_KERNEL_PMIC_SUPPORT
+	if (g_connv3_regmap_mt6373 != NULL) {
+		platform_driver_unregister(&connv3_mt6373_dev_drv);
+		g_connv3_regmap_mt6373 = NULL;
+	}
+#endif
+	return 0;
+}
+
 int connv3_pmic_mng_init(
 	struct platform_device *pdev,
 	struct connv3_dev_cb* dev_cb,
@@ -114,6 +183,8 @@ int connv3_pmic_mng_init(
 		g_connv3_platform_pmic_ops =
 			(const struct connv3_platform_pmic_ops*)plat_data->platform_pmic_ops;
 
+	pmic_mng_register_device();
+
 	if (g_connv3_platform_pmic_ops &&
 		g_connv3_platform_pmic_ops->pmic_initial_setting)
 		ret = g_connv3_platform_pmic_ops->pmic_initial_setting(pdev, dev_cb);
@@ -123,7 +194,7 @@ int connv3_pmic_mng_init(
 
 int connv3_pmic_mng_deinit(void)
 {
+	pmic_mng_unregister_device();
 	g_connv3_platform_pmic_ops = NULL;
 	return 0;
 }
-
