@@ -8,7 +8,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6639_CONN_INFRA_BUS_DUMP_VERSION	"20220905"
+#define MT6639_CONN_INFRA_BUS_DUMP_VERSION	"20230418"
 
 #define MT6639_AP2CONN_INFRA_ON_SLP_PROT	0x70028730
 #define MT6639_CONN_INFRA_CLK_DETECT		0x7c023000
@@ -94,7 +94,6 @@ const struct connv3_dbg_command mt6639_bus_a[] = {
 	{false, 0, 0, 0, true, 0x7c023414},
 	{false, 0, 0, 0, true, 0x7c023418},
 	{false, 0, 0, 0, true, 0x7c023434},
-	{false, 0, 0, 0, true, 0x7c00EA04},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_a = {
@@ -186,6 +185,7 @@ const struct connv3_dbg_command mt6639_bus_b[] = {
 	{false, 0x0, 0x0, 0x0, true, 0x7c048314},
 	{false, 0x0, 0x0, 0x0, true, 0x7c048318},
 	{false, 0x0, 0x0, 0x0, true, 0x7c04831c},
+	{false, 0x0, 0x0, 0x0, true, 0x7c00EA04},
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_b = {
