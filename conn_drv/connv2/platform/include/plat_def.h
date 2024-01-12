@@ -3,9 +3,27 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_DEF_H_
-#define _PLATFORM_DEF_H_
+#ifndef PLAT_DEF_H
+#define PLAT_DEF_H
 
-#include <linux/delay.h>
+#ifdef mapped_addr
+#undef mapped_addr
+#endif
+#define mapped_addr void __iomem *
 
-#endif				/* _PLATFORM_DEF_H_ */
+#ifdef strnlcat
+#undef strnlcat
+#endif
+#define strnlcat(des, src, length, size) strncat(des, src, length)
+
+#ifdef get_jiffies
+#undef get_jiffies
+#endif
+#define get_jiffies() jiffies
+
+#ifdef time_duration
+#undef time_duration
+#endif
+#define time_duration(x)  jiffies_to_msecs(jiffies - x)
+
+#endif	/* PLAT_DEF_H */

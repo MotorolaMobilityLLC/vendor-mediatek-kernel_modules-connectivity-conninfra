@@ -21,7 +21,7 @@
 ********************************************************************************
 */
 
-enum CONN_DEBUG_TYPE {
+enum conn_debug_type {
 	CONN_DEBUG_TYPE_WIFI = 0,
 	CONN_DEBUG_TYPE_BT = 1,
 	CONN_DEBUG_TYPE_GPS = 2,

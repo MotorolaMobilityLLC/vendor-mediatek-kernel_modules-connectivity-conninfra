@@ -58,8 +58,8 @@ static void consys_emi_get_md_shared_emi_mt6877(phys_addr_t* base, unsigned int*
 ********************************************************************************
 */
 
-extern unsigned long long gConEmiSize;
-extern phys_addr_t gConEmiPhyBase;
+extern unsigned long long g_con_emi_size;
+extern phys_addr_t g_con_emi_phy_base;
 
 struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6877 = {
 	.consys_ic_emi_mpu_set_region_protection = consys_emi_mpu_set_region_protection_mt6877,
@@ -71,8 +71,8 @@ static int consys_emi_mpu_set_region_protection_mt6877(void)
 {
 #if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
 	struct emimpu_region_t region;
-	unsigned long long start = gConEmiPhyBase;
-	unsigned long long end = gConEmiPhyBase + gConEmiSize - 1;
+	unsigned long long start = g_con_emi_phy_base;
+	unsigned long long end = g_con_emi_phy_base + g_con_emi_size - 1;
 
 	mtk_emimpu_init_region(&region, REGION_CONN);
 	mtk_emimpu_set_addr(&region, start, end);

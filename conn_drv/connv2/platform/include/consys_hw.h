@@ -3,12 +3,12 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_CONSYS_HW_H_
-#define _PLATFORM_CONSYS_HW_H_
+#ifndef CONSYS_HW_H
+#define CONSYS_HW_H
 
-#include <linux/platform_device.h>
-#include <linux/types.h>
-#include "conninfra.h"
+#include "../../../../include/conninfra.h"
+#include "plat_def.h"
+#include "plat_library.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -308,4 +308,4 @@ unsigned int consys_hw_get_support_drv(void);
  ********************************************************************************
  */
 
-#endif				/* _PLATFORM_CONSYS_HW_H_ */
+#endif	/* CONSYS_HW_H */

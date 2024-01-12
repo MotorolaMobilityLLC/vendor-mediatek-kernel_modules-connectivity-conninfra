@@ -3,14 +3,14 @@
  * Copyright (c) 2019 MediaTek Inc.
  */
 
-#ifndef _PLATFORM_PMIC_MNG_H_
-#define _PLATFORM_PMIC_MNG_H_
+#ifndef PMIC_MNG_H
+#define PMIC_MNG_H
 
 #include <linux/platform_device.h>
+#include <linux/version.h>
 
 #include "consys_hw.h"
 
-#include <linux/version.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 #define COMMON_KERNEL_PMIC_SUPPORT	1
 #else
@@ -108,4 +108,4 @@ int pmic_mng_raise_voltage(unsigned int, bool, bool);
 ********************************************************************************
 */
 
-#endif				/* _PLATFORM_PMIC_MNG_H_ */
+#endif	/* PMIC_MNG_H */
