@@ -795,6 +795,8 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
 	int iRet = 0, retry = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
+	unsigned int emi_addr = 0;
+	unsigned int emi_size = 0;
 
 	g_conninfra_dev_cb = dev_cb;
 	atomic_set(&g_hw_init_done, 0);
@@ -802,7 +804,7 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 	if (iRet)
 		pr_err("Conninfra platform driver registered failed(%d)\n", iRet);
 	else {
-		while (atomic_read(&g_hw_init_done) == 0 && retry < 100) {
+		while (atomic_read(&g_hw_init_done) == 0) {
 			osal_sleep_ms(50);
 			retry++;
 			if (__ratelimit(&_rs))
@@ -812,6 +814,9 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 
 	pmic_mng_register_device();
 	clock_mng_register_device();
+
+	conninfra_get_phy_addr(&emi_addr, &emi_size);
+	connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID), emi_addr);
 
 	INIT_WORK(&ap_resume_work, consys_hw_ap_resume_handler);
 	pr_info("[consys_hw_init] result [%d]\n", iRet);
