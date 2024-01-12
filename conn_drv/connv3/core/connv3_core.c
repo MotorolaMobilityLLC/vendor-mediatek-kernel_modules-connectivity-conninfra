@@ -145,7 +145,7 @@ enum pre_cal_type {
 	PRE_CAL_SCREEN_ON_DISABLED = 3
 };
 
-static unsigned int g_pre_cal_mode = 0;
+static unsigned int g_pre_cal_mode = PRE_CAL_ALL_DISABLED;
 
 /*******************************************************************************
 *                              F U N C T I O N S
