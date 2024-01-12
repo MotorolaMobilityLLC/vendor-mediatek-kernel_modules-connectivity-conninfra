@@ -601,6 +601,10 @@ int connv3_log_init(int conn_type, int primary_size, int mcu_size, void (*log_ev
 
 	pr_info("[%s] type=[%d]", __func__, conn_type);
 	handler = connv3_log_subsys_init(conn_type, primary_size, mcu_size);
+	if (!handler) {
+		pr_notice("[%s] handler == NULL\n", __func__);
+		return -1;
+	}
 
 	handler->ctrl_block[CONNV3_LOG_TYPE_PRIMARY].log_data_handler = log_event_cb;
 	g_connv3_log_dev[conn_type] = handler;
