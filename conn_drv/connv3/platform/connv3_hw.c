@@ -96,6 +96,24 @@ unsigned int connv3_hw_get_adie_chipid(void)
 	return 0;
 }
 
+unsigned int connv3_hw_get_connsys_ic_info(uint8_t *buf, u32 buf_sz)
+{
+	int ret;
+
+	ret = connv3_pmic_mng_get_connsys_chip_info(buf, buf_sz);
+
+	return ret;
+}
+
+unsigned int connv3_hw_get_pmic_ic_info(uint8_t *buf, u32 buf_sz)
+{
+	int ret;
+
+	ret = connv3_pmic_mng_get_pmic_chip_info(buf, buf_sz);
+
+	return ret;
+}
+
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 {
 	/*

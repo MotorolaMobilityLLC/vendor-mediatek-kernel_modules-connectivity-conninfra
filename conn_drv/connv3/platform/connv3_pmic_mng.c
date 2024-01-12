@@ -133,6 +133,29 @@ int connv3_pmic_mng_antenna_power_ctrl(u32 radio, unsigned int enable)
 	return ret;
 }
 
+int connv3_pmic_mng_get_connsys_chip_info(char *connsys_ecid, int connsys_ecid_size)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+                g_connv3_platform_pmic_ops->pmic_get_connsys_chip_info)
+                ret = g_connv3_platform_pmic_ops->pmic_get_connsys_chip_info(connsys_ecid, connsys_ecid_size);
+
+        return ret;
+}
+
+int connv3_pmic_mng_get_pmic_chip_info(char *pmic_ecid, int pmic_ecid_size)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+                g_connv3_platform_pmic_ops->pmic_get_pmic_chip_info)
+                ret = g_connv3_platform_pmic_ops->pmic_get_pmic_chip_info(pmic_ecid, pmic_ecid_size);
+
+        return ret;
+}
+
+
 #if COMMON_KERNEL_PMIC_SUPPORT
 static int connv3_mt6373_probe(struct platform_device *pdev)
 {
