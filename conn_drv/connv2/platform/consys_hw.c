@@ -91,7 +91,7 @@ const struct conninfra_plat_data *g_conninfra_plat_data;
 
 struct pinctrl *g_conninfra_pinctrl_ptr;
 
-static unsigned int g_adie_chipid;
+static unsigned int g_adie_chipid[CONNDRV_TYPE_MAX];
 static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
 
 /* this config is defined by each platform, used to change setting by dbg command. */
@@ -188,10 +188,10 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 			consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
 		pr_info("Power off CONNSYS PART 2\n");
 		if (consys_hw_ops->consys_plt_set_if_pinmux)
-			consys_hw_ops->consys_plt_set_if_pinmux(0);
+			consys_hw_ops->consys_plt_set_if_pinmux(0, curr_status, next_status);
 		if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
 			consys_hw_ops->consys_plt_clock_buffer_ctrl(0);
-		ret = pmic_mng_common_power_ctrl(0);
+		ret = pmic_mng_common_power_ctrl(0, curr_status, next_status);
 		if (ret)
 			pr_info("Power off a-die power, ret=%d\n", ret);
 	} else {
@@ -202,17 +202,23 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 			consys_hw_ops->consys_plt_subsys_status_update(false, off_radio);
 		_consys_hw_raise_voltage(off_radio, false, true);
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
-			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
+			consys_hw_ops->consys_plt_spi_master_cfg(curr_status, next_status);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
 		if (ret == 0)
 			_consys_hw_conninfra_sleep();
+		if (consys_hw_ops->consys_plt_set_if_pinmux)
+			consys_hw_ops->consys_plt_set_if_pinmux(0, curr_status, next_status);
+		ret = pmic_mng_common_power_ctrl(0, curr_status, next_status);
+		if (ret)
+			pr_info("Power off a-die power, ret=%d\n", ret);
 	}
 
 	return 0;
 }
 
-int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
+int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type,
+						unsigned int curr_status, unsigned int next_status)
 {
 	int ret;
 
@@ -232,7 +238,7 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
 		}
 		fallthrough;
 	case CONNINFRA_PWR_ON_PMIC_ON_FAIL:
-		ret = pmic_mng_common_power_ctrl(0);
+		ret = pmic_mng_common_power_ctrl(0, curr_status, next_status);
 		if (ret)
 			pr_err("[%s] turn off VCN control fail, ret=%d\n", __func__, ret);
 		break;
@@ -250,13 +256,16 @@ unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type)
 	} else if (type == CONNSYS_HW_VER) {
 		return consys_hw_get_hw_ver();
 	} else if (type == CONNSYS_ADIE_CHIPID) {
-		return g_adie_chipid;
+		/* default return BT's a-die id */
+		return consys_hw_detect_adie_chipid(CONNDRV_TYPE_BT);
+	} else if (type == CONNSYS_GPS_ADIE_CHIPID) {
+		return consys_hw_detect_adie_chipid(CONNDRV_TYPE_GPS);
 	}
 
 	return 0;
 }
 
-unsigned int consys_hw_detect_adie_chipid(void)
+unsigned int consys_hw_detect_adie_chipid(unsigned int drv_type)
 {
 	int chipid = 0;
 
@@ -264,16 +273,16 @@ unsigned int consys_hw_detect_adie_chipid(void)
 		return 0;
 
 	/* detect a-die only once */
-	if (g_adie_chipid) {
+	if (g_adie_chipid[drv_type]) {
 		osal_unlock_sleepable_lock(&g_adie_chipid_lock);
-		return g_adie_chipid;
+		return g_adie_chipid[drv_type];
 	}
 
 	if (consys_hw_ops->consys_plt_adie_detection) {
-		chipid = consys_hw_ops->consys_plt_adie_detection();
+		chipid = consys_hw_ops->consys_plt_adie_detection(drv_type);
 
 		if (chipid > 0) {
-			g_adie_chipid = chipid;
+			g_adie_chipid[drv_type] = chipid;
 			pr_info("A-die chipid detection done, found chipid=[%x]\n", chipid);
 		} else
 			pr_info("Fail to detect a-die chipid, found chipid=[%x]\n", chipid);
@@ -281,7 +290,7 @@ unsigned int consys_hw_detect_adie_chipid(void)
 
 	osal_unlock_sleepable_lock(&g_adie_chipid_lock);
 
-	return g_adie_chipid;
+	return g_adie_chipid[drv_type];
 }
 
 int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
@@ -306,12 +315,13 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		 * Set PMIC to turn on the power that AFE WBG circuit in D-die,
 		 * OSC or crystal component, and A-die need.
 		 */
-		ret = pmic_mng_common_power_ctrl(1);
+		ret = pmic_mng_common_power_ctrl(1, curr_status, next_status);
 		if (consys_hw_ops->consys_plt_clock_buffer_ctrl)
 			consys_hw_ops->consys_plt_clock_buffer_ctrl(1);
 		if (ret) {
 			pr_err("[%s] turn on PMIC error, ret=%d\n", __func__, ret);
-			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_PMIC_ON_FAIL);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_PMIC_ON_FAIL,
+									curr_status, next_status);
 			return CONNINFRA_POWER_ON_D_DIE_FAIL;
 		}
 
@@ -321,13 +331,14 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		 * 3. Enable AXI bus (AP2CONN slpprot)
 		 */
 		if (consys_hw_ops->consys_plt_set_if_pinmux)
-			consys_hw_ops->consys_plt_set_if_pinmux(1);
+			consys_hw_ops->consys_plt_set_if_pinmux(1, curr_status, next_status);
 
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
 			ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(1);
 		if (ret) {
 			pr_err("[%s] Conninfra HW power on fail, ret=%d\n", __func__, ret);
-			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL,
+									curr_status, next_status);
 			return CONNINFRA_POWER_ON_D_DIE_FAIL;
 		}
 
@@ -335,7 +346,8 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 			ret = consys_hw_ops->consys_plt_polling_consys_chipid();
 		if (ret) {
 			pr_err("[%s] polling d-die id fail, ret=%d\n", __func__, ret);
-			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_POLLING_CHIP_ID_FAIL,
+									curr_status, next_status);
 			return CONNINFRA_POWER_ON_D_DIE_FAIL;
 		}
 
@@ -352,12 +364,13 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		if (consys_hw_ops->consys_plt_d_die_cfg)
 			consys_hw_ops->consys_plt_d_die_cfg();
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
-			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
+			consys_hw_ops->consys_plt_spi_master_cfg(curr_status, next_status);
 		if (consys_hw_ops->consys_plt_a_die_cfg)
-			ret = consys_hw_ops->consys_plt_a_die_cfg();
+			ret = consys_hw_ops->consys_plt_a_die_cfg(curr_status, next_status);
 		if (ret) {
 			pr_err("[%s] a-die config error, ret=%d\n", __func__, ret);
-			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_A_DIE_FAIL);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_A_DIE_FAIL,
+									curr_status, next_status);
 			return CONNINFRA_POWER_ON_A_DIE_FAIL;
 		}
 		if (consys_hw_ops->consys_plt_afe_sw_patch)
@@ -373,23 +386,34 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
 		/* Enable low power mode */
-		pmic_mng_common_power_low_power_mode(1);
+		pmic_mng_common_power_low_power_mode(1, curr_status, next_status);
 	} else {
+		ret = pmic_mng_common_power_ctrl(1, curr_status, next_status);
+		if (ret) {
+			pr_err("[%s] turn on PMIC error, ret=%d\n", __func__, ret);
+			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_PMIC_ON_FAIL, curr_status, next_status);
+			return CONNINFRA_POWER_ON_D_DIE_FAIL;
+		}
+		if (consys_hw_ops->consys_plt_set_if_pinmux)
+			consys_hw_ops->consys_plt_set_if_pinmux(1, curr_status, next_status);
 		ret = _consys_hw_conninfra_wakeup();
 		if (ret) {
 			pr_err("[%s] wakeup conninfra fail, ret=%d\n", __func__, ret);
 			return CONNINFRA_POWER_ON_CONFIG_FAIL;
 		}
+		if (consys_hw_ops->consys_plt_a_die_cfg)
+			ret = consys_hw_ops->consys_plt_a_die_cfg(curr_status, next_status);
 		/* Record SW status on shared sysram */
 		if (consys_hw_ops->consys_plt_subsys_status_update)
 			consys_hw_ops->consys_plt_subsys_status_update(true, on_radio);
 		if (consys_hw_ops->consys_plt_spi_master_cfg)
-			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
+			consys_hw_ops->consys_plt_spi_master_cfg(curr_status, next_status);
 		_consys_hw_raise_voltage(on_radio, true, true);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
 
 		_consys_hw_conninfra_sleep();
+		pmic_mng_common_power_low_power_mode(1, curr_status, next_status);
 	}
 	return 0;
 }
@@ -472,10 +496,24 @@ int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsi
 	return -1;
 }
 
+int consys_hw_spi_1_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
+{
+	if (consys_hw_ops->consys_plt_spi_read)
+		return consys_hw_ops->consys_plt_spi_1_read(subsystem, addr, data);
+	return -1;
+}
+
 int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	if (consys_hw_ops->consys_plt_spi_write)
 		return consys_hw_ops->consys_plt_spi_write(subsystem, addr, data);
+	return -1;
+}
+
+int consys_hw_spi_1_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
+{
+	if (consys_hw_ops->consys_plt_spi_write)
+		return consys_hw_ops->consys_plt_spi_1_write(subsystem, addr, data);
 	return -1;
 }
 
@@ -484,6 +522,14 @@ int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int add
 {
 	if (consys_hw_ops->consys_plt_spi_update_bits)
 		return consys_hw_ops->consys_plt_spi_update_bits(subsystem, addr, data, mask);
+	return -1;
+}
+
+int consys_hw_spi_1_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
+					 unsigned int data, unsigned int mask)
+{
+	if (consys_hw_ops->consys_plt_spi_update_bits)
+		return consys_hw_ops->consys_plt_spi_1_update_bits(subsystem, addr, data, mask);
 	return -1;
 }
 

@@ -113,7 +113,7 @@ void connv2_resume_notify(void);
 
 /* adaptor */
 void connv2_set_coredump_mode(int mode);
-u32 connv2_detect_adie_chipid(void);
+u32 connv2_detect_adie_chipid(u32 drv_type);
 
 /* screen on/off */
 void connv2_power_on_off_notify(int on_off);
@@ -214,6 +214,14 @@ struct wmt_platform_bridge g_plat_bridge = {
 
 static atomic_t g_connv2_hw_init_done = ATOMIC_INIT(0);
 
+static const u32 drv_convertor[CONN_ADAPTOR_DRV_SIZE] = {CONNDRV_TYPE_WIFI,
+				CONNDRV_TYPE_BT, CONNDRV_TYPE_GPS, CONNDRV_TYPE_FM};
+static int _conn_adp_drv_2_connv2_drv(u32 adp_drv_type) {
+	if (adp_drv_type >= CONN_ADAPTOR_DRV_SIZE)
+		return -1;
+	return drv_convertor[adp_drv_type];
+}
+
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -233,9 +241,16 @@ void connv2_set_coredump_mode(int mode)
 	connsys_coredump_set_dump_mode(mode);
 }
 
-u32 connv2_detect_adie_chipid(void)
+
+
+u32 connv2_detect_adie_chipid(u32 drv_type)
 {
-	return consys_hw_detect_adie_chipid();
+	int v2_drv_type = _conn_adp_drv_2_connv2_drv(drv_type);
+	if (v2_drv_type < 0) {
+		pr_notice("[%s] input error: %d\n", __func__, drv_type);
+		return 0;
+	}
+	return consys_hw_detect_adie_chipid(v2_drv_type);
 }
 
 static int conninfra_dev_pmic_event_cb(unsigned int id, unsigned int event)
@@ -551,7 +566,8 @@ static void conninfra_register_power_throttling_callback(void)
 	int ret;
 
 	pwr_info.chip_id = consys_hw_chipid_get();
-	pwr_info.adie_id = consys_hw_detect_adie_chipid();
+	/* default wifi bucause it usually has the highest power consumption */
+	pwr_info.adie_id = consys_hw_detect_adie_chipid(CONNDRV_TYPE_WIFI);
 	pwr_info.get_temp = conninfra_core_thermal_query;
 	ret = conn_pwr_init(&pwr_info);
 	if (ret < 0)
@@ -587,7 +603,8 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 #if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	/* power throttling */
 	pwr_info.chip_id = consys_hw_chipid_get();
-	pwr_info.adie_id = consys_hw_detect_adie_chipid();
+	/* default wifi bucause it usually has the highest power consumption */
+	pwr_info.adie_id = consys_hw_detect_adie_chipid(CONNDRV_TYPE_WIFI);
 	pwr_info.get_temp = consys_hw_therm_query;
 	ret = conn_pwr_init(&pwr_info);
 	if (ret < 0)

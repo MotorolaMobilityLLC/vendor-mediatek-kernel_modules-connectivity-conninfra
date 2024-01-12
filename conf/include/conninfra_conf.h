@@ -148,6 +148,7 @@ struct conninfra_conf {
 	unsigned char tcxo_gpio;
 
 	unsigned char pre_cal_mode;
+	unsigned int vcn33_1_voltage;
 };
 
 

@@ -244,6 +244,20 @@ int conninfra_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsi
 }
 EXPORT_SYMBOL(conninfra_spi_read);
 
+int conninfra_spi_1_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
+{
+	if (conninfra_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNINFRA_ERR_RST_ONGOING;
+	}
+	if (subsystem >= SYS_SPI_MAX) {
+		pr_err("[%s] wrong subsys %d", __func__, subsystem);
+		return -EINVAL;
+	}
+	return conninfra_core_spi_1_read(subsystem, addr, data);;
+}
+EXPORT_SYMBOL(conninfra_spi_1_read);
+
 int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	if (conninfra_core_is_rst_locking()) {
@@ -256,9 +270,23 @@ int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 		return -EINVAL;
 	}
 	return conninfra_core_spi_write(subsystem, addr, data);
-;
 }
 EXPORT_SYMBOL(conninfra_spi_write);
+
+int conninfra_spi_1_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
+{
+	if (conninfra_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNINFRA_ERR_RST_ONGOING;
+	}
+
+	if (subsystem >= SYS_SPI_MAX) {
+		pr_err("[%s] wrong subsys %d", __func__, subsystem);
+		return -EINVAL;
+	}
+	return conninfra_core_spi_1_write(subsystem, addr, data);
+}
+EXPORT_SYMBOL(conninfra_spi_1_write);
 
 int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
 {
@@ -275,6 +303,22 @@ int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int add
 	return conninfra_core_spi_update_bits(subsystem, addr, data, mask);
 }
 EXPORT_SYMBOL(conninfra_spi_update_bits);
+
+int conninfra_spi_1_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+{
+	if (conninfra_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNINFRA_ERR_RST_ONGOING;
+	}
+
+	if (subsystem >= SYS_SPI_MAX) {
+		pr_err("[%s] wrong subsys %d", __func__, subsystem);
+		return -EINVAL;
+	}
+
+	return conninfra_core_spi_1_update_bits(subsystem, addr, data, mask);
+}
+EXPORT_SYMBOL(conninfra_spi_1_update_bits);
 
 int conninfra_adie_top_ck_en_on(enum consys_adie_ctl_type type)
 {

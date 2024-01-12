@@ -47,8 +47,10 @@ typedef int(*CONSYS_PMIC_GET_FROM_DTS) (
 	struct platform_device *pdev,
 	struct conninfra_dev_cb* dev_cb);
 
-typedef int(*CONSYS_PMIC_COMMON_POWER_CTRL) (unsigned int enable);
-typedef int(*CONSYS_PMIC_COMMON_POWER_LOW_POWER_MODE) (unsigned int enable);
+typedef int(*CONSYS_PMIC_COMMON_POWER_CTRL) (unsigned int enable, unsigned int curr_status,
+					unsigned int next_status);
+typedef int(*CONSYS_PMIC_COMMON_POWER_LOW_POWER_MODE) (unsigned int enable, unsigned int curr_status,
+					unsigned int next_status);
 
 typedef int(*CONSYS_PMIC_WIFI_POWER_CTRL) (unsigned int enable);
 typedef int(*CONSYS_PMIC_BT_POWER_CTRL) (unsigned int enable);
@@ -80,6 +82,7 @@ extern struct regmap *g_regmap;
 extern struct regmap *g_regmap_mt6363;
 extern struct regmap *g_regmap_mt6373;
 extern struct regmap *g_regmap_mt6368;
+extern struct regmap *g_regmap_mt6369;
 #endif
 
 /*******************************************************************************
@@ -95,8 +98,10 @@ extern struct regmap *g_regmap_mt6368;
 int pmic_mng_init(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb, const struct conninfra_plat_data* plat_data);
 int pmic_mng_deinit(void);
 
-int pmic_mng_common_power_ctrl(unsigned int enable);
-int pmic_mng_common_power_low_power_mode(unsigned int enable);
+int pmic_mng_common_power_ctrl(unsigned int enable, unsigned int curr_status,
+					unsigned int next_status);
+int pmic_mng_common_power_low_power_mode(unsigned int enable, unsigned int curr_status,
+					unsigned int next_status);
 int pmic_mng_wifi_power_ctrl(unsigned int enable);
 int pmic_mng_bt_power_ctrl(unsigned int enable);
 int pmic_mng_gps_power_ctrl(unsigned int enable);

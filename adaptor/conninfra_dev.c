@@ -74,7 +74,7 @@ static struct notifier_block conn_adaptor_pm_notifier;
 
 
 struct conn_adaptor_drv_func_support {
-	u32 (*get_adie_id)(void);
+	u32 (*get_adie_id)(u32 drv_type);
 };
 
 struct conn_adaptor_drv_gen_inst {
@@ -193,7 +193,7 @@ static u32 conn_adaptor_detect_adie_chipid(u32 drv_type)
 		return 0;
 	}
 
-	return (*(g_drv_func_support[drv_type].get_adie_id))();
+	return (*(g_drv_func_support[drv_type].get_adie_id))(drv_type);
 }
 
 

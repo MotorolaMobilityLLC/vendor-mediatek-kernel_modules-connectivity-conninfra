@@ -25,7 +25,7 @@ struct conn_adaptor_drv_gen_cb {
 	u32 drv_radio_support;
 
 	u32 (*get_chip_id)(void);
-	u32 (*get_adie_id)(void);
+	u32 (*get_adie_id)(u32 drv_type);
 
 	/* suspend/resume */
 	void (*plat_suspend_notify)(void);

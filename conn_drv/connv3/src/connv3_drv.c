@@ -106,7 +106,7 @@ void connv3_resume_notify(void);
 /* adaptor */
 u32 connv3_get_chipid(void);
 void connv3_set_coredump_mode(int mode);
-u32 connv3_detect_adie_chipid(void);
+u32 connv3_detect_adie_chipid(u32 drv_type);
 
 /* screen on/off */
 void connv3_power_on_off_notify(int on_off);
@@ -154,7 +154,7 @@ void connv3_set_coredump_mode(int mode)
 	connv3_coredump_set_dump_mode(mode);
 }
 
-u32 connv3_detect_adie_chipid(void)
+u32 connv3_detect_adie_chipid(u32 drv_type)
 {
 	return connv3_hw_get_adie_chipid();
 }

@@ -46,12 +46,14 @@ typedef int(*CONSYS_PLT_READ_REG_FROM_DTS) (struct platform_device *pdev);
 
 typedef int(*CONSYS_PLT_CLOCK_BUFFER_CTRL) (unsigned int enable);
 typedef int(*CONSYS_PLT_CONNINFRA_ON_POWER_CTRL) (unsigned int enable);
-typedef void(*CONSYS_PLT_SET_IF_PINMUX) (unsigned int enable);
+typedef void(*CONSYS_PLT_SET_IF_PINMUX) (unsigned int enable, unsigned int curr_status,
+					unsigned int next_status);
 
 typedef int(*CONSYS_PLT_POLLING_CONSYS_CHIPID) (void);
 typedef int(*CONSYS_PLT_D_DIE_CFG) (void);
-typedef int(*CONSYS_PLT_SPI_MASTER_CFG) (unsigned int next_status);
-typedef int(*CONSYS_PLT_A_DIE_CFG) (void);
+typedef int(*CONSYS_PLT_SPI_MASTER_CFG) (unsigned int curr_status, unsigned int next_status);
+typedef int(*CONSYS_PLT_SPI_ONE_MASTER_CFG) (void);
+typedef int(*CONSYS_PLT_A_DIE_CFG) (unsigned int curr_status, unsigned int next_status);
 typedef void(*CONSYS_PLT_AFE_SW_PATCH) (void);
 typedef int(*CONSYS_PLT_AFE_WBG_CAL) (void);
 typedef int(*CONSYS_PLT_SUBSYS_PLL_INITIAL) (void);
@@ -79,6 +81,13 @@ typedef int(*CONSYS_PLT_SPI_WRITE)(enum sys_spi_subsystem subsystem, unsigned in
 typedef int(*CONSYS_PLT_SPI_UPDATE_BITS)(enum sys_spi_subsystem subsystem, unsigned int addr,
 					     unsigned int data, unsigned int mask);
 
+typedef int(*CONSYS_PLT_SPI_1_READ)(enum sys_spi_subsystem subsystem, unsigned int addr,
+				     unsigned int *data);
+typedef int(*CONSYS_PLT_SPI_1_WRITE)(enum sys_spi_subsystem subsystem, unsigned int addr,
+				      unsigned int data);
+typedef int(*CONSYS_PLT_SPI_1_UPDATE_BITS)(enum sys_spi_subsystem subsystem, unsigned int addr,
+					     unsigned int data, unsigned int mask);
+
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_ON)(enum consys_adie_ctl_type type);
 typedef int(*CONSYS_PLT_ADIE_TOP_CK_EN_OFF)(enum consys_adie_ctl_type type);
 
@@ -99,7 +108,7 @@ typedef void(*CONSYS_PLT_CONFIG_SETUP)(void);
 typedef int(*CONSYS_PLT_BUS_CLOCK_CTRL)(enum consys_drv_type drv_type, unsigned int, int);
 typedef u64(*CONSYS_PLT_SOC_TIMESTAMP_GET)(void);
 
-typedef unsigned int (*CONSYS_PLT_ADIE_DETECTION)(void);
+typedef unsigned int (*CONSYS_PLT_ADIE_DETECTION)(unsigned int drv_type);
 
 typedef void (*CONSYS_PLT_SET_MCU_CONTROL)(int type, bool onoff);
 
@@ -128,6 +137,7 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_POLLING_CONSYS_CHIPID consys_plt_polling_consys_chipid;
 	CONSYS_PLT_D_DIE_CFG consys_plt_d_die_cfg;
 	CONSYS_PLT_SPI_MASTER_CFG consys_plt_spi_master_cfg;
+	CONSYS_PLT_SPI_ONE_MASTER_CFG consys_plt_spi_one_master_cfg;
 	CONSYS_PLT_A_DIE_CFG consys_plt_a_die_cfg;
 	CONSYS_PLT_AFE_SW_PATCH consys_plt_afe_sw_patch;
 	CONSYS_PLT_AFE_WBG_CAL consys_plt_afe_wbg_cal;
@@ -150,6 +160,11 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_SPI_READ consys_plt_spi_read;
 	CONSYS_PLT_SPI_WRITE consys_plt_spi_write;
 	CONSYS_PLT_SPI_UPDATE_BITS consys_plt_spi_update_bits;
+
+	/* For SPI one operation */
+	CONSYS_PLT_SPI_1_READ consys_plt_spi_1_read;
+	CONSYS_PLT_SPI_1_WRITE consys_plt_spi_1_write;
+	CONSYS_PLT_SPI_1_UPDATE_BITS consys_plt_spi_1_update_bits;
 
 	/* For a-die top_ck_en control */
 	CONSYS_PLT_ADIE_TOP_CK_EN_ON consys_plt_adie_top_ck_en_on;
@@ -261,6 +276,11 @@ int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
 					 unsigned int data, unsigned int mask);
 
+int consys_hw_spi_1_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
+int consys_hw_spi_1_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+int consys_hw_spi_1_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
+					 unsigned int data, unsigned int mask);
+
 int consys_hw_adie_top_ck_en_on(enum consys_adie_ctl_type type);
 int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type);
 
@@ -296,7 +316,7 @@ int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onof
 u64 consys_hw_soc_timestamp_get(void);
 
 // Auto a-die detection
-unsigned int consys_hw_detect_adie_chipid(void);
+unsigned int consys_hw_detect_adie_chipid(unsigned int drv_type);
 unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type);
 
 int consys_hw_set_platform_config(int value);

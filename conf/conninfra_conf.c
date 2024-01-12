@@ -161,6 +161,7 @@ static const struct parse_data cfg_fields[] = {
 	CHAR(coex_config_addjust_ble_scan_time_ratio_wifi_slot),
 	CHAR(tcxo_gpio),
 	CHAR(pre_cal_mode),
+	INT(vcn33_1_voltage),
 };
 
 #define NUM_CFG_FIELDS (osal_sizeof(cfg_fields) / osal_sizeof(cfg_fields[0]))
