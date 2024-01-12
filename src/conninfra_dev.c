@@ -30,6 +30,9 @@
 #include "wmt_build_in_adapter.h"
 #include "emi_mng.h"
 
+#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+#include "conn_drv_init.h"
+#endif
 #ifdef CFG_CONNINFRA_UT_SUPPORT
 #include "conninfra_test.h"
 #endif
@@ -55,6 +58,7 @@
 #define CONNINFRA_DEV_IOC_MAGIC 0xc2
 #define CONNINFRA_IOCTL_GET_CHIP_ID _IOR(CONNINFRA_DEV_IOC_MAGIC, 0, int)
 #define CONNINFRA_IOCTL_SET_COREDUMP_MODE _IOW(CONNINFRA_DEV_IOC_MAGIC, 1, unsigned int)
+#define CONNINFRA_IOCTL_DO_MODULE_INIT _IOR(CONNINFRA_DEV_IOC_MAGIC, 2, int)
 
 #define CONNINFRA_DEV_INIT_TO_MS (2 * 1000)
 
@@ -116,6 +120,8 @@ static void conninfra_register_devapc_callback(void);
 static int conninfra_dev_suspend_cb(void);
 static int conninfra_dev_resume_cb(void);
 static int conninfra_dev_pmic_event_cb(unsigned int, unsigned int);
+
+static int conninfra_dev_do_drv_init(void);
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -179,6 +185,9 @@ static struct conninfra_dev_cb g_conninfra_dev_cb = {
 
 int conninfra_dev_open(struct inode *inode, struct file *file)
 {
+#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+	pr_info("[%s] built-in mode, allow to open", __func__);
+#else
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
 	if (!wait_event_timeout(
@@ -191,7 +200,7 @@ int conninfra_dev_open(struct inode *inode, struct file *file)
 		}
 		return -EIO;
 	}
-
+#endif
 	pr_info("open major %d minor %d (pid %d)\n",
 			imajor(inode), iminor(inode), current->pid);
 
@@ -220,9 +229,36 @@ ssize_t conninfra_dev_write(struct file *filp,
 
 static long conninfra_dev_unlocked_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
+#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
+#endif
 	int retval = 0;
 
 	pr_info("[%s] cmd (%d),arg(%ld)\n", __func__, cmd, arg);
+
+	/* Special process for module init command */
+	if (cmd == CONNINFRA_IOCTL_DO_MODULE_INIT) {
+	#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+		retval = conninfra_dev_do_drv_init();
+		return retval;
+	#else
+		pr_info("[%s] KO mode", __func__);
+		return 0;
+	#endif
+	}
+
+#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+	if (!wait_event_timeout(
+		g_conninfra_init_wq,
+		g_conninfra_init_status == CONNINFRA_INIT_DONE,
+		msecs_to_jiffies(CONNINFRA_DEV_INIT_TO_MS))) {
+		if (__ratelimit(&_rs)) {
+			pr_warn("wait_event_timeout (%d)ms,(%lu)jiffies,return -EIO\n",
+			        CONNINFRA_DEV_INIT_TO_MS, msecs_to_jiffies(CONNINFRA_DEV_INIT_TO_MS));
+		}
+		return -EIO;
+	}
+#endif
 
 	switch (cmd) {
 	case CONNINFRA_IOCTL_GET_CHIP_ID:
@@ -414,6 +450,72 @@ static int conninfra_dev_pmic_event_cb(unsigned int id, unsigned int event)
 }
 
 /************************************************************************/
+static int conninfra_dev_do_drv_init()
+{
+	static int init_done = 0;
+	int iret = 0;
+
+	if (init_done) {
+		pr_info("%s already init, return.", __func__);
+		return 0;
+	}
+	init_done = 1;
+
+		/* init power on off handler */
+	INIT_WORK(&gPwrOnOffWork, conninfra_dev_pwr_on_off_handler);
+	conninfra_fb_notifier.notifier_call
+				= conninfra_dev_fb_notifier_callback;
+	iret = fb_register_client(&conninfra_fb_notifier);
+	if (iret)
+		pr_err("register fb_notifier fail");
+	else
+		pr_info("register fb_notifier success");
+
+#ifdef CFG_CONNINFRA_UT_SUPPORT
+	iret = conninfra_test_setup();
+	if (iret)
+		pr_err("init conninfra_test fail, ret = %d\n", iret);
+#endif
+
+	iret = conninfra_conf_init();
+	if (iret)
+		pr_warn("init conf fail\n");
+	pr_info("Skip config init");
+
+	iret = consys_hw_init(&g_conninfra_dev_cb);
+	if (iret) {
+		pr_err("init consys_hw fail, ret = %d\n", iret);
+		g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
+		return -2;
+	}
+
+	iret = conninfra_core_init();
+	if (iret) {
+		pr_err("conninfra init fail");
+		g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
+		return -3;
+	}
+
+	conninfra_dev_dbg_init();
+
+	wmt_export_platform_bridge_register(&g_plat_bridge);
+
+	conninfra_register_devapc_callback();
+
+	pr_info("ConnInfra Dev: init (%d)\n", iret);
+	g_conninfra_init_status = CONNINFRA_INIT_DONE;
+
+#ifdef MTK_WCN_REMOVE_KERNEL_MODULE
+	iret = (int)consys_hw_chipid_get();
+	iret = do_connectivity_driver_init(iret);
+	if (iret)
+		pr_err("Sub driver init fail, iret=%d", iret);
+#endif
+
+	return 0;
+
+}
+
 
 static int conninfra_dev_init(void)
 {
@@ -455,51 +557,14 @@ static int conninfra_dev_init(void)
 						PTR_ERR(pConninfraDev));
 		goto err2;
 	}
-
-	/* init power on off handler */
-	INIT_WORK(&gPwrOnOffWork, conninfra_dev_pwr_on_off_handler);
-	conninfra_fb_notifier.notifier_call
-				= conninfra_dev_fb_notifier_callback;
-	iret = fb_register_client(&conninfra_fb_notifier);
-	if (iret)
-		pr_err("register fb_notifier fail");
-	else
-		pr_info("register fb_notifier success");
-
-#ifdef CFG_CONNINFRA_UT_SUPPORT
-	iret = conninfra_test_setup();
-	if (iret)
-		pr_err("init conninfra_test fail, ret = %d\n", iret);
+#ifndef MTK_WCN_REMOVE_KERNEL_MODULE
+	iret = conninfra_dev_do_drv_init();
+	if (iret) {
+		pr_err("conninfra_do_drv_init fail, iret = %d", iret);
+		return iret;
+	}
 #endif
-
-	iret = conninfra_conf_init();
-	if (iret)
-		pr_warn("init conf fail\n");
-
-	iret = consys_hw_init(&g_conninfra_dev_cb);
-	if (iret) {
-		pr_err("init consys_hw fail, ret = %d\n", iret);
-		g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
-		return -2;
-	}
-
-	iret = conninfra_core_init();
-	if (iret) {
-		pr_err("conninfra init fail");
-		g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
-		return -3;
-	}
-
-	conninfra_dev_dbg_init();
-
-	wmt_export_platform_bridge_register(&g_plat_bridge);
-
-	conninfra_register_devapc_callback();
-
-	pr_info("ConnInfra Dev: init (%d)\n", iret);
-	g_conninfra_init_status = CONNINFRA_INIT_DONE;
 	return 0;
-
 err2:
 
 	pr_err("[conninfra_dev_init] err2");
@@ -528,8 +593,6 @@ static void conninfra_dev_deinit(void)
 
 	g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
 	fb_unregister_client(&conninfra_fb_notifier);
-
-
 
 	iret = conninfra_dev_dbg_deinit();
 #ifdef CFG_CONNINFRA_UT_SUPPORT
