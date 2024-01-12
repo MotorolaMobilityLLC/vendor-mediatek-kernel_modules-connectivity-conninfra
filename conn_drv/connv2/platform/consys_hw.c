@@ -282,6 +282,17 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 
 	/* first power on */
 	if (curr_status == 0) {
+		/* Get clock_type and save to global variable */
+		ret = consys_hw_get_clock_schematic();
+		if (ret < 0) {
+			pr_err("[%s] Cannot get clock type, ret=%d\n", __func__, ret);
+			return CONNINFRA_POWER_ON_D_DIE_FAIL;
+		}
+		conn_hw_env.clock_type = ret;
+		/* Interface of send global variable to ATF */
+		if (consys_hw_ops->consys_plt_init_atf_data)
+			consys_hw_ops->consys_plt_init_atf_data();
+
 		/* POS PART 1:
 		 * Set PMIC to turn on the power that AFE WBG circuit in D-die,
 		 * OSC or crystal component, and A-die need.
