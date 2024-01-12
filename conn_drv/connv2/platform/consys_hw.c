@@ -488,12 +488,17 @@ int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type)
 
 int _consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff)
 {
+	if (!pmic_mng_is_support_raise_voltage())
+		return 0;
 	return pmic_mng_raise_voltage(drv_type, raise, onoff);
 }
 
 int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff)
 {
 	int ret;
+
+	if (!pmic_mng_is_support_raise_voltage())
+		return 0;
 
 	ret = _consys_hw_conninfra_wakeup();
 	if (ret == 0) {
