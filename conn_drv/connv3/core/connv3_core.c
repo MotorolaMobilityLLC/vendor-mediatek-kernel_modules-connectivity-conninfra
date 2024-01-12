@@ -13,6 +13,7 @@
 #if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 #include <aee.h>
 #endif
+#include <connectivity_build_in_adapter.h>
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -334,12 +335,21 @@ static int opfunc_power_on_done(struct msg_op_data *op)
 		return ret;
 	}
 
+
+	pr_info("[%s] type=[%d]", __func__, drv_type);
+
 	/* GPIO control */
 	ret = connv3_hw_pwr_on_done(drv_type);
 	if (ret) {
 		pr_err("[%s] fail, ret=%d", __func__, ret);
 	} else {
 		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
+
+		/* notification */
+		if (drv_type == CONNV3_DRV_TYPE_BT)
+			connectivity_export_conap_scp_state_change(conn_bt_on);
+		else if (drv_type == CONNV3_DRV_TYPE_WIFI)
+			connectivity_export_conap_scp_state_change(conn_wifi_on);
 	}
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
@@ -389,6 +399,13 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 		}
 
 		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_OFF;
+
+		/* notification */
+		if (drv_type == CONNV3_DRV_TYPE_BT)
+			connectivity_export_conap_scp_state_change(conn_bt_off);
+		else if (drv_type == CONNV3_DRV_TYPE_WIFI)
+			connectivity_export_conap_scp_state_change(conn_wifi_off);
+
 	}
 	/* is there subsys on ? */
 	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++)
