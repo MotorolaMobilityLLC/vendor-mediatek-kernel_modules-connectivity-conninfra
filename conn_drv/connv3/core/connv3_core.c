@@ -226,14 +226,12 @@ static void dump_curr_status(char *tag)
 
 static int opfunc_power_on_internal(unsigned int drv_type)
 {
-#define MAX_TIMEOUT_COUNT 12
 	int ret, i;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	u32 cur_pre_on_state;
 	const unsigned int subdrv_all_done = (0x1 << CONNV3_DRV_TYPE_MAX) - 1;
 	unsigned int subdrv_preon_done;
 	struct subsys_drv_inst *drv_inst;
-	unsigned int count = 0;
 
 	/* Check abnormal type */
 	if (drv_type >= CONNV3_DRV_TYPE_MAX) {
@@ -282,17 +280,12 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		pr_info("[CONNV3_PWR_ON] pre vvvvvvvvvvvvv");
 		while (atomic_read(&g_connv3_ctx.pre_pwr_state) != subdrv_all_done) {
 			ret = down_timeout(&g_connv3_ctx.pre_pwr_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
-			count++;
 			if (ret == 0)
 				continue;
 			cur_pre_on_state = atomic_read(&g_connv3_ctx.pre_pwr_state);
 			pr_info("cur_rst state =[%d]", cur_pre_on_state);
 			for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
 				if ((cur_pre_on_state & (0x1 << i)) == 0) {
-					if (i == CONNV3_DRV_TYPE_BT && count >= MAX_TIMEOUT_COUNT) {
-						pr_notice("[%s] BT pre-callback timeout exceed 6 secs", __func__);
-						BUG_ON(1);
-					}
 					pr_info("[pre_pwr_on] [%s] pre-callback is not back", connv3_drv_thread_name[i]);
 					drv_inst = &g_connv3_ctx.drv_inst[i];
 					osal_thread_show_stack(&drv_inst->msg_ctx.thread);
