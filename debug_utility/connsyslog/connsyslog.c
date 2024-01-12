@@ -1609,7 +1609,6 @@ int connsys_dedicated_log_set_ap_state(int state)
 		}
 
 		EMI_WRITE32(handler->virAddrEmiLogBase + 32, state);
-		pr_debug("%s state: drv:%s %d\n", __func__,  type_to_title[i], state);
 	}
 
 	return 0;

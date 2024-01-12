@@ -477,7 +477,6 @@ static int conninfra_thermal_get_temp_cb(void *data, int *temp)
 		return 0;
 	}
 
-	pr_info("[%s] query thermal", __func__);
 	ret = conninfra_core_thermal_query(&g_temp_thermal_value);
 	if (ret == 0)
 		*temp = g_temp_thermal_value * 1000;
