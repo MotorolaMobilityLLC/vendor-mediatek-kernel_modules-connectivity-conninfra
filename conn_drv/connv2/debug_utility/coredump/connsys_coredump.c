@@ -1167,8 +1167,17 @@ static int conndump_dump_emi(struct connsys_dump_ctx* ctx)
 	unsigned long comp_ret;
 	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb
 	char emi_dump_command[EMI_COMMAND_LENGTH];
+	unsigned int emi_dump_start, emi_dump_end;
+	unsigned int emi_dump_size;
 
-	if (snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "dev=/dev/conninfra_dev,emi_size=%d,mcif_emi_size=%d", ctx->full_emi_size, ctx->mcif_emi_size) < 0) {
+	/* check emi dump offset */
+	coredump_mng_get_emi_dump_offset(&emi_dump_start, &emi_dump_end);
+	if (emi_dump_end > emi_dump_start)
+		emi_dump_size = emi_dump_end - emi_dump_start;
+	else
+		emi_dump_size = ctx->full_emi_size;
+
+	if (snprintf(emi_dump_command, EMI_COMMAND_LENGTH, "dev=/dev/conninfra_dev,emi_size=%d,mcif_emi_size=%d", emi_dump_size, ctx->mcif_emi_size) < 0) {
 		pr_notice("%s snprintf failed\n", __func__);
 		return -1;
 	}

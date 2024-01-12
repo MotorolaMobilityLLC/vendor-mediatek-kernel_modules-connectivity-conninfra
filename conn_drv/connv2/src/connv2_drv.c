@@ -354,17 +354,33 @@ int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma)
 {
 	unsigned long bufId = pVma->vm_pgoff;
 	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
+	unsigned int start_offset = 0, end_offset = 0;
+	unsigned long size = 0;
+	phys_addr_t emi_dump_addr = addr_info->emi_ap_phy_addr;
 
-	pr_info("conninfra_mmap start:%lu end:%lu size: %lu buffer id=%lu\n",
+	coredump_mng_get_emi_dump_offset(&start_offset, &end_offset);
+	size = end_offset - start_offset;
+
+	pr_info("conninfra_mmap start:%lu end:%lu size: %lu buffer id=%lu"
+		" emi dump section=[0x%lx][0x%08x, 0x%08x][0x%08x]\n",
 		pVma->vm_start, pVma->vm_end,
-		pVma->vm_end - pVma->vm_start, bufId);
+		pVma->vm_end - pVma->vm_start, bufId,
+		emi_dump_addr, start_offset, end_offset, size);
+
+	if (end_offset <= start_offset ||
+	    start_offset >= addr_info->emi_size ||
+	    end_offset > addr_info->emi_size)
+		return -EINVAL;
 
 	if (bufId == 0) {
-		if (pVma->vm_end - pVma->vm_start > addr_info->emi_size)
+		if (pVma->vm_end - pVma->vm_start > size)
 			return -EINVAL;
-		pr_info("conninfra_mmap size: %lu\n", pVma->vm_end - pVma->vm_start);
-		if (remap_pfn_range(pVma, pVma->vm_start, addr_info->emi_ap_phy_addr >> PAGE_SHIFT,
-			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
+		emi_dump_addr += start_offset;
+
+		pr_info("emi_dump_addr=[%lx]\n", emi_dump_addr);
+		if (remap_pfn_range(pVma, pVma->vm_start,
+			(emi_dump_addr >> PAGE_SHIFT),
+			size, pVma->vm_page_prot))
 			return -EAGAIN;
 		return 0;
 	} else if (bufId == 1) {

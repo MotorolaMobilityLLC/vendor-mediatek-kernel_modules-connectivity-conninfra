@@ -206,3 +206,21 @@ bool coredump_mng_is_supported(unsigned int drv)
 
 	return true;
 }
+
+void coredump_mng_get_emi_dump_offset(unsigned int *start, unsigned int *end)
+{
+	phys_addr_t base;
+	unsigned int size = 0;
+
+	if (consys_platform_coredump_ops &&
+	    consys_platform_coredump_ops->consys_coredump_get_emi_dump_offset)
+		consys_platform_coredump_ops->consys_coredump_get_emi_dump_offset(start, end);
+	else {
+		if (start)
+			*start = 0;
+		if (end) {
+			coredump_mng_get_emi_phy_addr(&base, &size);
+			*end = size;
+		}
+	}
+}
