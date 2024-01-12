@@ -66,6 +66,7 @@ static int opfunc_pre_cal(struct msg_op_data *op);
 static int opfunc_therm_ctrl(struct msg_op_data *op);
 static int opfunc_rfspi_read(struct msg_op_data *op);
 static int opfunc_rfspi_write(struct msg_op_data *op);
+static int opfunc_rfspi_update_bits(struct msg_op_data *op);
 static int opfunc_adie_top_ck_en_on(struct msg_op_data *op);
 static int opfunc_adie_top_ck_en_off(struct msg_op_data *op);
 static int opfunc_spi_clock_switch(struct msg_op_data *op);
@@ -104,6 +105,7 @@ static const msg_opid_func conninfra_core_opfunc[] = {
 	[CONNINFRA_OPID_THERM_CTRL] = opfunc_therm_ctrl,
 	[CONNINFRA_OPID_RFSPI_READ] = opfunc_rfspi_read,
 	[CONNINFRA_OPID_RFSPI_WRITE] = opfunc_rfspi_write,
+	[CONNINFRA_OPID_RFSPI_UPDATE_BITS] = opfunc_rfspi_update_bits,
 	[CONNINFRA_OPID_ADIE_TOP_CK_EN_ON] = opfunc_adie_top_ck_en_on,
 	[CONNINFRA_OPID_ADIE_TOP_CK_EN_OFF] = opfunc_adie_top_ck_en_off,
 	[CONNINFRA_OPID_SPI_CLOCK_SWITCH] = opfunc_spi_clock_switch,
@@ -758,6 +760,33 @@ static int opfunc_rfspi_write(struct msg_op_data *op)
 	}
 	/* DO spi write */
 	ret = consys_hw_spi_write(op->op_data[0], op->op_data[1], op->op_data[2]);
+err:
+	osal_unlock_sleepable_lock(&g_conninfra_ctx.core_lock);
+	return ret;
+}
+
+static int opfunc_rfspi_update_bits(struct msg_op_data *op)
+{
+	int ret = 0;
+
+	ret = osal_lock_sleepable_lock(&g_conninfra_ctx.core_lock);
+	if (ret) {
+		pr_err("core_lock fail!!\n");
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
+	if (g_conninfra_ctx.infra_drv_status != DRV_STS_POWER_ON) {
+		pr_err("Connsys didn't power on\n");
+		ret = CONNINFRA_SPI_OP_FAIL;
+		goto err;
+	}
+	if (consys_hw_reg_readable() == 0) {
+		pr_err("connsys reg not readable\n");
+		ret = CONNINFRA_SPI_OP_FAIL;
+		goto err;
+	}
+
+	ret = consys_hw_spi_update_bits(op->op_data[0], op->op_data[1], op->op_data[2], op->op_data[3]);
 err:
 	osal_unlock_sleepable_lock(&g_conninfra_ctx.core_lock);
 	return ret;
@@ -1500,6 +1529,19 @@ int conninfra_core_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr
 	if (ret) {
 		pr_err("[%s] failed (ret = %d). subsystem=%s addr=0x%x data=%d\n",
 			__func__, ret, conninfra_core_spi_subsys_string(subsystem), addr, data);
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+	return 0;
+}
+
+int conninfra_core_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+{
+	int ret;
+	ret = msg_thread_send_wait_4(&(g_conninfra_ctx.msg_ctx), CONNINFRA_OPID_RFSPI_UPDATE_BITS, 0,
+		subsystem, addr, data, mask);
+	if (ret) {
+		pr_err("[%s] failed (ret = %d). subsystem=%s addr=0x%x data=0x%x mask=0x%x\n",
+			__func__, ret, conninfra_core_spi_subsys_string(subsystem), addr, data, mask);
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 	return 0;

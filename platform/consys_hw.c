@@ -108,6 +108,9 @@ const struct conninfra_plat_data *g_conninfra_plat_data = NULL;
 
 struct pinctrl *g_conninfra_pinctrl_ptr = NULL;
 static atomic_t g_hw_init_done = ATOMIC_INIT(0);
+
+static unsigned int g_adie_chipid = 0;
+static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -240,6 +243,47 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
 			break;
 	}
 	return 0;
+}
+
+unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type)
+{
+	if (type == CONNSYS_SOC_CHIPID) {
+		return consys_hw_chipid_get();
+	} else if (type == CONNSYS_HW_VER) {
+		return consys_hw_get_hw_ver();
+	} else if (type == CONNSYS_ADIE_CHIPID) {
+		return g_adie_chipid;
+	}
+
+	return 0;
+}
+
+unsigned int consys_hw_detect_adie_chipid(void)
+{
+	int chipid = 0;
+
+	if (osal_lock_sleepable_lock(&g_adie_chipid_lock))
+		return 0;
+
+	/* detect a-die only once */
+	if (g_adie_chipid) {
+		osal_unlock_sleepable_lock(&g_adie_chipid_lock);
+		return g_adie_chipid;
+	}
+
+	if (consys_hw_ops->consys_plt_adie_detection) {
+		chipid = consys_hw_ops->consys_plt_adie_detection();
+
+		if (chipid > 0) {
+			g_adie_chipid = chipid;
+			pr_info("A-die chipid detection done, found chipid=[%x]\n", chipid);
+		} else
+			pr_info("Fail to detect a-die chipid, found chipid=[%x]\n", chipid);
+	}
+
+	osal_unlock_sleepable_lock(&g_adie_chipid_lock);
+
+	return g_adie_chipid;
 }
 
 int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
@@ -419,6 +463,13 @@ int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, uns
 {
 	if (consys_hw_ops->consys_plt_spi_write)
 		return consys_hw_ops->consys_plt_spi_write(subsystem, addr, data);
+	return -1;
+}
+
+int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+{
+	if (consys_hw_ops->consys_plt_spi_update_bits)
+		return consys_hw_ops->consys_plt_spi_update_bits(subsystem, addr, data, mask);
 	return -1;
 }
 
@@ -659,6 +710,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	g_pdev = pdev;
 
 	atomic_set(&g_hw_init_done, 1);
+	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	return 0;
 }
 
@@ -673,6 +725,7 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 	if (g_pdev)
 		g_pdev = NULL;
 
+	osal_sleepable_lock_deinit(&g_adie_chipid_lock);
 	return 0;
 }
 

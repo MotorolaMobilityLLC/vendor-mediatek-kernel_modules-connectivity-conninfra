@@ -113,6 +113,15 @@ enum connsys_emi_type
 	CONNSYS_EMI_MAX,
 };
 
+enum connsys_ic_info_type
+{
+	CONNSYS_SOC_CHIPID,
+	CONNSYS_HW_VER,
+	CONNSYS_ADIE_CHIPID,
+
+	CONNSYS_IC_INFO_MAX,
+};
+
 #define CONNINFRA_SPI_OP_FAIL	0x1
 
 #define CONNINFRA_CB_RET_CAL_PASS_POWER_OFF 0x0
@@ -162,6 +171,9 @@ int conninfra_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clo
 /* Clock schematic query */
 int conninfra_get_clock_schematic(void);
 
+/* IC info query */
+unsigned int conninfra_get_ic_info(enum connsys_ic_info_type type);
+
 /* SPI clock switch */
 int conninfra_spi_clock_switch(enum connsys_spi_speed_type type);
 
@@ -172,6 +184,7 @@ int conninfra_adie_top_ck_en_off(enum consys_adie_ctl_type type);
 /* RFSPI */
 int conninfra_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
+int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
 
 /* EMI */
 void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size);
