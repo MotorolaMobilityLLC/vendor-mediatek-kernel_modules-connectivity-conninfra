@@ -33,9 +33,11 @@ MODULE_NAME := conninfra
 ifeq ($(CONFIG_WLAN_DRV_BUILD_IN),y)
 $(warning $(MODULE_NAME) build-in boot.img)
 obj-y += $(MODULE_NAME).o
+PATH_TO_CONNINFRA_DRV := $(srctree)/$(src)
 else
 $(warning $(MODULE_NAME) is kernel module)
 obj-m += $(MODULE_NAME).o
+PATH_TO_CONNINFRA_DRV := $(src)
 endif
 
 ###############################################################################
@@ -57,14 +59,14 @@ ccflags-y += -I$(src)/debug_utility/metlog
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
-ifneq ($(wildcard $(src)/platform/mt6885),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6885),)
 ccflags-y += -I$(src)/platform/mt6885/include
 ccflags-y += -I$(src)/platform/mt6885/include/CODA
 endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
-ifneq ($(wildcard $(src)/platform/mt6893),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6893),)
 $(warning $(MODULE_NAME) build mt6893)
 ccflags-y += -I$(src)/platform/mt6893/include
 ccflags-y += -I$(src)/platform/mt6893/include/CODA
@@ -72,7 +74,7 @@ endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
-ifneq ($(wildcard $(src)/platform/mt6877),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6877),)
 ccflags-y += -I$(src)/platform/mt6877/include
 ccflags-y += -I$(src)/platform/mt6877/include/CODA
 endif
@@ -114,7 +116,7 @@ $(MODULE_NAME)-objs += debug_utility/conninfra_dbg.o
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)
-ifneq ($(wildcard $(src)/platform/mt6885),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6885),)
 $(MODULE_NAME)-objs += platform/mt6885/mt6885.o
 $(MODULE_NAME)-objs += platform/mt6885/mt6885_pmic.o
 $(MODULE_NAME)-objs += platform/mt6885/mt6885_emi.o
@@ -125,7 +127,7 @@ endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6893),y)
-ifneq ($(wildcard $(src)/platform/mt6893),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6893),)
 $(MODULE_NAME)-objs += platform/mt6893/mt6893.o
 $(MODULE_NAME)-objs += platform/mt6893/mt6893_pmic.o
 $(MODULE_NAME)-objs += platform/mt6893/mt6893_emi.o
@@ -136,7 +138,7 @@ endif
 endif
 
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6877),y)
-ifneq ($(wildcard $(src)/platform/mt6877),)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/platform/mt6877),)
 $(MODULE_NAME)-objs += platform/mt6877/mt6877.o
 $(MODULE_NAME)-objs += platform/mt6877/mt6877_pmic.o
 $(MODULE_NAME)-objs += platform/mt6877/mt6877_emi.o
