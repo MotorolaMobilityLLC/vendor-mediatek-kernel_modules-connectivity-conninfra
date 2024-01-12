@@ -249,8 +249,6 @@ static long conn_adaptor_dev_unlocked_ioctl(struct file *filp, unsigned int cmd,
 {
 	int retval = 0;
 
-	pr_info("[%s] cmd (%d),arg(%ld)\n", __func__, cmd, arg);
-
 	/* Special process for module init command */
 	if (cmd == CONNINFRA_IOCTL_DO_MODULE_INIT) {
 		pr_info("[%s] KO mode", __func__);
@@ -259,11 +257,11 @@ static long conn_adaptor_dev_unlocked_ioctl(struct file *filp, unsigned int cmd,
 
 	switch (cmd) {
 	case CONNINFRA_IOCTL_GET_CHIP_ID:
-		pr_info("[%s] get chip id\n", __func__);
 		retval = conn_adaptor_get_chipid();
+		pr_info("[%s] get chip id: 0x%x\n", __func__, retval);
 		break;
 	case CONNINFRA_IOCTL_SET_COREDUMP_MODE:
-		pr_info("[%s] set coredump \n", __func__);
+		pr_info("[%s] set coredump as: %d\n", __func__, arg);
 		conn_adaptor_set_coredump_mode(arg);
 		break;
 	case CONNINFRA_IOCTL_GET_ADIE_CHIP_ID:
@@ -285,7 +283,6 @@ static long conn_adaptor_dev_compat_ioctl(struct file *filp, unsigned int cmd, u
 {
 	long ret;
 
-	pr_info("[%s] cmd (%d)\n", __func__, cmd);
 	ret = conn_adaptor_dev_unlocked_ioctl(filp, cmd, arg);
 	return ret;
 }

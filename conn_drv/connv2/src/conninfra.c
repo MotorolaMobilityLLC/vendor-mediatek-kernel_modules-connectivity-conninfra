@@ -212,7 +212,6 @@ int conninfra_sub_drv_ops_register(enum consys_drv_type type,
 		pr_err("[%s] incorrect drv type [%d]", __func__, type);
 		return -EINVAL;
 	}
-	pr_info("[%s] ----", __func__);
 	conninfra_core_subsys_ops_reg(type, cb);
 	return 0;
 }
@@ -225,7 +224,6 @@ int conninfra_sub_drv_ops_unregister(enum consys_drv_type type)
 		pr_err("[%s] incorrect drv type [%d]", __func__, type);
 		return -EINVAL;
 	}
-	pr_info("[%s] ----", __func__);
 	conninfra_core_subsys_ops_unreg(type);
 	return 0;
 }
