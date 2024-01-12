@@ -1,45 +1,38 @@
+/*  SPDX-License-Identifier: GPL-2.0 */
 /*
- * Copyright (C) 2016 MediaTek Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+ * Copyright (c) 2019 MediaTek Inc.
  */
 
 /*! \file
-*    \brief  Declaration of library functions
-*
-*    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
-*/
+ *    \brief  Declaration of library functions
+ *
+ *    Any definitions in this file will be shared among GLUE Layer and internal Driver Stack.
+ */
 
 #ifndef _CONNINFRA_H_
 #define _CONNINFRA_H_
 
+#include <linux/types.h>
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ ********************************************************************************
+ */
 enum consys_drv_type {
 	CONNDRV_TYPE_BT = 0,
 	CONNDRV_TYPE_FM = 1,
@@ -62,8 +55,7 @@ enum consys_adie_ctl_type {
 };
 
 /* HW-specific, need sync with FW.  DO NOT MODIFY */
-enum sys_spi_subsystem
-{
+enum sys_spi_subsystem {
 	SYS_SPI_WF1 = 0x00,
 	SYS_SPI_WF  = 0x01,
 	SYS_SPI_BT  = 0x02,
@@ -81,8 +73,7 @@ enum connsys_spi_speed_type {
 	CONNSYS_SPI_SPEED_MAX
 };
 
-enum connsys_clock_schematic
-{
+enum connsys_clock_schematic {
 	CONNSYS_CLOCK_SCHEMATIC_26M_COTMS = 0,
 	CONNSYS_CLOCK_SCHEMATIC_52M_COTMS,
 	CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO,
@@ -107,16 +98,14 @@ enum connsys_clock_schematic
  * |           |
  * +-----------+
  */
-enum connsys_emi_type
-{
+enum connsys_emi_type {
 	CONNSYS_EMI_FW,
 	CONNSYS_EMI_MCIF,
 
 	CONNSYS_EMI_MAX,
 };
 
-enum connsys_ic_info_type
-{
+enum connsys_ic_info_type {
 	CONNSYS_SOC_CHIPID,
 	CONNSYS_HW_VER,
 	CONNSYS_ADIE_CHIPID,
@@ -150,24 +139,24 @@ enum connsys_ic_info_type
 #define CONNINFRA_POWER_ON_CONFIG_FAIL	-0x3333
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ ********************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ********************************************************************************
+ */
 /* Conninfra bus clock control */
 int conninfra_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock, int status);
 /* Clock schematic query */
@@ -186,11 +175,12 @@ int conninfra_adie_top_ck_en_off(enum consys_adie_ctl_type type);
 /* RFSPI */
 int conninfra_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int conninfra_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
-int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask);
+int conninfra_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
+					 unsigned int data, unsigned int mask);
 
 /* EMI */
 void conninfra_get_phy_addr(phys_addr_t *addr, unsigned int *size);
-void conninfra_get_emi_phy_addr(enum connsys_emi_type type, phys_addr_t* base, unsigned int *size);
+void conninfra_get_emi_phy_addr(enum connsys_emi_type type, phys_addr_t *base, unsigned int *size);
 
 /* power on/off */
 int conninfra_pwr_on(enum consys_drv_type drv_type);
@@ -256,7 +246,7 @@ struct whole_chip_rst_cb {
 struct pre_calibration_cb {
 	int (*pwr_on_cb)(void);
 	int (*do_cal_cb)(void);
-	int (*get_cal_result_cb)(unsigned int* offset, unsigned int* size);
+	int (*get_cal_result_cb)(unsigned int *offset, unsigned int *size);
 };
 
 struct sub_drv_ops_cb {
@@ -277,8 +267,8 @@ int conninfra_sub_drv_ops_register(enum consys_drv_type drv_type, struct sub_drv
 int conninfra_sub_drv_ops_unregister(enum consys_drv_type drv_type);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ ********************************************************************************
+ */
 
 #endif /* _CONNINFRA_H_ */
