@@ -418,7 +418,9 @@ int conn_adaptor_kern_dbg_handler(int x, int y, int z, char* buf, int buf_sz)
 {
 	int offset = 0, sz, i;
 
-	if (x == 0x40) {
+
+	switch (x) {
+	case 0x40:
 		for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
 			if (atomic_read(&g_drv_gen_inst[i].enable) &&
 				g_drv_gen_inst[i].drv_gen_cb.dump_power_state) {
@@ -431,6 +433,11 @@ int conn_adaptor_kern_dbg_handler(int x, int y, int z, char* buf, int buf_sz)
 				}
 			}
 		}
+		break;
+	case 0x13:
+		pr_info("[%s] set coredump as: %d\n", __func__, y);
+		conn_adaptor_set_coredump_mode(y);
+		break;
 	}
 	return offset;
 }
