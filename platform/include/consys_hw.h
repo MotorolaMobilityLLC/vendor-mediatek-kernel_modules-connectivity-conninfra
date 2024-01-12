@@ -111,6 +111,9 @@ typedef unsigned int (*CONSYS_PLT_ADIE_DETECTION)(void);
 
 typedef void (*CONSYS_PLT_SET_MCU_CONTROL)(int type, bool onoff);
 
+typedef int (*CONSYS_PLT_PRE_CAL_BACKUP)(unsigned int offset, unsigned int size);
+typedef int (*CONSYS_PLT_PRE_CAL_CLEAN_DATA)(void);
+
 struct consys_hw_ops_struct {
 	/* load from dts */
 	CONSYS_PLT_CLK_GET_FROM_DTS consys_plt_clk_get_from_dts;
@@ -175,6 +178,9 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_ADIE_DETECTION consys_plt_adie_detection;
 
 	CONSYS_PLT_SET_MCU_CONTROL consys_plt_set_mcu_control;
+
+	CONSYS_PLT_PRE_CAL_BACKUP consys_plt_pre_cal_backup;
+	CONSYS_PLT_PRE_CAL_CLEAN_DATA consys_plt_pre_cal_clean_data;
 };
 
 struct conninfra_dev_cb {
@@ -296,6 +302,11 @@ int consys_hw_set_platform_config(int value);
 int consys_hw_get_platform_config(void);
 
 void consys_hw_set_mcu_control(int type, bool onoff);
+
+/* Pre-cal */
+int consys_hw_pre_cal_backup(unsigned int offset, unsigned int size);
+int consys_hw_pre_cal_clean_data(void);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

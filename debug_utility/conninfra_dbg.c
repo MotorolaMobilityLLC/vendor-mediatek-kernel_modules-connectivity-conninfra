@@ -504,20 +504,46 @@ static inline char* conninfra_dbg_spi_subsys_string(enum sys_spi_subsystem subsy
 static int conninfra_dbg_spi_read(int par1, int par2, int par3)
 {
 	unsigned int data;
-	int ret;
+	int iRet, get_lock_ret, spi_ret, sz;
+	char buf[CONNINFRA_DBG_DUMP_BUF_SIZE] = {'\0'};
 
 	if (par2 < 0 || par2 >= SYS_SPI_MAX) {
 		pr_notice("%s par2 is out of range\n", __func__);
 		return 0;
 	}
 
-	ret = conninfra_spi_read(par2, par3, &data);
-	if (ret == 0)
+	spi_ret = conninfra_spi_read(par2, par3, &data);
+	if (spi_ret == 0) {
 		pr_info("%s read[%s]addr[0x%x]val[0x%x] ok\n",
 			__func__, conninfra_dbg_spi_subsys_string(par2), par3, data);
-	else
+		iRet = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE, "[%s] addr[0x%08x]=[0x%08x]\n",
+			conninfra_dbg_spi_subsys_string(par2), par3, data);
+	} else {
 		pr_notice("%s read[%s]addr[0x%x] failed(%d)\n",
-			__func__, conninfra_dbg_spi_subsys_string(par2), par3, ret);
+			__func__, conninfra_dbg_spi_subsys_string(par2), par3, spi_ret);
+		iRet = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE, "[%s] addr[0x%08x] read fail, spi_ret=%d\n",
+			conninfra_dbg_spi_subsys_string(par2), par3, spi_ret);
+	}
+
+	if (iRet)
+		pr_info("[%s] string error, iRet = %d", __func__, iRet);
+
+	get_lock_ret = osal_lock_sleepable_lock(&g_dump_lock);
+	if (get_lock_ret) {
+		pr_err("[%] dump lock fail, ret=%d", get_lock_ret);
+		return 0;
+	}
+
+	if (g_dump_buf_len < CONNINFRA_DBG_DUMP_BUF_SIZE - 1) {
+		sz = strlen(buf);
+		sz = (sz < CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len -1) ?
+			sz : CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len - 1;
+		strncpy(g_dump_buf + g_dump_buf_len, buf, sz);
+		g_dump_buf_len += sz;
+		g_dump_buf[g_dump_buf_len] = '\0';
+	}
+	osal_unlock_sleepable_lock(&g_dump_lock);
+
 	return 0;
 }
 
@@ -769,6 +795,7 @@ int conninfra_dev_dbg_init(void)
 
 	osal_sleepable_lock_init(&g_dump_lock);
 
+	memset(g_dump_buf, '\0', CONNINFRA_DBG_DUMP_BUF_SIZE);
 	return i_ret;
 }
 

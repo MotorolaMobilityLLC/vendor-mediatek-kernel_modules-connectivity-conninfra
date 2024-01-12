@@ -255,6 +255,7 @@ struct whole_chip_rst_cb {
 struct pre_calibration_cb {
 	int (*pwr_on_cb)(void);
 	int (*do_cal_cb)(void);
+	int (*get_cal_result_cb)(unsigned int* offset, unsigned int* size);
 };
 
 struct sub_drv_ops_cb {
