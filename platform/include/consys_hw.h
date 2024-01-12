@@ -20,7 +20,7 @@
 #define _PLATFORM_CONSYS_HW_H_
 
 #include <linux/platform_device.h>
-
+#include <linux/types.h>
 #include "conninfra.h"
 
 /*******************************************************************************
@@ -103,6 +103,7 @@ typedef int(*CONSYS_PLT_POWER_STATE)(void);
 typedef void(*CONSYS_PLT_CONFIG_SETUP)(void);
 
 typedef int(*CONSYS_PLT_BUS_CLOCK_CTRL)(enum consys_drv_type drv_type, unsigned int, int);
+typedef u64(*CONSYS_PLT_SOC_TIMESTAMP_GET)(void);
 
 struct consys_hw_ops_struct {
 	/* load from dts */
@@ -160,6 +161,8 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_CONFIG_SETUP consys_plt_config_setup;
 
 	CONSYS_PLT_BUS_CLOCK_CTRL consys_plt_bus_clock_ctrl;
+
+	CONSYS_PLT_SOC_TIMESTAMP_GET consys_plt_soc_timestamp_get;
 };
 
 struct conninfra_dev_cb {
@@ -264,7 +267,10 @@ int consys_hw_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clo
  * 	false: no, raise voltage by scenario
  */
 int consys_hw_raise_voltage(enum consys_drv_type drv_type, bool raise, bool onoff);
-
+/* Get soc timestamp (non-sleep timer)
+ * unit: ms
+ */
+u64 consys_hw_soc_timestamp_get(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

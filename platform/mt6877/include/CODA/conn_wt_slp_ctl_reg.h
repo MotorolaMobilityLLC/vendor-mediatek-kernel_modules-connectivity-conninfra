@@ -10,7 +10,7 @@
 
 //****************************************************************************
 //
-//                     CONN_WT_SLP_CTL_REG CR Definitions
+//                     CONN_WT_SLP_CTL_REG CR Definitions (0x1800_5000)
 //
 //****************************************************************************
 
@@ -52,7 +52,13 @@
 #define CONN_WT_SLP_CTL_REG_WB_WF_B1_CMD_ADDR_ADDR             (CONN_WT_SLP_CTL_REG_BASE + 0x090) // 5090
 #define CONN_WT_SLP_CTL_REG_WB_GPS_RFBUF_ADR_ADDR              (CONN_WT_SLP_CTL_REG_BASE + 0x094) // 5094
 #define CONN_WT_SLP_CTL_REG_WB_GPS_L5_EN_ADDR_ADDR             (CONN_WT_SLP_CTL_REG_BASE + 0x098) // 5098
+#define CONN_WT_SLP_CTL_REG_WB_CK_STA_ADDR                     (CONN_WT_SLP_CTL_REG_BASE + 0x0A8) // 50A8
 #define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_0_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x120) // 5120
+#define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x124) // 5124
+#define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_2_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x128) // 5128
+#define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_3_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x12C) // 512C
+#define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_4_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x130) // 5130
+#define CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_5_ADDR               (CONN_WT_SLP_CTL_REG_BASE + 0x134) // 5134
 
 /* =====================================================================================
   ---WB_SLP_CTL (0x18005000 + 0x004)---

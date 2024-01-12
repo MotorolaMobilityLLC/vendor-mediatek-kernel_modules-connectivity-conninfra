@@ -4,7 +4,11 @@
  */
 
 #include <linux/printk.h>
-
+#include <linux/memblock.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include "consys_reg_util.h"
 #include "connsys_debug_utility.h"
 #include "connsys_coredump_hw_config.h"
 
@@ -104,4 +108,41 @@ bool is_host_view_cr(unsigned int addr, unsigned int* host_view)
 		return true;
 	}
 	return false;
+}
+
+bool is_host_csr_readable(void)
+{
+	void __iomem *vir_addr = NULL;
+	bool ret = false;
+	unsigned int r;
+
+	/* AP2CONN_INFRA ON
+	 * 1. Check ap2conn gals sleep protect status
+	 * 	- 0x1000_1228 [19] / 0x1000_1228 [13](rx/tx)
+	 * 	(sleep protect enable ready)
+	 * 	both of them should be 1'b0  (CR at ap side)
+	 */
+	vir_addr = ioremap(0x10001228, 0x4);
+	if (vir_addr) {
+		r = CONSYS_REG_READ_BIT(vir_addr, ((0x1 << 19) | (0x1 << 13)));
+		if (r == 0) {
+			ret = true;
+		}
+		iounmap(vir_addr);
+	} else
+		pr_info("[%s] remap 0x10001228 fail", __func__);
+
+	return ret;
+}
+
+enum cr_category get_cr_category(unsigned int addr)
+{
+	if (addr >= 0x7c000000 && addr <= 0x7c3fffff) {
+		if (addr >= 0x7c060000 && addr <= 0x7c06ffff) {
+			return CONN_HOST_CSR;
+		}
+		return CONN_INFRA_CR;
+	}
+
+	return SUBSYS_CR;
 }

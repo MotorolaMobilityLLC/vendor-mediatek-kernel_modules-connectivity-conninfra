@@ -6,6 +6,12 @@
 #ifndef _CONNSYS_COREDUMP_HW_CONFIG_H_
 #define _CONNSYS_COREDUMP_HW_CONFIG_H_
 
+enum cr_category {
+	CONN_HOST_CSR = 0,
+	CONN_INFRA_CR = 1,
+	SUBSYS_CR = 2,
+};
+
 
 struct coredump_hw_config {
 	char* name;
