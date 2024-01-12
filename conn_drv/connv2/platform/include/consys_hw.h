@@ -106,6 +106,9 @@ typedef void (*CONSYS_PLT_SET_MCU_CONTROL)(int type, bool onoff);
 typedef int (*CONSYS_PLT_PRE_CAL_BACKUP)(unsigned int offset, unsigned int size);
 typedef int (*CONSYS_PLT_PRE_CAL_CLEAN_DATA)(void);
 
+typedef int(*CONSYS_PLT_REGISTER_IRQ) (struct platform_device *pdev);
+typedef void(*CONSYS_PLT_UNREGISTER_IRQ) (void);
+
 struct consys_hw_ops_struct {
 	/* load from dts */
 	CONSYS_PLT_CLK_GET_FROM_DTS consys_plt_clk_get_from_dts;
@@ -176,6 +179,9 @@ struct consys_hw_ops_struct {
 
 	CONSYS_PLT_PRE_CAL_BACKUP consys_plt_pre_cal_backup;
 	CONSYS_PLT_PRE_CAL_CLEAN_DATA consys_plt_pre_cal_clean_data;
+
+	CONSYS_PLT_REGISTER_IRQ consys_plt_register_irq;
+	CONSYS_PLT_UNREGISTER_IRQ consys_plt_unregister_irq;
 };
 
 struct conninfra_dev_cb {
@@ -303,6 +309,9 @@ int consys_hw_pre_cal_backup(unsigned int offset, unsigned int size);
 int consys_hw_pre_cal_clean_data(void);
 
 unsigned int consys_hw_get_support_drv(void);
+
+int consys_hw_register_irq(struct platform_device *pdev);
+void consys_hw_unregister_irq(void);
 /*******************************************************************************
  *                              F U N C T I O N S
  ********************************************************************************
