@@ -334,8 +334,6 @@ static ssize_t connv3_read_internal(
 	}
 	cache_buf_size = ring_seg.remain;
 
-	pr_info("[%s] type=[%d] blcok=[%d]", __func__, conn_type, block_type);
-
 	RING_READ_FOR_EACH(size, ring_seg, ring) {
 		if (to_user) {
 			retval = copy_to_user(userbuf + written, ring_seg.ring_pt, ring_seg.sz);
@@ -352,6 +350,7 @@ static ssize_t connv3_read_internal(
 		cache_buf_size -= ring_seg.sz;
 		written += ring_seg.sz;
 	}
+
 done:
 	return written;
 }
@@ -370,6 +369,11 @@ ssize_t _connv3_log_read_to_user(int conn_type, int block_type, char __user *buf
 {
 	struct connv3_log_dev* handler;
 	unsigned int written = 0;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+	static unsigned int written_times[CONNV3_DEBUG_TYPE_SIZE][CONNV3_LOG_TYPE_SIZE];
+	static size_t written_cnt[CONNV3_DEBUG_TYPE_SIZE][CONNV3_LOG_TYPE_SIZE];
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 
 	if (conn_type < CONNV3_DEBUG_TYPE_WIFI || conn_type >= CONNV3_DEBUG_TYPE_SIZE)
 		goto done;
@@ -383,7 +387,17 @@ ssize_t _connv3_log_read_to_user(int conn_type, int block_type, char __user *buf
 	}
 	written = connv3_read_internal(handler, conn_type, block_type, NULL, buf, count, true);
 
-	pr_info("[%s] type=[%d] block=[%d] written=[%d]", conn_type, block_type, written);
+	written_times[conn_type][block_type]++;
+	written_cnt[conn_type][block_type] += written;
+	if (__ratelimit(&_rs)) {
+		pr_info("[%s] type=[%d] blcok=[%d] write %d times, %d bytes",
+			__func__, conn_type, block_type,
+			written_times[conn_type][block_type],
+			written_cnt[conn_type][block_type]);
+		written_times[conn_type][block_type] = 0;
+		written_cnt[conn_type][block_type] = 0;
+	}
+
 done:
 	return written;
 }
@@ -465,6 +479,11 @@ u32 connv3_log_handler(int conn_type, enum connv3_log_type type, u8 *buf, u32 si
 	struct connv3_log_ctrl_block *block;
 	struct ring_segment ring_cache_seg;
 	u32 written = 0;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
+	static unsigned int read_times[CONNV3_DEBUG_TYPE_SIZE][CONNV3_LOG_TYPE_SIZE];
+	static size_t read_cnt[CONNV3_DEBUG_TYPE_SIZE][CONNV3_LOG_TYPE_SIZE];
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 
 	if (conn_type < 0 || conn_type >= CONNV3_DEBUG_TYPE_SIZE)
 		return 0;
@@ -483,7 +502,17 @@ u32 connv3_log_handler(int conn_type, enum connv3_log_type type, u8 *buf, u32 si
 		size -= ring_cache_seg.sz;
 		written += ring_cache_seg.sz;
 	}
-	pr_info("[%s] written=[%d]", __func__, written);
+
+	read_times[conn_type][type]++;
+	read_cnt[conn_type][type] += written;
+	if (__ratelimit(&_rs)) {
+		pr_info("[%s] type=[%d] blcok=[%d] read %d times, %d bytes",
+			__func__, conn_type, type,
+			read_times[conn_type][type],
+			read_cnt[conn_type][type]);
+		read_times[conn_type][type] = 0;
+		read_cnt[conn_type][type] = 0;
+	}
 
 	connv3_log_event_set(block);
 	return written;
