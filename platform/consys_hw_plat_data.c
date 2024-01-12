@@ -19,6 +19,7 @@
 struct conninfra_plat_data __weak mt6885_plat_data = {};
 struct conninfra_plat_data __weak mt6893_plat_data = {};
 struct conninfra_plat_data __weak mt6877_plat_data = {};
+struct conninfra_plat_data __weak mt6983_plat_data = {};
 
 #ifdef CONFIG_OF
 const struct of_device_id apconninfra_of_ids[] = {
@@ -38,6 +39,12 @@ const struct of_device_id apconninfra_of_ids[] = {
 		.compatible = "mediatek,mt6877-consys",
 	#if IS_ENABLED(CONFIG_MTK_COMBO_CHIP_CONSYS_6877)
 		.data = (void*)&mt6877_plat_data,
+	#endif
+	},
+	{
+		.compatible = "mediatek,mt6983-consys",
+	#if IS_ENABLED(CONFIG_MTK_COMBO_CHIP_CONSYS_6983)
+		.data = (void*)&mt6983_plat_data,
 	#endif
 	},
 	{}

@@ -284,6 +284,10 @@ u64 consys_hw_soc_timestamp_get(void);
 // Auto a-die detection
 unsigned int consys_hw_detect_adie_chipid(void);
 unsigned int consys_hw_get_ic_info(enum connsys_ic_info_type type);
+
+int consys_hw_set_platform_config(int value);
+int consys_hw_get_platform_config(void);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

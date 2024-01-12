@@ -15,6 +15,7 @@
 #include "consys_hw.h"
 #include "emi_mng.h"
 #include "pmic_mng.h"
+#include "clock_mng.h"
 #include "consys_reg_mng.h"
 #include "connsys_debug_utility.h"
 #include "coredump_mng.h"
@@ -113,6 +114,10 @@ static atomic_t g_hw_init_done = ATOMIC_INIT(0);
 
 static unsigned int g_adie_chipid = 0;
 static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
+
+/* this config is defined by each platform, used to change setting by dbg command. */
+/* MT6983: for sleep mode control */
+static int g_platform_config;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -767,6 +772,18 @@ static void consys_hw_ap_resume_handler(struct work_struct *work)
 		(*g_conninfra_dev_cb->conninfra_resume_cb)();
 }
 
+/* this function is used by conninfra_dbg. */
+int consys_hw_set_platform_config(int value)
+{
+	g_platform_config = value;
+	return 0;
+}
+
+int consys_hw_get_platform_config(void)
+{
+	return g_platform_config;
+}
+
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
 	int iRet = 0, retry = 0;
@@ -785,6 +802,9 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 				pr_info("g_hw_init_done = 0, retry = %d", retry);
 		}
 	}
+
+	pmic_mng_register_device();
+	clock_mng_register_device();
 
 	INIT_WORK(&ap_resume_work, consys_hw_ap_resume_handler);
 	pr_info("[consys_hw_init] result [%d]\n", iRet);

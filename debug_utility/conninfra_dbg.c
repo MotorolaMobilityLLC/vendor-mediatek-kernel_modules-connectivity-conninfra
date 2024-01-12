@@ -21,6 +21,7 @@
 #include "conninfra_core.h"
 #include "emi_mng.h"
 #include "connsys_debug_utility.h"
+#include "consys_hw.h"
 
 #define CONNINFRA_DBG_PROCNAME "driver/conninfra_dbg"
 
@@ -74,6 +75,7 @@ static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3);
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
+static int conninfra_dbg_set_platform_config(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
@@ -104,6 +106,9 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #endif /* CONNINFRA_DBG_SUPPORT */
 	[0x13] = conninfra_dbg_connsys_coredump_ctrl,
 	[0x14] = conninfra_dbg_connsys_coredump_mode_query,
+	/* Notice: The usage of config might be different for each platform. */
+	/* MT6983: for sleep mode control, 1: sleep_mode_1 2: sleep_mode_2 */
+	[0x15] = conninfra_dbg_set_platform_config,
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -427,6 +432,14 @@ static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par
 
 	pr_info("Connsys coredump mode is [%d]\n", orig_mode);
 	return orig_mode;
+}
+
+static int conninfra_dbg_set_platform_config(int par1, int par2, int par3)
+{
+        consys_hw_set_platform_config(par2);
+
+        pr_info("set platform config %d\n", par2);
+        return 0;
 }
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
