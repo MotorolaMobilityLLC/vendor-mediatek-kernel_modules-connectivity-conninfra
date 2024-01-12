@@ -117,6 +117,12 @@ int connv3_pwr_off(enum connv3_drv_type drv_type)
 }
 EXPORT_SYMBOL(connv3_pwr_off);
 
+int connv3_ext_32k_on(void)
+{
+	return connv3_core_ext_32k_on();
+}
+EXPORT_SYMBOL(connv3_ext_32k_on);
+
 int connv3_trigger_whole_chip_rst(enum connv3_drv_type who, char *reason)
 {
 	/* use schedule worker to trigger ??? */

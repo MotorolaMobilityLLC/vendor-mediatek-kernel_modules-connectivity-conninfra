@@ -71,6 +71,7 @@ int connv3_hw_deinit(void);
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio);
 int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
+int connv3_hw_ext_32k_onoff(bool);
 
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);

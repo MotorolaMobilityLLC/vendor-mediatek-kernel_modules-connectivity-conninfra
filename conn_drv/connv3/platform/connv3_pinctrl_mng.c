@@ -85,6 +85,17 @@ int connv3_pinctrl_mng_remove(void)
 	return ret;
 }
 
+int connv3_pinctrl_mng_ext_32k_ctrl(bool on)
+{
+
+	int ret = 0;
+
+	if (g_connv3_platform_pinctrl_ops &&
+		g_connv3_platform_pinctrl_ops->pinctrl_ext_32k_ctrl)
+		ret = g_connv3_platform_pinctrl_ops->pinctrl_ext_32k_ctrl(on);
+
+	return ret;
+}
 
 int connv3_pinctrl_mng_init(
 	struct platform_device *pdev,
