@@ -22,6 +22,8 @@
 #include "emi_mng.h"
 #include "connsys_debug_utility.h"
 #include "consys_hw.h"
+#include <linux/regmap.h>
+#include "clock_mng.h"
 
 #define CONNINFRA_DBG_PROCNAME "driver/conninfra_dbg"
 
@@ -56,6 +58,9 @@ static int conninfra_dbg_efuse_write(int par1, int par2, int par3);
 
 static int conninfra_dbg_ap_reg_read(int par1, int par2, int par3);
 static int conninfra_dbg_ap_reg_write(int par1, int par2, int par3);
+
+static int conninfra_dbg_clk_reg_read(int par1, int par2, int par3);
+static int conninfra_dbg_clk_reg_write(int par1, int par2, int par3);
 
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -109,6 +114,8 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	/* Notice: The usage of config might be different for each platform. */
 	/* MT6983: for sleep mode control, 1: sleep_mode_1 2: sleep_mode_2 */
 	[0x15] = conninfra_dbg_set_platform_config,
+	[0x16] = conninfra_dbg_clk_reg_read,
+	[0x17] = conninfra_dbg_clk_reg_write,
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -440,6 +447,40 @@ static int conninfra_dbg_set_platform_config(int par1, int par2, int par3)
 
         pr_info("set platform config %d\n", par2);
         return 0;
+}
+
+static int conninfra_dbg_clk_reg_read(int par1, int par2, int par3)
+{
+	int value = 0;
+	struct regmap *map = consys_clock_mng_get_regmap();
+
+	pr_info("%s clock ic register read, reg address:0x%x\n", __func__, par2);
+	if (map == NULL) {
+		pr_notice("%s clock ic regmap is NULL.\n", __func__);
+		return 0;
+	}
+	regmap_read(map, par2, &value);
+	pr_info("%s clock ic register read, reg address:0x%x, value:0x%x\n", __func__, par2, value);
+
+	return 0;
+}
+
+static int conninfra_dbg_clk_reg_write(int par1, int par2, int par3)
+{
+	int value = 0;
+	struct regmap *map = consys_clock_mng_get_regmap();
+
+	pr_info("%s clock ic register write, reg address:0x%x, value:0x%x\n", __func__, par2, par3);
+	if (map == NULL) {
+		pr_notice("%s clock ic regmap is NULL.\n", __func__);
+		return 0;
+	}
+
+	regmap_write(map, par2, par3);
+	regmap_read(map, par2, &value);
+	pr_info("%s clock ic register write done, value after write:0x%x\n", __func__, value);
+
+	return 0;
 }
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
