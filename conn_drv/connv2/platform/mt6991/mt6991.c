@@ -158,7 +158,7 @@ static int consys_power_state_dump(char *buf, unsigned int size, int print_log)
 			buf_sz = size;
 		}
 		ret = snprintf(buf_p, buf_sz,
-			"[consys_power_state][round:%lu]conninfra:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;[total]conninfra:%lu.%03lu,%lu;gps:%lu.%03lu,%lu;",
+			"[consys_power_state][round:%llu]conninfra:%u.%03u,%u;gps:%u.%03u,%u;[total]conninfra:%llu.%03llu,%llu;gps:%llu.%03llu,%llu;",
 			round,
 			CONN_TICK_TO_SEC(conninfra_sleep_time),
 			CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000),
