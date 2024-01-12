@@ -113,7 +113,7 @@ struct consys_emi_addr_info* emi_mng_get_phy_addr(void)
 static void emi_mng_get_gps_emi(struct platform_device *pdev)
 {
 	struct device_node *node;
-	unsigned int phy_addr = 0;
+	u64 phy_addr = 0;
 	unsigned int phy_size = 0;
 
 	node = of_find_node_by_name(NULL, "gps");
@@ -122,7 +122,7 @@ static void emi_mng_get_gps_emi(struct platform_device *pdev)
 		return;
 	}
 
-	if (of_property_read_u32(node, "emi-addr", &phy_addr)) {
+	if (of_property_read_u64(node, "emi-addr", &phy_addr)) {
 		pr_info("%s: unable to get emi_addr\n", __func__);
 		return;
 	}
