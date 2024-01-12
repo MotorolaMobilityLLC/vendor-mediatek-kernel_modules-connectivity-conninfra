@@ -172,7 +172,7 @@ int conninfra_dbg_read_chipid(int par1, int par2, int par3)
 int conninfra_dbg_reg_read(int par1, int par2, int par3)
 {
 	int ret = 0, sz;
-	char buf[CONNINFRA_DBG_DUMP_BUF_SIZE];
+	char buf[128];
 
 	/* par2-->register address */
 	/* par3-->register mask */
@@ -180,7 +180,7 @@ int conninfra_dbg_reg_read(int par1, int par2, int par3)
 	int iRet;
 
 	iRet = conninfra_core_reg_read(par2, &value, par3);
-	ret = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE,
+	ret = snprintf(buf, sizeof(buf),
 			"read chip register (0x%08x) with mask (0x%08x) %s, value = 0x%08x\n",
 			par2, par3, iRet != 0 ? "failed" : "succeed", iRet != 0 ? -1 : value);
 	if (ret < 0) {
@@ -511,7 +511,7 @@ static int conninfra_dbg_spi_read(int par1, int par2, int par3)
 {
 	unsigned int data;
 	int iRet, get_lock_ret, spi_ret, sz;
-	char buf[CONNINFRA_DBG_DUMP_BUF_SIZE] = {'\0'};
+	char buf[128] = {'\0'};
 
 	if (par2 < 0 || par2 >= SYS_SPI_MAX) {
 		pr_notice("%s par2 is out of range\n", __func__);
@@ -522,12 +522,12 @@ static int conninfra_dbg_spi_read(int par1, int par2, int par3)
 	if (spi_ret == 0) {
 		pr_info("%s read[%s]addr[0x%x]val[0x%x] ok\n",
 			__func__, conninfra_dbg_spi_subsys_string(par2), par3, data);
-		iRet = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE, "[%s] addr[0x%08x]=[0x%08x]\n",
+		iRet = snprintf(buf, sizeof(buf), "[%s] addr[0x%08x]=[0x%08x]\n",
 			conninfra_dbg_spi_subsys_string(par2), par3, data);
 	} else {
 		pr_notice("%s read[%s]addr[0x%x] failed(%d)\n",
 			__func__, conninfra_dbg_spi_subsys_string(par2), par3, spi_ret);
-		iRet = snprintf(buf, CONNINFRA_DBG_DUMP_BUF_SIZE, "[%s] addr[0x%08x] read fail, spi_ret=%d\n",
+		iRet = snprintf(buf, sizeof(buf), "[%s] addr[0x%08x] read fail, spi_ret=%d\n",
 			conninfra_dbg_spi_subsys_string(par2), par3, spi_ret);
 	}
 

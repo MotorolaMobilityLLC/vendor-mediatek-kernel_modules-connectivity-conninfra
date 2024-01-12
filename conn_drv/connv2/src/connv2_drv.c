@@ -402,7 +402,7 @@ ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t cou
 {
 	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
 	unsigned int start_offset = 0, end_offset = 0;
-	unsigned long size = 0;
+	unsigned int size = 0;
 	unsigned int mcif_emi_size = 0;
 	phys_addr_t emi_dump_addr = 0;
 	phys_addr_t mcif_emi_dump_addr = 0;
@@ -480,7 +480,7 @@ int connv2_dump_power_state(uint8_t *buf, u32 buf_sz)
 {
 #define CONN_DUMP_STATE_BUF_SIZE 1024
 	int ret = 0, len;
-	char tmp_buf[CONN_DUMP_STATE_BUF_SIZE];
+	char *tmp_buf;
 
 #if 0
 	ret = osal_lock_sleepable_lock(&g_dump_lock);
@@ -489,22 +489,29 @@ int connv2_dump_power_state(uint8_t *buf, u32 buf_sz)
 		return ret;
 	}
 #endif
+	tmp_buf = (char *)osal_malloc(CONN_DUMP_STATE_BUF_SIZE);
+	if (!tmp_buf) {
+		pr_notice("%s failed to allocate memory\n", __func__);
+		return -1;
+	}
 
 	memset(tmp_buf, '\0', CONN_DUMP_STATE_BUF_SIZE);
 	ret = conninfra_core_dump_power_state(tmp_buf, CONN_DUMP_STATE_BUF_SIZE);
 	if (ret) {
 		//osal_unlock_sleepable_lock(&g_dump_lock);
+		osal_free(tmp_buf);
 		return ret;
 	}
 
 	len = strlen(tmp_buf);
 	if (len > 0 && len < CONN_DUMP_STATE_BUF_SIZE) {
-		if (snprintf(buf, buf_sz, "%s", tmp_buf, len) < 0)
+		if (snprintf(buf, buf_sz, "%s", tmp_buf) < 0)
 			pr_notice("[%s] snprintf fail", __func__);
 	} else
-		return -1;
+		len = -1;
 
 	//osal_unlock_sleepable_lock(&g_dump_lock);
+	osal_free(tmp_buf);
 	return len;
 }
 

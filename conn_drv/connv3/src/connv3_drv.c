@@ -212,21 +212,29 @@ int connv3_dump_power_state(uint8_t *buf, u32 buf_sz)
 {
 #define CONN_DUMP_STATE_BUF_SIZE 1024
 	int ret = 0, len;
-	char tmp_buf[CONN_DUMP_STATE_BUF_SIZE];
+	char *tmp_buf;
+
+	tmp_buf = osal_malloc(CONN_DUMP_STATE_BUF_SIZE);
+	if (!tmp_buf) {
+		pr_notice("%s failed to allocate memory\n", __func__);
+		return -1;
+	}
 
 	memset(tmp_buf, '\0', CONN_DUMP_STATE_BUF_SIZE);
 	ret = connv3_core_reset_and_dump_power_state(tmp_buf, CONN_DUMP_STATE_BUF_SIZE, 1);
 	if (ret) {
+		osal_free(tmp_buf);
 		return ret;
 	}
 
 	len = strlen(tmp_buf);
 	if (len > 0 && len < CONN_DUMP_STATE_BUF_SIZE) {
-		if (snprintf(buf, buf_sz, "%s", tmp_buf, len) < 0)
+		if (snprintf(buf, buf_sz, "%s", tmp_buf) < 0)
 			pr_notice("[%s] snprintf fail", __func__);
 	} else
-		return -1;
+		len = -1;
 
+	osal_free(tmp_buf);
 	return len;
 }
 
