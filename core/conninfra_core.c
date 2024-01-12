@@ -23,6 +23,7 @@
 #include "msg_thread.h"
 #include "consys_reg_mng.h"
 #include "conninfra_conf.h"
+#include "connectivity_build_in_adapter.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -94,6 +95,7 @@ static void _conninfra_core_update_rst_status(enum chip_rst_status status);
 */
 
 struct conninfra_ctx g_conninfra_ctx;
+extern phys_addr_t gConEmiPhyBase;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -1920,6 +1922,7 @@ int conninfra_core_init(void)
 	INIT_WORK(&infra_ctx->cal_info.pre_cal_work, conninfra_core_pre_cal_work_handler);
 	osal_sleepable_lock_init(&infra_ctx->cal_info.pre_cal_lock);
 
+	connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID), gConEmiPhyBase);
 	return ret;
 }
 
@@ -1946,6 +1949,7 @@ int conninfra_core_deinit(void)
 
 	osal_sleepable_lock_deinit(&infra_ctx->core_lock);
 	//osal_sleepable_lock_deinit(&infra_ctx->rst_lock);
+	connectivity_export_conap_scp_deinit();
 
 	return 0;
 }
