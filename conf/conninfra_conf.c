@@ -536,6 +536,7 @@ static int platform_request_firmware(char *patch_name, osal_firmware **ppPatch)
 	} while (ret == -EAGAIN);
 	if (ret != 0) {
 		pr_err("failed to open or read!(%s)\n", patch_name);
+		release_firmware(fw);
 		return -1;
 	}
 	pr_debug("loader firmware %s  ok!!\n", patch_name);
