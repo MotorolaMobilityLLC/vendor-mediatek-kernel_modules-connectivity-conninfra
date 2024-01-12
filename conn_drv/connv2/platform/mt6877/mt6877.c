@@ -10,7 +10,6 @@
 #include <linux/math64.h>
 #include <linux/of.h>
 #include <linux/types.h>
-#include <mtk_clkbuf_ctl.h>
 
 #include <connectivity_build_in_adapter.h>
 

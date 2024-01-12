@@ -33,7 +33,6 @@
 
 #include <connectivity_build_in_adapter.h>
 #include <mtk_ccci_common.h>
-#include <mtk_clkbuf_ctl.h>
 
 
 #endif	/* PLAT_LIBRARY_H */
