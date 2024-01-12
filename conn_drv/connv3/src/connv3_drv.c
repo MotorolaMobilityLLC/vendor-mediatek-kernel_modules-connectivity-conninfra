@@ -186,19 +186,17 @@ static void connv3_dev_pmic_event_handler(struct work_struct *work)
 
 void connv3_suspend_notify(void)
 {
+	/* Do nothing now */
 }
 
 void connv3_resume_notify(void)
 {
-#if 0
-	conninfra_core_dump_power_state();
-	connsys_dedicated_log_set_ap_state(1);
-#endif
 	schedule_work(&g_connv3_ap_resume_work);
 }
 
 static void connv3_hw_ap_resume_handler(struct work_struct *work)
 {
+	connv3_core_reset_and_dump_power_state(NULL, 0);
 }
 
 void connv3_power_on_off_notify(int on_off)
@@ -213,7 +211,24 @@ void connv3_power_on_off_notify(int on_off)
 
 int connv3_dump_power_state(uint8_t *buf, u32 buf_sz)
 {
-	return 0;
+#define CONN_DUMP_STATE_BUF_SIZE 1024
+	int ret = 0, len;
+	char tmp_buf[CONN_DUMP_STATE_BUF_SIZE];
+
+	memset(tmp_buf, '\0', CONN_DUMP_STATE_BUF_SIZE);
+	ret = connv3_core_reset_and_dump_power_state(tmp_buf, CONN_DUMP_STATE_BUF_SIZE);
+	if (ret) {
+		return ret;
+	}
+
+	len = strlen(tmp_buf);
+	if (len > 0 && len < CONN_DUMP_STATE_BUF_SIZE) {
+		if (snprintf(buf, buf_sz, "%s", tmp_buf, len) < 0)
+			pr_notice("[%s] snprintf fail", __func__);
+	} else
+		return -1;
+
+	return len;
 }
 
 /* BT, WIFI, GPS, FM */
