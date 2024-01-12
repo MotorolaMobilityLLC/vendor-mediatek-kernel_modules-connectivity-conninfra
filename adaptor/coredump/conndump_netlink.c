@@ -37,11 +37,13 @@
 
 #define CONN_COREDUMP_SYS_LIST(F) \
 F(wifi) \
-F(bt)
+F(bt) \
+F(gps)
 
 #define CONN_COREDUMP_SYS_LIST_UPPER(F) \
 F(wifi, WIFI) \
-F(bt, BT)
+F(bt, BT) \
+F(gps, GPS)
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
