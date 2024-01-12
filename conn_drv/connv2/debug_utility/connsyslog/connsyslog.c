@@ -1606,7 +1606,6 @@ int connsys_dedicated_log_set_ap_state(int state)
 		handler = gLogDev[i];
 
 		if (handler == NULL || handler->virAddrEmiLogBase == 0) {
-			pr_notice("[%s][%s] didn't init\n", __func__, type_to_title[i]);
 			continue;
 		}
 
