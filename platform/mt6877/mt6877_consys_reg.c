@@ -78,7 +78,7 @@ static void consys_bus_hang_dump_a_rc(void)
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
 	void __iomem *addr = NULL;
 
-	addr = ioremap_nocache(0x1000F900, 0x100);
+	addr = ioremap(0x1000F900, 0x100);
 	if (!addr) {
 		pr_info("[%s] remap 0x1000F100 fail", __func__);
 		return;
@@ -128,7 +128,7 @@ static void consys_bus_hang_dump_a(void)
 	a11 = CONSYS_REG_READ(CONN_REG_SPM_ADDR + 0x928);
 	a12 = CONSYS_REG_READ(CONN_REG_SPM_ADDR + 0x938);
 
-	addr = ioremap_nocache(0x10000180, 0x20);
+	addr = ioremap(0x10000180, 0x20);
 	if (addr != NULL) {
 		a8 = CONSYS_REG_READ(addr);
 		iounmap(addr);
@@ -143,7 +143,7 @@ static void consys_bus_hang_dump_a(void)
 	 * A3	Read	0x1000F930
 	 * A4	Read	0x1000F934
 	 */
-	addr = ioremap_nocache(0x1000F900, 0x40);
+	addr = ioremap(0x1000F900, 0x40);
 	if (addr != NULL) {
 		a1 = CONSYS_REG_READ(addr + 0x28);
 		a2 = CONSYS_REG_READ(addr + 0x2c);
@@ -335,7 +335,7 @@ static void consys_bus_hang_dump_c(bool offclock)
 	 * 	0x1800_F408, 0x1800_F40C, 0x1800_F410, 0x1800_F414, 0x1800_F418, 0x1800_F41C
 	 * 	0x1800_F420, 0x1800_F424, 0x1800_F428, 0x1800_F42C, 0x1800_F430
 	 */
-	addr = ioremap_nocache(0x1800f400, 0x40);
+	addr = ioremap(0x1800f400, 0x40);
 	if (addr) {
 		memset(tmp_buf, '\0', LOG_TMP_BUF_SZ);
 		for (i = 0x8; i <= 0x30; i += 4) {
