@@ -1702,6 +1702,7 @@ static int consys_spi_read_nolock(enum sys_spi_subsystem subsystem, unsigned int
 	CONSYS_REG_WRITE(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->write_data_cr, 0);
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	udelay(1);
 	check = 0;
 	CONSYS_REG_BIT_POLLING(
 		CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit, 0, 100, 50, check);
@@ -1771,6 +1772,7 @@ static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned in
 	CONSYS_REG_WRITE(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->write_data_cr, data);
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	udelay(1);
 	check = 0;
 	CONSYS_REG_BIT_POLLING(CONN_REG_CONN_RF_SPI_MST_REG_ADDR + op->busy_cr, op->polling_bit, 0, 100, 50, check);
 	if (check != 0) {
