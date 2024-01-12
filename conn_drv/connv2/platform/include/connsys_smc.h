@@ -70,6 +70,9 @@ enum conn_smc_opid
 	/* consys_platform_coredump_ops */
 	SMC_CONNSYS_SETUP_DUMP_REGION_OPID = 80,
 	SMC_CONNSYS_SETUP_DYNAMIC_REMAP_OPID,
+
+	/* customize */
+	SMC_CONNSYS_ADIE_CLK_ENABLE_OPID = 90,
 };
 
 #endif	/* CONNSYS_SMC_H */
