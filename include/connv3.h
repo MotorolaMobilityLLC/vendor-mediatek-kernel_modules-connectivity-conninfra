@@ -83,13 +83,15 @@ int connv3_pwr_on_done(enum connv3_drv_type drv_type);
 int connv3_pwr_off(enum connv3_drv_type drv_type);
 int connv3_ext_32k_on(void);
 
-/* chip reset
+/* chip reset (L0)
  * return:
  *    <0: error
  *    =0: triggered
  *    =1: ongoing
  */
 int connv3_trigger_whole_chip_rst(enum connv3_drv_type drv, char *reason);
+/* chip reset for PMIC irq_b */
+int connv3_trigger_pmic_irq(enum connv3_drv_type who, char *reason);
 
 /* whole chip reset callback
  * return:
