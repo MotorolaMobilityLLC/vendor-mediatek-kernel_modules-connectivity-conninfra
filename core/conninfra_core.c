@@ -1350,7 +1350,26 @@ int conninfra_core_is_bus_hang(void)
 	osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 
 	return ret;
+}
 
+int conninfra_core_conn_bus_dump(void)
+{
+	int rst_status;
+	unsigned long flag;
+	int ret = 0;
+
+	spin_lock_irqsave(&g_conninfra_ctx.rst_lock, flag);
+	rst_status = g_conninfra_ctx.rst_status;
+	spin_unlock_irqrestore(&g_conninfra_ctx.rst_lock, flag);
+	if (rst_status >= CHIP_RST_RESET &&
+		rst_status < CHIP_RST_POST_CB) {
+		pr_info("[%s] rst is ongoing", __func__);
+		return 0;
+	}
+	/* Dump directly. */
+	ret = consys_hw_is_bus_hang();
+
+	return ret;
 }
 
 int conninfra_core_is_consys_reg(phys_addr_t addr)
