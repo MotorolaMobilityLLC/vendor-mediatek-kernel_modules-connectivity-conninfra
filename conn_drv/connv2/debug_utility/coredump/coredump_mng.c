@@ -198,3 +198,11 @@ char* coredump_mng_get_tag_name(int conn_type)
     return 0;
 }
 
+bool coredump_mng_is_supported(unsigned int drv)
+{
+	if (consys_platform_coredump_ops &&
+	    consys_platform_coredump_ops->consys_coredump_is_supported)
+		return consys_platform_coredump_ops->consys_coredump_is_supported(drv);
+
+	return true;
+}
