@@ -1670,8 +1670,10 @@ int conninfra_core_trg_chip_rst(enum consys_drv_type drv, char *reason)
 
 int conninfra_core_thermal_query(int *temp_val)
 {
+#define PRINT_TEMP_THRESHOLD 60
 	int ret = 0;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+	static DEFINE_RATELIMIT_STATE(_rs, 10 * HZ, 1);
 
 	if (temp_val == NULL)
 		return -1;
@@ -1682,11 +1684,24 @@ int conninfra_core_thermal_query(int *temp_val)
 	if (ret) {
 		pr_info("thermal query fail ret=%d\n", ret);
 		return ret;
+	} else if (*temp_val >= CONNINFRA_MAX_TEMP) {
+		pr_info("%s: temp[%d] is too high, re-query.\n", __func__, *temp_val);
+		ret = msg_thread_send_wait_1(&infra_ctx->msg_ctx,
+			CONNINFRA_OPID_THERM_CTRL, 0,
+			(size_t) temp_val);
+		if (ret) {
+			pr_info("thermal query fail ret=%d\n", ret);
+			return ret;
+		}
+		pr_info("temp of re-query is [%d]\n", *temp_val);
+		if (*temp_val >= CONNINFRA_MAX_TEMP)
+			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA,
+				"thermal is too high");
+	} else {
+		ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
+		if (__ratelimit(&_rs) || *temp_val > PRINT_TEMP_THRESHOLD)
+			pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
 	}
-	pr_info("ret=[%d] temp=[%d]\n", ret, *temp_val);
-
-	if (*temp_val >= CONNINFRA_MAX_TEMP)
-		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_CONNINFRA, "thermal is too high");
 
 	return ret;
 }
