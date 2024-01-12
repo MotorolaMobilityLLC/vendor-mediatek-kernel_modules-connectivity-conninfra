@@ -670,7 +670,7 @@ static void conninfra_detect_time_change(void) {
 		}
 	}
 
-	memcpy(&prev_utc, &curr_utc, sizeof(struct timeval));
+	memcpy(&prev_utc, &curr_utc, sizeof(struct timespec64));
 	prev_soc_time = curr_soc_time;
 	counter++;
 
