@@ -19,7 +19,13 @@
 #include <linux/platform_device.h>
 #include <linux/cdev.h>
 #include <linux/module.h>
+#include <linux/version.h>
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+#include <linux/mm.h>
+#include "mtk_disp_notify.h"
+#else
 #include <linux/fb.h>
+#endif
 #include <linux/workqueue.h>
 #include "conninfra.h"
 #include "conninfra_conf.h"
@@ -345,6 +351,34 @@ static int conninfra_dev_get_blank_state(void)
 	return atomic_read(&g_es_lr_flag_for_blank);
 }
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+int conninfra_dev_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *v)
+{
+	int *data = (int *)v;
+
+	pr_debug("conninfra_dev_fb_notifier_callback event=[%u]\n", event);
+
+	if (event != MTK_DISP_EVENT_BLANK) {
+		return 0;
+	}
+
+	pr_info("%s+\n", __func__);
+
+	if (*data == MTK_DISP_BLANK_UNBLANK) {
+		atomic_set(&g_es_lr_flag_for_blank, 1);
+		pr_info("@@@@@@@@@@ Conninfra enter UNBLANK @@@@@@@@@@@@@@\n");
+		schedule_work(&gPwrOnOffWork);
+	} else if (*data == MTK_DISP_BLANK_POWERDOWN) {
+		atomic_set(&g_es_lr_flag_for_blank, 0);
+		pr_info("@@@@@@@@@@ Conninfra enter early POWERDOWN @@@@@@@@@@@@@@\n");
+		schedule_work(&gPwrOnOffWork);
+	}
+
+	pr_info("%s-\n", __func__);
+
+	return 0;
+}
+#else
 int conninfra_dev_fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
@@ -375,6 +409,7 @@ int conninfra_dev_fb_notifier_callback(struct notifier_block *self,
 	}
 	return 0;
 }
+#endif
 
 static void conninfra_dev_pwr_on_off_handler(struct work_struct *work)
 {
@@ -560,7 +595,12 @@ static int conninfra_dev_do_drv_init()
 	INIT_WORK(&gPwrOnOffWork, conninfra_dev_pwr_on_off_handler);
 	conninfra_fb_notifier.notifier_call
 				= conninfra_dev_fb_notifier_callback;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+	iret = mtk_disp_notifier_register("conninfra_driver", &conninfra_fb_notifier);
+#else
 	iret = fb_register_client(&conninfra_fb_notifier);
+#endif
 	if (iret)
 		pr_err("register fb_notifier fail");
 	else
@@ -691,7 +731,12 @@ static void conninfra_dev_deinit(void)
 	int iret = 0;
 
 	g_conninfra_init_status = CONNINFRA_INIT_NOT_START;
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
+	mtk_disp_notifier_unregister(&conninfra_fb_notifier);
+#else
 	fb_unregister_client(&conninfra_fb_notifier);
+#endif
 
 	iret = conninfra_dev_dbg_deinit();
 #ifdef CFG_CONNINFRA_UT_SUPPORT

@@ -50,6 +50,7 @@ ccflags-y += -I$(srctree)/drivers/mmc/core
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/pmic/include/
 ccflags-y += -I$(srctree)/include/linux/soc/mediatek/
+ccflags-y += -I$(srctree)/drivers/gpu/drm/mediatek/mediatek_v2
 ###############################################################################
 
 
