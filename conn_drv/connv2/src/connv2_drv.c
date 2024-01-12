@@ -10,6 +10,7 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/thermal.h>
+#include <linux/version.h>
 
 #include <connectivity_build_in_adapter.h>
 
@@ -118,11 +119,19 @@ void connv2_power_on_off_notify(int on_off);
 /* thermal query */
 static int last_thermal_value;
 static int g_temp_thermal_value;
-static int conninfra_thermal_get_temp_cb(void *data, int *temp);
 static int conninfra_thermal_query_cb(void);
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+static int conninfra_thermal_get_temp_cb(struct thermal_zone_device *tz,
+		int *temp);
+static const struct thermal_zone_device_ops tz_conninfra_thermal_ops = {
+	.get_temp = conninfra_thermal_get_temp_cb,
+};
+#else
+static int conninfra_thermal_get_temp_cb(void *data, int *temp);
 static const struct thermal_zone_of_device_ops tz_conninfra_thermal_ops = {
 	.get_temp = conninfra_thermal_get_temp_cb,
 };
+#endif
 
 /* clk fail */
 static void conninfra_clock_fail_dump_cb(void);
@@ -294,7 +303,12 @@ static int conninfra_thermal_query_cb(void)
 }
 
 /* for Linux thermal framework */
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+static int conninfra_thermal_get_temp_cb(struct thermal_zone_device *tz,
+		int *temp)
+#else
 static int conninfra_thermal_get_temp_cb(void *data, int *temp)
+#endif
 {
 	int ret;
 
@@ -332,8 +346,13 @@ static void conninfra_register_thermal_callback(void)
 	}
 
 	/* register thermal zone */
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+	tz = devm_thermal_of_zone_register(
+		&pdev->dev, 0, NULL, &tz_conninfra_thermal_ops);
+#else
 	tz = devm_thermal_zone_of_sensor_register(
 		&pdev->dev, 0, NULL, &tz_conninfra_thermal_ops);
+#endif
 
 	if (IS_ERR(tz)) {
 		ret = PTR_ERR(tz);
