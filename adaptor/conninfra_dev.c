@@ -571,7 +571,11 @@ static int conninfra_dev_init(void)
 		goto err1;
 	}
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6,4,0))
+        p_conn_adaptor_class = class_create(CONNINFRA_DEVICE_NAME);
+#else
 	p_conn_adaptor_class = class_create(THIS_MODULE, CONNINFRA_DEVICE_NAME);
+#endif
 	if (IS_ERR(p_conn_adaptor_class)) {
 		pr_err("class create fail, error code(%ld)\n",
 						PTR_ERR(p_conn_adaptor_class));
