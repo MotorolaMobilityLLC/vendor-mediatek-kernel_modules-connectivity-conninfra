@@ -36,6 +36,7 @@
 #define CONN_CFG_CONN_INFRA_CFG_RC_CTL_0_TOP_ADDR              (CONN_CFG_BASE + 0x3C0) // 13C0
 #define CONN_CFG_CONN_INFRA_CFG_RC_CTL_1_TOP_ADDR              (CONN_CFG_BASE + 0x3C4) // 13C4
 #define CONN_CFG_EMI_CTL_0_ADDR                                (CONN_CFG_BASE + 0x400) // 1400
+#define CONN_CFG_EMI_CTL_1_ADDR                                (CONN_CFG_BASE + 0x404) // 1404
 #define CONN_CFG_CONN_INFRA_CONN2AP_SLP_STATUS_ADDR            (CONN_CFG_BASE + 0x504) // 1504
 #define CONN_CFG_CONN_INFRA_AP2CONN_SLP_STATUS_ADDR            (CONN_CFG_BASE + 0x514) // 1514
 #define CONN_CFG_CONN_INFRA_ON_BUS_SLP_STATUS_ADDR             (CONN_CFG_BASE + 0x524) // 1524
