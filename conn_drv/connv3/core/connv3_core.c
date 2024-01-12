@@ -28,7 +28,7 @@
  * 1: pmic/ext32k would be turn off
  * 0: pmic/ext32k keeps on
  */
-#define CONNV3_PWR_OFF_MODE_PMIC_OFF			1
+#define CONNV3_PWR_OFF_MODE_PMIC_OFF			0
 
 #define CONNV3_EVENT_TIMEOUT				3000
 #define CONNV3_RESET_TIMEOUT				500
