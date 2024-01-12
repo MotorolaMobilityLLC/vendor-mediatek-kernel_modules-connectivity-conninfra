@@ -920,7 +920,7 @@ static int opfunc_clock_fail_dump(struct msg_op_data *op)
 
 static int opfunc_pre_cal_prepare(struct msg_op_data *op)
 {
-	int ret = 0, rst_status;
+	int ret = 0, rst_status, num = 0;
 	unsigned long flag;
 	struct pre_cal_info *cal_info = &g_conninfra_ctx.cal_info;
 	struct subsys_drv_inst *bt_drv = &g_conninfra_ctx.drv_inst[CONNDRV_TYPE_BT];
@@ -953,8 +953,16 @@ static int opfunc_pre_cal_prepare(struct msg_op_data *op)
 	while (!ret) {
 		ret = osal_trylock_sleepable_lock(&cal_info->pre_cal_lock);
 		if (ret == 0) {
-			pr_notice("[%s] fail to get pre_cal_lock\n", __func__);
-			osal_sleep_ms(100);
+			if (num >= 10) {
+				/* Another pre-cal should be on progress */
+				/* Skip to prevent block core thread */
+				pr_notice("[%s] fail to get pre_cal_lock\n", __func__);
+				break;
+			}
+			/* sleep time is short to make sure get lock easier than */
+			/* conninfra_core_pre_cal_blocking */
+			osal_sleep_ms(10);
+			num++;
 			continue;
 		}
 
