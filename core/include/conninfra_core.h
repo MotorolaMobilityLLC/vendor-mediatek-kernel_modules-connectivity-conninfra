@@ -227,7 +227,7 @@ void conninfra_core_pre_cal_blocking(void);
  */
 int conninfra_core_reg_readable(void);
 int conninfra_core_reg_readable_no_lock(void);
-int conninfra_core_reg_readable_for_coredump(enum consys_drv_type drv_type);
+int conninfra_core_reg_readable_for_coredump(void);
 int conninfra_core_is_bus_hang(void);
 /* Special usage: for sspm ipi timeout dump */
 int conninfra_core_conn_bus_dump(void);

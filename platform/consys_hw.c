@@ -168,9 +168,9 @@ int consys_hw_reg_readable(void)
 	return consys_reg_mng_reg_readable();
 }
 
-int consys_hw_reg_readable_for_coredump(enum consys_drv_type drv_type)
+int consys_hw_reg_readable_for_coredump(void)
 {
-	return consys_reg_mng_reg_readable_for_coredump(drv_type);
+	return consys_reg_mng_reg_readable_for_coredump();
 }
 
 int consys_hw_is_connsys_reg(phys_addr_t addr)

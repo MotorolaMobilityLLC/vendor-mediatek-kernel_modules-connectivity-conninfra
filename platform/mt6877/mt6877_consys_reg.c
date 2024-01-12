@@ -20,7 +20,7 @@ static int consys_reg_init(struct platform_device *pdev);
 static int consys_reg_deinit(void);
 static int consys_check_reg_readable(void);
 static int __consys_check_reg_readable(void);
-static int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type);
+static int consys_check_reg_readable_for_coredump(void);
 static int consys_is_consys_reg(unsigned int addr);
 static int consys_is_bus_hang(void);
 
@@ -598,7 +598,7 @@ int consys_check_reg_readable(void)
 	return 1;
 }
 
-int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
+int consys_check_reg_readable_for_coredump(void)
 {
 	unsigned int r;
 
@@ -607,8 +607,7 @@ int consys_check_reg_readable_for_coredump(enum consys_drv_type drv_type)
 
 	r = CONSYS_REG_READ_BIT(CONN_HOST_CSR_TOP_DBG_DUMMY_5_ADDR, (0x1 << 0));
 	if (r != 0x1) {
-		pr_info("[%s] conn_infra off domain bus timeout irq, r=[0x%x], drv_type=[%d]\n",
-			__func__, r, drv_type);
+		pr_info("[%s] conn_infra off domain bus timeout irq, r=[0x%x]\n", __func__, r);
 		return 1; // can ignore bus timeout irq status for coredump
 	}
 
