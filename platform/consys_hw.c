@@ -92,6 +92,7 @@ static struct platform_driver mtk_conninfra_dev_drv = {
 #ifdef CONFIG_OF
 		   .of_match_table = apconninfra_of_ids,
 #endif
+		   .probe_type = PROBE_FORCE_SYNCHRONOUS,
 		   },
 };
 
@@ -109,7 +110,6 @@ struct conninfra_dev_cb *g_conninfra_dev_cb;
 const struct conninfra_plat_data *g_conninfra_plat_data = NULL;
 
 struct pinctrl *g_conninfra_pinctrl_ptr = NULL;
-static atomic_t g_hw_init_done = ATOMIC_INIT(0);
 
 static unsigned int g_adie_chipid = 0;
 static OSAL_SLEEPABLE_LOCK g_adie_chipid_lock;
@@ -750,7 +750,6 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	if (ret < 0)
 		pr_info("conn_pwr_init is failed %d.", ret);
 
-	atomic_set(&g_hw_init_done, 1);
 	return 0;
 }
 
@@ -763,7 +762,6 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 	else
 		pr_info("consys_plt_clk_detach is null");
 
-	atomic_set(&g_hw_init_done, 0);
 	if (g_pdev)
 		g_pdev = NULL;
 
@@ -838,25 +836,14 @@ void consys_hw_set_mcu_control(int type, bool onoff)
 
 int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
-	int iRet = 0, retry = 0, ret = 0;
-	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
+	int iRet = 0, ret = 0;
 	phys_addr_t emi_addr = 0;
 	unsigned int emi_size = 0;
 
 	g_conninfra_dev_cb = dev_cb;
-	atomic_set(&g_hw_init_done, 0);
 	iRet = platform_driver_register(&mtk_conninfra_dev_drv);
 	if (iRet)
 		pr_err("Conninfra platform driver registered failed(%d)\n", iRet);
-	else {
-		while (atomic_read(&g_hw_init_done) == 0) {
-			osal_sleep_ms(50);
-			retry++;
-			if (__ratelimit(&_rs))
-				pr_info("g_hw_init_done = 0, retry = %d", retry);
-		}
-	}
-
 	pmic_mng_register_device();
 	clock_mng_register_device();
 
