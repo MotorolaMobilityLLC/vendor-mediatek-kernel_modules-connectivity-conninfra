@@ -115,6 +115,11 @@ struct connv3_pre_calibration_cb {
 	int (*do_cal_cb)(void);
 	/* for security efuse download */
 	int (*efuse_on_cb)(void);
+	/* for pre-cal error handling
+	 * callback to subsys only when there is error during pre-cal flow and
+	 * hint subsys to break the process.
+	 */
+	int (*pre_cal_error)(void);
 };
 
 struct connv3_power_on_cb {
