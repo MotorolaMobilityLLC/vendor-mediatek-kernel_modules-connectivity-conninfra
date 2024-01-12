@@ -154,6 +154,7 @@ EXPORT_SYMBOL(conninfra_pwr_on);
 
 int conninfra_pwr_off(enum consys_drv_type drv_type)
 {
+	pr_info("[%s] drv=[%d]", __func__, drv_type);
 	if (conninfra_core_is_rst_locking()) {
 		DUMP_LOG();
 		return CONNINFRA_ERR_RST_ONGOING;
