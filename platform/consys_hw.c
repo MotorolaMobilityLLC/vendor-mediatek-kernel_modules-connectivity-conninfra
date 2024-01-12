@@ -715,6 +715,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	g_pdev = pdev;
 
 	pwr_info.chip_id = consys_hw_chipid_get();
+	pwr_info.adie_id = consys_hw_detect_adie_chipid();
 	pwr_info.get_temp = consys_hw_therm_query;
 	ret = conn_pwr_init(&pwr_info);
 	if (ret < 0)
