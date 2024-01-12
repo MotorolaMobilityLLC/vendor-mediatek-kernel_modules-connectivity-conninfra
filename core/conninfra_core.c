@@ -699,8 +699,16 @@ static int opfunc_therm_ctrl(struct msg_op_data *op)
 		return 0;
 	}
 
+	ret = osal_lock_sleepable_lock(&g_conninfra_ctx.core_lock);
+	if (ret) {
+		pr_err("[%s] core_lock fail!!", __func__);
+		return 0;
+	}
+
 	if (data_ptr)
 		ret = consys_hw_therm_query(data_ptr);
+
+	osal_unlock_sleepable_lock(&g_conninfra_ctx.core_lock);
 
 	if (__ratelimit(&_rs))
 		_status_dump();
