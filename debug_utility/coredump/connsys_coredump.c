@@ -457,7 +457,9 @@ do { \
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t\t<reason>%s</reason>\n",
 			ctx->info.reason);
-		snprintf(ctx->info.keyword, CONNSYS_ASSERT_KEYWORD_SIZE, "%s", ctx->info.reason);
+		ret = snprintf(ctx->info.keyword, CONNSYS_ASSERT_KEYWORD_SIZE, "%s", ctx->info.reason);
+		if (ret < 0)
+			pr_info("[%s] Copy reason(%s) to keyword error, ret=%d", __func__, ctx->info.reason, ret);
 	} else {
 		/* FW assert */
 		if (full_dump) {
