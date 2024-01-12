@@ -310,17 +310,31 @@ int consys_pmic_vcn33_2_power_ctl_mt6877(bool enable)
 }
 
 
-static void consys_raise_vcn13_vs2_voltage_mt6877(enum vcn13_state next_state)
+int consys_plt_pmic_raise_voltage_mt6877(unsigned int drv_type, bool raise, bool onoff)
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
+	enum vcn13_state next_state;
 	static enum vcn13_state curr_vcn13_state = vcn13_1_3v;
+	static bool bt_raise = false;
+
+	if (drv_type == 0 && onoff) {
+		bt_raise = raise;
+	} else {
+		return 0;
+	}
+	if (bt_raise) {
+		next_state = vcn13_1_37v;
+	} else {
+		next_state = vcn13_1_3v;
+	}
 
 	/* no change */
 	if (curr_vcn13_state == next_state) {
-		pr_info("[%s] curr==next_state(%d, %d), return\n", __func__, curr_vcn13_state, next_state);
-		return;
+		return 0;
 	}
-	pr_info("[%s] curr_vcn13_state=%d next_state=%d\n", __func__, curr_vcn13_state, next_state);
+	pr_info("[%s][drv_type(%d) raise(%d) onoff(%d)][bt_raise(%d) curr_state(%d) next_state(%d)]\n",
+		__func__, drv_type, raise, onoff, bt_raise, curr_vcn13_state, next_state);
+
 	/* Check raise window, the duration to previous action should be 1 ms. */
 	while (atomic_read(&g_voltage_change_status) == 1);
 	pr_info("[%s] check down\n", __func__);
@@ -362,23 +376,6 @@ static void consys_raise_vcn13_vs2_voltage_mt6877(enum vcn13_state next_state)
 	atomic_set(&g_voltage_change_status, 1);
 	osal_timer_modify(&g_voltage_change_timer, 1);
 #endif
-}
-
-int consys_plt_pmic_raise_voltage_mt6877(unsigned int drv_type, bool raise, bool onoff)
-{
-	static bool bt_raise = false;
-	pr_info("[%s] [drv_type(%d) raise(%d) onoff(%d)][bt_raise(%d)]\n",
-		__func__, drv_type, raise, onoff, bt_raise);
-	if (drv_type == 0 && onoff) {
-		bt_raise = raise;
-	} else {
-		return 0;
-	}
-	if (bt_raise) {
-		consys_raise_vcn13_vs2_voltage_mt6877(vcn13_1_37v);
-	} else {
-		consys_raise_vcn13_vs2_voltage_mt6877(vcn13_1_3v);
-	}
 	return 0;
 }
 

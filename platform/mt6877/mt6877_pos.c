@@ -673,8 +673,6 @@ int connsys_spi_master_cfg_mt6877(unsigned int next_status)
 	if ((next_status & (~(0x1 << CONNDRV_TYPE_BT))) == 0)
 		bt_only = 1;
 
-	pr_info("[%s] bt_only=%d\n", __func__, bt_only);
-
 	/* WF_CK_ADDR		0x18005070[11:0]	0xA04
 	 * WF_B1_CK_ADDR	0x18005070[27:16]	0xAF4
 	 * WF_WAKE_ADDR		0x18005074[11:0]	0x090
@@ -1185,7 +1183,6 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 	if ((next_status & (~(0x1 << CONNDRV_TYPE_BT))) == 0)
 		bt_only = true;
 
-	pr_info("[%s] current_status=%d bt_only = %d\n", __func__, curr_status, bt_only);
 	connsys_adie_clock_buffer_setting(bt_only);
 
 	if (curr_status == 0) {
@@ -1914,8 +1911,6 @@ void consys_spi_write_offset_range_nolock(
 	unsigned int reg_mask;
 	int ret;
 
-	pr_info("[%s][%s] addr=0x%04x value=0x%08x reg_offset=%d value_offset=%d size=%d",
-		__func__, get_spi_sys_name(subsystem), addr, value, reg_offset, value_offset, size);
 	value = (value >> value_offset);
 	value = GET_BIT_RANGE(value, size, 0);
 	value = (value << reg_offset);
@@ -1929,9 +1924,6 @@ void consys_spi_write_offset_range_nolock(
 	data2 = data & (~reg_mask);
 	data2 = (data2 | value);
 	consys_spi_write_nolock(subsystem, addr, data2);
-	pr_info("[%s][%s] Write CR:0x%08x from 0x%08x to 0x%08x",
-		__func__, get_spi_sys_name(subsystem),
-		addr, data, data2);
 }
 
 const char* get_spi_sys_name(enum sys_spi_subsystem subsystem)
