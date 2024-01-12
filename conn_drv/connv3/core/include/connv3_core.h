@@ -78,6 +78,12 @@ enum chip_rst_status {
 	CHIP_RST_DONE = 5
 };
 
+enum connv3_radio_off_mode {
+	CONNV3_RADIO_OFF_MODE_PMIC_OFF = 0,
+	CONNV3_RADIO_OFF_MODE_UDS = 1,
+	CONNV3_RADIO_OFF_MODE_MAX,
+};
+
 struct subsys_drv_inst {
 	enum connv3_drv_status drv_status;	/* Controlled driver status */
 	unsigned int rst_state;
@@ -142,6 +148,7 @@ struct connv3_ctx {
 
 	struct pre_cal_info cal_info;
 
+	enum connv3_radio_off_mode radio_off_mode;
 };
 
 //typedef enum _ENUM_CONNINFRA_CORE_OPID_T {

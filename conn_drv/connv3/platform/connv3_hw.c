@@ -221,6 +221,30 @@ int connv3_hw_power_info_reset(
 	return connv3_hw_dbg_power_info_reset(drv_type, cb);
 }
 
+enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void)
+{
+	enum connv3_radio_off_mode mode = CONNV3_RADIO_OFF_MODE_PMIC_OFF;
+	struct device_node *node;
+	u32 data;
+	int ret;
+
+	node = g_connv3_pdev->dev.of_node;
+	ret = of_property_read_u32(node, "radio-off-mode", &data);
+	if (ret < 0)
+		pr_notice("[%s] property (radio-off-mode) read fail: %d", __func__, ret);
+	else {
+		if (data < CONNV3_RADIO_OFF_MODE_MAX) {
+			mode = data;
+			pr_info("[%s] get: %d, mode=%d\n", __func__, data, mode);
+		} else {
+			pr_notice("[%s] wrong data: %d\n", __func__, data);
+		}
+	}
+
+	pr_info("[%s] return mode (%d)\n", __func__, mode);
+	return mode;
+}
+
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 {
 	int ret = 0;
