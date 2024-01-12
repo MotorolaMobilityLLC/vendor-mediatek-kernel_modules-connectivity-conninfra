@@ -60,6 +60,14 @@ int consys_reg_mng_reg_readable(void)
 		pr_err("%s not implement conninfra off domain check\n", __func__);
 		BUG_ON(1);
 	}
+	/* Separate bus_clock_check from conninfra_off_statsu_check */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status) {
+		ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status();
+		if (ret != 0) {
+			consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
+			return 0;
+		}
+	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (ret != 0) {
 		consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
@@ -113,6 +121,14 @@ int consys_reg_mng_reg_readable_for_coredump(void)
 	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status == NULL) {
 		pr_err("%s not implement conninfra off domain check\n", __func__);
 		BUG_ON(1);
+	}
+	/* Separate bus_clock_check from conninfra_off_statsu_check */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status) {
+		ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status();
+		if (ret != 0) {
+			consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
+			return 0;
+		}
 	}
 	ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (ret != 0) {
@@ -176,6 +192,14 @@ int consys_reg_mng_is_bus_hang(void)
 	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status == NULL) {
 		pr_err("%s not implement conninfra off domain check\n", __func__);
 		BUG_ON(1);
+	}
+	/* Separate bus_clock_check from conninfra_off_statsu_check */
+	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status) {
+		ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status();
+		if (ret != 0) {
+			consys_reg_mng_print_log(CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_ON);
+			return ret;
+		}
 	}
 	fp_ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_off_status();
 	if (fp_ret != 0) {

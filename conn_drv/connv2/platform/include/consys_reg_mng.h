@@ -40,6 +40,7 @@ struct consys_reg_mng_ops {
 	int (*consys_reg_mng_is_host_csr)(unsigned long addr);
 
 	int (*consys_reg_mng_check_readable_conninfra_on_status)(void);
+	int (*consys_reg_mng_check_readable_conninfra_bus_clock_status)(void);
 	int (*consys_reg_mng_check_readable_conninfra_off_status)(void);
 	int (*consys_reg_mng_check_readable_conninfra_irq)(void);
 	void (*consys_reg_mng_check_readable_conninfra_platform_log)(void);
