@@ -36,7 +36,7 @@ struct connv3_platform_pmic_ops {
 	int (*pmic_initial_setting) (struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 	int (*pmic_common_power_ctrl) (u32 enable);
 	int (*pmic_parse_state) (char *buffer, int buf_sz);
-	int (*pmic_antenna_power_ctrl) (u32 enable);
+	int (*pmic_antenna_power_ctrl) (u32 radio, u32 enable);
 
 };
 
@@ -64,7 +64,7 @@ int connv3_pmic_mng_deinit(void);
 int connv3_pmic_mng_common_power_ctrl(unsigned int enable);
 int connv3_pmic_mng_parse_state(char *buffer, int buf_sz);
 int connv3_pmic_mng_set_pmic_state(void);
-int connv3_pmic_mng_antenna_power_ctrl(unsigned int enable);
+int connv3_pmic_mng_antenna_power_ctrl(u32 radio, u32 enable);
 
 /*******************************************************************************
 *                              F U N C T I O N S

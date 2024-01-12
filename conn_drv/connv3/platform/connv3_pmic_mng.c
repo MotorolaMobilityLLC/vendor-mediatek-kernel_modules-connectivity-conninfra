@@ -82,13 +82,13 @@ int connv3_pmic_mng_set_pmic_state(void)
 	return 0;
 }
 
-int connv3_pmic_mng_antenna_power_ctrl(unsigned int enable)
+int connv3_pmic_mng_antenna_power_ctrl(u32 radio, unsigned int enable)
 {
 	int ret = 0;
 
 	if (g_connv3_platform_pmic_ops &&
 		g_connv3_platform_pmic_ops->pmic_antenna_power_ctrl)
-		ret = g_connv3_platform_pmic_ops->pmic_antenna_power_ctrl(enable);
+		ret = g_connv3_platform_pmic_ops->pmic_antenna_power_ctrl(radio, enable);
 
 	return ret;
 }
