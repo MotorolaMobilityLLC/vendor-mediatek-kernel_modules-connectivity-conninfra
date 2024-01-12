@@ -46,6 +46,7 @@ struct connv3_coredump_event_cb {
 	char dev_node[CONNV3_EMI_MAP_DEV_NODE_SIZE];
 	unsigned int emi_size;
 	unsigned int mcif_emi_size;
+	unsigned int emi2_size;
 };
 
 struct connv3_issue_info {

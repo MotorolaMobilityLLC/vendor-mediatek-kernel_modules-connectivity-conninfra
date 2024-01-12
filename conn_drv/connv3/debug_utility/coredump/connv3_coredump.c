@@ -69,7 +69,7 @@ struct timespec64 g_dump_start_time;
 #define CONNV3_EMIDUMP_TIMEOUT		(60*1000)
 #endif
 
-#define EMI_COMMAND_LENGTH	64
+#define EMI_COMMAND_LENGTH	128
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -750,12 +750,13 @@ static int connv3_send_emi_dump(struct connv3_dump_ctx *ctx, bool need_end)
 {
 	int ret;
 	unsigned long comp_ret;
-	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb
+	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb,emi2_size=cccccccc
 	char cmd_str[EMI_COMMAND_LENGTH] = {'\0'};
 	char *cmd_tag;
 
 	/* EMI dump */
-	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "dev=%s,emi_size=%d,mcif_emi_size=%d", ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size) < 0) {
+	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "dev=%s,emi_size=%d,mcif_emi_size=%d,emi2_size=%d",
+		ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size) < 0) {
 		pr_notice("%s snprintf failed\n", __func__);
 		return -1;
 	}
