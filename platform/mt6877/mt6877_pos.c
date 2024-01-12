@@ -1313,6 +1313,7 @@ int connsys_low_power_setting_mt6877(unsigned int curr_status, unsigned int next
 			CONSYS_SET_BIT(CONN_CFG_CONN_INFRA_CFG_RC_CTL_0_ADDR, (0x1 << 30));
 			CONSYS_REG_WRITE_MASK(CONN_CFG_CONN_INFRA_CFG_RC_CTL_1_ADDR, 0xd0, 0xf0);
 			CONSYS_SET_BIT(CONN_CFG_EMI_CTL_0_ADDR, (0x1 << 16));
+			CONSYS_SET_BIT(CONN_CFG_EMI_CTL_1_ADDR, (0x1 << 1));
 		}
 		/* RC mode check end */
 		/* Prevent subsys from power on/off in a short time interval
