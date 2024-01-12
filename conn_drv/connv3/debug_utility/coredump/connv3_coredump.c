@@ -485,6 +485,9 @@ int connv3_coredump_start(void* handler, const int drv, const char *reason, cons
 		pr_notice("[%s] state(%d) wrong", __func__, state);
 		return CONNV3_COREDUMP_ERR_WRONG_STATUS;
 	}
+
+	pr_info("[%s][%s] trigger_drv=%d reason=%s\n",
+		__func__, g_type_name[ctx->conn_type], drv, reason);
 	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_START);
 	osal_gettimeofday(&g_dump_start_time);
 

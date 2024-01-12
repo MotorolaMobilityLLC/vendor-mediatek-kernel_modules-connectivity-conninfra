@@ -54,7 +54,7 @@ static int core_tc(int par1, int par2, int par3);
 static int cal_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
 static int v3_coredump_tc(int par1, int par2, int par3);
-static int v3_bus_dump_tc(int par1, int par2, int par3);
+static int v3_hif_dump_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -81,8 +81,9 @@ static const CONNINFRA_TEST_FUNC connv3_test_func[] = {
 	//[0x09] = thermal_tc,
 	//[0x0a] = bus_hang_tc,
 	[0x0b] = v3_coredump_tc,
-	[0x0c] = v3_bus_dump_tc,
+	//[0x0c] = v3_bus_dump_tc,
 	//[0x0d] = ap_resume_tc,
+	[0xe] = v3_hif_dump_tc,
 };
 
 /*******************************************************************************
@@ -235,52 +236,37 @@ static int v3_coredump_tc(int par1, int par2, int par3)
 	return 0;
 }
 
-
-static int bus_dump_cb_read(void *priv_data, unsigned int addr, unsigned int *value)
+static int v3_hif_dump_tc(int par1, int par2, int par3)
 {
+#define TEST_ADDR	0x7C05B060
+#define TEST_WRITE_VALUE	0xffffffff
+	int ret, ret1, ret2;
+	unsigned int cr_read;
 
-	pr_info("[%s] read 0x%08x", (char*)priv_data, addr);
-	if (addr == 0x70028730) {
-		*value = 0;
-	} else if (addr == 0x7c023000) {
-		*value = 0xf;
-	} else if (addr == 0x7c011000) {
-		*value = 0x03010001;
-	} else {
-		*value = addr;
+	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI);
+	if (!ret) {
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI, 0x7c011000, &cr_read);
+		pr_info("[%s] read 0x7c011000=0x%08x, ret = %d\n", __func__, cr_read, ret);
+		ret1 = connv3_hif_dbg_write(
+			CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI,
+			TEST_ADDR, TEST_WRITE_VALUE);
+		ret2 = connv3_hif_dbg_read(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI, TEST_ADDR, &cr_read);
+		if (cr_read != TEST_WRITE_VALUE)
+			pr_info("[%s] write 0x%08x to 0x%08x fail, ret=[%d, %d]", __func__, TEST_ADDR, TEST_WRITE_VALUE, ret1, ret2);
+		ret1 = connv3_hif_dbg_write_mask(
+			CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI,
+			TEST_ADDR, 0xff, 0x0);
+		ret2 = connv3_hif_dbg_read(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI, TEST_ADDR, &cr_read);
+		if (cr_read != 0xffffff00)
+			pr_info("[%s] write mask fail, 0x%08x should be 0xffffff00, ret=[%d, %d]",
+				__func__, TEST_ADDR, ret1, ret2);
+		ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI);
+		pr_info("[%s] connv3_hif_dbg_end=%d\n", __func__, ret);
 	}
-	return 0;
-}
-
-static int bus_dump_cb_write(void *priv_data, unsigned int addr, unsigned int value)
-{
-	pr_info("[%s] write 0x%08x=0x%08x", (char*)priv_data, addr, value);
-	return 0;
-}
-
-static int bus_dump_cb_write_mask(void *priv_data, unsigned int addr, unsigned int mask, unsigned int value)
-{
-	pr_info("[%s] write 0x%08x=0x%08x w/ mask=0x%08x", (char*)priv_data, addr, value, mask);
-	return 0;
-}
-
-static int v3_bus_dump_tc(int par1, int par2, int par3)
-{
-	struct connv3_cr_cb bus_dump_cb = {
-		.read = bus_dump_cb_read,
-		.write = bus_dump_cb_write,
-		.write_mask = bus_dump_cb_write_mask,
-	};
-	char *test = "bus_test";
-	int ret;
-
-	pr_info("[%s][%d][%d][%d]", __func__, par1, par2, par3);
-
-	ret = connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI, &bus_dump_cb, test);
-	pr_info("[%s] ret=%d", __func__, ret);
 
 	return 0;
 }
+
 
 #if 0
 static int log_tc(int par1, int par2, int par3)

@@ -21,12 +21,12 @@
 ********************************************************************************
 */
 static int connv3_conninfra_bus_dump_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 static int connv3_conninfra_power_info_dump_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size);
 static int connv3_conninfra_power_info_reset_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 
 
 /*******************************************************************************
@@ -47,7 +47,7 @@ unsigned long mt6639_power_state_dump_data[POWER_STATE_DUMP_DATA_SIZE];
 ********************************************************************************
 */
 
-static int connv3_bus_check_ap2conn_on(struct connv3_cr_cb *cb, void *data)
+static int connv3_bus_check_ap2conn_on(struct connv3_cr_cb *cb)
 {
 	unsigned int trx;
 	int ret;
@@ -70,10 +70,11 @@ static int connv3_bus_check_ap2conn_on(struct connv3_cr_cb *cb, void *data)
 	return 0;
 }
 
-static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
+static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb)
 {
 	unsigned int value;
 	int ret, i;
+	void *data = cb->priv_data;
 
 	/* AP2CONN_INFRA OFF
 	 * 1.Check "AP2CONN_INFRA ON step is ok"
@@ -144,7 +145,7 @@ static int connv3_bus_check_ap2conn_off(struct connv3_cr_cb *cb, void *data)
 }
 
 int connv3_conninfra_bus_dump_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	int ret = 0, func_ret = 0;
 
@@ -156,39 +157,40 @@ int connv3_conninfra_bus_dump_mt6639(
 	}
 
 	pr_info("[V3_BUS] version=%s\n", MT6639_CONN_INFRA_BUS_DUMP_VERSION);
+
 	/* Dump after conn_infra_on is ready
 	 * - Connsys power debug - dump list
 	 * - Conninfra bus debug - status result
 	 * - conn_infra_cfg_clk - dump_list
 	 */
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_pwr_b, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_pwr_b, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_pwr_b dump err=[%d]", __func__, ret);
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_a, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_a, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_bus_a dump err=[%d]", __func__, ret);
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_cfg_clk_a, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_cfg_clk_a, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_cfg_clk_a dump err=[%d]", __func__, ret);
 
 	/* AP2CONN_INFRA OFF check */
-	func_ret = connv3_bus_check_ap2conn_off(cb, data);
+	func_ret = connv3_bus_check_ap2conn_off(cb);
 	if (func_ret == CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR)
 		return func_ret;
 
 	/* Dump conninfra off CR even timeout irq is triggerred. */
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_pwr_c, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_pwr_c, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_pwr_c dump err=[%d]", __func__, ret);
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_b, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_b, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_bus_b dump err=[%d]", __func__, ret);
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_cfg_clk_b, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_cfg_clk_b, cb);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_cfg_clk_b dump err=[%d]", __func__, ret);
 
 	/* Extra information dump */
-	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_extra, cb, data);
+	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_bus_extra, cb);
 	if (ret)
 		pr_notice("[%s] &mt6639_dmp_list_bus_extra dump err=[%d]", __func__, ret);
 
@@ -196,7 +198,7 @@ int connv3_conninfra_bus_dump_mt6639(
 }
 
 static int connv3_26m_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 #define POWER_STATE_BUFF_LENGTH	256
 	unsigned int i, str_len;
@@ -213,6 +215,8 @@ static int connv3_26m_dump(
 		"conn_pta ", "conn_spi ", " ", "conn_thm "};
 	char buf[POWER_STATE_BUFF_LENGTH] = {'\0'};
 	int ret;
+	void *data = cb->priv_data;
+
 	/* w	0x1806_015c[2:0]=3b'000
 	 * r	0x1806_0a04
 	 */
@@ -236,9 +240,10 @@ static int connv3_26m_dump(
 	return 0;
 }
 
-static inline void __sleep_count_trigger_read(struct connv3_cr_cb *cb, void *data)
+static inline void __sleep_count_trigger_read(struct connv3_cr_cb *cb)
 {
 	int ret;
+	void *data = cb->priv_data;
 
 	/* 0x7c06_0380[4] = 0
 	 * udelay 150
@@ -255,7 +260,7 @@ static inline void __sleep_count_trigger_read(struct connv3_cr_cb *cb, void *dat
 static char temp_buf[POWER_STATE_BUF_SIZE];
 
 int connv3_conninfra_sleep_count_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size)
 {
 #define CONN_32K_TICKS_PER_SEC (32768)
@@ -270,6 +275,7 @@ int connv3_conninfra_sleep_count_dump(
 	int ret;
 	char *buf_p = temp_buf;
 	int buf_sz = POWER_STATE_BUF_SIZE;
+	void *data = cb->priv_data;
 
 	/* Sleep count */
 	/* 1. Setup read select: 0x1806_0380[3:1]
@@ -283,7 +289,7 @@ int connv3_conninfra_sleep_count_dump(
 	 */
 	ret = cb->write_mask(
 		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x0 << 1));
-	__sleep_count_trigger_read(cb, data);
+	__sleep_count_trigger_read(cb);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &conninfra_sleep_cnt);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &conninfra_sleep_time);
 	if (ret) {
@@ -294,7 +300,7 @@ int connv3_conninfra_sleep_count_dump(
 
 	ret = cb->write_mask(
 		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x1U << 1));
-	__sleep_count_trigger_read(cb, data);
+	__sleep_count_trigger_read(cb);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &wf_sleep_cnt);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &wf_sleep_time);
 	if (ret) {
@@ -305,7 +311,7 @@ int connv3_conninfra_sleep_count_dump(
 
 	ret = cb->write_mask(
 		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x2U << 1));
-	__sleep_count_trigger_read(cb, data);
+	__sleep_count_trigger_read(cb);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &bt_sleep_cnt);
 	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &bt_sleep_time);
 	if (ret) {
@@ -418,18 +424,18 @@ print_partial_log:
 }
 
 int connv3_conninfra_power_info_dump_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size)
 {
 	int ret;
 
-	ret = connv3_26m_dump(drv_type, cb, data);
+	ret = connv3_26m_dump(drv_type, cb);
 	if (ret) {
 		pr_notice("[%s][%d] dump 26M fail, ret = %d", __func__, drv_type, ret);
 		return -1;
 	}
 
-	ret = connv3_conninfra_sleep_count_dump(drv_type, cb, data, buf, size);
+	ret = connv3_conninfra_sleep_count_dump(drv_type, cb, buf, size);
 	if (ret) {
 		pr_notice("[%s][%d] sleep count dump fail, ret = %d", __func__, drv_type, ret);
 		return -1;
@@ -438,11 +444,11 @@ int connv3_conninfra_power_info_dump_mt6639(
 }
 
 int connv3_conninfra_power_info_reset_mt6639(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	unsigned int ctl_bit;
 	int ret;
-
+	void *data = cb->priv_data;
 
 	/* switch to host side
 	 * HOST_CONN_INFRA_SLP_CNT_CTL (0x18060000 + 0x380)

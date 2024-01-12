@@ -94,20 +94,6 @@ struct connv3_whole_chip_rst_cb {
 /* PMIC state */
 void connv3_update_pmic_state(enum connv3_drv_type drv, char *buffer, int buf_sz);
 
-/* Conninfra bus dump
- * addr is connsys view
- */
-struct connv3_cr_cb {
-	int (*read)(void *priv_data, unsigned int addr, unsigned int *value);
-	int (*write)(void *priv_data, unsigned int addr, unsigned int value);
-	int (*write_mask)(void *priv_data, unsigned int addr, unsigned int mask, unsigned int value);
-};
-/* Return value:
- * - 0: no error
- * - CONNV3_BUS_CB_TOP_BUS_HANG ~ CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ
- */
-int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
-
 /* subsys callback register */
 struct connv3_pre_calibration_cb {
 	int (*pre_on_cb)(void);
@@ -127,6 +113,16 @@ struct connv3_power_on_cb {
 	int (*power_on_notify)(void);
 };
 
+/* CR relative callback function
+ * used by bus dump, hif dump, power dump
+ */
+struct connv3_cr_cb {
+	void *priv_data;
+	int (*read)(void *priv_data, unsigned int addr, unsigned int *value);
+	int (*write)(void *priv_data, unsigned int addr, unsigned int value);
+	int (*write_mask)(void *priv_data, unsigned int addr, unsigned int mask, unsigned int value);
+};
+
 /* Call from connv3 driver to subsys.
  * - power_dump_start
  * 	Return
@@ -138,12 +134,43 @@ struct connv3_power_on_cb {
  * - cr_cb: callback function to access CR through HIF
  */
 struct connv3_power_dump_cb {
-	int (*power_dump_start)(void);
-	void *priv_data;
-	struct connv3_cr_cb cr_cb;
-	void (*power_dump_end)(void);
+	int (*power_dump_start)(void *priv_data);
+	void (*power_dump_end)(void *priv_data);
 };
 
+/* Return value:
+ * - 0: no error
+ * - CONNV3_BUS_CB_TOP_BUS_HANG ~ CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ
+ */
+int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type);
+
+/* HIF dump
+ * addr is connsys view
+ */
+struct connv3_hif_dump_cb {
+	int (*hif_dump_start)(enum connv3_drv_type from_drv, void *priv_data);
+	int (*hif_dump_end)(enum connv3_drv_type from_drv, void *priv_data);
+};
+/* Return value:
+ * - 0: no error, to_drv could support hif debug dump
+ * - Others: to_drv not support hif debug dump
+ */
+int __must_check connv3_hif_dbg_start(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv);
+/* from_drv hint to_drv that hif debug dump is finished.
+ * to_drv could get fully control.
+ * 0: no error
+ * other: something wrong. Need check log.
+ */
+int connv3_hif_dbg_end(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv);
+int connv3_hif_dbg_read(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int *value);
+int connv3_hif_dbg_write(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int value);
+int connv3_hif_dbg_write_mask(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int mask, unsigned int value);
 
 struct connv3_sub_drv_ops_cb {
 	/* power on */
@@ -152,8 +179,11 @@ struct connv3_sub_drv_ops_cb {
 	struct connv3_whole_chip_rst_cb rst_cb;
 	/* calibration */
 	struct connv3_pre_calibration_cb pre_cal_cb;
+	struct connv3_cr_cb cr_cb;
 	/* power dump */
 	struct connv3_power_dump_cb pwr_dump_cb;
+	/* hif dump */
+	struct connv3_hif_dump_cb hif_dump_cb;
 };
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type drv_type, struct connv3_sub_drv_ops_cb *cb);

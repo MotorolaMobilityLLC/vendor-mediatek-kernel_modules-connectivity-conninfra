@@ -143,14 +143,14 @@ int connv3_trigger_whole_chip_rst(enum connv3_drv_type who, char *reason)
 }
 EXPORT_SYMBOL(connv3_trigger_whole_chip_rst);
 
-int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type)
 {
 	int ret;
 
 	/* Check invalid parameter */
-	if (drv_type >= CONNV3_DRV_TYPE_MAX || cb == NULL) {
-		pr_err("[%s] invalid parameter: drv_type=[%d] cb=[%p]",
-			__func__, drv_type, cb);
+	if (drv_type >= CONNV3_DRV_TYPE_MAX) {
+		pr_err("[%s] invalid parameter: drv_type=[%d]",
+			__func__, drv_type);
 		return -EINVAL;
 	}
 
@@ -159,7 +159,7 @@ int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb
 		return CONNV3_ERR_RST_ONGOING;
 	}
 
-	ret = connv3_core_bus_dump(drv_type, cb, priv_data);
+	ret = connv3_core_bus_dump(drv_type);
 	return ret;
 }
 EXPORT_SYMBOL(connv3_conninfra_bus_dump);
@@ -169,6 +169,111 @@ void connv3_update_pmic_state(enum connv3_drv_type drv, char *buffer, int buf_sz
 	connv3_core_update_pmic_status(drv, buffer, buf_sz);
 }
 EXPORT_SYMBOL(connv3_update_pmic_state);
+
+int connv3_hif_dbg_start(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv)
+{
+	/* Check invalid parameter */
+	if (from_drv >= CONNV3_DRV_TYPE_MAX || to_drv >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid parameter: drv_type=[%d][%d]",
+			__func__, from_drv, to_drv);
+		return -EINVAL;
+	}
+
+	if (connv3_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNV3_ERR_RST_ONGOING;
+	}
+
+	return connv3_core_hif_dbg_start(from_drv, to_drv);
+}
+EXPORT_SYMBOL(connv3_hif_dbg_start);
+
+int connv3_hif_dbg_end(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv)
+{
+	/* Check invalid parameter */
+	if (from_drv >= CONNV3_DRV_TYPE_MAX || to_drv >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid parameter: drv_type=[%d][%d]",
+			__func__, from_drv, to_drv);
+		return -EINVAL;
+	}
+
+	if (connv3_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNV3_ERR_RST_ONGOING;
+	}
+
+	return connv3_core_hif_dbg_end(from_drv, to_drv);
+}
+EXPORT_SYMBOL(connv3_hif_dbg_end);
+
+int connv3_hif_dbg_read(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int *value)
+{
+	/* Check invalid parameter */
+	if (from_drv >= CONNV3_DRV_TYPE_MAX || to_drv >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid parameter: drv_type=[%d][%d]",
+			__func__, from_drv, to_drv);
+		return -EINVAL;
+	}
+
+	if (value == NULL) {
+		pr_notice("[%s] value is NULL", __func__);
+		return -EINVAL;
+	}
+
+	if (connv3_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNV3_ERR_RST_ONGOING;
+	}
+
+	return connv3_core_hif_dbg_read(from_drv, to_drv,
+		addr, value);
+}
+EXPORT_SYMBOL(connv3_hif_dbg_read);
+
+int connv3_hif_dbg_write(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int value)
+{
+	/* Check invalid parameter */
+	if (from_drv >= CONNV3_DRV_TYPE_MAX || to_drv >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid parameter: drv_type=[%d][%d]",
+			__func__, from_drv, to_drv);
+		return -EINVAL;
+	}
+
+	if (connv3_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNV3_ERR_RST_ONGOING;
+	}
+
+	return connv3_core_hif_dbg_write(from_drv, to_drv, addr, value);
+}
+EXPORT_SYMBOL(connv3_hif_dbg_write);
+
+
+int connv3_hif_dbg_write_mask(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int mask, unsigned int value)
+{
+	/* Check invalid parameter */
+	if (from_drv >= CONNV3_DRV_TYPE_MAX || to_drv >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] invalid parameter: drv_type=[%d][%d]",
+			__func__, from_drv, to_drv);
+		return -EINVAL;
+	}
+
+	if (connv3_core_is_rst_locking()) {
+		DUMP_LOG();
+		return CONNV3_ERR_RST_ONGOING;
+	}
+
+	return connv3_core_hif_dbg_write_mask(from_drv, to_drv,
+		addr, mask, value);
+}
+EXPORT_SYMBOL(connv3_hif_dbg_write_mask);
+
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type type, struct connv3_sub_drv_ops_cb *cb)
 {

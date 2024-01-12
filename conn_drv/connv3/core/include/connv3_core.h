@@ -211,8 +211,7 @@ void connv3_core_pre_cal_blocking(void);
 
 int connv3_core_is_rst_locking(void);
 
-int connv3_core_bus_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+int connv3_core_bus_dump(enum connv3_drv_type drv_type);
 
 int connv3_core_reset_power_state(void);
 int connv3_core_dump_power_state(char *buf, unsigned int size);
@@ -221,6 +220,20 @@ int connv3_core_dump_power_state(char *buf, unsigned int size);
  * 2. Reset power state
  */
 int connv3_core_reset_and_dump_power_state(char *buf, unsigned int size);
+
+/* HIF dump
+ */
+int connv3_core_hif_dbg_start(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv);
+int connv3_core_hif_dbg_end(enum connv3_drv_type from_drv, enum connv3_drv_type to_drv);
+int connv3_core_hif_dbg_read(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int *value);
+int connv3_core_hif_dbg_write(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int value);
+int connv3_core_hif_dbg_write_mask(
+	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
+	unsigned int addr, unsigned int mask, unsigned int value);
 
 /*******************************************************************************
 *                              F U N C T I O N S

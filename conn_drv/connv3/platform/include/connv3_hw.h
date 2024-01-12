@@ -83,13 +83,13 @@ int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
 
-int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 /* power dump */
 int connv3_hw_power_info_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size);
 int connv3_hw_power_info_reset(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 
 /*******************************************************************************
 *                              F U N C T I O N S

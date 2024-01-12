@@ -37,9 +37,9 @@
 */
 
 struct connv3_platform_dbg_ops {
-	int (*dbg_bus_dump)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
-	int (*dbg_power_info_dump)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data, char *buf, unsigned int size);
-	int (*dbg_power_info_reset)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+	int (*dbg_bus_dump)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
+	int (*dbg_power_info_dump)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, char *buf, unsigned int size);
+	int (*dbg_power_info_reset)(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 };
 
 struct connv3_dbg_command {
@@ -75,13 +75,13 @@ struct connv3_dump_list {
 int connv3_hw_dbg_init(struct platform_device *pdev,
 			const struct connv3_plat_data* plat_data);
 int connv3_hw_dbg_deinit(void);
-int connv3_hw_dbg_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+int connv3_hw_dbg_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 int connv3_hw_dbg_dump_utility(
-	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb, void *data);
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb);
 int connv3_hw_dbg_power_info_dump(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,
 	char *buf, unsigned int size);
 int connv3_hw_dbg_power_info_reset(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 
 #endif /* _CONNV3_HW_DBG_H_ */
