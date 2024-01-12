@@ -633,8 +633,13 @@ do { \
 			"\t\t\t<reason>%s</reason>\n",
 			ctx->issue_info.reason);
 
-	FORMAT_STRING(buf, len, max_len, sec_len,
-		"\t\t\t<keyword>NULL</keyword>\n");
+	if (ctx->issue_info.issue_type == CONNV3_ISSUE_DRIVER_ASSERT)
+		FORMAT_STRING(buf, len, max_len, sec_len,
+			"\t\t\t<keyword>%s</keyword>\n", ctx->issue_info.reason);
+	else
+		FORMAT_STRING(buf, len, max_len, sec_len,
+			"\t\t\t<keyword>NULL</keyword>\n");
+
 	FORMAT_STRING(buf, len, max_len, sec_len,
 		"\t\t</client>\n\t</hint>\n");
 	/*<hint><client> section @}*/
