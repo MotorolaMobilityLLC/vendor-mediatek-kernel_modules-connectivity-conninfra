@@ -9,7 +9,7 @@
 #ifdef CONFIG_FPGA_EARLY_PORTING
 #define LEGACY_MODE	1
 #else
-#define LEGACY_MODE	0
+#define LEGACY_MODE	1
 #endif
 
 struct pos_check_item {
