@@ -1191,10 +1191,10 @@ void connsys_afe_sw_patch_mt6991_gen(void)
 	if (check == (0x1U << 4)) {
 		efuse_val = CONSYS_REG_READ(vir_addr_consys_gen_afe_efuse_base_addr +
 			CONSYS_GEN_AFE_EFUSE_OFFSET_ADDR);
-		efuse_val = (efuse_val & 0xf);
+		efuse_val = (efuse_val & 0xf) << 4;
 		pr_info("[%s] set efuse val=[0x%x]\n", __func__, efuse_val);
 		CONSYS_REG_WRITE_MASK(CONN_AFE_CTL_BASE +
-			CONSYS_GEN_RG_WBG_AFE_01_ADDR, efuse_val, 0xf);
+			CONSYS_GEN_RG_WBG_AFE_01_ADDR, efuse_val, 0xf0);
 	}
 
 	iounmap(vir_addr_consys_gen_afe_efuse_base_addr);
