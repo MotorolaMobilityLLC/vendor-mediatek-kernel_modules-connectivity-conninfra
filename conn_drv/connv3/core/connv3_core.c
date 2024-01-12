@@ -172,7 +172,9 @@ static unsigned int opfunc_get_current_status(void)
 	unsigned int i;
 
 	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++)
-		ret |= (g_connv3_ctx.drv_inst[i].drv_status << i);
+		if (g_connv3_ctx.drv_inst[i].drv_status == DRV_STS_POWER_ON ||
+			g_connv3_ctx.drv_inst[i].drv_status == DRV_STS_PRE_POWER_ON)
+			ret |= (0x1 << i);
 
 	return ret;
 }
