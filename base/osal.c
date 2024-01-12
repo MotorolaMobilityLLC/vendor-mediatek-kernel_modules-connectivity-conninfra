@@ -67,12 +67,6 @@
 ********************************************************************************
 */
 
-int ftrace_flag = 1;
-
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-static unsigned long __read_mostly mark_addr;
-#endif
-static unsigned int g_pid;
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1237,69 +1231,6 @@ unsigned long long osal_elapsed_us(unsigned long long ts, unsigned long usec)
 	return (current_ts*1000000 + current_usec) - (ts*1000000 + usec);
 }
 
-void osal_buffer_dump(const unsigned char *buf,
-			const unsigned char *title, const unsigned int len,
-			const unsigned int limit)
-{
-	int k;
-	unsigned int dump_len;
-	char str[DBG_LOG_STR_SIZE] = {""};
-	int strlen = 0;
-
-	pr_info("[%s] len=%d, limit=%d, start dump\n", title, len, limit);
-
-	dump_len = ((limit != 0) && (len > limit)) ? limit : len;
-	for (k = 0; k < dump_len; k++) {
-		if ((k+1) % 16 != 0) {
-			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
-						"%02x ", buf[k]);
-		} else {
-			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
-						"%02x ", buf[k]);
-
-			pr_info("%s", str);
-			strlen = 0;
-		}
-	}
-	if (k % 16 != 0)
-		pr_info("%s\n", str);
-
-	pr_info("end of dump\n");
-}
-
-void osal_buffer_dump_data(const unsigned int *buf,
-			const unsigned char *title, const unsigned int len,
-			const unsigned int limit,
-			const int flag)
-{
-	int k;
-	unsigned int dump_len;
-	char str[DBG_LOG_STR_SIZE] = {""};
-	int strlen = 0;
-
-	dump_len = ((limit != 0) && (len > limit)) ? limit : len;
-	for (k = 0; k < dump_len; k++) {
-		if (((k+1) % 8 != 0) && (k < (dump_len - 1))) {
-			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
-							"0x%08x,", buf[k]);
-		} else {
-			strlen += osal_snprintf(str + strlen, DBG_LOG_STR_SIZE - strlen,
-							"0x%08x,", buf[k]);
-			if (flag)
-				osal_ftrace_print("%s%s", title, str);
-			else
-				pr_info("%s%s", title, str);
-			strlen = 0;
-		}
-	}
-	if (k % 8 != 0) {
-		if (flag)
-			osal_ftrace_print("%s%s", title, str);
-		else
-			pr_info("%s%s", title, str);
-	}
-}
-
 unsigned int osal_op_get_id(P_OSAL_OP pOp)
 {
 	return (pOp) ? pOp->op.opId : 0xFFFFFFFF;
@@ -1317,37 +1248,6 @@ void osal_op_raise_signal(P_OSAL_OP pOp, int result)
 		pOp->result = result;
 		osal_raise_signal(&pOp->signal);
 	}
-}
-
-int osal_ftrace_print(const char *str, ...)
-{
-	int ret = 0;
-#ifdef CONFIG_TRACING
-	va_list args;
-	char tempString[DBG_LOG_STR_SIZE];
-
-	if (ftrace_flag) {
-		va_start(args, str);
-		ret = vsnprintf(tempString, DBG_LOG_STR_SIZE, str, args);
-		va_end(args);
-		if (ret < 0)
-			pr_notice("%s ret = %d failed\n", __func__, ret);
-		else
-			trace_printk("%s\n", tempString);
-	}
-#endif
-	return ret;
-}
-
-int osal_ftrace_print_ctrl(int flag)
-{
-#ifdef CONFIG_TRACING
-	if (flag)
-		ftrace_flag = 1;
-	else
-		ftrace_flag = 0;
-#endif
-	return 0;
 }
 
 void osal_set_op_result(P_OSAL_OP pOp, int result)
@@ -1511,104 +1411,6 @@ void osal_op_history_save(struct osal_op_history *log_history, P_OSAL_OP pOp)
 	entry->ts = sec;
 	entry->usec = usec;
 	spin_unlock_irqrestore(&(log_history->lock), flags);
-}
-
-static inline void osal_systrace_prepare(void)
-{
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 0))
-	if (unlikely(mark_addr == 0))
-		mark_addr = kallsyms_lookup_name("tracing_mark_write");
-#endif
-	if (unlikely(g_pid == 0))
-		g_pid = task_pid_nr(current);
-}
-
-static void osal_systrace_b(const char *log)
-{
-	osal_systrace_prepare();
-	preempt_disable();
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-	KERNEL_event_trace_printk(mark_addr, "B|%d|%s\n", g_pid, log);
-#endif
-	preempt_enable();
-}
-
-
-static void osal_systrace_e(void)
-{
-	preempt_disable();
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-	KERNEL_event_trace_printk(mark_addr, "E\n");
-#endif
-	preempt_enable();
-}
-
-static void osal_systrace_c(int val, const char *log)
-{
-	osal_systrace_prepare();
-	preempt_disable();
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-	KERNEL_event_trace_printk(mark_addr, "C|%d|%s|%d\n", g_pid, log, val);
-#endif
-	preempt_enable();
-}
-
-void osal_systrace_major_b(const char *fmt, ...)
-{
-	char log[DBG_LOG_STR_SIZE];
-	va_list args;
-
-	memset(log, ' ', sizeof(log));
-	va_start(args, fmt);
-	if (vsnprintf(log, sizeof(log), fmt, args) < 0)
-		pr_err("[%s:%d] vsnprintf error", __func__, __LINE__);
-	va_end(args);
-	osal_systrace_b(log);
-}
-
-void osal_systrace_major_e(void)
-{
-	osal_systrace_e();
-}
-
-void osal_systrace_minor_b(const char *fmt, ...)
-{
-	char log[DBG_LOG_STR_SIZE];
-	va_list args;
-
-	if (!ftrace_flag)
-		return;
-
-	memset(log, ' ', sizeof(log));
-	va_start(args, fmt);
-	if (vsnprintf(log, sizeof(log), fmt, args) < 0)
-		pr_err("[%s:%d] vsnprintf error", __func__, __LINE__);
-	va_end(args);
-	osal_systrace_b(log);
-
-}
-
-void osal_systrace_minor_e(void)
-{
-	if (!ftrace_flag)
-		return;
-	osal_systrace_e();
-}
-
-void osal_systrace_minor_c(int val, const char *fmt, ...)
-{
-	char log[DBG_LOG_STR_SIZE];
-	va_list args;
-
-	if (!ftrace_flag)
-		return;
-
-	memset(log, ' ', sizeof(log));
-	va_start(args, fmt);
-	if (vsnprintf(log, sizeof(log), fmt, args) < 0)
-		pr_err("[%s:%d] vsnprintf error", __func__, __LINE__);
-	va_end(args);
-	osal_systrace_c(val, log);
 }
 
 int osal_wake_lock_init(struct osal_wake_lock *pLock)
