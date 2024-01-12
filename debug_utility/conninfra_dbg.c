@@ -34,6 +34,7 @@
 
 static struct proc_dir_entry *g_conninfra_dbg_entry;
 
+#if CONNINFRA_DBG_SUPPORT
 static ssize_t conninfra_dbg_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos);
 static ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
@@ -69,11 +70,13 @@ static int conninfra_dbg_thermal_query(int par1, int count, int interval);
 static int conninfra_dbg_thermal_ctrl(int par1, int par2, int par3);
 
 static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3);
+#endif /* CONNINFRA_DBG_SUPPORT */
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
+#if CONNINFRA_DBG_SUPPORT
 	[0x0] = conninfra_dbg_hwver_get,
 	[0x1] = conninfra_dbg_chip_rst,
 	[0x2] = conninfra_dbg_read_chipid,
@@ -98,6 +101,7 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0x11] = conninfra_dbg_fw_log_dump_emi,
 #endif
 	[0x12] = conninfra_dbg_connsys_emi_dump,
+#endif /* CONNINFRA_DBG_SUPPORT */
 	[0x13] = conninfra_dbg_connsys_coredump_ctrl,
 	[0x14] = conninfra_dbg_connsys_coredump_mode_query,
 };
@@ -108,6 +112,7 @@ char *g_dump_buf_ptr;
 int g_dump_buf_len;
 static OSAL_SLEEPABLE_LOCK g_dump_lock;
 
+#if CONNINFRA_DBG_SUPPORT
 int conninfra_dbg_hwver_get(int par1, int par2, int par3)
 {
 	pr_info("query chip version\n");
@@ -400,6 +405,7 @@ static int conninfra_dbg_connsys_emi_dump(int par1, int par2, int par3)
 	osal_free(buf);
 	return 0;
 }
+#endif /* CONNINFRA_DBG_SUPPORT */
 
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3)
 {
@@ -524,8 +530,8 @@ ssize_t conninfra_dbg_write(struct file *filp, const char __user *buffer, size_t
 #endif
 	/* For user load, only 0x13 is allowed to execute */
 	/* allow command 0x2e to enable catch connsys log on userload  */
-	if (0 == dbg_enabled && (x != 0x13)) {
-		pr_info("please enable WMT debug first\n\r");
+	if (0 == dbg_enabled && (x != 0x13) && (x != 0x14)) {
+		pr_info("please enable conninfra debug first\n\r");
 		return len;
 	}
 
