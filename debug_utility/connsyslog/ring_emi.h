@@ -17,7 +17,7 @@ struct ring_emi {
 	void *write;
 	/* addr storing the next readable pos, except when read == write as buffer empty */
 	void *read;
-	/* must be power of 2 */
+	/* must be power of 2 => remove the limitation (2019/12/23)*/
 	unsigned int max_size;
 };
 
@@ -37,17 +37,22 @@ unsigned int ring_emi_read_prepare(unsigned int sz, struct ring_emi_segment *seg
 #define ring_emi_read_all_prepare(seg, ring_emi)  ring_emi_read_prepare((ring_emi)->max_size, seg, ring_emi)
 unsigned int ring_emi_write_prepare(unsigned int sz, struct ring_emi_segment *seg, struct ring_emi *ring_emi);
 
-/* making sure max_size is power of 2 */
-#define RING_EMI_VALIDATE_SIZE(max_size) WARN_ON(!max_size || (max_size & (max_size - 1)))
+#define RING_EMI_VALIDATE_SIZE(max_size) WARN_ON(!max_size)
 
 #define RING_EMI_EMPTY(ring_emi) (EMI_READ32((ring_emi)->read) == EMI_READ32((ring_emi)->write))
 /* equation works even when write overflow */
 #define RING_EMI_SIZE(ring_emi) (EMI_READ32((ring_emi)->write) - EMI_READ32((ring_emi)->read))
+#define RING_EMI_FULL(ring_emi) (RING_EMI_SIZE(ring_emi) == (ring_emi)->max_size)
+#if 0
 #ifdef ROUND_REPEAT
-#define RING_EMI_FULL(ring_emi) (((EMI_READ32((ring_emi)->write) + 1) & ((ring_emi)->max_size - 1)) \
+#define RING_EMI_FULL(ring_emi) \
+	(((EMI_READ32((ring_emi)->write) + 1) >= (ring_emi)->max_size) ? \
+	(EMI_READ32((ring_emi)->write) + 1 - (ring_emi)->max_size) : \
+	(EMI_READ32((ring_emi)->write) + 1) \
 	== EMI_READ32((ring_emi)->read))
 #else
 #define RING_EMI_FULL(ring_emi) (RING_EMI_SIZE(ring_emi) == (ring_emi)->max_size)
+#endif
 #endif
 
 #define RING_EMI_READ_FOR_EACH(_sz, _seg, _ring_emi) \

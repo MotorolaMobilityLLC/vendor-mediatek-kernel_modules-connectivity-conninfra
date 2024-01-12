@@ -53,31 +53,6 @@
 ********************************************************************************
 */
 
-enum conn_semaphore_type
-{
-	CONN_SEMA_CHIP_POWER_ON_INDEX = 0,
-	CONN_SEMA_CALIBRATION_INDEX = 1,
-	CONN_SEMA_FW_DL_INDEX = 2,
-	CONN_SEMA_CLOCK_SWITCH_INDEX = 3,
-	CONN_SEMA_CCIF_INDEX = 4,
-	CONN_SEMA_COEX_INDEX = 5,
-	CONN_SEMA_USB_EP0_INDEX = 6,
-	CONN_SEMA_USB_SHARED_INFO_INDEX = 7,
-	CONN_SEMA_USB_SUSPEND_INDEX = 8,
-	CONN_SEMA_USB_RESUME_INDEX = 9,
-	CONN_SEMA_PCIE_INDEX = 10,
-	CONN_SEMA_RFSPI_INDEX = 11,
-	CONN_SEMA_EFUSE_INDEX = 12,
-	CONN_SEMA_THERMAL_INDEX = 13,
-	CONN_SEMA_FLASH_INDEX = 14,
-	CONN_SEMA_DEBUG_INDEX = 15,
-	CONN_SEMA_WIFI_LP_INDEX = 16,
-	CONN_SEMA_PATCH_DL_INDEX = 17,
-	CONN_SEMA_SHARED_VAR_INDEX = 18,
-	CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX = 19,
-	CONN_SEMA_NUM_MAX = 32 /* can't be omitted */
-};
-
 typedef int(*CONSYS_PLT_CLK_GET_FROM_DTS) (struct platform_device *pdev);
 typedef int(*CONSYS_PLT_READ_REG_FROM_DTS) (struct platform_device *pdev);
 
@@ -106,9 +81,6 @@ typedef void(*CONSYS_PLT_CLOCK_FAIL_DUMP) (void);
 typedef int(*CONSYS_PLT_IS_CONNSYS_REG) (unsigned int addr);
 
 
-typedef int(*CONSYS_PLT_SEMA_ACQUIRE_TIMEOUT)(enum conn_semaphore_type index, unsigned int usec);
-typedef void (*CONSYS_PLT_SEMA_RELEASE)(enum conn_semaphore_type index);
-
 typedef int(*CONSYS_PLT_SPI_READ)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 typedef int(*CONSYS_PLT_SPI_WRITE)(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
 
@@ -131,17 +103,12 @@ typedef int(*CONSYS_PLT_BUS_CLOCK_CTRL)(enum consys_drv_type drv_type, unsigned 
 struct consys_hw_ops_struct {
 	/* load from dts */
 	CONSYS_PLT_CLK_GET_FROM_DTS consys_plt_clk_get_from_dts;
-	/*CONSYS_IC_PMIC_GET_FROM_DTS consys_ic_pmic_get_from_dts;*/
-	//CONSYS_PLT_READ_REG_FROM_DTS consys_plt_read_reg_from_dts;
-	/* irq, do we need? */
-	/*CONSYS_IC_READ_IRQ_INFO_FROM_DTS consys_ic_read_irq_info_from_dts;*/
 
 	/* clock */
 	CONSYS_PLT_CLOCK_BUFFER_CTRL consys_plt_clock_buffer_ctrl;
 	CONSYS_PLT_CO_CLOCK_TYPE consys_plt_co_clock_type;
 
 	/* POS */
-	/*CONSYS_IC_HW_SPM_CLK_GATING_ENABLE consys_ic_hw_spm_clk_gating_enable;*/
 	CONSYS_PLT_CONNINFRA_ON_POWER_CTRL consys_plt_conninfra_on_power_ctrl;
 	CONSYS_PLT_SET_IF_PINMUX consys_plt_set_if_pinmux;
 
@@ -159,17 +126,11 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_CONNINFRA_WAKEUP consys_plt_conninfra_wakeup;
 	CONSYS_PLT_CONNINFRA_SLEEP consys_plt_conninfra_sleep;
 	CONSYS_PLT_IS_RC_MODE_ENABLE consys_plt_is_rc_mode_enable;
-	/*IC_BT_WIFI_SHARE_V33_SPIN_LOCK_INIT ic_bt_wifi_share_v33_spin_lock_init;*/
-	/*CONSYS_PLT_FORCE_TRIGGER_ASSERT_DEBUG_PIN consys_plt_force_trigger_assert_debug_pin;*/
 
 	CONSYS_PLT_CHECK_REG_READABLE consys_plt_check_reg_readable;
 	/* debug */
 	CONSYS_PLT_CLOCK_FAIL_DUMP consys_plt_clock_fail_dump;
 	CONSYS_PLT_GET_HW_VER consys_plt_get_hw_ver;
-
-	/* for semaphore */
-	CONSYS_PLT_SEMA_ACQUIRE_TIMEOUT consys_plt_sema_acquire_timeout;
-	CONSYS_PLT_SEMA_RELEASE consys_plt_sema_release;
 
 	/* For SPI operation */
 	CONSYS_PLT_SPI_READ consys_plt_spi_read;
@@ -252,9 +213,6 @@ int consys_hw_is_connsys_reg(phys_addr_t addr);
  */
 int consys_hw_is_bus_hang(void);
 int consys_hw_dump_bus_status(void);
-
-int consys_hw_sema_acquire_timeout(enum conn_semaphore_type index, unsigned int usec);
-void consys_hw_sema_release(enum conn_semaphore_type index);
 
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);

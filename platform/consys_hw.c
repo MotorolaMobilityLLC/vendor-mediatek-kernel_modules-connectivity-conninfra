@@ -198,6 +198,8 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 		ret = _consys_hw_conninfra_wakeup();
 		if (consys_hw_ops->consys_plt_subsys_status_update)
 			consys_hw_ops->consys_plt_subsys_status_update(false, off_radio);
+		if (consys_hw_ops->consys_plt_spi_master_cfg)
+			consys_hw_ops->consys_plt_spi_master_cfg(next_status);
 		if (consys_hw_ops->consys_plt_low_power_setting)
 			consys_hw_ops->consys_plt_low_power_setting(curr_status, next_status);
 		if (ret == 0)
@@ -230,15 +232,11 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 		if (consys_hw_ops->consys_plt_set_if_pinmux)
 			consys_hw_ops->consys_plt_set_if_pinmux(1);
 
-		udelay(500);
 		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl)
 			consys_hw_ops->consys_plt_conninfra_on_power_ctrl(1);
 
-		/* Wait 5ms for CONNSYS XO clock ready */
-		mdelay(6);
-
 		if (consys_hw_ops->consys_plt_polling_consys_chipid)
-			consys_hw_ops->consys_plt_polling_consys_chipid();
+			ret = consys_hw_ops->consys_plt_polling_consys_chipid();
 
 		/* POS PART 3:
 		 * 1. Set connsys EMI mapping
@@ -331,20 +329,6 @@ int consys_hw_dump_power_state(void)
 	if (consys_hw_ops && consys_hw_ops->consys_plt_power_state)
 		consys_hw_ops->consys_plt_power_state();
 	return 0;
-}
-
-int consys_hw_sema_acquire_timeout(enum conn_semaphore_type index, unsigned int usec)
-{
-	if (consys_hw_ops->consys_plt_sema_acquire_timeout && consys_hw_ops->consys_plt_sema_release)
-		return consys_hw_ops->consys_plt_sema_acquire_timeout(index, usec);
-	else
-		return CONN_SEMA_GET_FAIL;
-}
-
-void consys_hw_sema_release(enum conn_semaphore_type index)
-{
-	if (consys_hw_ops->consys_plt_sema_acquire_timeout && consys_hw_ops->consys_plt_sema_release)
-		consys_hw_ops->consys_plt_sema_release(index);
 }
 
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)

@@ -1013,7 +1013,7 @@ static int opfunc_subdrv_cal_pwr_on(struct msg_op_data *op)
 
 static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op)
 {
-	int ret;
+	int ret = 0;
 	unsigned int drv_type = op->op_data[0];
 	struct subsys_drv_inst *drv_inst;
 
@@ -1028,7 +1028,7 @@ static int opfunc_subdrv_cal_do_cal(struct msg_op_data *op)
 	}
 
 	pr_info("[pre_cal][%s] [%s] DONE", __func__, drv_thread_name[drv_type]);
-	return 0;
+	return ret;
 }
 
 static int opfunc_subdrv_therm_ctrl(struct msg_op_data *op)

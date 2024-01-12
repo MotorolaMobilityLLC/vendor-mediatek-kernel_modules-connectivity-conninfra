@@ -1111,7 +1111,6 @@ static int conndump_dump_mem_regions(struct connsys_dump_ctx* ctx)
 	unsigned int map_length;
 	void __iomem *map_base;
 	unsigned int* dump_buff = NULL;
-	unsigned int copy_idx;
 
 	pr_info("[%s] dump_regions_num=%d\n", __func__, ctx->dump_regions_num);
 	/* Check reg readable */
@@ -1151,9 +1150,7 @@ static int conndump_dump_mem_regions(struct connsys_dump_ctx* ctx)
 				pr_err("Remap %s fail.\n", ctx->dump_regions[idx].name);
 				goto next_mem_region;
 			}
-			for (copy_idx = 0; copy_idx < map_length; copy_idx += 4) {
-				dump_buff[(copy_idx >> 2)] = (*((volatile unsigned int *)(map_base + copy_idx)));
-			}
+			memcpy_fromio(dump_buff, map_base, map_length);
 			conndump_unmap(ctx, map_base);
 			ret = conndump_netlink_send_to_native(
 				ctx->conn_type,
