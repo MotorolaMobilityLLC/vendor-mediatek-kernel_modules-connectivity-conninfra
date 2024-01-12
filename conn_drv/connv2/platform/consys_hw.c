@@ -801,6 +801,19 @@ unsigned int consys_hw_get_support_drv(void)
 	return g_support_drv;
 }
 
+int consys_hw_register_irq(struct platform_device *pdev)
+{
+	if (consys_hw_ops->consys_plt_register_irq)
+		return consys_hw_ops->consys_plt_register_irq(pdev);
+	return 0;
+}
+
+void consys_hw_unregister_irq(void)
+{
+	if (consys_hw_ops->consys_plt_unregister_irq)
+		consys_hw_ops->consys_plt_unregister_irq();
+}
+
 int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb)
 {
 	int ret = 0;
@@ -814,6 +827,9 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 
 	/* Get supported drv from DTS */
 	g_support_drv = consys_hw_drv_support(pdev);
+
+	/* Register irq */
+	consys_hw_register_irq(pdev);
 
 	/* Register mng init */
 	if (consys_reg_mng_init(pdev, g_conninfra_plat_data) != 0) {
@@ -879,6 +895,7 @@ int consys_hw_deinit(void)
 	else
 		pr_info("consys_plt_clk_detach is null");
 
+	consys_hw_unregister_irq();
 	clock_mng_deinit();
 	pmic_mng_deinit();
 
