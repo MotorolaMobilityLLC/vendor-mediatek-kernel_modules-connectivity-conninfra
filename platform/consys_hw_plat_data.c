@@ -16,15 +16,9 @@
 */
 
 /* Platform data */
-#if IS_ENABLED(CONFIG_MTK_COMBO_CHIP_CONSYS_6885)
-extern struct conninfra_plat_data mt6885_plat_data;
-#endif
-#if IS_ENABLED(CONFIG_MTK_COMBO_CHIP_CONSYS_6893)
-extern struct conninfra_plat_data mt6893_plat_data;
-#endif
-#if IS_ENABLED(CONFIG_MTK_COMBO_CHIP_CONSYS_6877)
-extern struct conninfra_plat_data mt6877_plat_data;
-#endif
+struct conninfra_plat_data __weak mt6885_plat_data = {};
+struct conninfra_plat_data __weak mt6893_plat_data = {};
+struct conninfra_plat_data __weak mt6877_plat_data = {};
 
 #ifdef CONFIG_OF
 const struct of_device_id apconninfra_of_ids[] = {
