@@ -156,8 +156,6 @@ static struct devapc_vio_callbacks conninfra_devapc_handle = {
 	.debug_dump = conninfra_devapc_violation_cb,
 };
 #endif
-/* mmap */
-int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma);
 ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 int connv2_dump_power_state(uint8_t *buf, u32 buf_sz);
 
@@ -176,7 +174,6 @@ struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
 
 	/* coredump */
 	.set_coredump_mode = connv2_set_coredump_mode,
-	.coredump_mmap = connv2_mmap,
 	.coredump_emi_read = connv2_coredump_emi_read,
 
 	/* dump power state */
@@ -350,60 +347,6 @@ static void conninfra_register_thermal_callback(void)
 static void conninfra_clock_fail_dump_cb(void)
 {
 	conninfra_core_clock_fail_dump_cb();
-}
-
-int connv2_mmap(struct file *pFile, struct vm_area_struct *pVma)
-{
-	unsigned long bufId = pVma->vm_pgoff;
-	struct consys_emi_addr_info* addr_info = emi_mng_get_phy_addr();
-	unsigned int start_offset = 0, end_offset = 0;
-	unsigned long size = 0;
-	phys_addr_t emi_dump_addr = 0;
-
-	if (addr_info == NULL)
-		return -EINVAL;
-	emi_dump_addr = addr_info->emi_ap_phy_addr;
-
-	coredump_mng_get_emi_dump_offset(&start_offset, &end_offset);
-	size = end_offset - start_offset;
-
-	pr_info("conninfra_mmap start:%lu end:%lu size: %lu buffer id=%lu"
-		" emi dump section=[0x%lx][0x%08x, 0x%08x][0x%08x]\n",
-		pVma->vm_start, pVma->vm_end,
-		pVma->vm_end - pVma->vm_start, bufId,
-		emi_dump_addr, start_offset, end_offset, size);
-
-	if (end_offset <= start_offset ||
-	    start_offset >= addr_info->emi_size ||
-	    end_offset > addr_info->emi_size)
-		return -EINVAL;
-
-	if (bufId == 0) {
-		if (pVma->vm_end - pVma->vm_start > size)
-			return -EINVAL;
-		emi_dump_addr += start_offset;
-
-		pr_info("emi_dump_addr=[%lx]\n", emi_dump_addr);
-		if (remap_pfn_range(pVma, pVma->vm_start,
-			(emi_dump_addr >> PAGE_SHIFT),
-			size, pVma->vm_page_prot))
-			return -EAGAIN;
-		return 0;
-	} else if (bufId == 1) {
-		if (addr_info->md_emi_size == 0 ||
-		    pVma->vm_end - pVma->vm_start > addr_info->md_emi_size)
-			return -EINVAL;
-		pr_info("MD direct path size=%u map size=%lu\n",
-			addr_info->md_emi_size,
-			pVma->vm_end - pVma->vm_start);
-		if (remap_pfn_range(pVma, pVma->vm_start,
-			addr_info->md_emi_phy_addr >> PAGE_SHIFT,
-			pVma->vm_end - pVma->vm_start, pVma->vm_page_prot))
-			return -EAGAIN;
-		return 0;
-	}
-	/* Invalid bufId */
-	return -EINVAL;
 }
 
 ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
