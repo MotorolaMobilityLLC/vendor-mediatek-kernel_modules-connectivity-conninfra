@@ -391,6 +391,7 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 		atomic_set(&g_conninfra_ctx.power_dump_enable, 0);
 		if (g_conninfra_ctx.infra_drv_status == DRV_STS_POWER_OFF) {
 			pr_warn("Connsys already off, do nothing for force off\n");
+			osal_unlock_sleepable_lock(&infra_ctx->core_lock);
 			return 0;
 		}
 		/* Turn off subsys VCN and update record */
