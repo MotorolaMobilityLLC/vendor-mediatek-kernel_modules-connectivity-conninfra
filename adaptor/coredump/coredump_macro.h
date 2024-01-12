@@ -19,6 +19,10 @@ static int conndump_nl_reset_##name(struct sk_buff *skb, struct genl_info *info)
 #define COREDUMP_NETLINK_POLICY_DEF
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0))
+#define COREDUMP_NETLINK_POLICY_DEF_FOR_GNL_FAMILY .policy = conndump_genl_policy,
+#endif
+
 #define DECLARE_COREDUMP_NETLINK_OPS(name) \
 static struct genl_ops conndump_gnl_ops_array_##name[] = { \
 	{ \
@@ -63,6 +67,7 @@ static struct genl_ops conndump_gnl_ops_array_##name[] = { \
 			.maxattr = CONNDUMP_ATTR_MAX, \
 			.ops = conndump_gnl_ops_array_##dname, \
 			.n_ops = ARRAY_SIZE(conndump_gnl_ops_array_##dname), \
+			COREDUMP_NETLINK_POLICY_DEF_FOR_GNL_FAMILY \
 		}, \
 		.status = LINK_STATUS_INIT, \
 		.num_bind_process = 0, \
