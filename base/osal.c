@@ -1639,3 +1639,63 @@ void osal_systrace_minor_c(int val, const char *fmt, ...)
 	osal_systrace_c(val, log);
 }
 
+int osal_wake_lock_init(struct osal_wake_lock *pLock)
+{
+	if (!pLock)
+		return -1;
+	if (pLock->init_flag == 0) {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 149))
+		pLock->wake_lock = wakeup_source_register(NULL, pLock->name);
+#else
+		pLock->wake_lock = wakeup_source_register(pLock->name);
+#endif
+		pLock->init_flag = 1;
+	}
+	return 0;
+}
+
+int osal_wake_lock_deinit(struct osal_wake_lock *pLock)
+{
+	if (!pLock)
+		return -1;
+	if (pLock->init_flag == 1) {
+		wakeup_source_unregister(pLock->wake_lock);
+		pLock->init_flag = 0;
+	} else
+		pr_info("%s: wake_lock is not initialized!\n", __func__);
+	return 0;
+}
+
+int osal_wake_lock(struct osal_wake_lock *pLock)
+{
+	if (!pLock)
+		return -1;
+	if (pLock->init_flag == 1)
+		__pm_stay_awake(pLock->wake_lock);
+	else
+		pr_info("%s: wake_lock is not initialized!\n", __func__);
+	return 0;
+}
+
+int osal_wake_unlock(struct osal_wake_lock *pLock)
+{
+	if (!pLock)
+		return -1;
+	if (pLock->init_flag == 1)
+		__pm_relax(pLock->wake_lock);
+	else
+		pr_info("%s: wake_lock is not initialized!\n", __func__);
+	return 0;
+}
+
+int osal_wake_lock_count(struct osal_wake_lock *pLock)
+{
+	int count = 0;
+	if (!pLock)
+		return -1;
+	if (pLock->init_flag == 1)
+		count = pLock->wake_lock->active;
+	else
+		pr_info("%s: wake_lock is not initialized!\n", __func__);
+	return count;
+}

@@ -141,6 +141,8 @@ typedef unsigned long timer_handler_arg;
 #define GET_HANDLER_DATA(arg, data) (data = arg)
 #endif
 
+#define MAX_WAKE_LOCK_NAME_LEN 20
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -271,6 +273,12 @@ struct osal_op_history {
 	struct ring dump_ring_buffer;
 	struct work_struct dump_work;
 	unsigned char name[MAX_HISTORY_NAME_LEN];
+};
+
+struct osal_wake_lock {
+	struct wakeup_source *wake_lock;
+	unsigned char name[MAX_WAKE_LOCK_NAME_LEN];
+	int init_flag;
 };
 
 /*******************************************************************************
@@ -423,6 +431,12 @@ void osal_systrace_major_e(void);
 void osal_systrace_minor_b(const char *name, ...);
 void osal_systrace_minor_e(void);
 void osal_systrace_minor_c(int val, const char *name, ...);
+
+int osal_wake_lock_init(struct osal_wake_lock *plock);
+int osal_wake_lock(struct osal_wake_lock *plock);
+int osal_wake_unlock(struct osal_wake_lock *plock);
+int osal_wake_lock_count(struct osal_wake_lock *plock);
+int osal_wake_lock_deinit(struct osal_wake_lock *plock);
 
 /*******************************************************************************
 *                              F U N C T I O N S
