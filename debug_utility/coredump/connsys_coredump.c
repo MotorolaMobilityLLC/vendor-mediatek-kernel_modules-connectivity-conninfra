@@ -1578,7 +1578,7 @@ void* connsys_coredump_init(
 	/* EMI init */
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, &emi_base, &emi_size);
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_MCIF, NULL, &mcif_emi_size);
-	pr_info("Get emi_base=0x%x emi_size=%d\n", emi_base, emi_size);
+	pr_info("conn_type=%d Get emi_base=0x%x emi_size=%d\n", conn_type, emi_base, emi_size);
 	ctx->full_emi_size = emi_size;
 	ctx->emi_phy_addr_base = config->start_offset + emi_base;
 	ctx->emi_size = config->size;
