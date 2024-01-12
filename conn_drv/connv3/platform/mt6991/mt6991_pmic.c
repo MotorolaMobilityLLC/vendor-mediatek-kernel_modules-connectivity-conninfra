@@ -286,6 +286,12 @@ int connv3_plt_pmic_initial_setting_mt6991(
 
 	g_dev_cb = dev_cb;
 
+	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(g_pinctrl_ptr)) {
+		pr_err("[%s] Get pinctrl fail, %ld", __func__, PTR_ERR(g_pinctrl_ptr));
+		return -1;
+	}
+
 	g_pin_por_reset_trigger = pinctrl_lookup_state(
 		g_pinctrl_ptr, "connsys-pin-por-reset-trigger");
 	g_pin_por_reset_done = pinctrl_lookup_state(
