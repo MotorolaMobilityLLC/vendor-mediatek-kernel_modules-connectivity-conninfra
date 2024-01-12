@@ -21,6 +21,7 @@
 #include "msg_evt_test.h"
 #include "chip_rst_test.h"
 #include "coredump_test.h"
+#include "connv2_pos_test.h"
 #include "consys_hw.h"
 
 /*******************************************************************************
@@ -97,6 +98,7 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 	[0x0b] = dump_tc,
 	[0x0c] = is_bus_hang_tc,
 	[0x0d] = ap_resume_tc,
+	[0x0e] = conninfra_pos_tc,
 };
 
 /*******************************************************************************
@@ -121,6 +123,8 @@ int core_tc_pwr_on(void)
 	iret = conninfra_core_power_on(CONNDRV_TYPE_WIFI);
 	pr_info("Wi-Fi power on %s (result = %d)", iret? "fail" : "pass", iret);
 	osal_sleep_ms(200);
+	iret = conninfra_core_power_on(CONNDRV_TYPE_MAWD);
+	pr_info("MAWD power on %s (result = %d)", iret? "fail" : "pass", iret);
 
 	return iret;
 }
@@ -140,6 +144,9 @@ int core_tc_pwr_off(void)
 	osal_sleep_ms(100);
 	iret = conninfra_core_power_off(CONNDRV_TYPE_FM);
 	pr_info("FM power off %s (result = %d)", iret? "fail" : "pass", iret);
+	osal_sleep_ms(100);
+	iret = conninfra_core_power_off(CONNDRV_TYPE_MAWD);
+	pr_info("MAWD power off %s (result = %d)", iret? "fail" : "pass", iret);
 
 	return iret;
 }
@@ -153,6 +160,7 @@ int core_tc(int par1, int par2, int par3)
 		"FM",
 		"GPS",
 		"Wi-Fi",
+		"MAWD",
 	};
 
 	if (par2 == 0) {

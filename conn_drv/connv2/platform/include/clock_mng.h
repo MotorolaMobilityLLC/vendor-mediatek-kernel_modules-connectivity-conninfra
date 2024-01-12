@@ -23,6 +23,8 @@
 #define COMMON_KERNEL_CLK_SUPPORT	0
 #endif
 
+#include "conninfra.h"
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -61,6 +63,7 @@
 int clock_mng_init(struct platform_device *pdev, const struct conninfra_plat_data* plat_data);
 int clock_mng_deinit(void);
 struct regmap* consys_clock_mng_get_regmap(void);
+const char* clock_mng_get_schematic_name(enum connsys_clock_schematic type);
 
 /*******************************************************************************
 *                              F U N C T I O N S

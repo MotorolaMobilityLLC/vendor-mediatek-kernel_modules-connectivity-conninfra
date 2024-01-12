@@ -5,6 +5,7 @@
 
 #include <linux/of_device.h>
 #include <linux/regmap.h>
+#include "conninfra.h"
 #include "clock_mng.h"
 
 /*******************************************************************************
@@ -71,6 +72,14 @@ static struct platform_driver consys_mt6685_dev_drv = {
 		},
 };
 
+static const char *g_clock_name[CONNSYS_CLOCK_SCHEMATIC_MAX] = {
+	"26M co-clock",
+	"52M co-clock",
+	"26M tcxo",
+	"52M tcxo",
+};
+
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -125,4 +134,13 @@ static int clock_mng_unregister_device(void)
 	}
 
 	return 0;
+}
+
+const char* clock_mng_get_schematic_name(enum connsys_clock_schematic type)
+{
+	if (type < 0 || type >= CONNSYS_CLOCK_SCHEMATIC_MAX) {
+		return "Wrong clock schematic";
+	}
+
+	return g_clock_name[type];
 }
