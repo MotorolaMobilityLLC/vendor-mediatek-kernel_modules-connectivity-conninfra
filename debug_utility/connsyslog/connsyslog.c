@@ -739,6 +739,16 @@ static void connlog_log_data_handler(struct work_struct *work)
 	static DEFINE_RATELIMIT_STATE(_rs2, 2 * HZ, 1);
 #endif
 
+	if (handler == NULL) {
+		pr_notice("%s handler is NULL\n", __func__);
+		return;
+	}
+
+	if (handler->conn_type < 0 || handler->conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("%s handler->conn_type %d is invalid\n", __func__, handler->conn_type);
+		return;
+	}
+
 	for (i = 0; i < handler->block_num; i++) {
 		conn_type_block = handler->block_type[i];
 		if (conn_type_block < 0 || conn_type_block >= CONN_DEBUG_TYPE_END) {

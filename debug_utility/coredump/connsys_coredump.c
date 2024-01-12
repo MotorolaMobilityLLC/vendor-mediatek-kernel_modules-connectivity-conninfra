@@ -337,10 +337,12 @@ static int conndump_info_format(
 #define FORMAT_STRING(buf, len, max_len, sec_len, fmt, arg...) \
 do { \
 	sec_len = snprintf(buf + len, max_len, fmt, ##arg); \
-	max_len -= sec_len; \
-	len += sec_len; \
-	if (max_len <= 0) \
-		goto format_finish; \
+	if (sec_len > 0) { \
+		max_len -= sec_len; \
+		len += sec_len; \
+		if (max_len <= 0) \
+			goto format_finish; \
+	} \
 } while (0)
 
 	int len = 0;
@@ -403,16 +405,18 @@ do { \
 		"\t\t\t<subsys>%s</subsys>\n", ctx->hw_config.name);
 	if (ctx->info.issue_type == CONNSYS_ISSUE_DRIVER_ASSERT) {
 		/* Driver trigger assert */
-		FORMAT_STRING(buf, len, max_len, sec_len,
-			"\t\t\t<task>%s</task>\n",
-			task_drv_name[ctx->info.drv_type]);
+		if (ctx->info.drv_type >= 0 && ctx->info.drv_type < CONNDRV_TYPE_MAX)
+			FORMAT_STRING(buf, len, max_len, sec_len,
+				"\t\t\t<task>%s</task>\n",
+				task_drv_name[ctx->info.drv_type]);
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t\t<irqx>NULL</irqx>\n");
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t\t<isr>NULL</isr>\n");
-		FORMAT_STRING(buf, len, max_len, sec_len,
-			"\t\t\t<drv_type>%s</drv_type>\n",
-			drv_name[ctx->info.drv_type]);
+		if (ctx->info.drv_type >= 0 && ctx->info.drv_type < CONNDRV_TYPE_MAX)
+			FORMAT_STRING(buf, len, max_len, sec_len,
+				"\t\t\t<drv_type>%s</drv_type>\n",
+				drv_name[ctx->info.drv_type]);
 		FORMAT_STRING(buf, len, max_len, sec_len,
 			"\t\t\t<reason>%s</reason>\n",
 			ctx->info.reason);
