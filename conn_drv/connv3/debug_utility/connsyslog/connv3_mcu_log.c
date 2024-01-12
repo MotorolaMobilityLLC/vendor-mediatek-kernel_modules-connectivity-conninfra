@@ -377,6 +377,8 @@ ssize_t _connv3_log_read_to_user(int conn_type, int block_type, char __user *buf
 
 	if (conn_type < CONNV3_DEBUG_TYPE_WIFI || conn_type >= CONNV3_DEBUG_TYPE_SIZE)
 		goto done;
+	if (block_type < CONNV3_LOG_TYPE_PRIMARY || block_type >= CONNV3_LOG_TYPE_SIZE)
+		goto done;
 	if (atomic_read(&g_connv3_log_mode) != LOG_TO_FILE)
 		goto done;
 

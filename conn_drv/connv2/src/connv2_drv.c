@@ -195,8 +195,7 @@ struct wmt_platform_bridge g_plat_bridge = {
 #endif
 };
 
-
-
+static atomic_t g_connv2_hw_init_done = ATOMIC_INIT(0);
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -552,11 +551,16 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	if (ret < 0)
 		pr_info("conn_pwr_init is failed %d.", ret);
 
+	atomic_set(&g_connv2_hw_init_done, 1);
+
+	pr_info("[%s] init done", __func__);
+
 	return 0;
 }
 
 int mtk_conninfra_remove(struct platform_device *pdev)
 {
+	atomic_set(&g_connv2_hw_init_done, 0);
 	consys_hw_deinit();
 	if (g_drv_dev)
 		g_drv_dev = NULL;
@@ -567,7 +571,6 @@ int mtk_conninfra_remove(struct platform_device *pdev)
 
 int connv2_drv_init(void)
 {
-	int iret = 0;
 	unsigned int connv2_radio_support = 0;
 	unsigned int drv_enum_converter[CONNDRV_TYPE_MAX] =
 		{CONN_SUPPOPRT_DRV_BT_TYPE_BIT, CONN_SUPPOPRT_DRV_FM_TYPE_BIT,
@@ -575,11 +578,23 @@ int connv2_drv_init(void)
 		0x0, 0x0};
 	int i = 0;
 	unsigned int adaptor_radio_support = 0;
+	int iret = 0, retry = 0;
+	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
+
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
+
 
 	iret = platform_driver_register(&mtk_conninfra_dev_drv);
 	if (iret)
 		pr_err("Conninfra platform driver registered failed(%d)\n", iret);
-
+	else {
+		while (atomic_read(&g_connv2_hw_init_done) == 0) {
+			osal_sleep_ms(50);
+			retry++;
+			if (__ratelimit(&_rs))
+				pr_info("g_connv2_hw_init_done = 0, retry = %d", retry);
+		}
+	}
 	wmt_export_platform_bridge_register(&g_plat_bridge);
 
 	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);

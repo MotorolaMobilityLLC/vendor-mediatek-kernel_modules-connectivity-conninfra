@@ -117,7 +117,7 @@ static phys_addr_t gPhyEmiBase;
 /* alarm timer for suspend */
 struct connlog_alarm gLogAlarm;
 
-const struct connlog_emi_config* g_connsyslog_config = NULL;
+const struct connlog_emi_config *g_connsyslog_config = NULL;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1264,8 +1264,10 @@ int connsys_log_init(int conn_type)
 		return -1;
 	}
 
-	pr_info("[%s][%s] conn_type=[%d] emi offset=[0x%x] size=[0x%x]",
-		__func__, type_to_title[conn_type], conn_type, emi_config->log_offset, emi_config->log_size);
+	pr_info("[%s][%s] emi=[%x][%x] block size=[%x][%x]",
+				__func__, type_to_title[conn_type],
+				emi_config->log_offset, emi_config->log_size,
+				emi_config->block[0].size, emi_config->block[1].size);
 	handler = connlog_subsys_init(conn_type, emi_config);
 
 	gLogDev[conn_type] = handler;
@@ -1296,7 +1298,7 @@ EXPORT_SYMBOL(connsys_log_init);
 * RETURNS
 *
 *****************************************************************************/
-static void connlog_subsys_deinit(struct connlog_dev* handler)
+static void connlog_subsys_deinit(struct connlog_dev *handler)
 {
 	if (handler == NULL)
 		return;

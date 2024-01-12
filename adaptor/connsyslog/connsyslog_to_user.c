@@ -7,11 +7,9 @@
 #include "connsyslog_to_user.h"
 #include "fw_log_mcu.h"
 
-#define CONN_LOG_TYPE_SIZE	2
-
 struct connlog_user {
 	bool inited;
-	int (*init) (struct connlog_to_user_cb *cb);
+	int (*init) (int conn_type, struct connlog_to_user_cb *cb);
 	void (*deinit) (void);
 	void (*evt_cb) (void);
 };
@@ -32,15 +30,15 @@ int connlog_to_user_register(int conn_type, struct connlog_to_user_cb *cb)
 
 	pr_info("[%s] type=[%d]", __func__, conn_type);
 
-	if (conn_type < 0 || conn_type >= CONN_LOG_TYPE_SIZE)
+	if (conn_type < 0 || conn_type >= CONN_ADAPTOR_DRV_SIZE)
 		return -1;
 
-	if (g_connlog_user[conn_type].inited) {
+	if (g_connlog_user[conn_type].inited || g_connlog_user[conn_type].init == NULL) {
 		pr_info("[%s] conn [%d] was inited", __func__, conn_type);
 		return -1;
 	}
 
-	(*(g_connlog_user[conn_type].init))(cb);
+	(*(g_connlog_user[conn_type].init))(conn_type, cb);
 	ret = (*(cb->register_evt_cb))(cb->conn_type_id, g_connlog_user[conn_type].evt_cb);
 	if (ret)
 		pr_err("[%s] register_evt fail", __func__);
@@ -51,7 +49,7 @@ int connlog_to_user_register(int conn_type, struct connlog_to_user_cb *cb)
 
 int connlog_to_user_unregister(int conn_type)
 {
-	if (conn_type < 0 || conn_type >= CONN_LOG_TYPE_SIZE)
+	if (conn_type < 0 || conn_type >= CONN_ADAPTOR_DRV_SIZE)
 		return -1;
 
 	(*(g_connlog_user[conn_type].deinit))();

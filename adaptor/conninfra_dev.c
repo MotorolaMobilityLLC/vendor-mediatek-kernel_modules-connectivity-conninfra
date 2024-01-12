@@ -423,6 +423,10 @@ int conn_adaptor_kern_dbg_handler(int x, int y, int z, char* buf, int buf_sz)
 				sz = (*(g_drv_gen_inst[i].drv_gen_cb.dump_power_state))(buf + offset, buf_sz - offset);
 				if (sz > 0)
 					offset += sz;
+				if (offset >= buf_sz) {
+					pr_notice("[%s] buf full", __func__);
+					break;
+				}
 			}
 		}
 	}
@@ -611,6 +615,12 @@ static void conninfra_dev_deinit(void)
 	int iret = 0;
 
 	g_conn_adaptor_init_status = CONN_ADAPTOR_INIT_NOT_START;
+
+	/* deinit connv2 */
+	connv2_drv_deinit();
+
+	/* deinit connv3 */
+	connv3_drv_deinit();
 
 	conn_kern_adaptor_deinit();
 
