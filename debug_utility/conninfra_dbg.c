@@ -38,7 +38,6 @@
 static struct proc_dir_entry *g_conninfra_dbg_entry;
 
 #if CONNINFRA_DBG_SUPPORT
-static ssize_t conninfra_dbg_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos);
 static ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
 static int conninfra_dbg_hwver_get(int par1, int par2, int par3);
@@ -85,6 +84,7 @@ static int conninfra_dbg_set_platform_config(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par3);
 static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3);
+static int conninfra_dbg_dump_power_state(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
@@ -126,6 +126,10 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	[0x20] = conninfra_dbg_set_spi_write_subsys,
 #endif
 	[0x21] = conninfra_dbg_mcu_log_ctrl,
+
+	/* The following command ids should be used by WMT as well. */
+	/* Check the usage of WMT before add a new one */
+	[0x40] = conninfra_dbg_dump_power_state,
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -594,6 +598,13 @@ static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3)
 	}
 
 	return ret;
+}
+
+static int conninfra_dbg_dump_power_state(int par1, int par2, int par3)
+{
+	consys_hw_dump_power_state();
+
+	return 0;
 }
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
