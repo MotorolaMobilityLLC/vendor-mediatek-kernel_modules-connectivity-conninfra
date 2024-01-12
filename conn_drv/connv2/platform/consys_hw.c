@@ -235,7 +235,7 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type)
 			pr_err("[%s] turn off VCN control fail, ret=%d\n", __func__, ret);
 		break;
 	default:
-		pr_err("[%s] wrong type: %d", type);
+		pr_err("[%s] wrong type: %d", __func__, type);
 		break;
 	}
 	return 0;
