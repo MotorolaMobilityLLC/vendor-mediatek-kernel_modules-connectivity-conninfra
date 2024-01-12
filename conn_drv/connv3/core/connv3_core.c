@@ -656,6 +656,14 @@ static int opfunc_pre_cal_efuse_on(void)
 	struct timespec64 efuse_begin, efuse_pre_on, efuse_on, efuse_end;
 	struct subsys_drv_inst *drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI];
 
+
+
+	/* force power off */
+	pr_info("[pre_cal][efuse_on] force power off");
+	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false);
+	if (ret)
+		pr_notice("[%s] force Connv3 power off fail, ret(%d)", __func__, ret);
+
 	/* efuse pwoer on */
 	atomic_set(&g_connv3_ctx.pre_cal_state, 0);
 	sema_init(&g_connv3_ctx.pre_cal_sema, 1);
