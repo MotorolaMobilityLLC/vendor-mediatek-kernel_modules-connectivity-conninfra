@@ -263,13 +263,12 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 							wait_ret, op->result);*/
 
 		if (wait_ret == 0) {
-			pr_warn("opId(%d) completion timeout, curr_op=[%d(%d,%d,%d,%d)]\n",
+			pr_warn("opId(%d) completion timeout, op=[%d,%d,%d,%d]\n",
 				op->op.op_id,
-				ctx->cur_op->op.op_id,
-				ctx->cur_op->op.op_data[0],
-				ctx->cur_op->op.op_data[1],
-				ctx->cur_op->op.op_data[2],
-				ctx->cur_op->op.op_data[3]);
+				op->op.op_data[0],
+				op->op.op_data[1],
+				op->op.op_data[2],
+				op->op.op_data[3]);
 			osal_op_history_print(&ctx->op_history, ctx->thread.threadName);
 		} else if (op->result)
 			pr_info("opId(%d) result:%d\n",
