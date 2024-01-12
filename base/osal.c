@@ -264,10 +264,8 @@ void osal_dump_thread_state(const unsigned char *name)
 
 void osal_thread_show_stack(P_OSAL_THREAD pThread)
 {
-#if 0
 	if ((pThread) && (pThread->pThread))
 		KERNEL_show_stack(pThread->pThread, NULL);
-#endif
 }
 
 /*

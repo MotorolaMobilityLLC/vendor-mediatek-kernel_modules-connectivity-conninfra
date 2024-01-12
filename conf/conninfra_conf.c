@@ -159,6 +159,7 @@ static const struct parse_data cfg_fields[] = {
 	CHAR(coex_config_addjust_ble_scan_time_ratio),
 	CHAR(coex_config_addjust_ble_scan_time_ratio_bt_slot),
 	CHAR(coex_config_addjust_ble_scan_time_ratio_wifi_slot),
+	CHAR(tcxo_gpio),
 };
 
 #define NUM_CFG_FIELDS (osal_sizeof(cfg_fields) / osal_sizeof(cfg_fields[0]))
@@ -166,7 +167,7 @@ static const struct parse_data cfg_fields[] = {
 static int conf_parse_char(const struct parse_data *data, const char *pos)
 {
 	char *dst;
-	long res;
+	long res = 0;
 
 	dst = (char *)(data->param1);
 
@@ -205,7 +206,7 @@ static char *conf_write_char(const struct parse_data *data)
 static int conf_parse_short(const struct parse_data *data, const char *pos)
 {
 	unsigned short *dst;
-	long res;
+	long res = 0;
 
 	dst = (unsigned short *)data->param1;
 
@@ -246,7 +247,7 @@ static char *conf_write_short(const struct parse_data *data)
 static int conf_parse_int(const struct parse_data *data, const char *pos)
 {
 	int *dst;
-	long res;
+	long res = 0;
 
 	dst = (int *)data->param1;
 
@@ -514,7 +515,7 @@ static int conf_parse(const char *pInBuf, unsigned int size)
 
 static int platform_request_firmware(char *patch_name, osal_firmware **ppPatch)
 {
-	int ret = -1;
+	int ret;
 	osal_firmware *fw = NULL;
 
 	if (!ppPatch) {

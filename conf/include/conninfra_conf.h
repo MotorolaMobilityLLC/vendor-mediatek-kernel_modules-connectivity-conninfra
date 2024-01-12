@@ -144,6 +144,9 @@ struct conninfra_conf {
 	unsigned char coex_config_addjust_ble_scan_time_ratio_bt_slot;
 	unsigned char coex_config_addjust_ble_scan_time_ratio_wifi_slot;
 
+	/* POS. If set, means using ext TCXO */
+	unsigned char tcxo_gpio;
+
 };
 
 

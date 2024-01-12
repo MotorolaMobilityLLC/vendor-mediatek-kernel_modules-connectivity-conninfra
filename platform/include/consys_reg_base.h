@@ -21,6 +21,7 @@
 
 struct consys_reg_base_addr {
 	unsigned long vir_addr;
+	unsigned long phy_addr;
 	unsigned long long size;
 };
 

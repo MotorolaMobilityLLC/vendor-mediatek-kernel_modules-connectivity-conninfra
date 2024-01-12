@@ -26,11 +26,17 @@
 
 #include "conninfra.h"
 #include "conninfra_core.h"
+#include "consys_reg_mng.h"
+
+#include "connsyslog_test.h"
 #include "conf_test.h"
 #include "cal_test.h"
 #include "msg_evt_test.h"
 #include "chip_rst_test.h"
 #include "mailbox_test.h"
+#include "conninfra_step_test.h"
+#include "coredump_test.h"
+#include "consys_hw.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -74,6 +80,13 @@ static int msg_evt_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
 static int mailbox_tc(int par1, int par2, int par3);
 static int emi_tc(int par1, int par2, int par3);
+static int log_tc(int par1, int par2, int par3);
+static int thermal_tc(int par1, int par2, int par3);
+static int step_tc(int par1, int par2, int par3);
+static int bus_hang_tc(int par1, int par2, int par3);
+static int dump_tc(int par1, int par2, int par3);
+static int is_bus_hang_tc(int par1, int par2, int par3);
+static int ap_resume_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -96,6 +109,13 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 	[0x05] = cal_tc,
 	[0x06] = mailbox_tc,
 	[0x07] = emi_tc,
+	[0x08] = log_tc,
+	[0x09] = thermal_tc,
+	[0x0a] = step_tc,
+	[0x0b] = bus_hang_tc,
+	[0x0c] = dump_tc,
+	[0x0d] = is_bus_hang_tc,
+	[0x0e] = ap_resume_tc,
 };
 
 /*******************************************************************************
@@ -103,7 +123,7 @@ static const CONNINFRA_TEST_FUNC conninfra_test_func[] = {
 ********************************************************************************
 */
 
-int core_tc_pwr_on()
+int core_tc_pwr_on(void)
 {
 	int iret = 0;
 
@@ -124,7 +144,7 @@ int core_tc_pwr_on()
 	return iret;
 }
 
-int core_tc_pwr_off()
+int core_tc_pwr_off(void)
 {
 	int iret = 0;
 
@@ -147,14 +167,48 @@ int core_tc_pwr_off()
 int core_tc(int par1, int par2, int par3)
 {
 	int iret = 0;
+	char* driver_name[CONNDRV_TYPE_MAX] = {
+		"BT",
+		"FM",
+		"GPS",
+		"Wi-Fi",
+	};
 
 	if (par2 == 0) {
 		iret = core_tc_pwr_on();
 		iret = core_tc_pwr_off();
 	} else if (par2 == 1) {
-		iret = core_tc_pwr_on();
+		if (par3 == 15) {
+			iret = core_tc_pwr_on();
+		} else if (par3 >= CONNDRV_TYPE_BT && par3 <= CONNDRV_TYPE_WIFI) {
+			pr_info("Power on %s test start\n", driver_name[par3]);
+			iret = conninfra_core_power_on(par3);
+			pr_info("Power on %s test, return = %d\n", driver_name[par3], iret);
+		} else {
+			pr_info("No support parameter\n");
+		}
 	} else if (par2 == 2) {
-		iret = core_tc_pwr_off();
+		if (par3 == 15) {
+			iret = core_tc_pwr_off();
+		} else if (par3 >= CONNDRV_TYPE_BT && par3 <= CONNDRV_TYPE_WIFI) {
+			pr_info("Power off %s test start\n", driver_name[par3]);
+			iret = conninfra_core_power_off(par3);
+			pr_info("Power off %s test, return = %d\n", driver_name[par3], iret);
+		} else {
+			pr_info("No support parameter\n");
+		}
+	} else if (par2 == 3) {
+		if (par3 == 1) {
+			iret = conninfra_core_adie_top_ck_en_on(CONNSYS_ADIE_CTL_FW_WIFI);
+			pr_info(
+				"Turn on adie top ck en (ret=%d), please check 0x1805_2830[6] should be 1\n",
+				iret);
+		} else if (par3 == 0) {
+			iret = conninfra_core_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
+			pr_info(
+				"Turn off adie top ck en (ret=%d), please check 0x1805_2830[6] should be 1\n",
+				iret);
+		}
 	}
 	//pr_info("core_tc %s (result = %d)", iret? "fail" : "pass", iret);
 	return 0;
@@ -207,6 +261,108 @@ static int emi_tc(int par1, int par2, int par3)
 	return ret;
 }
 
+static int thermal_tc(int par1, int par2, int par3)
+{
+	int ret, temp;
+
+	ret = core_tc_pwr_on();
+	if (ret) {
+		pr_err("pwr on fail");
+		return -1;
+	}
+	ret = conninfra_core_thermal_query(&temp);
+	pr_info("[%s] thermal res=[%d][%d]", __func__, ret, temp);
+
+	return ret;
+}
+
+static int step_tc(int par1, int par2, int par3)
+{
+	int ret;
+
+	ret = core_tc_pwr_on();
+	if (ret) {
+		pr_err("pwr on fail");
+		return -1;
+	}
+
+	conninfra_core_force_conninfra_wakeup();
+	conninfra_step_test_all();
+	conninfra_core_force_conninfra_sleep();
+	return 0;
+}
+
+static int log_tc(int par1, int par2, int par3)
+{
+	/* 0: initial state
+	 * 1: log has been init.
+	 */
+	static int log_status = 0;
+	int ret = 0;
+
+	if (par2 == 0) {
+		if (log_status != 0) {
+			pr_info("log has been init.\n");
+			return 0;
+		}
+		/* init */
+		ret = connlog_test_init();
+		if (ret)
+			pr_err("FW log init fail! ret=%d\n", ret);
+		else {
+			log_status = 1;
+			pr_info("FW log init finish. Check result on EMI.\n");
+		}
+	} else if (par2 == 1) {
+		/* add fake log */
+		/* read log */
+		connlog_test_read();
+	} else if (par2 == 2) {
+		/* deinit */
+		if (log_status == 0) {
+			pr_info("log didn't init\n");
+			return 0;
+		}
+		ret = connlog_test_deinit();
+		if (ret)
+			pr_err("FW log deinit fail! ret=%d\n", ret);
+		else
+			log_status = 0;
+	}
+	return ret;
+}
+
+
+static int bus_hang_tc(int par1, int par2, int par3)
+{
+	int r;
+	r = conninfra_core_is_bus_hang();
+
+	pr_info("[%s] r=[%d]\n", __func__, r);
+	return 0;
+}
+
+static int dump_tc(int par1, int par2, int par3)
+{
+	return coredump_test(par1, par2, par3);
+}
+
+static int is_bus_hang_tc(int par1, int par2, int par3)
+{
+	int r;
+
+	r = consys_reg_mng_reg_readable();
+	pr_info("[%s] r=[%d]", __func__, r);
+	r = consys_reg_mng_is_bus_hang();
+	pr_info("[%s] r=[%d]", __func__, r);
+	return 0;
+}
+
+static int ap_resume_tc(int par1, int par2, int par3)
+{
+	return 0;
+}
+
 ssize_t conninfra_test_read(struct file *filp, char __user *buf,
 				size_t count, loff_t *f_pos)
 {
@@ -221,8 +377,8 @@ ssize_t conninfra_test_write(struct file *filp, const char __user *buffer, size_
 	char *pDelimiter = " \t";
 	int x = 0, y = 0, z = 0;
 	char *pToken = NULL;
-	long res;
-	//static bool testEnabled;
+	long res = 0;
+	static bool test_enabled = false;
 
 	pr_info("write parameter len = %d\n\r", (int) len);
 	if (len >= osal_sizeof(buf)) {
@@ -275,12 +431,13 @@ ssize_t conninfra_test_write(struct file *filp, const char __user *buffer, size_
 	 * writing 0xDB9DB9 to * "/proc/driver/wmt_dbg" to avoid
 	 * some malicious use
 	 */
-#if 0
 	if (x == 0xDB9DB9) {
-		dbgEnabled = 1;
+		test_enabled = true;
 		return len;
 	}
-#endif
+
+	if (!test_enabled)
+		return 0;
 
 	if (osal_array_size(conninfra_test_func) > x &&
 		NULL != conninfra_test_func[x])
