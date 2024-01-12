@@ -298,7 +298,7 @@ static int conn_adaptor_dev_get_disp_blank_state(void)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 int conn_adaptor_dev_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *v)
 {
-#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
+#if IS_ENABLED(CONFIG_DEVICE_MODULES_DRM_MEDIATEK)
 	int *data = (int *)v;
 
 	pr_debug("[%s] event=[%u]\n", __func__, event);
