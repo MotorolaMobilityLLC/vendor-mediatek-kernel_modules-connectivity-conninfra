@@ -728,11 +728,11 @@ int connsys_d_die_cfg_mt6991_gen(void)
 
 	/* conn_mawd memory  hw control setting -> disable hw power dowm */
 	CONSYS_REG_WRITE(CONN_RGU_ON_BASE +
-		CONSYS_GEN_MAWD_MEM_HWCTL_PDN_OFFSET_ADDR, 0x10);
+		CONSYS_GEN_MAWD_MEM_HWCTL_PDN_OFFSET_ADDR, 0xF);
 
 	/* conn_mawd memory  hw control setting -> enable hw sleep */
 	CONSYS_REG_WRITE(CONN_RGU_ON_BASE +
-		CONSYS_GEN_MAWD_MEM_HWCTL_SLP_OFFSET_ADDR, 0xF);
+		CONSYS_GEN_MAWD_MEM_HWCTL_SLP_OFFSET_ADDR, 0x10);
 
 	/* conn_infra MTCMOS memory control ack no mask to avoid receive fake ack */
 	CONSYS_REG_WRITE_MASK(CONN_RGU_ON_BASE +
