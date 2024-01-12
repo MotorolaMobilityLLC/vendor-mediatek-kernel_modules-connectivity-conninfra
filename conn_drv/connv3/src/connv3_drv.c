@@ -143,13 +143,7 @@ struct conn_adaptor_drv_gen_cb g_connv3_drv_gen = {
 */
 u32 connv3_get_chipid(void)
 {
-	return 0;
-}
-
-u32 connv3_chipid_get(void)
-{
-	//return consys_hw_chipid_get();
-	return 0;
+	return connv3_hw_get_chipid();
 }
 
 void connv3_set_coredump_mode(int mode)
