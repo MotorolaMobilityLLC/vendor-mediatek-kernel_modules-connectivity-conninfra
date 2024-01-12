@@ -554,9 +554,11 @@ int msg_thread_init(struct msg_thread_ctx *ctx,
 
 	/* init thread inst */
 	p_thread = &ctx->thread;
+	memset(p_thread->threadName, '\0', sizeof(p_thread->threadName));
 
-	osal_strncpy(p_thread->threadName, thread_name,
-			sizeof(p_thread->threadName));
+	if (thread_name != NULL)
+		osal_strncpy(p_thread->threadName, thread_name,
+					MAX_THREAD_NAME_LEN - 1);
 
 	p_thread->pThreadData = (void *) ctx;
 	p_thread->pThreadFunc = (void *) msg_evt_thread;

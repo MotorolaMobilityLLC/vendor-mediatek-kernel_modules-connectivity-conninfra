@@ -147,8 +147,6 @@ struct connv3_ctx {
 	struct osal_op_history cored_op_history;
 
 	struct pre_cal_info cal_info;
-
-	enum connv3_radio_off_mode radio_off_mode;
 };
 
 //typedef enum _ENUM_CONNINFRA_CORE_OPID_T {

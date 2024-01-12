@@ -261,12 +261,14 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	}
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
-		if (g_connv3_ctx.radio_off_mode == CONNV3_RADIO_OFF_MODE_UDS) {
-			/* Power recycle
-			 * when 1st power on, power off to make state clean
-			 * use CONNV3_DRV_TYPE_MAX to do pmic and ex32k off
-			 */
-			ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+		/* power recycle */
+		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
+
+		if (ret) {
+			pr_err("[%s] connv3 power recycle fail. drv=[%d] ret=[%d]\n",
+				__func__, drv_type, ret);
+			osal_unlock_sleepable_lock(&ctx->core_lock);
+			return ret;
 		}
 
 		/* pre_power_on flow */
@@ -477,10 +479,6 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 
 	connv3_core_wake_lock_get();
 	ret = connv3_hw_pwr_off(curr_status, drv_type);
-	if ((g_connv3_ctx.radio_off_mode == CONNV3_RADIO_OFF_MODE_PMIC_OFF) && try_power_off) {
-		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX);
-		pr_info("Force PMIC off, ret = %d\n", ret);
-	}
 	connv3_core_wake_lock_put();
 
 	if (ret) {
@@ -891,11 +889,6 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 	ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_WIFI, false);
 	if (ret)
 		pr_notice("[pre_cal] power off wifi fail, ret = %d", ret);
-
-	if (g_connv3_ctx.radio_off_mode == CONNV3_RADIO_OFF_MODE_PMIC_OFF) {
-		ret = pre_cal_drv_onoff_internal(CONNV3_DRV_TYPE_MAX, false);
-		pr_info("Force PMIC off, ret = %d\n", ret);
-	}
 
 	/* Check radio status */
 	ret = opfunc_get_current_status();
@@ -2089,10 +2082,6 @@ int connv3_core_init(void)
 	osal_strcpy(g_connv3_wake_lock.name, "connv3FuncCtrl");
 	g_connv3_wake_lock.init_flag = 0;
 	osal_wake_lock_init(&g_connv3_wake_lock);
-
-	/* Get power off mode */
-	ctx->radio_off_mode = connv3_hw_get_radio_off_mode();
-	pr_info("[%s] radio off mode: %d\n", __func__, ctx->radio_off_mode);
 
 	return ret;
 }
