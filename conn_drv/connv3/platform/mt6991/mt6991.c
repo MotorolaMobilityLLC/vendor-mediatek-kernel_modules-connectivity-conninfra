@@ -28,10 +28,14 @@
 #define PLATFORM_SOC_CHIP		0x6991
 #define CONN_HW_VER			0x6653
 #define CONN_ADIE_ID			0x6653
+
+#define MT6653_PLAT_CUSTOM_DATA_SIZE	4
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+extern struct platform_device *g_connv3_pdev;
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -42,6 +46,8 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+static u32 g_custom_data_size = 0;
+static u8 g_custom_param[MT6653_PLAT_CUSTOM_DATA_SIZE] = {0};
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -51,6 +57,8 @@
 u32 connv3_soc_get_chipid_mt6991(void);
 static u32 connv3_get_adie_chipid_mt6991(void);
 static u32 connv3_reset_type_support_mt6991(void);
+static u8* connv3_get_custom_option_mt6991(u32 *size);
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -60,6 +68,7 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6991 = {
 	.connsys_plt_get_chipid = connv3_soc_get_chipid_mt6991,
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6991,
 	.connsys_plt_reset_type_support = connv3_reset_type_support_mt6991,
+	.connsys_plt_get_custom_option = connv3_get_custom_option_mt6991,
 };
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6991 = {
@@ -96,3 +105,44 @@ static u32 connv3_reset_type_support_mt6991(void)
 	return 1;
 }
 
+u8* connv3_get_custom_option_mt6991(u32 *size)
+{
+	static bool is_init = false;
+	static u8 is_coclock = false;
+	static u16 ext_32K_ticks = 32500;
+
+	u32 value;
+	int ret;
+
+	if (!is_init) {
+		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "co-clock", &value);
+		if (ret)
+			pr_notice("[%s] read co_clock prop fail\n", __func__);
+		else
+			is_coclock = (u8)value;
+
+		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "ext-32k-ticks", &value);
+		if (ret)
+			pr_notice("[%s] read co_clock prop fail\n", __func__);
+		else
+			ext_32K_ticks = (u16)value;
+
+		/* Copy data to array */
+		memcpy(g_custom_param, &ext_32K_ticks, 2);
+		g_custom_param[2] = is_coclock;
+		g_custom_data_size = MT6653_PLAT_CUSTOM_DATA_SIZE; /* one byte as reserved. */
+
+		is_init = true;
+	}
+
+	if (size == NULL) {
+		pr_notice("[%s] input error, size == NULL\n", __func__);
+		return NULL;
+	}
+
+	*size = g_custom_data_size;
+	pr_info("[%s] data size = %d data=[0x%x 0x%x 0x%x 0x%x]\n",
+		__func__, *size,
+		g_custom_param[0], g_custom_param[1], g_custom_param[2], g_custom_param[3]);
+	return g_custom_param;
+}
