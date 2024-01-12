@@ -11,12 +11,23 @@
 
 #include "mt6639_dbg.h"
 
+#define CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL		0x7c060380
+#define CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP	0x7c060384
+#define CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER		0x7c060388
+#define CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER		0x7c06038c
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 static int connv3_conninfra_bus_dump_mt6639(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+static int connv3_conninfra_power_info_dump_mt6639(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	char *buf, unsigned int size);
+static int connv3_conninfra_power_info_reset_mt6639(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data);
+
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -24,7 +35,12 @@ static int connv3_conninfra_bus_dump_mt6639(
 */
 const struct connv3_platform_dbg_ops g_connv3_hw_dbg_mt6639 = {
 	.dbg_bus_dump = connv3_conninfra_bus_dump_mt6639,
+	.dbg_power_info_dump = connv3_conninfra_power_info_dump_mt6639,
+	.dbg_power_info_reset = connv3_conninfra_power_info_reset_mt6639,
 };
+
+#define POWER_STATE_DUMP_DATA_SIZE 25
+unsigned long mt6639_power_state_dump_data[POWER_STATE_DUMP_DATA_SIZE];
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -165,6 +181,291 @@ int connv3_conninfra_bus_dump_mt6639(
 	ret = connv3_hw_dbg_dump_utility(&mt6639_dmp_list_cfg_clk_b, cb, data);
 	if (ret)
 		pr_notice("[%s] mt6639_dmp_list_cfg_clk_b dump err=[%d]", __func__, ret);
+
+	return 0;
+}
+
+static int connv3_26m_dump(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+{
+#define POWER_STATE_BUFF_LENGTH	256
+	unsigned int i, str_len;
+	unsigned int buf_len = 0;
+	unsigned int r;
+	static const char *const osc_str[] = {
+		/* 0 */
+		"", "fm ", "gps ", "bgf ",
+		/* 4 */
+		"wf ", "conn_infra_bus ", " ", "ap2conn ", " ",
+		/* 8 */
+		" ", " ", " ", " ",
+		/* 12 */
+		"conn_pta ", "conn_spi ", " ", "conn_thm "};
+	char buf[POWER_STATE_BUFF_LENGTH] = {'\0'};
+	int ret;
+	/* w	0x1806_015c[2:0]=3b'000
+	 * r	0x1806_0a04
+	 */
+	ret = cb->write_mask(data, 0x7c06015c, 0x7, 0x0);
+	if (ret)
+		return ret;
+	ret = cb->read(data, 0x7c060a04, &r);
+	if (ret)
+		return ret;
+
+	for (i = 0; i < 16; i++) {
+		str_len = strlen(osc_str[i]);
+
+		if ((r & (0x1 << (1 + i))) > 0 && (buf_len + str_len < POWER_STATE_BUFF_LENGTH)) {
+			strncat(buf, osc_str[i], str_len);
+			buf_len += str_len;
+		}
+	}
+	pr_info("[%s] [0x%x] %s", __func__, r, buf);
+
+	return 0;
+}
+
+static inline void __sleep_count_trigger_read(struct connv3_cr_cb *cb, void *data)
+{
+	int ret;
+
+	/* 0x7c06_0380[4] = 0
+	 * udelay 150
+	 * 0x7c06_0380[4] = 1
+	 */
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, (0x1U << 4), 0);
+	udelay(150);
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, (0x1U << 4), (0x1U << 4));
+}
+
+#define POWER_STATE_BUF_SIZE 256
+static char temp_buf[POWER_STATE_BUF_SIZE];
+
+int connv3_conninfra_sleep_count_dump(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	char *buf, unsigned int size)
+{
+#define CONN_32K_TICKS_PER_SEC (32768)
+#define CONN_TICK_TO_SEC(TICK) (TICK / CONN_32K_TICKS_PER_SEC)
+	static u64 round;
+	static u64 t_conninfra_sleep_cnt, t_conninfra_sleep_time;
+	static u64 t_wf_sleep_cnt, t_wf_sleep_time;
+	static u64 t_bt_sleep_cnt, t_bt_sleep_time;
+	unsigned int conninfra_sleep_cnt = 0, conninfra_sleep_time = 0;
+	unsigned int wf_sleep_cnt = 0, wf_sleep_time = 0;
+	unsigned int bt_sleep_cnt = 0, bt_sleep_time = 0;
+	int ret;
+	char *buf_p = temp_buf;
+	int buf_sz = POWER_STATE_BUF_SIZE;
+
+	/* Sleep count */
+	/* 1. Setup read select: 0x1806_0380[3:1]
+	 *	3'h0: conn_infra sleep counter
+	 *	3'h1: wfsys sleep counter
+	 *	3'h2: bgfsys sleep counter
+	 *	3'h3: gpssys sleep counter
+	 * 2. Dump time and count
+	 *	a. Timer: 0x1806_0388
+	 *	b. Count: 0x1806_038C
+	 */
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x0 << 1));
+	__sleep_count_trigger_read(cb, data);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &conninfra_sleep_cnt);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &conninfra_sleep_time);
+	if (ret) {
+		pr_notice("[Connv3][Power dump][%d] conninfra dump error", drv_type);
+		goto print_partial_log;
+	}
+	udelay(60);
+
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x1U << 1));
+	__sleep_count_trigger_read(cb, data);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &wf_sleep_cnt);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &wf_sleep_time);
+	if (ret) {
+		pr_notice("[Connv3][Power dump][%d] wifi dump error", drv_type);
+		goto print_partial_log;
+	}
+	udelay(60);
+
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL, 0xe, (0x2U << 1));
+	__sleep_count_trigger_read(cb, data);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_COUNTER, &bt_sleep_cnt);
+	ret += cb->read(data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_TIMER, &bt_sleep_time);
+	if (ret) {
+		pr_notice("[Connv3][Power dump][%d] bt dump error", drv_type);
+		goto print_partial_log;
+	}
+	udelay(60);
+
+	t_conninfra_sleep_cnt += conninfra_sleep_cnt;
+	t_conninfra_sleep_time += conninfra_sleep_time;
+	t_wf_sleep_cnt += wf_sleep_cnt;
+	t_wf_sleep_time += wf_sleep_time;
+	t_bt_sleep_cnt += bt_sleep_cnt;
+	t_bt_sleep_time += bt_sleep_time;
+
+	mt6639_power_state_dump_data[0] = round;
+	mt6639_power_state_dump_data[1] = CONN_TICK_TO_SEC(conninfra_sleep_time);
+	mt6639_power_state_dump_data[2] =
+		CONN_TICK_TO_SEC((conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[3] = conninfra_sleep_cnt;
+	mt6639_power_state_dump_data[4] = CONN_TICK_TO_SEC(wf_sleep_time);
+	mt6639_power_state_dump_data[5] =
+		CONN_TICK_TO_SEC((wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[6] = wf_sleep_cnt;
+	mt6639_power_state_dump_data[7] = CONN_TICK_TO_SEC(bt_sleep_time);
+	mt6639_power_state_dump_data[8] =
+		CONN_TICK_TO_SEC((bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[9] = bt_sleep_cnt;
+
+	mt6639_power_state_dump_data[13] = CONN_TICK_TO_SEC(t_conninfra_sleep_time);
+	mt6639_power_state_dump_data[14] =
+		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[15] = t_conninfra_sleep_cnt;
+	mt6639_power_state_dump_data[16] = CONN_TICK_TO_SEC(t_wf_sleep_time);
+	mt6639_power_state_dump_data[17] =
+		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[18] = t_wf_sleep_cnt;
+	mt6639_power_state_dump_data[19] = CONN_TICK_TO_SEC(t_bt_sleep_time);
+	mt6639_power_state_dump_data[20] =
+		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[21] = t_bt_sleep_cnt;
+	round++;
+
+	if (buf != NULL && size > 0) {
+		buf_p = buf;
+		buf_sz = size;
+	}
+
+	ret = snprintf(buf_p, buf_sz,
+		"[connv3_power_state][round:%lu]conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;[total]conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu,%lu;",
+		mt6639_power_state_dump_data[0],
+		mt6639_power_state_dump_data[1],
+		mt6639_power_state_dump_data[2],
+		mt6639_power_state_dump_data[3],
+		mt6639_power_state_dump_data[4],
+		mt6639_power_state_dump_data[5],
+		mt6639_power_state_dump_data[6],
+		mt6639_power_state_dump_data[7],
+		mt6639_power_state_dump_data[8],
+		mt6639_power_state_dump_data[9],
+		mt6639_power_state_dump_data[13],
+		mt6639_power_state_dump_data[14],
+		mt6639_power_state_dump_data[15],
+		mt6639_power_state_dump_data[16],
+		mt6639_power_state_dump_data[17],
+		mt6639_power_state_dump_data[18],
+		mt6639_power_state_dump_data[19],
+		mt6639_power_state_dump_data[20],
+		mt6639_power_state_dump_data[21]);
+	if (ret)
+		pr_info("%s", buf_p);
+
+	return 0;
+
+print_partial_log:
+	mt6639_power_state_dump_data[13] = CONN_TICK_TO_SEC(t_conninfra_sleep_time);
+	mt6639_power_state_dump_data[14] =
+		CONN_TICK_TO_SEC((t_conninfra_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[15] = t_conninfra_sleep_cnt;
+	mt6639_power_state_dump_data[16] = CONN_TICK_TO_SEC(t_wf_sleep_time);
+	mt6639_power_state_dump_data[17] =
+		CONN_TICK_TO_SEC((t_wf_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[18] = t_wf_sleep_cnt;
+	mt6639_power_state_dump_data[19] = CONN_TICK_TO_SEC(t_bt_sleep_time);
+	mt6639_power_state_dump_data[20] =
+		CONN_TICK_TO_SEC((t_bt_sleep_time % CONN_32K_TICKS_PER_SEC) * 1000);
+	mt6639_power_state_dump_data[21] = t_bt_sleep_cnt;
+
+	if (buf != NULL && size > 0) {
+		buf_p = buf;
+		buf_sz = size;
+	}
+	ret = snprintf(buf_p, buf_sz,
+		"[connv3_power_state][total]conninfra:%lu.%03lu,%lu;wf:%lu.%03lu,%lu;bt:%lu.%03lu;",
+		mt6639_power_state_dump_data[13],
+		mt6639_power_state_dump_data[14],
+		mt6639_power_state_dump_data[15],
+		mt6639_power_state_dump_data[16],
+		mt6639_power_state_dump_data[17],
+		mt6639_power_state_dump_data[18],
+		mt6639_power_state_dump_data[19],
+		mt6639_power_state_dump_data[20],
+		mt6639_power_state_dump_data[21]);
+
+	if (ret)
+		pr_info("%s", buf_p);
+
+
+	return 0;
+}
+
+int connv3_conninfra_power_info_dump_mt6639(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data,
+	char *buf, unsigned int size)
+{
+	int ret;
+
+	ret = connv3_26m_dump(drv_type, cb, data);
+	if (ret) {
+		pr_notice("[%s][%d] dump 26M fail, ret = %d", __func__, drv_type, ret);
+		return -1;
+	}
+
+	ret = connv3_conninfra_sleep_count_dump(drv_type, cb, data, buf, size);
+	if (ret) {
+		pr_notice("[%s][%d] sleep count dump fail, ret = %d", __func__, drv_type, ret);
+		return -1;
+	}
+	return 0;
+}
+
+int connv3_conninfra_power_info_reset_mt6639(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *data)
+{
+	unsigned int ctl_bit;
+	int ret;
+
+
+	/* switch to host side
+	 * HOST_CONN_INFRA_SLP_CNT_CTL (0x18060000 + 0x380)
+	 * 	HOST_SLP_COUNTER_CTL_EN[31]  - (RW) Sleep counter control enable:
+	 * 	1'h0: Control by conn_infra_cfg
+	 * 	1'h1: Control by conn_host_csr_top
+	 */
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL,
+		(0x1U << 31 | 0x1U), (0x1U << 31 | 0x1U));
+
+	/* Clear data and disable stop to keep going */
+	/* I. Clear
+	 * i.	Conn_infra:	0x1806_0384[15]
+	 * ii.	Wf:		0x1806_0384[9]
+	 * iii.	Bt:		0x1806_0384[10]
+	 */
+
+	ctl_bit = ((0x1U << 15) | (0x1U << 9) | (0x1U << 10));
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP, ctl_bit, ctl_bit);
+	udelay(150);
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP, ctl_bit, 0x0);
+
+	ctl_bit = ((0x1U << 7) | (0x1U << 2) | (0x1U << 1));
+	/* II. Stop
+	 * i.	Conn_infra:	0x1806_0384[7]
+	 * ii.	Wf:		0x1806_0384[1]
+	 * iii.	Bt:		0x1806_0384[2]
+	 */
+	ret = cb->write_mask(
+		data, CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_SLP_STOP, ctl_bit, 0x0);
 
 	return 0;
 }
