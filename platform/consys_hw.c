@@ -840,7 +840,7 @@ int consys_hw_init(struct conninfra_dev_cb *dev_cb)
 {
 	int iRet = 0, retry = 0, ret = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
-	unsigned int emi_addr = 0;
+	phys_addr_t emi_addr = 0;
 	unsigned int emi_size = 0;
 
 	g_conninfra_dev_cb = dev_cb;

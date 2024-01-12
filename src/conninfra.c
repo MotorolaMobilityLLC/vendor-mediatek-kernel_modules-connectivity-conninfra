@@ -98,14 +98,13 @@ int conninfra_get_clock_schematic(void)
 }
 EXPORT_SYMBOL(conninfra_get_clock_schematic);
 
-void conninfra_get_phy_addr(unsigned int *addr, unsigned int *size)
+void conninfra_get_phy_addr(phys_addr_t *addr, unsigned int *size)
 {
 	phys_addr_t base;
 
 	conninfra_get_emi_phy_addr(CONNSYS_EMI_FW, &base, size);
 	if (addr)
-		*addr = (unsigned int)base;
-	return;
+		*addr = base;
 }
 EXPORT_SYMBOL(conninfra_get_phy_addr);
 
