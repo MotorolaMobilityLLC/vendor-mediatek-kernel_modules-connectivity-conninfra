@@ -206,8 +206,12 @@ struct msg_op *msg_evt_get_free_op(struct msg_thread_ctx *ctx)
 		return op;
 	}
 	op = msg_evt_get_op_from_q(&ctx->free_op_q);
-	if (op)
-		osal_memset(op, 0, osal_sizeof(struct msg_op));
+	if (op) {
+		osal_memset(&(op->op), 0, sizeof(struct msg_op_data));
+		op->result = 0;
+		atomic_set(&op->ref_count, 0);
+		atomic_set(&op->op_state, 0);
+	}
 	return op;
 }
 
@@ -215,13 +219,15 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 {
 	P_OSAL_SIGNAL signal = NULL;
 	int wait_ret = -1;
-	int ret = 0;
+	int ret = 0, cnt = 0;
 
 	do {
 		if (!ctx || !op) {
 			pr_err("msg_thread_ctx(0x%p), op(0x%p)\n", ctx, op);
 			break;
 		}
+
+		atomic_inc(&op->op_state);
 
 		signal = &op->signal;
 		if (signal->timeoutValue) {
@@ -274,6 +280,16 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 			pr_info("opId(%d) result:%d\n",
 					op->op.op_id, op->result);
 
+		atomic_dec(&op->op_state);
+		cnt = 0;
+		while (atomic_read(&op->op_state) >= 1) {
+			msleep(20);
+			if (((++cnt) % 50) == 0) {
+				pr_notice("[%s] op[%d] state=[%d] in_use", __func__,
+						op->op.op_id, atomic_read(&op->op_state));
+			}
+		}
+
 		/* op completes, check result */
 		ret = op->result;
 	} while (0);
@@ -308,6 +324,10 @@ int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 
 	if (ctx == NULL) {
 		pr_err("[%s] ctx is NULL", __func__);
+		return -1;
+	}
+	if (ctx->status == 0) {
+		pr_notice("[%s] msg ctx is not init successfully\n", __func__);
 		return -1;
 	}
 
@@ -372,6 +392,10 @@ int msg_thread_send_wait_4(struct msg_thread_ctx *ctx,
 
 	if (ctx == NULL) {
 		pr_err("[%s] msg ctx is NULL", __func__);
+		return -1;
+	}
+	if (ctx->status == 0) {
+		pr_notice("[%s] msg ctx is not init successfully\n", __func__);
 		return -1;
 	}
 
@@ -490,7 +514,7 @@ static int msg_evt_thread(void *pvData)
 	struct msg_thread_ctx *ctx = (struct msg_thread_ctx *)pvData;
 	P_OSAL_EVENT evt = NULL;
 	struct msg_op *op;
-	int ret;
+	int ret = 0, state;
 
 	if (ctx == NULL) {
 		pr_err("msg_evt_thread (NULL)\n");
@@ -519,9 +543,16 @@ static int msg_evt_thread(void *pvData)
 
 		/* TODO: save op history */
 		msg_op_history_save(&ctx->op_history, op);
-		msg_evt_set_current_op(ctx, op);
-		ret = msg_evt_opid_handler(ctx, &op->op);
-		msg_evt_set_current_op(ctx, NULL);
+		state = atomic_inc_return(&op->op_state);
+
+		if (state == 2) {
+			msg_evt_set_current_op(ctx, op);
+			ret = msg_evt_opid_handler(ctx, &op->op);
+			msg_evt_set_current_op(ctx, NULL);
+		} else
+			pr_notice("[%s] op not in_use, give up [%d]", __func__, state);
+
+		atomic_dec(&op->op_state);
 
 		if (ret)
 			pr_warn("opid (0x%x) failed, ret(%d)\n",
@@ -591,6 +622,10 @@ int msg_thread_init(struct msg_thread_ctx *ctx,
 				p_thread, r);
 		return -2;
 	}
+
+	/* Init successfully */
+	ctx->status = 1;
+
 	return r;
 }
 

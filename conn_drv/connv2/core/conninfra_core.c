@@ -803,6 +803,8 @@ static void conninfra_detect_time_change(void) {
 
 	if (time_changed) {
 		for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
+			if ((g_conninfra_ctx.support_drv & (0x1 << i)) == 0)
+				continue;
 			drv_inst = &g_conninfra_ctx.drv_inst[i];
 			ret = msg_thread_send_1(&drv_inst->msg_ctx,
 				INFRA_SUBDRV_OPID_TIME_CHANGED, i);

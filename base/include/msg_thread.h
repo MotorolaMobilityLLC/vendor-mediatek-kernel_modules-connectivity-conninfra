@@ -61,6 +61,7 @@ struct msg_op {
 	OSAL_SIGNAL signal;
 	int result;
 	atomic_t ref_count;
+	atomic_t op_state;
 };
 
 
@@ -88,6 +89,7 @@ struct msg_thread_ctx {
 	const msg_opid_func *op_func;
 
 	struct osal_op_history op_history;
+	unsigned int status; /* 0: initial, 1: working */
 };
 
 
