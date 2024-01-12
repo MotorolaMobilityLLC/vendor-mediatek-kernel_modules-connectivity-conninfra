@@ -18,6 +18,7 @@
 #include "consys_reg_mng.h"
 #include "connsys_debug_utility.h"
 #include "coredump_mng.h"
+#include "conn_power_throttling.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -660,6 +661,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
 	struct consys_emi_addr_info* emi_info = NULL;
+	struct conn_pwr_plat_info pwr_info;
 
 	if (pdev == NULL) {
 		pr_err("[%s] invalid input", __func__);
@@ -712,6 +714,12 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	coredump_mng_init(g_conninfra_plat_data);
 	g_pdev = pdev;
 
+	pwr_info.chip_id = consys_hw_chipid_get();
+	pwr_info.get_temp = consys_hw_therm_query;
+	ret = conn_pwr_init(&pwr_info);
+	if (ret < 0)
+		pr_info("conn_pwr_init is failed %d.", ret);
+
 	atomic_set(&g_hw_init_done, 1);
 	osal_sleepable_lock_init(&g_adie_chipid_lock);
 	return 0;
@@ -719,6 +727,8 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 
 int mtk_conninfra_remove(struct platform_device *pdev)
 {
+	conn_pwr_deinit();
+
 	if (consys_hw_ops->consys_plt_clk_detach)
 		consys_hw_ops->consys_plt_clk_detach();
 	else
