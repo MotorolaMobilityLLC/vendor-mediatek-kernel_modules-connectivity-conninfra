@@ -45,6 +45,15 @@ enum connv3_drv_type {
 
 #define CONNV3_ERR_RST_ONGOING			-0x7788
 
+/* whole chip reset type */
+#define CONNV3_CHIP_RST_TYPE_LEGACY_MODE		0x0
+#define CONNV3_CHIP_RST_TYPE_PMIC_FAULT_B		0x1
+#define CONNV3_CHIP_RST_TYPE_DFD_DUMP			0x2
+
+/* reset action */
+#define CONNV3_CHIP_RST_POST_ACTION_NOTHING		0x0
+#define CONNV3_CHIP_RST_POST_ACTION_PMIC_SHUTDOWN	0x1
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -86,7 +95,8 @@ int connv3_trigger_whole_chip_rst(enum connv3_drv_type drv, char *reason);
  *    !0: fail
  */
 struct connv3_whole_chip_rst_cb {
-	int (*pre_whole_chip_rst)(enum connv3_drv_type drv, char *reason);
+	int (*pre_whole_chip_rst)(enum connv3_drv_type drv, char *reason, unsigned int reset_type);
+	int (*post_reset_on)(unsigned int type);
 	int (*post_whole_chip_rst)(void);
 };
 

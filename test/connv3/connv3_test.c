@@ -103,7 +103,7 @@ int wifi_power_on_noitfy(void)
 	return 0;
 }
 
-int wifi_pre_chip_rst(enum connv3_drv_type drv, char *reason)
+int wifi_pre_chip_rst(enum connv3_drv_type drv, char *reason, unsigned int reset_type)
 {
 	pr_info("[%s] ===", __func__);
 	return 0;
@@ -128,7 +128,7 @@ int bt_power_on_noitfy(void)
 	return 0;
 }
 
-int bt_pre_chip_rst(enum connv3_drv_type drv, char *reason)
+int bt_pre_chip_rst(enum connv3_drv_type drv, char *reason, unsigned int reset_type)
 {
 	pr_info("[%s] ===", __func__);
 	return 0;

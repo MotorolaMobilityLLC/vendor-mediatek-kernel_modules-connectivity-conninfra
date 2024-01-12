@@ -1049,7 +1049,8 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 			drv_inst->ops_cb.rst_cb.pre_whole_chip_rst) {
 
 		ret = drv_inst->ops_cb.rst_cb.pre_whole_chip_rst(g_connv3_ctx.trg_drv,
-					g_connv3_ctx.trg_reason);
+					g_connv3_ctx.trg_reason,
+					CONNV3_CHIP_RST_TYPE_LEGACY_MODE);
 		if (ret)
 			pr_notice("[%s] fail [%d]", __func__, ret);
 	}
