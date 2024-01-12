@@ -5,14 +5,15 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
+#include "msg_thread.h"
+#include "osal_dbg.h"
+
 #include "consys_hw.h"
 #include "conninfra_core.h"
-#include "msg_thread.h"
 #include "consys_reg_mng.h"
 #include "conninfra_conf.h"
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include "connectivity_build_in_adapter.h"
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-#include <aee.h>
 #endif
 
 /*******************************************************************************
@@ -1956,7 +1957,7 @@ static int conninfra_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *
 			exception_title_index = (bt_cb == NULL ? 0 : 1);
 			if (snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
 				exception_title[exception_title_index]) > 0) {
-				aed_common_exception_api(
+				osal_dbg_common_exception_api(
 					exception_title[exception_title_index],
 					NULL, 0,
 					(const int*)exception_log, strlen(exception_log),
@@ -2291,7 +2292,9 @@ int conninfra_core_deinit(void)
 	osal_sleepable_lock_deinit(&infra_ctx->core_lock);
 	osal_wake_lock_deinit(&conninfra_wake_lock);
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	connectivity_export_conap_scp_deinit();
+#endif
 
 	return 0;
 }

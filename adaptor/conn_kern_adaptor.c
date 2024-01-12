@@ -11,7 +11,9 @@
 #include <linux/version.h>
 
 #include "osal.h"
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include "wmt_build_in_adapter.h"
+#endif
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -22,7 +24,7 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-
+#define CONN_ADAPTOR_DBG_DUMP_BUF_SIZE 1024
 
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -44,9 +46,10 @@
 ********************************************************************************
 */
 
-
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static ssize_t conn_adaptor_dbg_write(struct file *, const char __user *, size_t, loff_t *);
 static ssize_t conn_adaptor_dbg_read(struct file *, char __user *, size_t, loff_t *);
+#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -59,23 +62,26 @@ static ssize_t conn_adaptor_dbg_read(struct file *, char __user *, size_t, loff_
 */
 int (*g_kern_dbg_handler)(int x, int y, int z, char* buf, int buf_sz);
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 /* dbg */
 static const struct wmt_platform_dbg_bridge g_plat_dbg_bridge = {
 	.write_cb = conn_adaptor_dbg_write,
 	.read_cb = conn_adaptor_dbg_read,
 };
 
-#define CONN_ADAPTOR_DBG_DUMP_BUF_SIZE 1024
 static char g_conn_adaptor_dump_buf[CONN_ADAPTOR_DBG_DUMP_BUF_SIZE];
 static OSAL_SLEEPABLE_LOCK g_conn_adaptor_dump_lock;
 static int g_dump_buf_len;
 static char *g_dump_buf_ptr;
+
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static ssize_t conn_adaptor_dbg_write(struct file *filp, const char __user *buffer, size_t count, loff_t *f_pos)
 {
 	size_t len = count;
@@ -179,18 +185,23 @@ exit:
 	osal_unlock_sleepable_lock(&g_conn_adaptor_dump_lock);
 	return ret;
 }
+#endif
 
 int conn_kern_adaptor_init(int (*dbg_handler)(int x, int y, int z, char *buf, int buf_sz))
 {
-	osal_sleepable_lock_init(&g_conn_adaptor_dump_lock);
-
 	g_kern_dbg_handler = dbg_handler;
+
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
+	osal_sleepable_lock_init(&g_conn_adaptor_dump_lock);
 	wmt_export_platform_dbg_bridge_register(&g_plat_dbg_bridge);
+#endif
 	return 0;
 }
 
 int conn_kern_adaptor_deinit(void)
 {
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	wmt_export_platform_dbg_bridge_unregister();
+#endif
 	return 0;
 }

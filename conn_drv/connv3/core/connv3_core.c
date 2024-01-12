@@ -5,15 +5,15 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME "@(%s:%d) " fmt, __func__, __LINE__
 
+#include "conninfra_conf.h"
 #include "connv3.h"
 #include "connv3_hw.h"
 #include "connv3_core.h"
 #include "msg_thread.h"
-#include "conninfra_conf.h"
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-#include <aee.h>
-#endif
+#include "osal_dbg.h"
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include <connectivity_build_in_adapter.h>
+#endif
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -387,11 +387,13 @@ static int opfunc_power_on_done(struct msg_op_data *op)
 	} else {
 		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 		/* notification */
 		if (drv_type == CONNV3_DRV_TYPE_BT)
 			connectivity_export_conap_scp_state_change(conn_bt_on);
 		else if (drv_type == CONNV3_DRV_TYPE_WIFI)
 			connectivity_export_conap_scp_state_change(conn_wifi_on);
+#endif
 	}
 	dump_curr_status("Connv3 Pwr done");
 
@@ -444,12 +446,13 @@ static int opfunc_power_off_internal(unsigned int drv_type)
 
 		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_OFF;
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 		/* notification */
 		if (drv_type == CONNV3_DRV_TYPE_BT)
 			connectivity_export_conap_scp_state_change(conn_bt_off);
 		else if (drv_type == CONNV3_DRV_TYPE_WIFI)
 			connectivity_export_conap_scp_state_change(conn_wifi_off);
-
+#endif
 	}
 	/* is there subsys on ? */
 	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++)
@@ -1596,11 +1599,10 @@ static int connv3_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *sta
 	void *bt_cb;
 	void *wifi_cb;
 	unsigned long diff;
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 	const char *exception_title[2] = {"combo_bt", "combo_wifi"};
 	int exception_title_index;
 	char exception_log[70];
-#endif
+
 	osal_gettimeofday(&now);
 	diff = timespec64_to_ms(start, &now);
 
@@ -1609,17 +1611,15 @@ static int connv3_is_pre_cal_timeout_by_cb_not_registered(struct timespec64 *sta
 		wifi_cb = (void *)ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.do_cal_cb;
 		if (bt_cb == NULL || wifi_cb == NULL) {
 			pr_notice("%s [pre_cal][timeout!!] bt=[%p] wf=[%p]\n", __func__, bt_cb, wifi_cb);
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
 			exception_title_index = (bt_cb == NULL ? 0 : 1);
 			if (snprintf(exception_log, sizeof(exception_log), "pre-cal timeout. %s callback is not registered",
 				exception_title[exception_title_index]) > 0) {
-				aed_common_exception_api(
+				osal_dbg_common_exception_api(
 					exception_title[exception_title_index],
 					NULL, 0,
 					(const int*)exception_log, strlen(exception_log),
 					exception_log, 0);
 			}
-#endif
 			return 1;
 		}
 	}

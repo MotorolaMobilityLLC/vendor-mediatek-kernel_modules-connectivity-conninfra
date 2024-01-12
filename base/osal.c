@@ -30,6 +30,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include <linux/sched/clock.h> /* local_clock */
 #include <linux/version.h>
 #include <linux/delay.h>
 #include <linux/sched.h>
@@ -40,7 +41,9 @@
 #include <linux/vmalloc.h>
 #include <asm/current.h>
 #include <linux/kfifo.h>
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include "connectivity_build_in_adapter.h"
+#endif
 #include "osal.h"
 
 /*******************************************************************************
@@ -66,7 +69,9 @@
 
 int ftrace_flag = 1;
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static unsigned long __read_mostly mark_addr;
+#endif
 static unsigned int g_pid;
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -223,8 +228,10 @@ static inline bool __osal_is_valid_thread(P_OSAL_THREAD pThread)
 
 void osal_thread_show_stack(P_OSAL_THREAD pThread)
 {
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	if (__osal_is_valid_thread(pThread))
 		KERNEL_show_stack(pThread->pThread, NULL);
+#endif
 }
 
 /*
@@ -1163,7 +1170,8 @@ int osal_sleepable_lock_init(P_OSAL_SLEEPABLE_LOCK pSL)
 
 int osal_lock_sleepable_lock(P_OSAL_SLEEPABLE_LOCK pSL)
 {
-	return mutex_lock_killable(&pSL->lock);
+	mutex_lock(&pSL->lock);
+	return 0;
 }
 
 int osal_unlock_sleepable_lock(P_OSAL_SLEEPABLE_LOCK pSL)
@@ -1519,7 +1527,9 @@ static void osal_systrace_b(const char *log)
 {
 	osal_systrace_prepare();
 	preempt_disable();
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	KERNEL_event_trace_printk(mark_addr, "B|%d|%s\n", g_pid, log);
+#endif
 	preempt_enable();
 }
 
@@ -1527,7 +1537,9 @@ static void osal_systrace_b(const char *log)
 static void osal_systrace_e(void)
 {
 	preempt_disable();
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	KERNEL_event_trace_printk(mark_addr, "E\n");
+#endif
 	preempt_enable();
 }
 
@@ -1535,7 +1547,9 @@ static void osal_systrace_c(int val, const char *log)
 {
 	osal_systrace_prepare();
 	preempt_disable();
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	KERNEL_event_trace_printk(mark_addr, "C|%d|%s|%d\n", g_pid, log, val);
+#endif
 	preempt_enable();
 }
 

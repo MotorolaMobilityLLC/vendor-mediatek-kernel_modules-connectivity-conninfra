@@ -131,8 +131,7 @@ static int conndump_nl_bind_internal(struct dump_netlink_ctx* ctx, struct sk_buf
 	if (info == NULL)
 		goto out;
 
-	if (mutex_lock_killable(&ctx->nl_lock))
-		return -1;
+	mutex_lock(&ctx->nl_lock);
 
 	port_na = info->attrs[CONNDUMP_ATTR_PORT];
 	if (port_na) {
@@ -309,10 +308,7 @@ int conndump_netlink_send_to_native_internal(struct dump_netlink_ctx* ctx, char*
 
 	/* Clean up invalid bind_pid */
 	if (killed_num > 0) {
-		if (mutex_lock_killable(&ctx->nl_lock)) {
-		/* if fail to get lock, it is fine to update bind_pid[] later */
-			return ret;
-		}
+		mutex_lock(&ctx->nl_lock);
 		for (i = 0; i < ctx->num_bind_process - killed_num; i++) {
 			if (ctx->bind_pid[i] == 0) {
 				for (j = ctx->num_bind_process - 1; j > i; j--) {

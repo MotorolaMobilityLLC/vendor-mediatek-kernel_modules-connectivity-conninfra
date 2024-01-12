@@ -16,17 +16,16 @@
 #include <linux/slab.h>
 #include <linux/time.h>
 #include <linux/timer.h>
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-#include <aee.h>
-#endif
+
 #include "conninfra.h"
 #include "connsys_debug_utility.h"
 #include "connsys_coredump.h"
 #include "connsys_coredump_emi.h"
 #include "connsys_coredump_hw_config.h"
+#include "coredump_mng.h"
 #include "conndump_netlink.h"
 #include "osal.h"
-#include "coredump_mng.h"
+#include "osal_dbg.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -1272,20 +1271,16 @@ static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump
 			pr_notice("%s snprintf failed\n", __func__);
 	}
 
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	pr_info("par1: [%s] pars: [%s] par3: [%d]\n",
 		coredump_mng_get_tag_name(ctx->conn_type),
 		ctx->info.exception_log,
 		strlen(ctx->info.exception_log));
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-	/* Call AEE API */
-	aed_common_exception_api(
+	/* Call debug API */
+	osal_dbg_common_exception_api(
 		coredump_mng_get_tag_name(ctx->conn_type),
 		NULL, 0,
 		(const int*)ctx->info.exception_log, strlen(ctx->info.exception_log),
 		ctx->info.exception_log, 0);
-#endif
-#endif
 }
 
 /*****************************************************************************

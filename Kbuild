@@ -21,8 +21,13 @@ KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 
 ###############################################################################
 # Option for some ALPS specific feature, ex: AEE.
+ifeq ($(CONFIG_ARCH_MEDIATEK),y)
 ccflags-y += -D CONNINFRA_PLAT_ALPS=1
 ccflags-y += -D MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE=1
+else
+ccflags-y += -D CONNINFRA_PLAT_ALPS=0
+ccflags-y += -D MTK_CONNINFRA_CLOCK_BUFFER_API_AVAILABLE=0
+endif
 
 ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/include
 ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/include/mt-plat
@@ -184,6 +189,7 @@ endif
 
 $(MODULE_NAME)-objs += base/ring.o
 $(MODULE_NAME)-objs += base/osal.o
+$(MODULE_NAME)-objs += base/osal_dbg.o
 $(MODULE_NAME)-objs += base/msg_thread.o
 $(MODULE_NAME)-objs += conf/conninfra_conf.o
 

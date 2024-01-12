@@ -11,7 +11,9 @@
 #include <linux/delay.h>
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 #include <linux/mm.h>
+#if IS_ENABLED(CONFIG_DEVICE_MODULES_DRM_MEDIATEK)
 #include "mtk_disp_notify.h"
+#endif
 #else
 #include <linux/fb.h>
 #endif
@@ -296,6 +298,7 @@ static int conn_adaptor_dev_get_disp_blank_state(void)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 int conn_adaptor_dev_fb_notifier_callback(struct notifier_block *self, unsigned long event, void *v)
 {
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK)
 	int *data = (int *)v;
 
 	pr_debug("[%s] event=[%u]\n", __func__, event);
@@ -317,13 +320,14 @@ int conn_adaptor_dev_fb_notifier_callback(struct notifier_block *self, unsigned 
 	}
 
 	pr_info("%s-\n", __func__);
-
+#endif
 	return 0;
 }
 #else
 int conn_adaptor_dev_fb_notifier_callback(struct notifier_block *self,
 				unsigned long event, void *data)
 {
+#if defined(CONFIG_FB)
 	struct fb_event *evdata = data;
 	int blank;
 
@@ -349,6 +353,7 @@ int conn_adaptor_dev_fb_notifier_callback(struct notifier_block *self,
 	default:
 		break;
 	}
+#endif
 	return 0;
 }
 #endif

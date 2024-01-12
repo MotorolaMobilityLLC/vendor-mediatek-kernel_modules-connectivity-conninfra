@@ -31,8 +31,9 @@
 #include <linux/types.h>
 #include <linux/version.h>
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include <connectivity_build_in_adapter.h>
 #include <mtk_ccci_common.h>
-
+#endif
 
 #endif	/* PLAT_LIBRARY_H */

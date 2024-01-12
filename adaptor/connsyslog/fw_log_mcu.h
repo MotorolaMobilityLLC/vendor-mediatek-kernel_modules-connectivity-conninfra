@@ -30,13 +30,10 @@ F(gps)
 
 CONN_FW_LOG_SYS_LIST(DECLARE_FW_LOG_SYS)
 
-
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 int fw_log_mcu_init(struct fw_log_mcu_info *info, const struct file_operations *ops);
 void fw_log_mcu_deinit(struct fw_log_mcu_info *info);
 int fw_log_mcu_open(struct inode *inode, struct file *file);
 int fw_log_mcu_close(struct inode *inode, struct file *file);
 int fw_log_mcu_register_event_cb(struct fw_log_mcu_info *info);
-#endif
 
 #endif /*_FW_LOG_MCU_H_*/

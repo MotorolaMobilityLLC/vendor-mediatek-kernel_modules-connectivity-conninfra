@@ -4,10 +4,13 @@
  */
 
 #include "../../../base/include/osal.h"
+#include "../../../base/include/osal_dbg.h"
 #include "../../../include/conninfra.h"
 #include "../debug_utility/coredump/coredump_mng.h"
 #include "../debug_utility/include/connsys_debug_utility.h"
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include "conn_power_throttling.h"
+#endif
 #include "include/clock_mng.h"
 #include "include/consys_hw.h"
 #include "include/consys_reg_mng.h"
@@ -15,7 +18,6 @@
 #include "include/plat_def.h"
 #include "include/plat_library.h"
 #include "include/pmic_mng.h"
-#include "aee.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -583,11 +585,7 @@ static void _consys_hw_conninfra_sleep(void)
 	}
 
 	if (g_conninfra_wakeup_ref_cnt < 0) {
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-		aee_kernel_exception("conninfra", "%s count %d is unexpected.", __func__, g_conninfra_wakeup_ref_cnt);
-#else
-		pr_notice("%s count %d is unexpected.", __func__, g_conninfra_wakeup_ref_cnt);
-#endif
+		osal_dbg_kernel_exception("conninfra", "%s count %d is unexpected.", __func__, g_conninfra_wakeup_ref_cnt);
 		_consys_hw_conninfra_print_wakeup_record();
 	} else
 		_consys_hw_conninfra_add_wakeup_record(g_conninfra_wakeup_ref_cnt);
@@ -852,11 +850,12 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 	if (emi_info) {
 		connsys_dedicated_log_path_apsoc_init((phys_addr_t)emi_info->emi_ap_phy_addr,
 						      g_conninfra_plat_data->connsyslog_config);
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 		connectivity_export_conap_scp_init(consys_hw_get_ic_info(CONNSYS_SOC_CHIPID),
 						   (phys_addr_t)emi_info->emi_ap_phy_addr);
-	} else {
+#endif
+	} else
 		pr_err("Connsys and scp didn't init because EMI is invalid\n");
-	}
 
 	consys_hw_tcxo_parser(pdev);
 

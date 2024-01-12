@@ -14,16 +14,13 @@
 #include <linux/time64.h>
 #include <linux/vmalloc.h>
 
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
-#include <aee.h>
-#endif
-
 #include "conndump_netlink.h"
 #include "connv3_coredump.h"
 #include "connv3_debug_utility.h"
 #include "connv3_dump_mng.h"
 #include "connv3.h"
 #include "osal.h"
+#include "osal_dbg.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -742,20 +739,16 @@ static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customi
 	else
 		exception_log = ctx->issue_info.assert_info;
 
-#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	pr_info("par1: [%s] pars: [%s] par3: [%d]\n",
 		exp_tag_name,
 		exception_log,
 		strlen(exception_log));
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-	/* Call AEE API */
-	aed_common_exception_api(
+	/* Call debug API */
+	osal_dbg_common_exception_api(
 		exp_tag_name,
 		NULL, 0,
 		(const int*)exception_log, strlen(exception_log),
 		exception_log, 0);
-#endif
-#endif
 	return 0;
 }
 

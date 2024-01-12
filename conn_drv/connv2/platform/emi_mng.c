@@ -11,10 +11,12 @@
 #include "emi_mng.h"
 #include "osal.h"
 
+#if IS_ENABLED(CONFIG_MTK_EMI)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
 #include <soc/mediatek/emi.h>
 #else
 #include <memory/mediatek/emi.h>
+#endif
 #endif
 
 /*******************************************************************************

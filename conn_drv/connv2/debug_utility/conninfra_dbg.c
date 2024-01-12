@@ -25,7 +25,9 @@
 #include <linux/regmap.h>
 #include "clock_mng.h"
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include "connectivity_build_in_adapter.h"
+#endif
 
 #define CONNINFRA_DBG_PROCNAME "driver/conninfra_dbg"
 
@@ -659,7 +661,9 @@ static int conninfra_dbg_dump_power_state(int par1, int par2, int par3)
 
 static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3)
 {
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	connectivity_export_conap_scp_trigger_cmd(par2, par3, 0);
+#endif
 
 	return 0;
 }

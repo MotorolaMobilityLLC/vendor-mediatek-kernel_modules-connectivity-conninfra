@@ -12,7 +12,11 @@
 #include <linux/thermal.h>
 #include <linux/version.h>
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 #include <connectivity_build_in_adapter.h>
+#include "conn_power_throttling.h"
+#include "wmt_build_in_adapter.h"
+#endif
 
 #include "osal.h"
 #include "conninfra_core.h"
@@ -20,9 +24,7 @@
 #include "consys_hw.h"
 #include "connsys_debug_utility.h"
 #include "coredump_mng.h"
-#include "conn_power_throttling.h"
 #include "conn_adaptor.h"
-#include "wmt_build_in_adapter.h"
 #include "emi_mng.h"
 
 #if IS_ENABLED(CONFIG_DEVICE_MODULES_MTK_DEVAPC)
@@ -116,10 +118,8 @@ u32 connv2_detect_adie_chipid(void);
 /* screen on/off */
 void connv2_power_on_off_notify(int on_off);
 
-/* thermal query */
-static int last_thermal_value;
+/* thermal query for Linux thermal framework */
 static int g_temp_thermal_value;
-static int conninfra_thermal_query_cb(void);
 #if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
 static int conninfra_thermal_get_temp_cb(struct thermal_zone_device *tz,
 		int *temp);
@@ -133,6 +133,11 @@ static const struct thermal_zone_of_device_ops tz_conninfra_thermal_ops = {
 };
 #endif
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
+/* thermal for legacy MTK thermal platform */
+static int last_thermal_value;
+static int conninfra_thermal_query_cb(void);
+
 /* clk fail */
 static void conninfra_clock_fail_dump_cb(void);
 
@@ -141,6 +146,7 @@ static int conninfra_conn_reg_readable(void);
 static int conninfra_conn_is_bus_hang(void);
 #ifdef SSPM_DEBUG_DUMP
 static int conninfra_conn_bus_dump(void);
+#endif
 #endif
 
 /* DEVAPC */
@@ -189,6 +195,7 @@ struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
 	.dump_power_state = connv2_dump_power_state,
 };
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 struct wmt_platform_bridge g_plat_bridge = {
 	.thermal_query_cb = conninfra_thermal_query_cb,
 	.clock_fail_dump_cb  = conninfra_clock_fail_dump_cb,
@@ -203,6 +210,7 @@ struct wmt_platform_bridge g_plat_bridge = {
 	//.debug_cb = conninfra_dbg_write,
 #endif
 };
+#endif
 
 static atomic_t g_connv2_hw_init_done = ATOMIC_INIT(0);
 
@@ -258,7 +266,9 @@ void connv2_suspend_notify(void)
 {
 	connsys_dedicated_log_set_ap_state(0);
 	conninfra_core_reset_power_state();
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	conn_pwr_suspend();
+#endif
 }
 
 void connv2_resume_notify(void)
@@ -270,7 +280,9 @@ static void consys_hw_ap_resume_handler(struct work_struct *work)
 {
 	conninfra_core_dump_power_state(NULL, 0);
 	connsys_dedicated_log_set_ap_state(1);
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	conn_pwr_resume();
+#endif
 }
 
 
@@ -283,6 +295,7 @@ void connv2_power_on_off_notify(int on_off)
 		conninfra_core_screen_off();
 }
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static int conninfra_thermal_query_cb(void)
 {
 	int ret;
@@ -301,6 +314,7 @@ static int conninfra_thermal_query_cb(void)
 
 	return last_thermal_value;
 }
+#endif
 
 /* for Linux thermal framework */
 #if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
@@ -362,10 +376,12 @@ static void conninfra_register_thermal_callback(void)
 	pr_info("Register thermal zone device.\n");
 }
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static void conninfra_clock_fail_dump_cb(void)
 {
 	conninfra_core_clock_fail_dump_cb();
 }
+#endif
 
 ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
@@ -482,6 +498,7 @@ int connv2_dump_power_state(uint8_t *buf, u32 buf_sz)
 /* this function go through consys_hw, skip conninfra_core */
 /* there is no lock and skip consys power on check         */
 /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 static int conninfra_conn_reg_readable(void)
 {
 	return consys_hw_reg_readable();
@@ -507,6 +524,7 @@ static int conninfra_conn_bus_dump(void)
 	return conninfra_core_conn_bus_dump();
 }
 #endif
+#endif
 
 #if CFG_CONNINFRA_DEVAPC_SUPPORT
 static void conninfra_devapc_violation_cb(void)
@@ -528,6 +546,7 @@ static void conninfra_register_devapc_callback(void)
 
 static void conninfra_register_power_throttling_callback(void)
 {
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	struct conn_pwr_plat_info pwr_info;
 	int ret;
 
@@ -537,12 +556,15 @@ static void conninfra_register_power_throttling_callback(void)
 	ret = conn_pwr_init(&pwr_info);
 	if (ret < 0)
 		pr_info("conn_pwr_init is failed %d.", ret);
+#endif
 }
 
 int mtk_conninfra_probe(struct platform_device *pdev)
 {
 	int ret = -1;
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	struct conn_pwr_plat_info pwr_info;
+#endif
 
 	if (pdev == NULL) {
 		pr_err("[%s] invalid input", __func__);
@@ -562,6 +584,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	g_drv_dev = pdev;
 
 	/* TODO */
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	/* power throttling */
 	pwr_info.chip_id = consys_hw_chipid_get();
 	pwr_info.adie_id = consys_hw_detect_adie_chipid();
@@ -569,6 +592,7 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	ret = conn_pwr_init(&pwr_info);
 	if (ret < 0)
 		pr_info("conn_pwr_init is failed %d.", ret);
+#endif
 
 	atomic_set(&g_connv2_hw_init_done, 1);
 
@@ -603,10 +627,12 @@ int connv2_drv_init(void)
 	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);
 
 
-	iret = platform_driver_register(&mtk_conninfra_dev_drv);
-	if (iret)
+	iret = platform_driver_probe(&mtk_conninfra_dev_drv, mtk_conninfra_probe);
+	//iret = platform_driver_register(&mtk_conninfra_dev_drv);
+	if (iret) {
 		pr_err("Conninfra platform driver registered failed(%d)\n", iret);
-	else {
+		return -1;
+	} else {
 		while (atomic_read(&g_connv2_hw_init_done) == 0) {
 			osal_sleep_ms(50);
 			retry++;
@@ -614,7 +640,9 @@ int connv2_drv_init(void)
 				pr_info("g_connv2_hw_init_done = 0, retry = %d", retry);
 		}
 	}
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	wmt_export_platform_bridge_register(&g_plat_bridge);
+#endif
 
 	INIT_WORK(&g_conninfra_pmic_work.pmic_work, conninfra_dev_pmic_event_handler);
 
@@ -666,7 +694,9 @@ int connv2_drv_deinit(void)
 	ret = conninfra_test_remove();
 #endif
 
+#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
 	conn_pwr_deinit();
+#endif
 	ret = conn_adaptor_unregister_drv_gen(CONN_ADAPTOR_DRV_GEN_CONNAC_2);
 
 	ret = conninfra_dev_dbg_deinit();
