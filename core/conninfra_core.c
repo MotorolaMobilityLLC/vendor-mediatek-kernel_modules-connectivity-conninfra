@@ -22,6 +22,7 @@
 #include "conninfra_core.h"
 #include "msg_thread.h"
 #include "consys_reg_mng.h"
+#include "conninfra_conf.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -155,6 +156,15 @@ static const msg_opid_func infra_subdrv_opfunc[] = {
 	[INFRA_SUBDRV_OPID_CAL_DO_CAL] = opfunc_subdrv_cal_do_cal,
 	[INFRA_SUBDRV_OPID_THERM_CTRL] = opfunc_subdrv_therm_ctrl,
 };
+
+enum pre_cal_type {
+	PRE_CAL_ALL_ENABLED = 0,
+	PRE_CAL_ALL_DISABLED = 1,
+	PRE_CAL_PWR_ON_DISABLED = 2,
+	PRE_CAL_SCREEN_ON_DISABLED = 3
+};
+
+static unsigned int g_pre_cal_mode = 0;
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -808,6 +818,7 @@ static int opfunc_pre_cal_prepare(struct msg_op_data *op)
 			bt_drv->drv_status == DRV_STS_POWER_OFF &&
 			wifi_drv->drv_status == DRV_STS_POWER_OFF) {
 			cal_info->status = PRE_CAL_SCHEDULED;
+			cal_info->caller = op->op_data[0];
 			pr_info("[pre_cal] BT&WIFI is off, schedule pre-cal from status=[%d] to new status[%d]\n",
 				cur_status, cal_info->status);
 			schedule_work(&cal_info->pre_cal_work);
@@ -1060,6 +1071,8 @@ int conninfra_core_power_off(enum consys_drv_type type)
 int conninfra_core_pre_cal_start(void)
 {
 	int ret = 0;
+	bool skip = false;
+	enum pre_cal_caller caller;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
 	struct pre_cal_info *cal_info = &infra_ctx->cal_info;
 
@@ -1069,6 +1082,43 @@ int conninfra_core_pre_cal_start(void)
 			__func__, ret);
 		return -1;
 	}
+
+	caller = cal_info->caller;
+	pr_info("[%s] [pre_cal] Caller = %u", __func__, caller);
+
+	/* Handle different pre_cal_mode */
+	switch (g_pre_cal_mode) {
+		case PRE_CAL_ALL_DISABLED:
+			pr_info("[%s] [pre_cal] Skip all pre-cal", __func__);
+			skip = true;
+			cal_info->status = PRE_CAL_DONE;
+			break;
+		case PRE_CAL_PWR_ON_DISABLED:
+			if (caller == PRE_CAL_BY_SUBDRV_REGISTER) {
+				pr_info("[%s] [pre_cal] Skip pre-cal triggered by subdrv register", __func__);
+				skip = true;
+				cal_info->status = PRE_CAL_NOT_INIT;
+			}
+			break;
+		case PRE_CAL_SCREEN_ON_DISABLED:
+			if (caller == PRE_CAL_BY_SCREEN_ON) {
+				pr_info("[%s] [pre_cal] Skip pre-cal triggered by screen on", __func__);
+				skip = true;
+				cal_info->status = PRE_CAL_DONE;
+			}
+			break;
+		default:
+			pr_info("[%s] [pre_cal] Begin pre-cal, g_pre_cal_mode: %u",
+				__func__, g_pre_cal_mode);
+			break;
+	}
+
+	if (skip) {
+		pr_info("[%s] [pre_cal] Reset status to %d", __func__, cal_info->status);
+		osal_unlock_sleepable_lock(&cal_info->pre_cal_lock);
+		return -2;
+	}
+
 	cal_info->status = PRE_CAL_EXECUTING;
 	ret = msg_thread_send_wait(&infra_ctx->cb_ctx,
 				CONNINFRA_CB_OPID_PRE_CAL, 0);
@@ -1096,8 +1146,8 @@ int conninfra_core_screen_on(void)
 		return 0;
 	}
 
-	ret = msg_thread_send(&infra_ctx->msg_ctx,
-				CONNINFRA_OPID_PRE_CAL_PREPARE);
+	ret = msg_thread_send_1(&infra_ctx->msg_ctx,
+			CONNINFRA_OPID_PRE_CAL_PREPARE, PRE_CAL_BY_SCREEN_ON);
 	if (ret) {
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
@@ -1473,8 +1523,8 @@ int conninfra_core_subsys_ops_reg(enum consys_drv_type type,
 
 	if (trigger_pre_cal) {
 		pr_info("[%s] [pre_cal] trigger pre-cal BT/WF are registered", __func__);
-		ret = msg_thread_send(&infra_ctx->msg_ctx,
-						CONNINFRA_OPID_PRE_CAL_PREPARE);
+		ret = msg_thread_send_1(&infra_ctx->msg_ctx,
+				CONNINFRA_OPID_PRE_CAL_PREPARE, PRE_CAL_BY_SUBDRV_REGISTER);
 		if (ret)
 			pr_err("send pre_cal_prepare msg fail, ret = %d\n", ret);
 	}
@@ -1502,11 +1552,25 @@ void conninfra_core_pre_cal_blocking(void)
 	struct pre_cal_info *cal_info = &g_conninfra_ctx.cal_info;
 	struct timeval start, end;
 	unsigned long diff;
+	static bool ever_pre_cal = false;
 
 	do_gettimeofday(&start);
 
 	/* non-zero means lock got, zero means not */
 	while (true) {
+		// Handle PRE_CAL_PWR_ON_DISABLED case:
+		// 1. Do pre-cal "only once" after bootup if BT or WIFI is default on
+		// 2. Use ever_pre_cal to check if the "first" pre-cal is already
+		//    triggered. If yes, skip pre-cal
+		if (g_pre_cal_mode == PRE_CAL_PWR_ON_DISABLED && !ever_pre_cal) {
+			struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+			ret = msg_thread_send_1(&infra_ctx->msg_ctx,
+					CONNINFRA_OPID_PRE_CAL_PREPARE, PRE_CAL_BY_SUBDRV_PWR_ON);
+			ever_pre_cal = true;
+			pr_info("[%s] [pre_cal] Triggered by subdrv power on and set ever_pre_cal to true, result: %d", __func__, ret);
+		}
+
 		ret = osal_trylock_sleepable_lock(&cal_info->pre_cal_lock);
 		if (ret) {
 			if (cal_info->status == PRE_CAL_NOT_INIT ||
@@ -1653,6 +1717,14 @@ int conninfra_core_init(void)
 {
 	int ret = 0, i;
 	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+	// Get pre-cal mode
+	const struct conninfra_conf *conf = NULL;
+	conf = conninfra_conf_get_cfg();
+	if (conf != NULL) {
+		g_pre_cal_mode = conf->pre_cal_mode;
+	}
+	pr_info("[%s] [pre_cal] Init g_pre_cal_mode = %u", __func__, g_pre_cal_mode);
 
 	osal_memset(&g_conninfra_ctx, 0, sizeof(g_conninfra_ctx));
 

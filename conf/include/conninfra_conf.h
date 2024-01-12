@@ -147,6 +147,7 @@ struct conninfra_conf {
 	/* POS. If set, means using ext TCXO */
 	unsigned char tcxo_gpio;
 
+	unsigned char pre_cal_mode;
 };
 
 
