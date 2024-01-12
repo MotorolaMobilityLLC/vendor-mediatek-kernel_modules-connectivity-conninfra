@@ -96,6 +96,17 @@ unsigned int connv3_hw_get_adie_chipid(void)
 	return 0;
 }
 
+unsigned int connv3_hw_get_reset_type_support(void)
+{
+	if (connv3_hw_ops->connsys_plt_reset_type_support)
+		return connv3_hw_ops->connsys_plt_reset_type_support();
+	else
+		pr_notice("connsys_plt_reset_type_support not supproted\n");
+
+	/* 0 means "shutdown PMIC" */
+	return 0;
+}
+
 unsigned int connv3_hw_get_connsys_ic_info(uint8_t *buf, u32 buf_sz)
 {
 	int ret;

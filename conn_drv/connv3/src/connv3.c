@@ -123,7 +123,8 @@ int connv3_trigger_whole_chip_rst(enum connv3_drv_type who, char *reason)
 	/* so that function can be returned immediately */
 	int r;
 
-	r = connv3_core_lock_rst();
+	/* for normal L0 reset flow, only do it once */
+	r = connv3_core_lock_rst(NULL);
 	if (r >= CHIP_RST_START) {
 		/* reset is ongoing */
 		pr_warn("[%s] r=[%d] chip rst is ongoing\n", __func__, r);
@@ -131,11 +132,30 @@ int connv3_trigger_whole_chip_rst(enum connv3_drv_type who, char *reason)
 	}
 	pr_info("[%s] rst lock [%d] [%d] reason=%s", __func__, r, who, reason);
 
-	connv3_core_trg_chip_rst(who, reason);
+	connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_NORMAL, who, reason);
 
 	return 0;
 }
 EXPORT_SYMBOL(connv3_trigger_whole_chip_rst);
+
+int connv3_trigger_pmic_irq(enum connv3_drv_type who, char *reason)
+{
+	int r;
+	unsigned int rst_source = 0;
+
+	r = connv3_core_lock_rst(&rst_source);
+	if (r >= CHIP_RST_START && rst_source > CONNV3_CHIP_RST_SOURCE_NORMAL) {
+		/* pmic reset is ongoing */
+		pr_notice("[%s] r=[%d] rst_source=[%d] pmic rst is ongoing\n", __func__, r, rst_source);
+		return 1;
+	}
+	pr_info("[%s] rst lock [%d] [%d] [%d] reason=%s",
+		__func__, r, who, rst_source, reason);
+
+	connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_PMIC_IRQ_B, who, reason);
+	return 0;
+}
+EXPORT_SYMBOL(connv3_trigger_pmic_irq);
 
 int connv3_conninfra_bus_dump(enum connv3_drv_type drv_type)
 {

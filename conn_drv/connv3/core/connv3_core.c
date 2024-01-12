@@ -186,8 +186,7 @@ static unsigned int g_pre_cal_mode = PRE_CAL_SCREEN_ON_DISABLED;
 
 static void reset_chip_rst_trg_data(void)
 {
-	g_connv3_ctx.trg_drv = CONNV3_DRV_TYPE_MAX;
-	memset(g_connv3_ctx.trg_reason, '\0', CHIP_RST_REASON_MAX_LEN);
+	memset(g_connv3_ctx.trg_reason, '\0', CONNV3_CHIP_RST_SOURCE_MAX*CHIP_RST_REASON_MAX_LEN);
 }
 
 static unsigned long timespec64_to_ms(struct timespec64 *begin, struct timespec64 *end)
@@ -537,6 +536,9 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	unsigned int drv_pwr_state[CONNV3_DRV_TYPE_MAX];
 	const unsigned int subdrv_all_done = (0x1 << CONNV3_DRV_TYPE_MAX) - 1;
 	struct timespec64 pre_begin, pre_end, reset_end, done_end;
+	unsigned int rst_type_support;
+	enum connv3_reset_source rst_source;
+	enum connv3_drv_type trg_drv;
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
 		pr_info("No subsys on, just return");
@@ -544,10 +546,18 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		return 0;
 	}
 
+	trg_drv = op->op_data[0];
+	rst_source = op->op_data[1];
 	osal_gettimeofday(&pre_begin);
 
 	atomic_set(&g_connv3_ctx.rst_state, 0);
 	sema_init(&g_connv3_ctx.rst_sema, 1);
+
+	rst_type_support = connv3_hw_get_reset_type_support();
+	/* 1: support POR_RST */
+	if (rst_type_support == 1) {
+
+	}
 
 	_connv3_core_update_rst_status(CHIP_RST_PRE_CB);
 
@@ -556,8 +566,8 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		drv_inst = &g_connv3_ctx.drv_inst[i];
 		drv_pwr_state[i] = drv_inst->drv_status;
 		pr_info("subsys %d is %d", i, drv_inst->drv_status);
-		ret = msg_thread_send_1(&drv_inst->msg_ctx,
-				CONNV3_SUBDRV_OPID_PRE_RESET, i);
+		ret = msg_thread_send_3(&drv_inst->msg_ctx,
+				CONNV3_SUBDRV_OPID_PRE_RESET, i, trg_drv, rst_source);
 	}
 
 	pr_info("[chip_rst] pre vvvvvvvvvvvvv");
@@ -1041,15 +1051,16 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 	int ret, cur_rst_state;
 	unsigned int drv_type = op->op_data[0];
 	struct subsys_drv_inst *drv_inst;
-
+	enum connv3_drv_type trg_drv = op->op_data[1];
+	enum connv3_reset_source rst_source = op->op_data[2];
 
 	/* TODO: should be locked, to avoid cb was reset */
 	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
 	if (/*drv_inst->drv_status == DRV_ST_POWER_ON &&*/
 			drv_inst->ops_cb.rst_cb.pre_whole_chip_rst) {
 
-		ret = drv_inst->ops_cb.rst_cb.pre_whole_chip_rst(g_connv3_ctx.trg_drv,
-					g_connv3_ctx.trg_reason,
+		ret = drv_inst->ops_cb.rst_cb.pre_whole_chip_rst(trg_drv,
+					g_connv3_ctx.trg_reason[rst_source],
 					CONNV3_CHIP_RST_TYPE_LEGACY_MODE);
 		if (ret)
 			pr_notice("[%s] fail [%d]", __func__, ret);
@@ -1526,7 +1537,7 @@ int connv3_core_screen_off(void)
 	return 0;
 }
 
-int connv3_core_lock_rst(void)
+int connv3_core_lock_rst(unsigned int* rst_source)
 {
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	int ret = 0;
@@ -1534,6 +1545,8 @@ int connv3_core_lock_rst(void)
 
 	spin_lock_irqsave(&ctx->rst_lock, flag);
 
+	if (rst_source)
+		*rst_source = ctx->rst_source;
 	ret = ctx->rst_status;
 	if (ctx->rst_status > CHIP_RST_NONE &&
 		ctx->rst_status < CHIP_RST_DONE) {
@@ -1558,16 +1571,20 @@ int connv3_core_unlock_rst(void)
 	return 0;
 }
 
-int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason)
+int connv3_core_trg_chip_rst(enum connv3_reset_source rst_source, enum connv3_drv_type drv, char *reason)
 {
 	int ret = 0;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 
-	ctx->trg_drv = drv;
-	if (snprintf(ctx->trg_reason, CHIP_RST_REASON_MAX_LEN, "%s", reason) < 0)
+	if (rst_source >= CONNV3_CHIP_RST_SOURCE_MAX) {
+		pr_notice("[%s] rst_source(%d) invalid\n", __func__, rst_source);
+		return -1;
+	}
+
+	if (snprintf(&ctx->trg_reason[rst_source][0], CHIP_RST_REASON_MAX_LEN, "%s", reason) < 0)
 		pr_warn("[%s::%d] snprintf error\n", __func__, __LINE__);
-	ret = msg_thread_send_1(&ctx->cb_ctx,
-				CONNV3_CB_OPID_CHIP_RST, drv);
+	ret = msg_thread_send_2(&ctx->cb_ctx,
+				CONNV3_CB_OPID_CHIP_RST, drv, rst_source);
 	if (ret) {
 		pr_err("[%s] send msg fail, ret = %d", __func__, ret);
 		return -1;
@@ -1579,16 +1596,28 @@ int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason)
 int connv3_core_pmic_event_cb(unsigned int id, unsigned int event)
 {
 	int r;
+	unsigned int rst_source = 0;
 
-	r = connv3_core_lock_rst();
-	if (r >= CHIP_RST_START) {
-		/* reset is ongoing */
-		pr_info("[%s] r=[%d] chip rst is ongoing\n", __func__, r);
-		return 1;
+	/* id = 0, means 6639 project. 6639 only support pmic shutdown to reboot.
+	 * id = 1, means project that support POR_RST.
+	 */
+	r = connv3_core_lock_rst(&rst_source);
+	if (id == 0) {
+		if (r >= CHIP_RST_START) {
+			/* reset is ongoing */
+			pr_info("[%s] r=[%d] chip rst is ongoing\n", __func__, r);
+			return 1;
+		}
+	}
+	if (id == 1) {
+		if (r >= CHIP_RST_START && rst_source != CONNV3_CHIP_RST_SOURCE_NORMAL) {
+			pr_info("[%s] r=[%d] source=[%d] chip rst is ongoing\n", __func__, r, rst_source);
+			return 1;
+		}
 	}
 
 	if (event == 1)
-		connv3_core_trg_chip_rst(CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
+		connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B, CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
 
 	return 0;
 }

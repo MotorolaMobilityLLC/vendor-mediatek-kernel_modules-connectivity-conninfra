@@ -40,6 +40,12 @@ struct connv3_hw_ops_struct {
 	u32 (*connsys_plt_get_chipid) (void);
 	u32 (*connsys_plt_get_adie_chipid) (void);
 	u32 (*connsys_plt_pre_cal_blocking_enable) (void);
+	/* Indicate which reset type is supported in this platform
+	 * Return value:
+	 * - 0: Power shutdown
+	 * - 1: POR_RESET is supported
+	 */
+	u32 (*connsys_plt_reset_type_support) (void);
 };
 
 struct connv3_dev_cb {
@@ -91,6 +97,10 @@ int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
 
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
+/* Get platform supported reset type
+ * If the platform function is not implemented, default value is 0 (shutdown PMIC).
+ */
+unsigned int connv3_hw_get_reset_type_support(void);
 
 unsigned int connv3_hw_get_connsys_ic_info(uint8_t *buf, u32 buf_sz);
 unsigned int connv3_hw_get_pmic_ic_info(uint8_t *buf, u32 buf_sz);

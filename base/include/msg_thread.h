@@ -113,7 +113,10 @@ int msg_thread_send_1(struct msg_thread_ctx *ctx, int opid,
 						size_t param1);
 int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 						size_t param1, size_t param2);
-
+int msg_thread_send_3(struct msg_thread_ctx *ctx, int opid,
+			size_t param1, size_t param2,size_t param3);
+int msg_thread_send_4(struct msg_thread_ctx *ctx, int opid,
+			size_t param1, size_t param2, size_t param3, size_t param4);
 int msg_thread_send_wait(struct msg_thread_ctx *ctx, int opid,
 						int timeout);
 int msg_thread_send_wait_1(struct msg_thread_ctx *ctx, int opid,

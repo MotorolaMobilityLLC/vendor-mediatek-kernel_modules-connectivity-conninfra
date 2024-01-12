@@ -66,16 +66,26 @@ enum pre_cal_caller {
 enum chip_rst_status {
 	CHIP_RST_NONE = 0,
 	CHIP_RST_START = 1,
-	CHIP_RST_PRE_CB = 2,
-	CHIP_RST_RESET = 3,
-	CHIP_RST_POST_CB = 4,
-	CHIP_RST_DONE = 5
+	CHIP_RST_DFD_SETUP = 2,
+	CHIP_RST_DFD_PRE_DUMP = 3,
+	CHIP_RST_PRE_CB = 4,
+	CHIP_RST_RESET = 5,
+	CHIP_RST_DFD_POST_DUMP = 6,
+	CHIP_RST_POST_CB = 7,
+	CHIP_RST_DONE = 8
 };
 
 enum connv3_radio_off_mode {
 	CONNV3_RADIO_OFF_MODE_PMIC_OFF = 0,
 	CONNV3_RADIO_OFF_MODE_UDS = 1,
 	CONNV3_RADIO_OFF_MODE_MAX,
+};
+
+enum connv3_reset_source {
+	CONNV3_CHIP_RST_SOURCE_NORMAL = 0,
+	CONNV3_CHIP_RST_SOURCE_PMIC_IRQ_B = 1,
+	CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B = 2,
+	CONNV3_CHIP_RST_SOURCE_MAX,
 };
 
 struct subsys_drv_inst {
@@ -124,8 +134,8 @@ struct connv3_ctx {
 
 	struct semaphore rst_sema;
 	atomic_t rst_state;
-	enum connv3_drv_type trg_drv;
-	char trg_reason[CHIP_RST_REASON_MAX_LEN];
+	enum connv3_reset_source rst_source;
+	char trg_reason[CONNV3_CHIP_RST_SOURCE_MAX][CHIP_RST_REASON_MAX_LEN];
 
 	/* pre_cal */
 	struct semaphore pre_cal_sema;
@@ -187,9 +197,9 @@ int connv3_core_power_on_done(enum connv3_drv_type type);
 int connv3_core_power_off(enum connv3_drv_type type);
 int connv3_core_ext_32k_on(void);
 
-int connv3_core_lock_rst(void);
+int connv3_core_lock_rst(unsigned int *rst_source);
 int connv3_core_unlock_rst(void);
-int connv3_core_trg_chip_rst(enum connv3_drv_type drv, char *reason);
+int connv3_core_trg_chip_rst(enum connv3_reset_source rst_source, enum connv3_drv_type drv, char *reason);
 
 int connv3_core_pmic_event_cb(unsigned int id, unsigned int event);
 void connv3_core_update_pmic_status(enum connv3_drv_type drv, char *buffer, int buf_sz);

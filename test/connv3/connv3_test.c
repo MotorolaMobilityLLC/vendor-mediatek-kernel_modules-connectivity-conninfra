@@ -55,6 +55,7 @@ static int cal_tc(int par1, int par2, int par3);
 static int chip_rst_tc(int par1, int par2, int par3);
 static int v3_coredump_tc(int par1, int par2, int par3);
 static int v3_hif_dump_tc(int par1, int par2, int par3);
+static int v3_dfd_rst_tc(int par1, int par2, int par3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -84,6 +85,7 @@ static const CONNINFRA_TEST_FUNC connv3_test_func[] = {
 	//[0x0c] = v3_bus_dump_tc,
 	//[0x0d] = ap_resume_tc,
 	[0xe] = v3_hif_dump_tc,
+	[0xf] = v3_dfd_rst_tc,
 };
 
 /*******************************************************************************
@@ -267,6 +269,19 @@ static int v3_hif_dump_tc(int par1, int par2, int par3)
 	return 0;
 }
 
+extern int connv3_core_pmic_event_cb(unsigned int id, unsigned int event);
+
+static int v3_dfd_rst_tc(int par1, int par2, int par3)
+{
+	int ret;
+
+	ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-1");
+	pr_info("[%s] reset test-1, ret=%d\n", __func__, ret);
+	ret = connv3_core_pmic_event_cb(0, 1);
+	pr_info("[%s] reset test-2, ret=%d\n", __func__, ret);
+
+	return 0;
+}
 
 #if 0
 static int log_tc(int par1, int par2, int par3)

@@ -306,17 +306,29 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 
 int msg_thread_send(struct msg_thread_ctx *ctx, int opid)
 {
-	return msg_thread_send_2(ctx, opid, 0, 0);
+	return msg_thread_send_4(ctx, opid, 0, 0, 0, 0);
 }
 
 int msg_thread_send_1(struct msg_thread_ctx *ctx, int opid,
 						size_t param1)
 {
-	return msg_thread_send_2(ctx, opid, param1, 0);
+	return msg_thread_send_4(ctx, opid, param1, 0, 0, 0);
 }
 
 int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
-						size_t param1, size_t param2)
+	size_t param1, size_t param2)
+{
+	return msg_thread_send_4(ctx, opid, param1, param2, 0, 0);
+}
+
+int msg_thread_send_3(struct msg_thread_ctx *ctx, int opid,
+	size_t param1, size_t param2,size_t param3)
+{
+	return msg_thread_send_4(ctx, opid, param1, param2, param3, 0);
+}
+
+int msg_thread_send_4(struct msg_thread_ctx *ctx, int opid,
+	size_t param1, size_t param2, size_t param3, size_t param4)
 {
 	struct msg_op *op = NULL;
 	P_OSAL_SIGNAL signal;
@@ -339,6 +351,8 @@ int msg_thread_send_2(struct msg_thread_ctx *ctx, int opid,
 	op->op.op_id = opid;
 	op->op.op_data[0] = param1;
 	op->op.op_data[1] = param2;
+	op->op.op_data[2] = param3;
+	op->op.op_data[3] = param4;
 
 	signal = &op->signal;
 	//signal->timeoutValue = timeout > 0 ? timeout : MSG_OP_TIMEOUT;
