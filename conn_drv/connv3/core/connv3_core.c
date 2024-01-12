@@ -1423,6 +1423,7 @@ int connv3_core_pre_cal_start(void)
 
 int connv3_core_screen_on(void)
 {
+#if 0
 	int ret = 0, rst_status;
 	unsigned long flag;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
@@ -1442,11 +1443,13 @@ int connv3_core_screen_on(void)
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
+#endif
 	return 0;
 }
 
 int connv3_core_screen_off(void)
 {
+#if 0
 	int ret = 0;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 
@@ -1456,7 +1459,7 @@ int connv3_core_screen_off(void)
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
-
+#endif
 	return 0;
 }
 
