@@ -110,7 +110,7 @@ static void emi_mng_get_gps_emi(struct platform_device *pdev)
 	u64 phy_addr = 0;
 	unsigned int phy_size = 0;
 
-	node = of_find_node_by_name(NULL, "gps");
+	node = of_find_node_by_path("/gps@18c00000");
 	if (!node) {
 		pr_notice("%s failed to find gps node\n", __func__);
 		return;

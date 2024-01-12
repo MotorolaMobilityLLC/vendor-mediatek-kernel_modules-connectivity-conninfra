@@ -411,7 +411,7 @@ ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t cou
 			size, mcif_emi_size, count);
 		return 0;
 	} else {
-		pr_info("[%s] base=[%x] [0x%x~0x%x] size=0x%x", __func__, emi_dump_addr, start_offset, end_offset, size);
+		pr_info("[%s] base=[0x%x] [0x%x~0x%x] size=0x%x", __func__, emi_dump_addr, start_offset, end_offset, size);
 		emi_virt_addr_base = ioremap(emi_dump_addr + start_offset, size);
 		if (emi_virt_addr_base == NULL) {
 			pr_notice("[%s] remap fail, addr=0x%x size=%d",
@@ -435,7 +435,7 @@ ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t cou
 		if (mcif_emi_size == 0)
 			return (size - retval);
 
-		pr_info("[%s] base=[%x] [0x%x~0x%x] size=0x%x", __func__, mcif_emi_dump_addr, 0, mcif_emi_size, mcif_emi_size);
+		pr_info("[%s] base=[0x%x] [0x%x~0x%x] size=0x%x", __func__, mcif_emi_dump_addr, 0, mcif_emi_size, mcif_emi_size);
 		mcif_emi_virt_addr_base = ioremap(mcif_emi_dump_addr, mcif_emi_size);
 		if (mcif_emi_virt_addr_base == NULL) {
 			pr_notice("[%s] remap fail, addr=0x%x size=%d",

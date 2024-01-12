@@ -277,7 +277,8 @@ static void conndump_timeout_handler(timer_handler_arg arg)
 	GET_HANDLER_DATA(arg, data);
 	ctx = (struct connsys_dump_ctx*)data;
 	if (ctx) {
-		pr_info("[%s] coredump timeout\n", ctx->conn_type);
+		pr_info("[%s] coredump timeout, conn_type=[%d]\n",
+			__func__, ctx->conn_type);
 		conndump_set_dump_state(ctx, CORE_DUMP_TIMEOUT);
 	}
 }

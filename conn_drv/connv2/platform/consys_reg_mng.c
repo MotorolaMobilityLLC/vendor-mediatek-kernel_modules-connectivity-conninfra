@@ -60,7 +60,7 @@ int consys_reg_mng_reg_readable(void)
 		pr_err("%s not implement conninfra off domain check\n", __func__);
 		BUG_ON(1);
 	}
-	/* Separate bus_clock_check from conninfra_off_statsu_check */
+	/* Separate bus_clock_check from conninfra_off_status_check */
 	if (g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status) {
 		ret = g_consys_reg_ops->consys_reg_mng_check_readable_conninfra_bus_clock_status();
 		if (ret != 0) {
