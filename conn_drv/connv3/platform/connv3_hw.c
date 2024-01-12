@@ -47,6 +47,7 @@
 */
 
 static int get_connv3_platform_ops(struct platform_device *pdev);
+static enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -57,6 +58,9 @@ const struct connv3_hw_ops_struct *connv3_hw_ops;
 struct platform_device *g_connv3_pdev;
 
 const struct connv3_plat_data *g_connv3_plat_data = NULL;
+
+static enum connv3_radio_off_mode g_radio_off_mode
+		= CONNV3_RADIO_OFF_MODE_PMIC_OFF;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -94,6 +98,19 @@ unsigned int connv3_hw_get_adie_chipid(void)
 
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 {
+	/*
+	 * +------+---------------- +------------+-----------+-------------------+
+	 * | Mode | pwr_on          | last       | rst       | pre_cal           |
+	 * |      | (pwr recycle)   | subdrv off |           | (last subdrv off) |
+	 * +------+---------------- +------------+-----------+-------------------+
+	 * | UDS  | pmic_en=0       | vsel=0     | pmic_en=0 | vsel=0            |
+	 * |      | vsel=0          |            | vsel=0    |                   |
+	 * +------+---------------- +------------+-----------+-------------------+
+	 * | PMIC | (X)             | pmic_en=0  | pmic_en=0 | pmic_en=0         |
+	 * | OFF  | Same as UDS for | vsel=0     | vsel=0    | vsel=0            |
+	 * |      | simplicity      |            |           |                   |
+	 * +------+---------------- +------------+-----------+-------------------+
+	 */
 	int ret;
 
 	ret = connv3_pmic_mng_antenna_power_ctrl(off_radio, 0);
@@ -107,22 +124,22 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 			pr_err("[%s] remove pinctrl fail, ret = %d", __func__, ret);
 			return ret;
 		}
-	}
 
-	if (off_radio == CONNV3_DRV_TYPE_MAX) {
-		ret = connv3_pinctrl_mng_ext_32k_ctrl(false);
-		if (ret) {
-			pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
-			return ret;
+		if (g_radio_off_mode == CONNV3_RADIO_OFF_MODE_PMIC_OFF
+			|| (off_radio == CONNV3_DRV_TYPE_MAX)) {
+			ret = connv3_pinctrl_mng_ext_32k_ctrl(false);
+			if (ret) {
+				pr_err("[%s] turn off ext 32k fail, ret = %d", __func__, ret);
+				return ret;
+			}
+			ret = connv3_pmic_mng_common_power_ctrl(0);
+			if (ret) {
+				pr_err("[%s] pmic off fail, ret = %d", __func__, ret);
+				return ret;
+			}
+			pr_info("[%s] force PMIC off, ret = %d\n", __func__, ret);
 		}
-		ret = connv3_pmic_mng_common_power_ctrl(0);
-		if (ret) {
-			pr_err("[%s] pmic off fail, ret = %d", __func__, ret);
-			return ret;
-		}
-	}
 
-	if ((curr_status & (~(0x1 << off_radio))) == 0) {
 		ret = connv3_pmic_mng_vsel_ctrl(0);
 		if (ret) {
 			pr_err("[%s] pmic vsel fail, ret = %d", __func__, ret);
@@ -221,7 +238,7 @@ int connv3_hw_power_info_reset(
 	return connv3_hw_dbg_power_info_reset(drv_type, cb);
 }
 
-enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void)
+static enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void)
 {
 	enum connv3_radio_off_mode mode = CONNV3_RADIO_OFF_MODE_PMIC_OFF;
 	struct device_node *node;
@@ -273,6 +290,8 @@ int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 	ret = connv3_hw_dbg_init(pdev, g_connv3_plat_data);
 
 	g_connv3_pdev = pdev;
+
+	g_radio_off_mode = connv3_hw_get_radio_off_mode();
 
 	pr_info("[%s] result [%d]\n", __func__, ret);
 	return ret;

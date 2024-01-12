@@ -92,8 +92,6 @@ int connv3_hw_power_info_dump(
 int connv3_hw_power_info_reset(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
 
-enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void);
-
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
