@@ -185,7 +185,7 @@ $(MODULE_NAME)-objs += platform/mt6879/mt6879_consys_reg.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_pos.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_pos_gen.o
 $(MODULE_NAME)-objs += platform/mt6879/mt6879_coredump.o
-$(MODULE_NAME)-objs += platform/mt6879/mt6879_debug.o
+$(MODULE_NAME)-objs += platform/mt6879/mt6879_debug_gen.o
 endif
 endif
 
