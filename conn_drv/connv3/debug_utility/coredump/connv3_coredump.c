@@ -111,6 +111,13 @@ static void connv3_dump_free(const void* dst)
 	kvfree(dst);
 }
 
+static const char* connv3_dump_get_type_name(int type)
+{
+	if (type < CONNV3_DEBUG_TYPE_WIFI || type >= CONNV3_DEBUG_TYPE_SIZE)
+		return "TYPE_INVALID";
+	return g_type_name[type];
+}
+
 static void connv3_dump_set_dump_state(
 	struct connv3_dump_ctx *ctx, enum connv3_coredump_state state)
 {
@@ -487,7 +494,7 @@ int connv3_coredump_start(void* handler, const int drv, const char *reason, cons
 	}
 
 	pr_info("[%s][%s] trigger_drv=%d reason=%s\n",
-		__func__, g_type_name[ctx->conn_type], drv, reason);
+		__func__, connv3_dump_get_type_name(ctx->conn_type), drv, reason);
 	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_START);
 	osal_gettimeofday(&g_dump_start_time);
 
