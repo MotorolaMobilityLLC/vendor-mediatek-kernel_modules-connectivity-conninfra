@@ -15,7 +15,6 @@
 #include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_core.h"
-#include "connsyslog_test.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -256,7 +255,7 @@ int mtk_connv3_probe(struct platform_device *pdev)
 
 	/*************** for debug *********************/
 	// before enabling connlog_test should remove connlog_to_user_register in connv2
-	connlog_test_init();
+	//connlog_test_init();
 
 	pr_info("[%s] --------------", __func__);
 
