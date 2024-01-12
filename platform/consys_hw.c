@@ -358,6 +358,8 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 			_consys_hw_pwr_on_rollback(CONNINFRA_PWR_ON_A_DIE_FAIL);
 			return CONNINFRA_POWER_ON_A_DIE_FAIL;
 		}
+		if (consys_hw_ops->consys_plt_afe_sw_patch)
+			consys_hw_ops->consys_plt_afe_sw_patch();
 		if (consys_hw_ops->consys_plt_afe_wbg_cal)
 			consys_hw_ops->consys_plt_afe_wbg_cal();
 		if (consys_hw_ops->consys_plt_subsys_pll_initial)
