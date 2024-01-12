@@ -134,7 +134,7 @@ void connv3_set_coredump_mode(int mode)
 
 u32 connv3_detect_adie_chipid(void)
 {
-	return 0;
+	return connv3_hw_get_adie_chipid();
 }
 
 void connv3_suspend_notify(void)

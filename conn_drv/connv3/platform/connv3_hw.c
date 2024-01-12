@@ -81,6 +81,15 @@ unsigned int connv3_hw_get_chipid(void)
 	return 0;
 }
 
+unsigned int connv3_hw_get_adie_chipid(void)
+{
+	if (connv3_hw_ops->connsys_plt_get_adie_chipid)
+		return connv3_hw_ops->connsys_plt_get_adie_chipid();
+	else
+		pr_err("connsys_plt_get_adie_chipid not supported\n");
+	return 0;
+}
+
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 {
 	int ret;
