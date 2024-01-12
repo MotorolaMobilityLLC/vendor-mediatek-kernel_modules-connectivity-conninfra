@@ -111,7 +111,7 @@ int consys_plt_pmic_get_from_dts_mt6877(struct platform_device *pdev, struct con
 	if (!reg_VCN33_2_WIFI)
 		pr_err("Regulator_get VCN33_WIFI fail\n");
 
-	g_voltage_change_timer.timeoutHandler = consys_plt_pmic_raise_voltage_timer_handler;
+	g_voltage_change_timer.timeoutHandler = consys_plt_pmic_raise_voltage_timer_handler_mt6877;
 	osal_timer_create(&g_voltage_change_timer);
 	return 0;
 }
