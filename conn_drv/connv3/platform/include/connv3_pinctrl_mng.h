@@ -33,7 +33,8 @@
 */
 
 struct connv3_platform_pinctrl_ops {
-
+	int (*pinctrl_init)(struct platform_device *pdev);
+	int (*pinctrl_deinit)(void);
 	int (*pinctrl_setup_pre) (void);
 	int (*pinctrl_setup_done) (void);
 	int (*pinctrl_remove) (void);

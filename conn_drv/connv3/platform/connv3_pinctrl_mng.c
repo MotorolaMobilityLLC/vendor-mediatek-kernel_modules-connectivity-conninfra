@@ -4,6 +4,9 @@
  */
 
 #include <linux/of_device.h>
+#include <linux/of.h>
+#include <linux/of_device.h>
+#include <linux/pinctrl/consumer.h>
 
 #include "connv3_hw.h"
 #include "connv3_pinctrl_mng.h"
@@ -51,7 +54,6 @@ const struct connv3_platform_pinctrl_ops* g_connv3_platform_pinctrl_ops = NULL;
 ********************************************************************************
 */
 
-
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -60,9 +62,11 @@ const struct connv3_platform_pinctrl_ops* g_connv3_platform_pinctrl_ops = NULL;
 int connv3_pinctrl_mng_setup_pre(void)
 {
 	int ret = 0;
+
 	if (g_connv3_platform_pinctrl_ops &&
 		g_connv3_platform_pinctrl_ops->pinctrl_setup_pre)
 		ret = g_connv3_platform_pinctrl_ops->pinctrl_setup_pre();
+
 	return ret;
 
 }
@@ -70,18 +74,22 @@ int connv3_pinctrl_mng_setup_pre(void)
 int connv3_pinctrl_mng_setup_done(void)
 {
 	int ret = 0;
+
 	if (g_connv3_platform_pinctrl_ops &&
 		g_connv3_platform_pinctrl_ops->pinctrl_setup_done)
 		ret = g_connv3_platform_pinctrl_ops->pinctrl_setup_done();
+
 	return ret;
 }
 
 int connv3_pinctrl_mng_remove(void)
 {
 	int ret = 0;
+
 	if (g_connv3_platform_pinctrl_ops &&
 		g_connv3_platform_pinctrl_ops->pinctrl_remove)
 		ret = g_connv3_platform_pinctrl_ops->pinctrl_remove();
+
 	return ret;
 }
 
@@ -101,16 +109,24 @@ int connv3_pinctrl_mng_init(
 	struct platform_device *pdev,
 	const struct connv3_plat_data* plat_data)
 {
+	int ret = 0;
 
 	if (g_connv3_platform_pinctrl_ops == NULL)
 		g_connv3_platform_pinctrl_ops =
 			(const struct connv3_platform_pinctrl_ops*)plat_data->platform_pinctrl_ops;
+	if (g_connv3_platform_pinctrl_ops != NULL &&
+	    g_connv3_platform_pinctrl_ops->pinctrl_init)
+		ret = g_connv3_platform_pinctrl_ops->pinctrl_init(pdev);
 
-	return 0;
+	return ret;
 }
 
 int connv3_pinctrl_mng_deinit(void)
 {
+	if (g_connv3_platform_pinctrl_ops != NULL &&
+	    g_connv3_platform_pinctrl_ops->pinctrl_deinit)
+		g_connv3_platform_pinctrl_ops->pinctrl_deinit();
+
 	g_connv3_platform_pinctrl_ops = NULL;
 	return 0;
 }

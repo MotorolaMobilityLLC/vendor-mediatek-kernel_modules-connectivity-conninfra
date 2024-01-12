@@ -306,13 +306,17 @@ static int opfunc_power_on_done(struct msg_op_data *op)
 
 	ret = osal_lock_sleepable_lock(&ctx->core_lock);
 	if (ret) {
-		pr_err("core_lock fail!!");
+		pr_err("[%s] core_lock fail!!", __func__);
 		return ret;
 	}
 
 	/* GPIO control */
-
-	g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
+	ret = connv3_hw_pwr_on_done(drv_type);
+	if (ret) {
+		pr_err("[%s] fail, ret=%d", __func__, ret);
+	} else {
+		g_connv3_ctx.drv_inst[drv_type].drv_status = DRV_STS_POWER_ON;
+	}
 	osal_unlock_sleepable_lock(&ctx->core_lock);
 
 	return 0;
@@ -921,6 +925,15 @@ int connv3_core_power_on(enum connv3_drv_type type)
 
 int connv3_core_power_on_done(enum connv3_drv_type type)
 {
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send_wait_1(&ctx->msg_ctx,
+				CONNV3_OPID_PWR_ON_DONE, 0, type);
+	if (ret) {
+		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
 	return 0;
 }
 
