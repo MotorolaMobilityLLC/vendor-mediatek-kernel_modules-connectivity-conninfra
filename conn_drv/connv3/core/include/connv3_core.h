@@ -206,6 +206,9 @@ void connv3_core_pre_cal_blocking(void);
 
 int connv3_core_is_rst_locking(void);
 
+int connv3_core_bus_dump(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

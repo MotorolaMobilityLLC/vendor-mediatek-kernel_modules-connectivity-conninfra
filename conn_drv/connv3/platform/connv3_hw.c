@@ -11,6 +11,7 @@
 #include <linux/suspend.h>
 
 #include "connv3_hw.h"
+#include "connv3_hw_dbg.h"
 #include "connv3_pmic_mng.h"
 #include "connv3_pinctrl_mng.h"
 #include "coredump/connv3_dump_mng.h"
@@ -175,6 +176,11 @@ int connv3_hw_ext_32k_onoff(bool on)
 	return connv3_pinctrl_mng_ext_32k_ctrl(on);
 }
 
+int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb, void *priv_data)
+{
+	return connv3_hw_dbg_bus_dump(drv_type, cb, priv_data);
+}
+
 int connv3_hw_init(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -200,6 +206,8 @@ int connv3_hw_init(struct platform_device *pdev)
 
 	ret = connv3_dump_mng_init((void*)g_connv3_plat_data->platform_coredump_ops);
 
+	ret = connv3_hw_dbg_init(pdev, g_connv3_plat_data);
+
 	g_connv3_pdev = pdev;
 
 	pr_info("[%s] result [%d]\n", __func__, ret);
@@ -208,6 +216,9 @@ int connv3_hw_init(struct platform_device *pdev)
 
 int connv3_hw_deinit(void)
 {
+	int ret;
+
+	ret = connv3_hw_dbg_deinit();
 
 	if (g_connv3_pdev)
 		g_connv3_pdev = NULL;
