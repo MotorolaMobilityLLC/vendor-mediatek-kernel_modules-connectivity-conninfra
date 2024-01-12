@@ -756,7 +756,7 @@ static int connv3_send_emi_dump(struct connv3_dump_ctx *ctx, bool need_end)
 
 	/* EMI dump */
 	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "dev=%s,emi_size=%d,mcif_emi_size=%d,emi2_size=%d",
-		ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size) < 0) {
+		ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size, ctx->cb.emi2_size) < 0) {
 		pr_notice("%s snprintf failed\n", __func__);
 		return -1;
 	}

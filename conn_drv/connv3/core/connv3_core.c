@@ -1323,7 +1323,9 @@ static int opfunc_subdrv_post_reset_on(struct msg_op_data *op)
 		if (ret)
 			pr_notice("[%s][%s][type=%d] fail, ret=%d\n",
 				__func__, connv3_drv_name[drv_type], type, ret);
-	}
+	} else
+		pr_notice("[%s][%s][type=%d] not support\n",
+			__func__, connv3_drv_name[drv_type], type);
 
 	atomic_add(0x1 << drv_type, &g_connv3_ctx.rst_state);
 	up(&g_connv3_ctx.rst_sema);
@@ -1805,9 +1807,10 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	memcpy(&g_connv3_ctx.drv_inst[type].ops_cb, cb,
 					sizeof(struct connv3_sub_drv_ops_cb));
 
-	pr_info("[%s] [pre_cal] type=[%s] cb rst=[%p][%p] pre_cal=[%p][%p]",
+	pr_info("[%s] [pre_cal] type=[%s] cb rst=[%p][%p][%p] pre_cal=[%p][%p]",
 			__func__, connv3_drv_name[type],
 			cb->rst_cb.pre_whole_chip_rst, cb->rst_cb.post_whole_chip_rst,
+			cb->rst_cb.post_reset_on,
 			cb->pre_cal_cb.pwr_on_cb, cb->pre_cal_cb.do_cal_cb);
 
 	pr_info("[%s] [pre_cal] type=[%d] bt=[%p][%p] wf=[%p][%p]", __func__, type,

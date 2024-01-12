@@ -185,6 +185,9 @@ endif
 ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv3/platform/mt6989),)
 ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/platform/mt6989/include
 endif
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv3/platform/mt6376),)
+ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/platform/mt6376/include
+endif
 #V3 combo chip
 ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv3/platform/mt6639),)
 ccflags-y += -I$(KO_CODE_PATH)/conn_drv/connv3/platform/mt6639/include
@@ -525,6 +528,16 @@ $(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6989/mt6989_mt6653.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6653/mt6653_dbg.o
 endif
 endif
+
+ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6991),y)
+ifneq ($(wildcard $(PATH_TO_CONNINFRA_DRV)/conn_drv/connv3/platform/mt6991),)
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6991/mt6991.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6991/mt6991_pmic.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6991/mt6991_pinctrl.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/mt6653/mt6653_dbg.o
+endif
+endif
+
 
 ###############################################################################
 # Test

@@ -53,8 +53,9 @@ int connv3_hw_dbg_bus_dump(
 }
 
 
-int connv3_hw_dbg_dump_utility(
-	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb)
+static int _dump_utility(
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb,
+	const char *value_pattern)
 {
 #define LOG_TMP_BUF_SZ 32
 	int ret = 0, func_ret = 0;
@@ -69,37 +70,37 @@ int connv3_hw_dbg_dump_utility(
 	memset(g_dump_buf, '\0', sizeof(char)*LOG_DUMP_BUF_SZ);
 	for (i = 0; i < dump_list->dump_size; i++) {
 		command = &dump_list->cmd_list[i];
-		if (command != NULL) {
-			/* Write with mask */
-			if (command->write && command->mask != 0) {
-				ret = cb->write_mask(
-					data, command->w_addr, command->mask, command->value);
-			} else if (command->write) {
-				/* Writ directly */
-				ret = cb->write(data, command->w_addr, command->value);
-			}
+		if (command == NULL)
+			continue;
+		/* Write with mask */
+		if (command->write && command->mask != 0) {
+			ret = cb->write_mask(
+				data, command->w_addr, command->mask, command->value);
+		} else if (command->write) {
+			/* Writ directly */
+			ret = cb->write(data, command->w_addr, command->value);
+		}
+		if (ret) {
+			pr_err("[V3 dump][%s][%d] write error: %d",
+				dump_list->tag, i, ret);
+			func_ret = i;
+			break;
+		}
+		if (command->read) {
+			ret = cb->read(data, command->r_addr, &value);
 			if (ret) {
-				pr_err("[V3 dump][%s][%d] write error: %d",
+				pr_err("[V3 dump][%s][%d] read error: %d",
 					dump_list->tag, i, ret);
 				func_ret = i;
 				break;
 			}
-			if (command->read) {
-				ret = cb->read(data, command->r_addr, &value);
-				if (ret) {
-					pr_err("[V3 dump][%s][%d] read error: %d",
-						dump_list->tag, i, ret);
-					func_ret = i;
-					break;
-				}
-				if (snprintf(tmp, LOG_TMP_BUF_SZ, "[0x%08x]", value) >= 0)
-					strncat(g_dump_buf, tmp, strlen(tmp));
-				dump_count++;
-				if ((dump_count % 25) == 0) {
-					pr_info("[V3_BUS][%s][%d] %s", dump_list->tag, dump_line, g_dump_buf);
-					dump_line++;
-					memset(g_dump_buf, '\0', sizeof(char)*LOG_DUMP_BUF_SZ);
-				}
+			if (snprintf(tmp, LOG_TMP_BUF_SZ, value_pattern, value) >= 0)
+				strncat(g_dump_buf, tmp, strlen(tmp));
+			dump_count++;
+			if ((dump_count % 25) == 0) {
+				pr_info("[V3_BUS][%s][%d] %s", dump_list->tag, dump_line, g_dump_buf);
+				dump_line++;
+				memset(g_dump_buf, '\0', sizeof(char)*LOG_DUMP_BUF_SZ);
 			}
 		}
 	}
@@ -113,6 +114,31 @@ int connv3_hw_dbg_dump_utility(
 	return func_ret;
 }
 
+
+int connv3_hw_dbg_dump_utility(
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb)
+{
+	int func_ret;
+
+	func_ret = _dump_utility(dump_list, cb, "[0x%08x]");
+
+	return func_ret;
+}
+
+int connv3_hw_dbg_unify_dump_utility(
+	const struct connv3_dump_list *dump_list, struct connv3_cr_cb *cb)
+{
+	int func_ret = 0;
+
+	/* Print header */
+	pr_info("[%s][H] [%s][Count: %d]\n",
+		dump_list->tag, dump_list->description, dump_list->read_count);
+
+	/* Print list*/
+	func_ret = _dump_utility(dump_list, cb, "%08x ");
+
+	return func_ret;
+}
 
 int connv3_hw_dbg_power_info_dump(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb,

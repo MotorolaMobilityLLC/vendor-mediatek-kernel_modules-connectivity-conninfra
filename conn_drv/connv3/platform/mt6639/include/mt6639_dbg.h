@@ -29,7 +29,8 @@ const struct connv3_dbg_command mt6639_pwr_b[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_pwr_b = {
-	"power_b", sizeof(mt6639_pwr_b)/sizeof(struct connv3_dbg_command),
+	"power_b", NULL,
+	7, sizeof(mt6639_pwr_b)/sizeof(struct connv3_dbg_command),
 	mt6639_pwr_b,
 };
 
@@ -72,7 +73,8 @@ const struct connv3_dbg_command mt6639_pwr_c[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_pwr_c = {
-	"power_c", sizeof(mt6639_pwr_c)/sizeof(struct connv3_dbg_command),
+	"power_c", NULL,
+	25, sizeof(mt6639_pwr_c)/sizeof(struct connv3_dbg_command),
 	mt6639_pwr_c,
 };
 
@@ -97,7 +99,8 @@ const struct connv3_dbg_command mt6639_bus_a[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_a = {
-	"bus_a", sizeof(mt6639_bus_a)/sizeof(struct connv3_dbg_command),
+	"bus_a", NULL,
+	16, sizeof(mt6639_bus_a)/sizeof(struct connv3_dbg_command),
 	mt6639_bus_a,
 };
 
@@ -189,7 +192,8 @@ const struct connv3_dbg_command mt6639_bus_b[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_b = {
-	"bus_b", sizeof(mt6639_bus_b)/sizeof(struct connv3_dbg_command),
+	"bus_b", NULL,
+	84, sizeof(mt6639_bus_b)/sizeof(struct connv3_dbg_command),
 	mt6639_bus_b,
 };
 
@@ -213,7 +217,8 @@ const struct connv3_dbg_command mt6639_cfg_clk_a[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_cfg_clk_a = {
-	"cfg_clk_a", sizeof(mt6639_cfg_clk_a)/sizeof(struct connv3_dbg_command),
+	"cfg_clk_a", NULL,
+	16, sizeof(mt6639_cfg_clk_a)/sizeof(struct connv3_dbg_command),
 	mt6639_cfg_clk_a
 };
 
@@ -250,7 +255,8 @@ const struct connv3_dbg_command mt6639_cfg_clk_b[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_cfg_clk_b = {
-	"cfg_clk_b", sizeof(mt6639_cfg_clk_b)/sizeof(struct connv3_dbg_command),
+	"cfg_clk_b", NULL,
+	8, sizeof(mt6639_cfg_clk_b)/sizeof(struct connv3_dbg_command),
 	mt6639_cfg_clk_b
 };
 
@@ -271,7 +277,8 @@ const struct connv3_dbg_command mt6639_bus_extra[] = {
 };
 
 const struct connv3_dump_list mt6639_dmp_list_bus_extra = {
-	"bus_extra", sizeof(mt6639_bus_extra)/sizeof(struct connv3_dbg_command),
+	"bus_extra", NULL,
+	9, sizeof(mt6639_bus_extra)/sizeof(struct connv3_dbg_command),
 	mt6639_bus_extra
 };
 

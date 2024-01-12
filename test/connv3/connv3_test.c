@@ -306,6 +306,18 @@ static int v3_dfd_rst_tc(int par1, int par2, int par3)
 			ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-2-3");
 			pr_info("[%s] reset test-2-3, ret=%d\n", __func__, ret);
 		}
+	} else if (par2 == 3) {
+		ret = connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_CONNV3, "reset test-3-1");
+		pr_info("[%s] reset test-3-1, ret=%d\n", __func__, ret);
+		ret = connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_CONNV3, "reset test-3-2");
+		pr_info("[%s] reset test-3-2, ret=%d\n", __func__, ret);
+		ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-3-3");
+		pr_info("[%s] reset test-3-3, ret=%d\n", __func__, ret);
+	} else if (par2 == 4) {
+		ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-4-1");
+		pr_info("[%s] reset test-4-1, ret=%d\n", __func__, ret);
+		ret = connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_CONNV3, "reset test-4-2");
+		pr_info("[%s] reset test-4-2, ret=%d\n", __func__, ret);
 	}
 
 	return 0;
