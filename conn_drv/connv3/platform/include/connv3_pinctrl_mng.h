@@ -40,6 +40,7 @@ struct connv3_platform_pinctrl_ops {
 	int (*pinctrl_remove) (void);
 	int (*pinctrl_ext_32k_ctrl)(bool);
 	/* debug */
+	int (*pinctrl_dfd_trigger) (bool);
 };
 
 
@@ -67,6 +68,8 @@ int connv3_pinctrl_mng_setup_done(void);
 int connv3_pinctrl_mng_remove(void);
 
 int connv3_pinctrl_mng_ext_32k_ctrl(bool);
+
+int connv3_pinctrl_mng_dfd_trigger(bool);
 
 /*******************************************************************************
 *                              F U N C T I O N S

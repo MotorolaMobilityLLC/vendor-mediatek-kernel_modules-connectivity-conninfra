@@ -275,10 +275,36 @@ static int v3_dfd_rst_tc(int par1, int par2, int par3)
 {
 	int ret;
 
-	ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-1");
-	pr_info("[%s] reset test-1, ret=%d\n", __func__, ret);
-	ret = connv3_core_pmic_event_cb(0, 1);
-	pr_info("[%s] reset test-2, ret=%d\n", __func__, ret);
+	pr_info("[%s][%d][%d][%d]", __func__, par1, par2, par3);
+
+	if (par2 == 1) {
+		ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-1-1");
+		pr_info("[%s] reset test-1-1, ret=%d\n", __func__, ret);
+		ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-1-2");
+		pr_info("[%s] reset test-1-2, ret=%d\n", __func__, ret);
+		osal_sleep_ms(2000);
+
+		if (par3 >= 2) {
+			ret = connv3_core_pmic_event_cb(0, 1);
+			pr_info("[%s] reset test-2, ret=%d\n", __func__, ret);
+			osal_sleep_ms(2000);
+		}
+
+		if (par3 >= 3) {
+			ret = connv3_core_pmic_event_cb(1, 1);
+			pr_info("[%s] reset test-3, ret=%d\n", __func__, ret);
+		}
+	} else if (par2 == 2) {
+		ret = connv3_core_pmic_event_cb(1, 1);
+		pr_info("[%s] reset test-2-1, ret=%d\n", __func__, ret);
+		ret = connv3_core_pmic_event_cb(1, 1);
+		pr_info("[%s] reset test-2-2, ret=%d\n", __func__, ret);
+
+		if (par3 >= 2) {
+			ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_CONNV3, "reset test-2-3");
+			pr_info("[%s] reset test-2-3, ret=%d\n", __func__, ret);
+		}
+	}
 
 	return 0;
 }

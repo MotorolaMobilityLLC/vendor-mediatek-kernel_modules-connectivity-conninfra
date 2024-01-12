@@ -268,6 +268,11 @@ int connv3_hw_ext_32k_onoff(bool on)
 	return connv3_pinctrl_mng_ext_32k_ctrl(on);
 }
 
+int connv3_hw_pwr_rst(void)
+{
+	return connv3_pmic_mng_pwr_rst();
+}
+
 int connv3_hw_bus_dump(enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	return connv3_hw_dbg_bus_dump(drv_type, cb);
@@ -308,6 +313,11 @@ static enum connv3_radio_off_mode connv3_hw_get_radio_off_mode(void)
 
 	pr_info("[%s] return mode (%d)\n", __func__, mode);
 	return mode;
+}
+
+int connv3_hw_dfd_trigger(bool enable)
+{
+	return connv3_pinctrl_mng_dfd_trigger(enable);
 }
 
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)

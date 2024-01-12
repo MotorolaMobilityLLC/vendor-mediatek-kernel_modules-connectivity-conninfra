@@ -31,10 +31,12 @@ enum connv3_coredump_state {
 	CONNV3_COREDUMP_STATE_INIT = 0,
 	CONNV3_COREDUMP_STATE_START,
 	CONNV3_COREDUMP_STATE_MEM_REGION,
-	CONNV3_COREDUMP_STATE_EMI,
-	CONNV3_COREDUMP_STATE_WAIT_DONE,
-	CONNV3_COREDUMP_STATE_EMI_TIMEOUT,
-	CONNV3_COREDUMP_STATE_DONE,
+	CONNV3_COREDUMP_STATE_EMI,		/* EMI dump is triggerred */
+	CONNV3_COREDUMP_STATE_EMI_DONE,		/* EMI dump end successfully */
+	CONNV3_COREDUMP_STATE_EMI_TIMEOUT,	/* EMI dump timeout */
+	CONNV3_COREDUMP_STATE_END,		/* COREDUMP_END command is sent */
+	CONNV3_COREDUMP_STATE_END_DONE,		/* Coredump is end succesfully */
+	CONNV3_COREDUMP_STATE_END_TIMEOUT,	/* Coredump end command timeout */
 	CONNV3_COREDUMP_STATE_MAX, /* should not reach */
 };
 
@@ -66,6 +68,8 @@ struct timespec64 g_dump_start_time;
 #else /* defined(CONFIG_FPGA_EARLY_PORTING) */
 #define CONNV3_EMIDUMP_TIMEOUT		(60*1000)
 #endif
+
+#define EMI_COMMAND_LENGTH	64
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -138,7 +142,7 @@ static void connv3_dump_emi_dump_end(void* handler)
 	struct connv3_dump_ctx* ctx = (struct connv3_dump_ctx*)handler;
 	enum connv3_coredump_state state = connv3_dump_get_dump_state(ctx);
 
-	if (state == CONNV3_COREDUMP_STATE_EMI || state == CONNV3_COREDUMP_STATE_WAIT_DONE) {
+	if (state == CONNV3_COREDUMP_STATE_EMI || state == CONNV3_COREDUMP_STATE_END) {
 		pr_info("Wake up end command\n");
 		complete(&ctx->emi_dump);
 	}
@@ -707,30 +711,61 @@ EXPORT_SYMBOL(connv3_coredump_get_issue_info);
 
 static int connv3_dump_end_dump(struct connv3_dump_ctx *ctx)
 {
-#define EMI_COMMAND_LENGTH	64
+	int ret;
+	unsigned long comp_ret;
+	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb
+	char cmd_str[EMI_COMMAND_LENGTH] = {'\0'};
+	char *cmd_tag = "[COREDUMP_END]";
+
+	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "coredump_end") < 0) {
+		pr_notice("[%s][%s] coredump end snprintf failed", __func__, g_type_name[ctx->conn_type]);
+		return -1;
+	}
+	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_END);
+
+	pr_info("[%s] tag=[%s] dump command=[%s] cmd length=[%d]\n", __func__, cmd_tag, cmd_str, strlen(cmd_str));
+	ret = conndump_netlink_send_to_native(ctx->conn_type, cmd_tag, cmd_str, strlen(cmd_str));
+
+	if (ret < 0) {
+		pr_err("Send end or emi command fail, ret = %d\n", ret);
+		return -1;
+	}
+
+	comp_ret = wait_for_completion_timeout(
+		&ctx->emi_dump,
+		msecs_to_jiffies(CONNV3_EMIDUMP_TIMEOUT));
+
+	if (comp_ret == 0) {
+		pr_err("COREDUMP_END timeout\n");
+		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_END_TIMEOUT);
+	} else {
+		pr_info("COREDUMP_END done");
+		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_END_DONE);
+	}
+
+	return 0;
+}
+
+static int connv3_send_emi_dump(struct connv3_dump_ctx *ctx, bool need_end)
+{
 	int ret;
 	unsigned long comp_ret;
 	// format: dev=/dev/conninfra_dev,emi_size=aaaaaaaa,mcif_emi_size=bbbbbbbb
 	char cmd_str[EMI_COMMAND_LENGTH] = {'\0'};
 	char *cmd_tag;
 
-	/* EMI is invalid, send end command */
-	if (strlen(ctx->cb.dev_node) == 0 || ctx->cb.emi_size == 0) {
-		cmd_tag = "[COREDUMP_END]";
-		if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "coredump_end") < 0) {
-			pr_notice("[%s][%s] coredump end snprintf failed", __func__, g_type_name[ctx->conn_type]);
-			return -1;
-		}
-		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_WAIT_DONE);
-	} else {
-		cmd_tag = "[EMI]";
-		/* EMI dump */
-		if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "dev=%s,emi_size=%d,mcif_emi_size=%d", ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size) < 0) {
-			pr_notice("%s snprintf failed\n", __func__);
-			return -1;
-		}
-		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_EMI);
+	/* EMI dump */
+	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "dev=%s,emi_size=%d,mcif_emi_size=%d", ctx->cb.dev_node, ctx->cb.emi_size, ctx->cb.mcif_emi_size) < 0) {
+		pr_notice("%s snprintf failed\n", __func__);
+		return -1;
 	}
+	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_EMI);
+
+	if (need_end)
+		cmd_tag = "[EMI]"; // dump emi and end coredump
+	else
+		cmd_tag = "[EMI_ONLY]"; // dump emi only
+
 	pr_info("[%s] tag=[%s] dump command=[%s] cmd length=[%d]\n", __func__, cmd_tag, cmd_str, strlen(cmd_str));
 	ret = conndump_netlink_send_to_native(ctx->conn_type, cmd_tag, cmd_str, strlen(cmd_str));
 
@@ -748,11 +783,45 @@ static int connv3_dump_end_dump(struct connv3_dump_ctx *ctx)
 		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_EMI_TIMEOUT);
 	} else {
 		pr_info("EMI dump end");
-		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_DONE);
+		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_EMI_DONE);
 	}
-
 	return 0;
 }
+
+int connv3_coredump_emi(void *handler)
+{
+	struct connv3_dump_ctx *ctx = (struct connv3_dump_ctx*)handler;
+	int ret;
+	enum connv3_coredump_state state;
+
+	if (ctx == NULL)
+		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+	if (strlen(ctx->cb.dev_node) == 0 || ctx->cb.emi_size == 0) {
+		pr_notice("[%s][%s] not support EMI dump\n", __func__, g_type_name[ctx->conn_type]);
+		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
+	}
+
+	state = connv3_dump_get_dump_state(ctx);
+	if (state < CONNV3_COREDUMP_STATE_START ||
+	    state >= CONNV3_COREDUMP_STATE_EMI) {
+		pr_notice("[%s] state(%d) wrong", __func__, state);
+		return CONNV3_COREDUMP_ERR_WRONG_STATUS;
+	}
+
+	ret = osal_lock_sleepable_lock(&ctx->ctx_lock);
+	if (ret) {
+		pr_notice("[%s] get lock fail, ret = %d\n", __func__, ret);
+		return CONNV3_COREDUMP_ERR_GET_LOCK_FAIL;
+	}
+
+	/* Do emi dump only, don't end coredump. */
+	ret = connv3_send_emi_dump(ctx, false);
+
+	osal_unlock_sleepable_lock(&ctx->ctx_lock);
+
+	return ret;
+}
+EXPORT_SYMBOL(connv3_coredump_emi);
 
 static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customized_string)
 {
@@ -800,8 +869,23 @@ int connv3_coredump_end(void *handler, char *customized_string)
 	}
 
 	osal_gettimeofday(&pre_end);
-	/* Send EMI dump or end command to native */
-	connv3_dump_end_dump(ctx);
+
+	if (strlen(ctx->cb.dev_node) == 0 || ctx->cb.emi_size == 0) {
+		/* Send end command */
+		connv3_dump_end_dump(ctx);
+	} else {
+		/* EMI dump has been executed */
+		if (state >= CONNV3_COREDUMP_STATE_EMI) {
+			/* Send end command */
+			connv3_dump_end_dump(ctx);
+		} else {
+			/* Do EMI dump and end coredump */
+			ret = connv3_send_emi_dump(ctx, true);
+			if (ret)
+				pr_notice("[%s] Send emi dump and end coredump error, ret = %d\n",
+					__func__, ret);
+		}
+	}
 
 	/* All process finished, set to init status */
 	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_INIT);

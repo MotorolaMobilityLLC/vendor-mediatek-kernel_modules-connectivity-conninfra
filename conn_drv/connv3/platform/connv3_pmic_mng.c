@@ -107,6 +107,17 @@ int connv3_pmic_mng_vsel_ctrl(u32 enable)
 	return ret;
 }
 
+int connv3_pmic_mng_pwr_rst(void)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->pmic_pwr_rst)
+		ret = g_connv3_platform_pmic_ops->pmic_pwr_rst();
+
+	return ret;
+}
+
 int connv3_pmic_mng_parse_state(char *buffer, int buf_sz)
 {
 	int ret = 0;

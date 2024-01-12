@@ -92,6 +92,7 @@ int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio, unsigned
 int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
 int connv3_hw_ext_32k_onoff(bool);
+int connv3_hw_pwr_rst(void);
 
 int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
 
@@ -113,6 +114,9 @@ int connv3_hw_power_info_dump(
 	char *buf, unsigned int size);
 int connv3_hw_power_info_reset(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb);
+
+/* DFD relative function */
+int connv3_hw_dfd_trigger(bool);
 
 /*******************************************************************************
 *                              F U N C T I O N S

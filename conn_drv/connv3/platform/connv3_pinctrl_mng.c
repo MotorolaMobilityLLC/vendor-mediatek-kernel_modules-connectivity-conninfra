@@ -105,6 +105,17 @@ int connv3_pinctrl_mng_ext_32k_ctrl(bool on)
 	return ret;
 }
 
+int connv3_pinctrl_mng_dfd_trigger(bool enable)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pinctrl_ops &&
+		g_connv3_platform_pinctrl_ops->pinctrl_dfd_trigger)
+		ret = g_connv3_platform_pinctrl_ops->pinctrl_dfd_trigger(enable);
+
+	return ret;
+}
+
 int connv3_pinctrl_mng_init(
 	struct platform_device *pdev,
 	const struct connv3_plat_data* plat_data)

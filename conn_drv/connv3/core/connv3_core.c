@@ -87,6 +87,7 @@ static int opfunc_subdrv_pwr_on_notify(struct msg_op_data *op);
 static int opfunc_subdrv_efuse_on(struct msg_op_data *op);
 static int opfunc_subdrv_pre_cal_fail(struct msg_op_data *op);
 static int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op);
+static int opfunc_subdrv_post_reset_on(struct msg_op_data *op);
 
 static void _connv3_core_update_rst_status(enum chip_rst_status status);
 
@@ -151,7 +152,7 @@ typedef enum {
 	CONNV3_SUBDRV_OPID_CAL_EFUSE_ON = 7,
 	CONNV3_SUBDRV_OPID_PRE_CAL_FAIL = 8,
 	CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY = 9,
-
+	CONNV3_SUBDRV_OPID_POST_RST_ON  = 10,
 	CONNV3_SUBDRV_OPID_MAX
 } connv3_subdrv_op;
 
@@ -167,6 +168,7 @@ static const msg_opid_func connv3_subdrv_opfunc[] = {
 	[CONNV3_SUBDRV_OPID_CAL_EFUSE_ON] = opfunc_subdrv_efuse_on,
 	[CONNV3_SUBDRV_OPID_PRE_CAL_FAIL] = opfunc_subdrv_pre_cal_fail,
 	[CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY] = opfunc_subdrv_pwr_down_notify,
+	[CONNV3_SUBDRV_OPID_POST_RST_ON] = opfunc_subdrv_post_reset_on,
 };
 
 enum pre_cal_type {
@@ -280,15 +282,23 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		return 0;
 	}
 
-	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
-		/* power recycle */
-		ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX, NULL);
-
-		if (ret) {
-			pr_err("[%s] connv3 power recycle fail. drv=[%d] ret=[%d]\n",
-				__func__, drv_type, ret);
-			osal_unlock_sleepable_lock(&ctx->core_lock);
-			return ret;
+	/* g_connv3_ctx.core_status meaning
+	 * - DRV_STS_POWER_OFF: all radio is off.
+	 * 	(pmic_en is 0 or 1 for power off uds mode)
+	 * - DRV_STS_RESET: pmic_en is 1 and POR_RST has been happened.
+	 * - DRV_STS_POWER_ON: pmic_en is 1 and at least one radio has called connv3_pwr_on.
+	 */
+	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF ||
+	    g_connv3_ctx.core_status == DRV_STS_RESET) {
+		if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
+			/* power recycle */
+			ret = connv3_hw_pwr_off(0, CONNV3_DRV_TYPE_MAX, NULL);
+			if (ret) {
+				pr_err("[%s] connv3 power recycle fail. drv=[%d] ret=[%d]\n",
+					__func__, drv_type, ret);
+				osal_unlock_sleepable_lock(&ctx->core_lock);
+				return ret;
+			}
 		}
 
 		/* pre_power_on flow */
@@ -529,16 +539,38 @@ static int opfunc_power_off(struct msg_op_data *op)
 	return opfunc_power_off_internal(drv_type);
 }
 
+static const char* __chip_rst_get_type_name(unsigned int type)
+{
+	static const char *rst_type_string[3] = {
+		[CONNV3_CHIP_RST_TYPE_LEGACY_MODE] = "Legacy",
+		[CONNV3_CHIP_RST_TYPE_PMIC_FAULT_B] = "PMIC_FAULTB",
+		[CONNV3_CHIP_RST_TYPE_DFD_DUMP] = "DFD_DUMP",
+	};
+
+	if (type > CONNV3_CHIP_RST_TYPE_DFD_DUMP)
+		return "UNKNOWN";
+
+	return rst_type_string[type];
+}
+
 static int opfunc_chip_rst(struct msg_op_data *op)
 {
 	int i, ret, cur_rst_state;
 	struct subsys_drv_inst *drv_inst;
 	unsigned int drv_pwr_state[CONNV3_DRV_TYPE_MAX];
 	const unsigned int subdrv_all_done = (0x1 << CONNV3_DRV_TYPE_MAX) - 1;
-	struct timespec64 pre_begin, pre_end, reset_end, done_end;
+	struct timespec64 rst_begin, pre_begin, pre_end, post_reset_end, reset_end, done_end;
 	unsigned int rst_type_support;
 	enum connv3_reset_source rst_source;
 	enum connv3_drv_type trg_drv;
+	/* 0: legacy mode (default)
+	 * 1: PMIC falut_b
+	 * 2: DFD dump (CONN_RST or PMIC_IRQB)
+	 */
+	unsigned int rst_type = CONNV3_CHIP_RST_TYPE_LEGACY_MODE;
+	bool need_pmic_toggle = true;
+	enum connv3_drv_status bt_status = g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT].drv_status;
+	enum connv3_drv_status wifi_status = g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status;
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
 		pr_info("No subsys on, just return");
@@ -548,7 +580,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 
 	trg_drv = op->op_data[0];
 	rst_source = op->op_data[1];
-	osal_gettimeofday(&pre_begin);
+	osal_gettimeofday(&rst_begin);
 
 	atomic_set(&g_connv3_ctx.rst_state, 0);
 	sema_init(&g_connv3_ctx.rst_sema, 1);
@@ -556,9 +588,38 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	rst_type_support = connv3_hw_get_reset_type_support();
 	/* 1: support POR_RST */
 	if (rst_type_support == 1) {
-
+		if (rst_source == CONNV3_CHIP_RST_SOURCE_NORMAL) {
+			rst_type = CONNV3_CHIP_RST_TYPE_DFD_DUMP;
+			need_pmic_toggle = false;
+		} else if (rst_source == CONNV3_CHIP_RST_SOURCE_PMIC_IRQ_B) {
+			/* GO DFD flow */
+			rst_type = CONNV3_CHIP_RST_TYPE_DFD_DUMP;
+		} else if (rst_source == CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B) {
+			/* GO legacy reset */
+			rst_type = CONNV3_CHIP_RST_TYPE_PMIC_FAULT_B;
+		}
 	}
 
+	if (rst_type == CONNV3_CHIP_RST_TYPE_DFD_DUMP) {
+		_connv3_core_update_rst_status(CHIP_RST_DFD_SETUP);
+		/* PU DFD_EN pin */
+		ret = connv3_hw_dfd_trigger(true);
+		if (ret)
+			pr_notice("[%s] connv3_hw_dfd_en error, ret = %d\n", __func__, ret);
+
+		_connv3_core_update_rst_status(CHIP_RST_DFD_PRE_DUMP);
+		/* Call conn_scp API to do DFD dump and wait */
+	#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
+		ret = connectivity_export_conap_scp_trigger_dfd_cmd(
+			((bt_status > 0? CONAP_SCP_DFD_DRV_BT: 0) | (wifi_status > 0? CONAP_SCP_DFD_DRV_WF : 0)),
+			0, 0);
+		pr_info("[chip_rst] dfd dump done, ret = %d\n", ret);
+	#else
+		pr_warn("[chip_rst] not internal, don't support DFD dump\n");
+	#endif
+	}
+
+	osal_gettimeofday(&pre_begin);
 	_connv3_core_update_rst_status(CHIP_RST_PRE_CB);
 
 	/* pre */
@@ -566,8 +627,8 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		drv_inst = &g_connv3_ctx.drv_inst[i];
 		drv_pwr_state[i] = drv_inst->drv_status;
 		pr_info("subsys %d is %d", i, drv_inst->drv_status);
-		ret = msg_thread_send_3(&drv_inst->msg_ctx,
-				CONNV3_SUBDRV_OPID_PRE_RESET, i, trg_drv, rst_source);
+		ret = msg_thread_send_4(&drv_inst->msg_ctx,
+				CONNV3_SUBDRV_OPID_PRE_RESET, i, trg_drv, rst_source, rst_type);
 	}
 
 	pr_info("[chip_rst] pre vvvvvvvvvvvvv");
@@ -586,23 +647,92 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		}
 	}
 
-	_connv3_core_update_rst_status(CHIP_RST_RESET);
-
 	osal_gettimeofday(&pre_end);
 
-	pr_info("[chip_rst] reset ++++++++++++");
-	/*******************************************************/
-	/* reset */
-	/* call consys_hw */
-	/*******************************************************/
-	/* Special power-off function, turn off connsys directly */
-	ret = opfunc_power_off_internal(CONNV3_DRV_TYPE_MAX);
-	pr_info("Force connv3 power off, ret=%d. Status should be off. Status=%d\n",
-		ret, g_connv3_ctx.core_status);
+	if (rst_type == CONNV3_CHIP_RST_TYPE_DFD_DUMP) {
+	#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
+		/* Clean DFD dump */
+		ret = connectivity_export_conap_scp_clr_dfd_buffer();
+		pr_info("[%s] clean DFD dump done, ret = %d\n", __func__, ret);
+	#else
+		pr_warn("[chip_rst] Not internal platform\n");
+	#endif
 
-	_connv3_core_update_rst_status(CHIP_RST_POST_CB);
+		/* Reset flow
+		 * 1. PD DFD_EN pin
+		 * 2. Call conn_scp to turn off uart function
+		 * 3. CONN_RST toggle
+		 */
+		/* 1. PD DFD_EN pin */
+		ret = connv3_hw_dfd_trigger(false);
+		if (ret)
+			pr_notice("[%s] connv3_hw_dfd_trigger(0) error, ret = %d\n", __func__, ret);
+
+		/* 2. Call conn_scp to turn off uart function */
+	#if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
+		if (g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT].drv_status == DRV_STS_POWER_ON)
+			connectivity_export_conap_scp_state_change(conn_bt_off);
+		if (g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status == DRV_STS_POWER_ON)
+			connectivity_export_conap_scp_state_change(conn_wifi_off);
+	#endif
+		/* 3. CONN_RST toggle */
+		ret = connv3_hw_pwr_rst();
+		if (ret)
+			pr_notice("[%s] connv3_hw_pwr_rst fail, ret = %d\n", __func__, ret);
+
+		/* post_rst_on_cb */
+		atomic_set(&g_connv3_ctx.rst_state, 0);
+		sema_init(&g_connv3_ctx.rst_sema, 1);
+		for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+			drv_inst = &g_connv3_ctx.drv_inst[i];
+			ret = msg_thread_send_2(&drv_inst->msg_ctx,
+				CONNV3_SUBDRV_OPID_POST_RST_ON, i, need_pmic_toggle);
+		}
+		while (atomic_read(&g_connv3_ctx.rst_state) != subdrv_all_done) {
+			ret = down_timeout(&g_connv3_ctx.rst_sema, msecs_to_jiffies(CONNV3_RESET_TIMEOUT));
+			if (ret == 0)
+				continue;
+			cur_rst_state = atomic_read(&g_connv3_ctx.rst_state);
+			for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+				if ((cur_rst_state & (0x1 << i)) == 0) {
+					pr_info("[chip_rst] [%s] post_reset_on callback is not back", connv3_drv_thread_name[i]);
+					drv_inst = &g_connv3_ctx.drv_inst[i];
+					osal_thread_show_stack(&drv_inst->msg_ctx.thread);
+				}
+			}
+		}
+	}
+
+	osal_gettimeofday(&post_reset_end);
+
+	if (need_pmic_toggle) {
+		_connv3_core_update_rst_status(CHIP_RST_RESET);
+		pr_info("[chip_rst] reset ++++++++++++");
+		/*******************************************************/
+		/* reset */
+		/* call consys_hw */
+		/*******************************************************/
+		/* Special power-off function, turn off connsys directly */
+		ret = opfunc_power_off_internal(CONNV3_DRV_TYPE_MAX);
+		pr_info("Force connv3 power off, ret=%d. Status should be off. Status=%d\n",
+			ret, g_connv3_ctx.core_status);
+	} else {
+		/* Don't toggle pmic, need to update driver status one-by-one */
+		for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+			if (g_connv3_ctx.drv_inst[i].drv_status != DRV_STS_POWER_OFF) {
+				g_connv3_ctx.drv_inst[i].drv_status = DRV_STS_PRE_POWER_ON;
+			}
+		}
+		/* core_status DRV_STS_RESET means that POR_RST trigger and pmic_en is on
+		 * need to patch download again
+		 */
+		g_connv3_ctx.core_status = DRV_STS_RESET;
+		dump_curr_status("PMIC_POR_RST");
+	}
 
 	osal_gettimeofday(&reset_end);
+
+	_connv3_core_update_rst_status(CHIP_RST_POST_CB);
 
 	/* post */
 	atomic_set(&g_connv3_ctx.rst_state, 0);
@@ -632,10 +762,14 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	_connv3_core_update_rst_status(CHIP_RST_NONE);
 	osal_gettimeofday(&done_end);
 
-	pr_info("[chip_rst] summary pre=[%lu] reset=[%lu] post=[%lu]",
-				timespec64_to_ms(&pre_begin, &pre_end),
-				timespec64_to_ms(&pre_end, &reset_end),
-				timespec64_to_ms(&reset_end, &done_end));
+	pr_info("[chip_rst][%s] summary total=[%lu] pre-dfd=[%lu] pre-cb=[%lu] post-dfd=[%lu] off=[%lu] post-cb=[%lu]",
+				__chip_rst_get_type_name(rst_type),
+				timespec64_to_ms(&rst_begin, &done_end),      /* total */
+				timespec64_to_ms(&rst_begin, &pre_begin),     /* pre-dfd */
+				timespec64_to_ms(&pre_begin, &pre_end),       /* pre-cb */
+				timespec64_to_ms(&pre_end, &post_reset_end),  /* post-dfd */
+				timespec64_to_ms(&post_reset_end, &reset_end),/* power off */
+				timespec64_to_ms(&reset_end, &done_end));     /* post-cb */
 
 	return 0;
 }
@@ -1053,15 +1187,19 @@ static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 	struct subsys_drv_inst *drv_inst;
 	enum connv3_drv_type trg_drv = op->op_data[1];
 	enum connv3_reset_source rst_source = op->op_data[2];
+	unsigned int rst_type = op->op_data[3];
 
 	/* TODO: should be locked, to avoid cb was reset */
 	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
 	if (/*drv_inst->drv_status == DRV_ST_POWER_ON &&*/
 			drv_inst->ops_cb.rst_cb.pre_whole_chip_rst) {
 
+		pr_info("[%s][%s] trg_reason=[%s] type=[%d]",
+			__func__, connv3_drv_thread_name[drv_type],
+			g_connv3_ctx.trg_reason[rst_source], rst_type);
 		ret = drv_inst->ops_cb.rst_cb.pre_whole_chip_rst(trg_drv,
 					g_connv3_ctx.trg_reason[rst_source],
-					CONNV3_CHIP_RST_TYPE_LEGACY_MODE);
+					rst_type);
 		if (ret)
 			pr_notice("[%s] fail [%d]", __func__, ret);
 	}
@@ -1170,6 +1308,27 @@ static int opfunc_dump_power_state(struct msg_op_data *op)
 static int opfunc_reset_and_dump_power_state(struct msg_op_data *op)
 {
 	return opfunc_power_dump_internal(CONNV3_PWR_INFO_DUMP_AND_RESET, op);
+}
+
+static int opfunc_subdrv_post_reset_on(struct msg_op_data *op)
+{
+	int ret;
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+	unsigned int type = op->op_data[1];
+
+	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+	if (drv_inst->ops_cb.rst_cb.post_reset_on) {
+		ret = drv_inst->ops_cb.rst_cb.post_reset_on(type);
+		if (ret)
+			pr_notice("[%s][%s][type=%d] fail, ret=%d\n",
+				__func__, connv3_drv_name[drv_type], type, ret);
+	}
+
+	atomic_add(0x1 << drv_type, &g_connv3_ctx.rst_state);
+	up(&g_connv3_ctx.rst_sema);
+
+	return 0;
 }
 
 
@@ -1616,8 +1775,11 @@ int connv3_core_pmic_event_cb(unsigned int id, unsigned int event)
 		}
 	}
 
-	if (event == 1)
+	if (event == 1) {
+		pr_info("[%s] r=[%d] source=[%u] id=[%u] event=[%u] retrigger L0\n",
+			__func__, r, rst_source, id, event);
 		connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B, CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
+	}
 
 	return 0;
 }

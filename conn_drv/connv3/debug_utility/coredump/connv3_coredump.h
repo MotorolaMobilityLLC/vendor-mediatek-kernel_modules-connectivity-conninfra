@@ -69,6 +69,7 @@ extern void connv3_coredump_set_dump_mode(enum connv3_coredump_mode mode);
 extern int connv3_coredump_start(void *handler, const int drv, const char *reason, const char *dump_msg , const char *fw_version);
 extern int connv3_coredump_send(void *handler, char *tag, char *content, unsigned int length);
 extern int connv3_coredump_get_issue_info(void *handler, struct connv3_issue_info *issue_info, char *xml_str, unsigned int xml_str_size);
+extern int connv3_coredump_emi(void *handler);
 extern int connv3_coredump_end(void *handler, char *customized_string);
 
 
