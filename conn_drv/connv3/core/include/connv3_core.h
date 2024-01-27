@@ -123,10 +123,11 @@ struct connv3_ctx {
 	 * 2. Reset and clear power status when platform suspend
 	 * 3. Dump power status when platform resume
 	 */
-	//spinlock_t power_dump_lock;
 	atomic_t power_dump_enable;
 
 	OSAL_SLEEPABLE_LOCK core_lock;
+
+	OSAL_SLEEPABLE_LOCK subsys_op_lock;
 
 	/* chip reset */
 	enum chip_rst_status rst_status;

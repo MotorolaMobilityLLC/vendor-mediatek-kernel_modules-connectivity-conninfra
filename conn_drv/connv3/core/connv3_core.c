@@ -1519,10 +1519,18 @@ static int opfunc_subdrv_efuse_on(struct msg_op_data *op) {
 int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op) {
 	unsigned int drv_type = op->op_data[0];
 	struct subsys_drv_inst *drv_inst;
+	int ret;
 
 	if (drv_type >= CONNV3_DRV_TYPE_MAX) {
 		pr_notice("[%s] invalid type=[%d]", __func__, drv_type);
 		return -EINVAL;
+	}
+
+	ret = osal_lock_sleepable_lock(&g_connv3_ctx.subsys_op_lock);
+	if (ret) {
+		pr_notice("[%s][drv=%s] get subsys_op_lock fail, ret = %d\n",
+			__func__, connv3_drv_thread_name[drv_type], ret);
+		return -1;
 	}
 
 	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
@@ -1531,6 +1539,7 @@ int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op) {
 		(drv_inst->ops_cb.pwr_on_cb.chip_power_down_notify)(0);
 	}
 
+	osal_unlock_sleepable_lock(&g_connv3_ctx.subsys_op_lock);
 	return 0;
 }
 
@@ -1802,6 +1811,12 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	if (type < CONNV3_DRV_TYPE_BT || type >= CONNV3_DRV_TYPE_MAX)
 		return -1;
 
+	ret = osal_lock_sleepable_lock(&ctx->subsys_op_lock);
+	if (ret) {
+		pr_notice("[%s] get subsys_op_lock fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+
 	spin_lock_irqsave(&g_connv3_ctx.infra_lock, flag);
 	drv_inst = &g_connv3_ctx.drv_inst[type];
 	memcpy(&g_connv3_ctx.drv_inst[type].ops_cb, cb,
@@ -1834,20 +1849,29 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 			pr_err("send pre_cal_prepare msg fail, ret = %d\n", ret);
 	}
 
+	osal_unlock_sleepable_lock(&ctx->subsys_op_lock);
 	return 0;
 }
 
 int connv3_core_subsys_ops_unreg(enum connv3_drv_type type)
 {
 	unsigned long flag;
+	int ret;
 
 	if (type < CONNV3_DRV_TYPE_BT || type >= CONNV3_DRV_TYPE_MAX)
 		return -1;
+
+	ret = osal_lock_sleepable_lock(&g_connv3_ctx.subsys_op_lock);
+	if (ret) {
+		pr_notice("[%s] get subsys_op_lock fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
 	spin_lock_irqsave(&g_connv3_ctx.infra_lock, flag);
 	memset(&g_connv3_ctx.drv_inst[type].ops_cb, 0,
 					sizeof(struct connv3_sub_drv_ops_cb));
 	spin_unlock_irqrestore(&g_connv3_ctx.infra_lock, flag);
 
+	osal_unlock_sleepable_lock(&g_connv3_ctx.subsys_op_lock);
 	return 0;
 }
 
@@ -2294,6 +2318,7 @@ int connv3_core_init(void)
 	spin_lock_init(&ctx->infra_lock);
 	osal_sleepable_lock_init(&ctx->core_lock);
 	spin_lock_init(&ctx->rst_lock);
+	osal_sleepable_lock_init(&ctx->subsys_op_lock);
 	//spin_lock_init(&ctx->power_dump_lock);
 	//atomic_set(&ctx->power_dump_enable, 0);
 
@@ -2355,6 +2380,7 @@ int connv3_core_deinit(void)
 		return -1;
 	}
 
+	osal_sleepable_lock_deinit(&ctx->subsys_op_lock);
 	osal_sleepable_lock_deinit(&ctx->core_lock);
 	osal_wake_lock_deinit(&g_connv3_wake_lock);
 
