@@ -134,22 +134,17 @@ int consys_reg_deinit_mt6991(void)
 
 int consys_check_ap2conn_infra_on_mt6991(void)
 {
-	unsigned int tx, rx;
+	unsigned int val;
 
 	/* Check ap2conn slpprot
-	 * 0x1002_C1CC[0] / 0x1002_C00C[25](rx/tx) (sleep protect enable ready)
-	 * both of them should be 1'b0
+	 * 0x1002_C00C[24] (sleep protect enable ready) should be 1'b0
 	 */
-	/* connsys_protect_rdy */
-	rx = CONSYS_REG_READ(INFRABUS_AO_REG_BASE_ADDR + 0x1cc);
-	/* infrasys_protect_rdy */
-	tx = CONSYS_REG_READ(INFRABUS_AO_REG_BASE_ADDR + 0xc);
+	val = CONSYS_REG_READ(INFRABUS_AO_REG_BASE_ADDR + 0xc);
 
-	if (rx & (0x1 << 0))
-		return CONNINFRA_AP2CONN_RX_SLP_PROT_ERR;
-	if (tx & (0x1 << 25))
+	if (val & (0x1 << 24)) {
+		pr_info("%s slp_prot is enabled. val = 0x%x\n", __func__, val);
 		return CONNINFRA_AP2CONN_TX_SLP_PROT_ERR;
-
+	}
 	return 0;
 }
 
