@@ -163,6 +163,7 @@ int consys_conninfra_wakeup_mt6991_gen(void);
 /****************************************************************************************************/
 /* Base: CONN_HOST_CSR_TOP_BASE (0x4006_0000)                                                       */
 /****************************************************************************************************/
+#define CONSYS_GEN_CONN_HOST_CSR_TOP_CONN_INFRA_EMI_THROTTLE_CFG_ADDR                       0x128
 #define CONSYS_GEN_CONN_INFRA_WAKEPU_TOP_OFFSET_ADDR                                        0x1a0
 #define CONSYS_GEN_HOST_CONN_INFRA_SLP_CNT_CTL_OFFSET_ADDR                                  0x380
 #define CONSYS_GEN_CONN_HOST_CSR_TOP_HOST_CONN_INFRA_SLP_CNT_CTL_OFFSET_ADDR                0x380
