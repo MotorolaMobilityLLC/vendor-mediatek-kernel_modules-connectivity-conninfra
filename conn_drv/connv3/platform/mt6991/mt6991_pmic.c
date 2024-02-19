@@ -110,9 +110,10 @@ int connv3_plt_pmic_common_power_ctrl_mt6991(u32 enable)
 {
 	struct pinctrl_state *pinctrl_set;
 	struct pinctrl_state *faultb_set;
+	static int pmic_enabled = 0;
 	int ret = 0;
 
-	if (enable) {
+	if (enable == 1 && pmic_enabled == 0) {
 		pinctrl_set = pinctrl_lookup_state(
 				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
 		if (!IS_ERR(pinctrl_set)) {
@@ -136,7 +137,12 @@ int connv3_plt_pmic_common_power_ctrl_mt6991(u32 enable)
 		}
 
 		g_spurious_pmic_exception_mt6991 = 0;
-	} else {
+		pmic_enabled = 1;
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	} else if (enable == 0 && pmic_enabled == 1){
+		/* Wait BT/WIFI FW off */
+		mdelay(210);
+
 		g_spurious_pmic_exception_mt6991 = 1;
 		parse_pmic_register_once = 0;
 
@@ -164,9 +170,10 @@ int connv3_plt_pmic_common_power_ctrl_mt6991(u32 enable)
 		} else {
 			pr_err("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
 		}
-	}
 
-	pr_info("[%s] enable=[%d]", __func__, enable);
+		pmic_enabled = 0;
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	}
 
 	return ret;
 }
