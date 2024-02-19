@@ -126,6 +126,15 @@ static int connv3_plt_pinctrl_initial_state(void)
 	if (ret)
 		pr_notice("[%s] pinctrl init fail, %d", __func__, ret);
 
+
+	if (!g_dfd_init_done) {
+		pr_notice("[%s] dfd pin not init, skip setting\n", __func__);
+	} else {
+		ret = pinctrl_select_state(g_pinctrl_ptr, g_dfd_init);
+		if (ret)
+			pr_notice("[%s] dfd pin init fail, %d\n", __func__, ret);
+	}
+
 	return 0;
 }
 
@@ -195,6 +204,7 @@ int connv3_plt_pinctrl_setup_pre_mt6991(void)
 	if (ret)
 		pr_notice("[%s] pinctrl pre on fail, %d", __func__, ret);
 
+	connv3_plt_pinctrl_dfd_trigger_mt6991(false);
 	return 0;
 }
 
