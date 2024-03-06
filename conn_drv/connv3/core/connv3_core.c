@@ -282,6 +282,14 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 		return 0;
 	}
 
+	/* check if platform ready */
+	ret = connv3_hw_check_status();
+	if (ret != CONNV3_PLT_STATE_READY) {
+		pr_notice("[CONNV3_PWR_ON] ret = %d\n", ret);
+		osal_unlock_sleepable_lock(&ctx->core_lock);
+		return CONNV3_ERR_CLOCK_NOT_READY;
+	}
+
 	/* g_connv3_ctx.core_status meaning
 	 * - DRV_STS_POWER_OFF: all radio is off.
 	 * 	(pmic_en is 0 or 1 for power off uds mode)
@@ -423,7 +431,6 @@ static int opfunc_power_on_done(struct msg_op_data *op)
 		pr_err("[%s] core_lock fail!!", __func__);
 		return ret;
 	}
-
 
 	pr_info("[%s] type=[%d]", __func__, drv_type);
 
@@ -914,13 +921,16 @@ static int opfunc_pre_cal_efuse_on(void)
 static int opfunc_pre_cal(struct msg_op_data *op)
 {
 #define CAL_DRV_COUNT 2
+#define PRE_CAL_PLATFORM_CHECK_TIMEOUT_MS	(2 * 60 * 1000) // 2 minutes
+#define PRE_CAL_PLATFOEM_CHECK_DURATION		1000 // 1 sec
 	int cal_drvs[CAL_DRV_COUNT] = {CONNV3_DRV_TYPE_BT, CONNV3_DRV_TYPE_WIFI};
 	int i, ret, cur_state;
 	int bt_cal_ret, wf_cal_ret;
 	struct subsys_drv_inst *drv_inst;
 	int pre_cal_done_state = (0x1 << CONNV3_DRV_TYPE_BT) | (0x1 << CONNV3_DRV_TYPE_WIFI);
-	struct timespec64 efuse_on_start, begin, pwr_on_begin, bt_cal_begin, wf_cal_begin, end;
+	struct timespec64 plt_check, efuse_on_start, begin, pwr_on_begin, bt_cal_begin, wf_cal_begin, end;
 	int pmic_state;
+	unsigned int check_total_time = 0;
 
 	/* Check BT/WIFI status again */
 	ret = osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
@@ -937,6 +947,21 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 		}
 	}
 	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
+
+	osal_gettimeofday(&plt_check);
+	/* Check platform status */
+	while (check_total_time <= PRE_CAL_PLATFORM_CHECK_TIMEOUT_MS) {
+		ret = connv3_hw_check_status();
+		if (ret == CONNV3_PLT_STATE_READY) {
+			break;
+		}
+		check_total_time += PRE_CAL_PLATFOEM_CHECK_DURATION;
+		msleep(PRE_CAL_PLATFOEM_CHECK_DURATION);
+	}
+	if (ret != CONNV3_PLT_STATE_READY) {
+		pr_notice("[%s] pre-cal check platform ready fail, ret: %d\n", __func__, ret);
+		return -1;
+	}
 
 	osal_gettimeofday(&efuse_on_start);
 	ret = opfunc_pre_cal_efuse_on();
@@ -1071,7 +1096,8 @@ static int opfunc_pre_cal(struct msg_op_data *op)
 
 	osal_gettimeofday(&end);
 
-	pr_info("[pre_cal] summary efuse_on=[%lu] pre_on=[%lu] pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
+	pr_info("[pre_cal] summary plt_check=[%lu] efuse_on=[%lu] pre_on=[%lu] pwr=[%lu] bt_cal=[%d][%lu] wf_cal=[%d][%lu]",
+			timespec64_to_ms(&plt_check, &efuse_on_start),
 			timespec64_to_ms(&efuse_on_start, &begin),
 			timespec64_to_ms(&begin, &pwr_on_begin),
 			timespec64_to_ms(&pwr_on_begin, &bt_cal_begin),
@@ -1790,6 +1816,10 @@ int connv3_core_pmic_event_cb(unsigned int id, unsigned int event)
 		pr_info("[%s] r=[%d] source=[%u] id=[%u] event=[%u] retrigger L0\n",
 			__func__, r, rst_source, id, event);
 		connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B, CONNV3_DRV_TYPE_CONNV3, "PMIC Fault");
+	} else if (event == 2) {
+		pr_info("[%s] r=[%d] source=[%u] id=[%u] event=[%u] retrigger L0\n",
+			__func__, r, rst_source, id, event);
+		connv3_core_trg_chip_rst(CONNV3_CHIP_RST_SOURCE_PMIC_FAULT_B, CONNV3_DRV_TYPE_CONNV3, "Co-clock error");
 	}
 
 	return 0;

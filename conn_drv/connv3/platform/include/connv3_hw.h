@@ -30,13 +30,23 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+enum connv3_plt_state {
+	CONNV3_PLT_STATE_READY = 0,
+	CONNV3_PLT_STATE_CLK_ERROR,
+	CONNV3_PLT_STATE_MAX,
+};
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
 
+struct connv3_dev_cb {
+	int (*connv3_pmic_event_notifier) (unsigned int, unsigned int);
+};
+
 struct connv3_hw_ops_struct {
+	u32 (*connsys_plt_clk_init) (struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 	u32 (*connsys_plt_get_chipid) (void);
 	u32 (*connsys_plt_get_adie_chipid) (void);
 	u32 (*connsys_plt_pre_cal_blocking_enable) (void);
@@ -47,10 +57,9 @@ struct connv3_hw_ops_struct {
 	 */
 	u32 (*connsys_plt_reset_type_support) (void);
 	u8* (*connsys_plt_get_custom_option)(u32* size);
-};
-
-struct connv3_dev_cb {
-	int (*connv3_pmic_event_notifier) (unsigned int, unsigned int);
+	/* Check platform resource status, resource maybe clock or others.
+	 */
+	u32 (*connsys_plt_check_status) (void);
 };
 
 #define DRV_GEN_SUPPORT_FULL 0x7
@@ -97,6 +106,7 @@ int connv3_hw_pwr_rst(void);
 
 int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
 
+int connv3_hw_clk_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
 /* Get platform supported reset type
@@ -120,6 +130,8 @@ int connv3_hw_power_info_reset(
 int connv3_hw_dfd_trigger(bool);
 
 u8* connv3_hw_get_custom_option(u32 *size);
+
+int connv3_hw_check_status(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
