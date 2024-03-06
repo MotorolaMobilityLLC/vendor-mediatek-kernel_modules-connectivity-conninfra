@@ -833,6 +833,7 @@ int conninfra_dev_dbg_deinit(void)
 	return 0;
 }
 
+#if CONNINFRA_DBG_SUPPORT
 static int conninfra_dbg_spi_1_read(int par1, int par2, int par3)
 {
 	unsigned int data;
@@ -898,3 +899,4 @@ static int conninfra_dbg_spi_1_write(int par1, int par2, int par3)
 			__func__, conninfra_dbg_spi_subsys_string(spi_write_subsys), par2, par3, ret);
 	return 0;
 }
+#endif
