@@ -16,6 +16,10 @@
 #define MT6653_CONN_INFRA_VERSION_ID		0x03040001
 #define MT6653_CONN_INFRA_OFF_IRQ_REG		0x20023400
 
+#define MT6653_VERSION_ID_FAIL_A2C	0xdead0a2c
+#define MT6653_VERSION_ID_FAIL_ZERO	0xdead0000
+
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -37,6 +41,19 @@ const struct connv3_platform_dbg_ops g_connv3_hw_dbg_mt6653 = {
 	.dbg_bus_dump = connv3_conninfra_bus_dump_mt6653,
 	.dbg_power_info_dump = connv3_conninfra_power_info_dump_mt6653,
 	.dbg_power_info_reset = connv3_conninfra_power_info_reset_mt6653,
+};
+
+const struct connv3_dbg_command mt6653_extra_bt[] = {
+	/* Write, addr, mask, value, Read, addr*/
+	/* A01 */ {false, 0, 0, 0, true, 0x81025200},
+	/* A02 */ {false, 0, 0, 0, true, 0x80000000},
+	/* A03 */ {false, 0, 0, 0, true, 0x81030130},
+};
+
+const struct connv3_dump_list mt6653_dmp_list_extra_bt = {
+	"extra_bt", NULL,
+	3, sizeof(mt6653_extra_bt)/sizeof(struct connv3_dbg_command),
+	mt6653_extra_bt,
 };
 
 /*******************************************************************************
@@ -93,6 +110,10 @@ static int connv3_bus_check_ap2conn_off_mt6653(struct connv3_cr_cb *cb)
 	if (value != MT6653_CONN_INFRA_VERSION_ID) {
 		pr_notice("[%s] get conn_infra version fail, expect:[0x%08x], get:0x%08x",
 			__func__, MT6653_CONN_INFRA_VERSION_ID, value);
+		if (value == 0xdead0a2c)
+			return MT6653_VERSION_ID_FAIL_A2C;
+		if (value == 0x0)
+			return MT6653_VERSION_ID_FAIL_ZERO;
 		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
 	}
 
@@ -110,13 +131,9 @@ static int connv3_bus_check_ap2conn_off_mt6653(struct connv3_cr_cb *cb)
 	return 0;
 }
 
-int connv3_conninfra_bus_dump_mt6653(
-	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
+int connv3_conninfra_dump_von_mt6653(struct connv3_cr_cb *cb)
 {
-	int ret = 0, func_ret = 0;
-
-	/* Print version */
-	pr_info("[V3_BUS][PSOP_1_1] version=%s\n", MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION);
+	int ret = 0;
 
 	/* Dump host side CR */
 	ret = connv3_hw_dbg_unify_dump_utility(
@@ -132,10 +149,44 @@ int connv3_conninfra_bus_dump_mt6653(
 	if (ret)
 		pr_notice("[%s] mt6653_conn_infra_top_a error(%d)\n", __func__, ret);
 
+	return 0;
+}
+
+int connv3_conninfra_bus_dump_mt6653(
+	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
+{
+	int ret = 0, func_ret = 0;
+
+	/* Print version */
+	pr_info("[V3_BUS][PSOP_1_1] version=%s\n", MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION);
+
+	/* Dump host side CR */
+	connv3_conninfra_dump_von_mt6653(cb);
+
 	/* AP2CONN_INFRA OFF check */
 	func_ret = connv3_bus_check_ap2conn_off_mt6653(cb);
 	if (func_ret == CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR)
 		return func_ret;
+
+	/* Special case for more dump */
+	if (func_ret == MT6653_VERSION_ID_FAIL_A2C) {
+		if (drv_type == CONNV3_DRV_TYPE_WIFI) {
+			/* Dump von again */
+			pr_info("[V3_BUS][PSOP_1_1] version=%s\n", MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION);
+			/* Dump host side CR */
+			connv3_conninfra_dump_von_mt6653(cb);
+		}
+		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
+	}
+	if (func_ret == MT6653_VERSION_ID_FAIL_ZERO) {
+		if (drv_type == CONNV3_DRV_TYPE_BT) {
+			ret = connv3_hw_dbg_dump_utility(&mt6653_dmp_list_extra_bt, cb);
+			if (ret)
+				pr_notice("[%s] mt6653_extra_bt dump err=[%d]", __func__, ret);
+		}
+		return CONNV3_BUS_CONN_INFRA_OFF_CLK_ERR;
+	}
+
 
 	/* Dump conninfra off */
 	ret = connv3_hw_dbg_unify_dump_utility(
