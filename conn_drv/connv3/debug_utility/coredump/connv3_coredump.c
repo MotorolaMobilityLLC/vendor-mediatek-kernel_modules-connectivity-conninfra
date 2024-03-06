@@ -168,6 +168,7 @@ static int connv3_coredump_info_analysis(
 		"<EXCEPTION> ",
 		"ipc=",
 		"eva=",
+		"itype=",
 		"etype:",
 	};
 	char *pStr = (char*)dump_msg;
@@ -340,8 +341,36 @@ static int connv3_coredump_info_analysis(
 			}
 		}
 
-		/* Check etype */
+		/* Check itype */
 		type_str = (char*)exception_sub_string[3];
+		pTemp2 = strstr(pDtr, type_str);
+		if (pTemp2 == NULL) {
+			pr_notice("Substring(%s) not found\n", type_str);
+		} else {
+			pDtr = pTemp2;
+			pDtr += strlen(type_str);
+			pTemp = strchr(pDtr, ',');
+			if (pTemp != NULL) {
+				char itype_str[CONNV3_ASSERT_INFO_SIZE] = {'\0'};
+				len = pTemp - pDtr;
+				len = (len >= CONNV3_ASSERT_TYPE_SIZE) ? CONNV3_ASSERT_TYPE_SIZE - 1 : len;
+				memcpy(&itype_str, pDtr, len);
+				itype_str[len] = '\0';
+				pr_info("itype=%s\n", itype_str);
+				if (remain_array_len > 0) {
+					sec_len = snprintf(
+						&ctx->issue_info.assert_info[idx], remain_array_len,
+						" itype=%s", itype_str);
+					if (sec_len > 0) {
+						remain_array_len -= sec_len;
+						idx += sec_len;
+					}
+				}
+			}
+		}
+
+		/* Check etype */
+		type_str = (char*)exception_sub_string[4];
 		pDtr = strstr(pDtr, type_str);
 		if (pDtr == NULL) {
 			pr_notice("Substring(%s) not found\n", type_str);
@@ -829,12 +858,15 @@ static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customi
 	char *exception_log;
 	char *exp_tag_name = connv3_dump_mng_get_exception_tag_name(ctx->conn_type);
 
-	if (customized_string != NULL)
+	if (customized_string != NULL && strlen(customized_string) != 0) {
+		pr_info("[%s] use customized_string=%s\n", __func__, customized_string);
 		exception_log = customized_string;
-	else
+	} else {
+		pr_info("[%s] use assert_info=%s\n", __func__, ctx->issue_info.assert_info);
 		exception_log = ctx->issue_info.assert_info;
+	}
 
-	pr_info("par1: [%s] pars: [%s] par3: [%d]\n",
+	pr_info("par1: [%s] par2: [%s] par3: [%d]\n",
 		exp_tag_name,
 		exception_log,
 		strlen(exception_log));
