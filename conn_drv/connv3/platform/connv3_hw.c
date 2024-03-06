@@ -331,6 +331,22 @@ u8* connv3_hw_get_custom_option(u32 *size)
 	return NULL;
 }
 
+int connv3_hw_clk_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
+{
+	if (connv3_hw_ops->connsys_plt_clk_init)
+		return connv3_hw_ops->connsys_plt_clk_init(pdev, dev_cb);
+
+	return 0;
+}
+
+int connv3_hw_check_status(void)
+{
+	if (connv3_hw_ops->connsys_plt_check_status)
+		return connv3_hw_ops->connsys_plt_check_status();
+
+	return CONNV3_PLT_STATE_READY;
+}
+
 int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 {
 	int ret = 0;
@@ -341,6 +357,10 @@ int connv3_hw_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb)
 		pr_err("[%s] get platform ops fail", __func__);
 		return -2;
 	}
+
+	ret = connv3_hw_clk_init(pdev, dev_cb);
+	if (ret)
+		pr_notice("[%s] connv3_hw_clk_init fail, ret = %d\n", __func__, ret);
 
 	ret = connv3_pmic_mng_init(pdev, dev_cb, g_connv3_plat_data);
 	if (ret) {

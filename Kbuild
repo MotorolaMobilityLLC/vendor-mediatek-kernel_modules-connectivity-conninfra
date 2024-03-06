@@ -59,6 +59,23 @@ obj-m += $(MODULE_NAME).o
 PATH_TO_CONNINFRA_DRV := $(KO_CODE_PATH)
 endif
 
+$(info [conninfra_drv] $$PATH_TO_CONNINFRA_DRV is [${PATH_TO_CONNINFRA_DRV}])
+$(info [conninfra_drv] $$KO_CODE_PATH is [${KO_CODE_PATH}])
+$(info [conninfra_drv] $$KBUILD_EXTRA_SYMBOLS is [${KBUILD_EXTRA_SYMBOLS}])
+
+ifeq ($(CFG_CONNINFRA_COCLOCK_SUPPORT),y)
+    $(info [conninfra_drv][Kbuild] co-clock flag=1)
+    PATH_TO_MD_FSM ?= $(PATH_TO_CONNINFRA_DRV)/../../wwan/tmi3
+    $(info [conninfra_drv] $$PATH_TO_MD_FSM is [${PATH_TO_MD_FSM}])
+    ifneq ($(wildcard $(PATH_TO_MD_FSM)),)
+        ccflags-y += -I$(PATH_TO_MD_FSM)
+        ccflags-y += -I$(PATH_TO_MD_FSM)/common
+    else
+        $(info [conninfra_drv] $$PATH_TO_MD_FSM not found)
+    endif
+else
+    $(info [conninfra_drv] $$CFG_CONNINFRA_COCLOCK_SUPPORT not support)
+endif
 
 ###############################################################################
 # Common_main

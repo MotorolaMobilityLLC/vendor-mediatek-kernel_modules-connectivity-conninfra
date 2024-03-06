@@ -46,6 +46,7 @@ enum connv3_drv_type {
 #define CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ		0x10
 
 #define CONNV3_ERR_RST_ONGOING			-0x7788
+#define CONNV3_ERR_CLOCK_NOT_READY		-0x5566
 
 /* whole chip reset type */
 #define CONNV3_CHIP_RST_TYPE_LEGACY_MODE		0x0

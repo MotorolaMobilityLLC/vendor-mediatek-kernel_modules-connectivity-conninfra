@@ -13,6 +13,29 @@ filegroup(
     ]),
 )
 
+
+filegroup(
+    name = "sources",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/.*",
+            "**/.*/**",
+            "**/BUILD.bazel",
+            "**/*.bzl",
+        ],
+    )
+)
+
 define_mgk_ko(
     name = "conninfra",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/.*",
+            "**/.*/**",
+            "**/BUILD.bazel",
+            "**/*.bzl",
+        ],
+    )
 )

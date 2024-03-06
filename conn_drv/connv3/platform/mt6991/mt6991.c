@@ -16,6 +16,10 @@
 #include "connv3_hw.h"
 #include "coredump/connv3_dump_mng.h"
 
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+#include "mtk_fsm.h"
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -48,6 +52,8 @@ extern struct platform_device *g_connv3_pdev;
 */
 static u32 g_custom_data_size = 0;
 static u8 g_custom_param[MT6653_PLAT_CUSTOM_DATA_SIZE] = {0};
+static struct connv3_dev_cb* g_dev_cb;
+static bool g_is_co_clock = false;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -58,6 +64,13 @@ u32 connv3_soc_get_chipid_mt6991(void);
 static u32 connv3_get_adie_chipid_mt6991(void);
 static u32 connv3_reset_type_support_mt6991(void);
 static u8* connv3_get_custom_option_mt6991(u32 *size);
+static u32 connv3_clk_init_mt6991(
+	struct platform_device *pdev,
+	struct connv3_dev_cb *dev_cb);
+static u32 connv3_check_clock_status_mt6991(void);
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *priv_data);
+#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -65,10 +78,12 @@ static u8* connv3_get_custom_option_mt6991(u32 *size);
 */
 
 struct connv3_hw_ops_struct g_connv3_hw_ops_mt6991 = {
+	.connsys_plt_clk_init = connv3_clk_init_mt6991,
 	.connsys_plt_get_chipid = connv3_soc_get_chipid_mt6991,
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6991,
 	.connsys_plt_reset_type_support = connv3_reset_type_support_mt6991,
 	.connsys_plt_get_custom_option = connv3_get_custom_option_mt6991,
+	.connsys_plt_check_status = connv3_check_clock_status_mt6991,
 };
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6991 = {
@@ -105,22 +120,83 @@ static u32 connv3_reset_type_support_mt6991(void)
 	return 1;
 }
 
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *priv_data)
+{
+	pr_info("[%s] state=[%d] flags=[%d]\n", __func__, state->to_state, state->fsm_flag);
+
+	if (state->to_state == FSM_STATE_EXCEPTION) {
+		/* ID = 1, event = 2
+		 * 1 means MT6653 platform
+		 * 2 means clock issue
+		 */
+		g_dev_cb->connv3_pmic_event_notifier(1, 2);
+	}
+}
+#endif
+
+u32 connv3_clk_init_mt6991(
+	struct platform_device *pdev,
+	struct connv3_dev_cb *dev_cb)
+{
+	int ret;
+	u32 value;
+
+	g_dev_cb = dev_cb;
+	ret = of_property_read_u32(pdev->dev.of_node, "co-clock", &value);
+	if (ret)
+		pr_notice("[%s] read co_clock prop fail\n", __func__);
+	else
+		g_is_co_clock = (bool)value;
+	pr_info("[%s] g_is_co_clock=%d\n", __func__, value);
+
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+	pr_info("[%s] g_is_co_clock=%d\n", __func__, g_is_co_clock);
+	if (g_is_co_clock) {
+		ret = mtk_fsm_kernel_notifier_register(
+			"connsys_mt6653", connv3_md_fsm_notifier_cb, NULL);
+		pr_info("[%s] mtk_fsm_kernel_notifier_register ret = %d\n",
+			__func__, ret);
+	}
+#else
+	pr_info("[%s] CFG_CONNINFRA_EAP_COCLOCK not support\n", __func__);
+#endif
+
+	return 0;
+}
+
+u32 connv3_check_clock_status_mt6991(void)
+{
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+#if 1
+	unsigned int state, fsm_flag;
+
+	pr_info("[%s] g_is_co_clock=%d\n", __func__, g_is_co_clock);
+	if (g_is_co_clock) {
+		mtk_fsm_state_get(&state, &fsm_flag);
+		if (state == FSM_STATE_READY) {
+			return 0;
+		}
+		pr_notice("[%s] get state: (%d, %d)\n", __func__, state, fsm_flag);
+		return CONNV3_PLT_STATE_CLK_ERROR;
+	} else
+#endif
+		return 0;
+#else
+	pr_info("[%s] CFG_CONNINFRA_EAP_COCLOCK not support\n", __func__);
+	return 0;
+#endif
+}
+
 u8* connv3_get_custom_option_mt6991(u32 *size)
 {
 	static bool is_init = false;
-	static u8 is_coclock = false;
 	static u16 ext_32K_ticks = 32500;
 
 	u32 value;
 	int ret;
 
 	if (!is_init) {
-		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "co-clock", &value);
-		if (ret)
-			pr_notice("[%s] read co_clock prop fail\n", __func__);
-		else
-			is_coclock = (u8)value;
-
 		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "ext-32k-ticks", &value);
 		if (ret)
 			pr_notice("[%s] read co_clock prop fail\n", __func__);
@@ -129,7 +205,7 @@ u8* connv3_get_custom_option_mt6991(u32 *size)
 
 		/* Copy data to array */
 		memcpy(g_custom_param, &ext_32K_ticks, 2);
-		g_custom_param[2] = is_coclock;
+		g_custom_param[2] = g_is_co_clock;
 		g_custom_data_size = MT6653_PLAT_CUSTOM_DATA_SIZE; /* one byte as reserved. */
 
 		is_init = true;
