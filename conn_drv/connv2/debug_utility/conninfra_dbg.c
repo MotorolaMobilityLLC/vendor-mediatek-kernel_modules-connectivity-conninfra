@@ -185,6 +185,11 @@ int conninfra_dbg_reg_read(int par1, int par2, int par3)
 	unsigned int value = 0x0;
 	int iRet;
 
+	if (par2 % 4) {
+		pr_info("%s[%d] address(0x%x) should be aligned 4\n", __func__, __LINE__, par2);
+		return 0;
+	}
+
 	iRet = conninfra_core_reg_read(par2, &value, par3);
 	ret = snprintf(buf, sizeof(buf),
 			"read chip register (0x%08x) with mask (0x%08x) %s, value = 0x%08x\n",
@@ -220,6 +225,11 @@ int conninfra_dbg_reg_write(int par1, int par2, int par3)
 	/* par2-->register address */
 	/* par3-->value to set */
 	int ret;
+
+	if (par2 % 4) {
+		pr_info("%s[%d] address(0x%x) should be aligned 4\n", __func__, __LINE__, par2);
+		return 0;
+	}
 
 	ret = conninfra_core_reg_write(par2, par3, 0xffffffff);
 	pr_info("write chip register (0x%08x) with value (0x%08x) %s\n",
@@ -290,6 +300,11 @@ static int conninfra_dbg_ap_reg_read(int par1, int par2, int par3)
 	unsigned char *ap_reg_base = NULL;
 
 	pr_info("AP register read, reg address:0x%x\n", par2);
+	if (par2 % 4) {
+		pr_info("%s[%d] address(0x%x) should be aligned 4\n", __func__, __LINE__, par2);
+		return 0;
+	}
+
 	ap_reg_base = ioremap(par2, 0x4);
 	if (ap_reg_base) {
 		value = readl(ap_reg_base);
@@ -307,6 +322,10 @@ static int conninfra_dbg_ap_reg_write(int par1, int par2, int par3)
 	unsigned char *ap_reg_base = NULL;
 
 	pr_info("AP register write, reg address:0x%x, value:0x%x\n", par2, par3);
+	if (par2 % 4) {
+		pr_info("%s[%d] address(0x%x) should be aligned 4\n", __func__, __LINE__, par2);
+		return 0;
+	}
 
 	ap_reg_base = ioremap(par2, 0x4);
 	if (ap_reg_base) {

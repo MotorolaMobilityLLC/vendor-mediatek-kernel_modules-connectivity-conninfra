@@ -337,6 +337,12 @@ ssize_t connv3_log_node_write(struct file *filp, const char __user *buffer, size
 	long res = 0;
 	int ret = 0;
 
+	pr_info("write parameter len = %d\n\r", (int) len);
+	if (len >= osal_sizeof(buf)) {
+		pr_info("input handling fail!\n");
+		return -1;
+	}
+
 	if (copy_from_user(buf, buffer, len))
 		return -EFAULT;
 
