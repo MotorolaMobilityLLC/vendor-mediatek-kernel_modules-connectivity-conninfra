@@ -11,14 +11,6 @@
 #include "aee.h"
 #endif
 
-
-void osal_dbg_kernel_exception(const char *module, const char *msg, ...)
-{
-#if IS_ENABLED(CONFIG_MTK_AEE_FEATURE)
-	aee_kernel_exception(module, msg);
-#endif
-}
-
 void osal_dbg_common_exception_api(
 	const char *assert_type, const int *log,
 	int log_size, const int *phy, int phy_size,
