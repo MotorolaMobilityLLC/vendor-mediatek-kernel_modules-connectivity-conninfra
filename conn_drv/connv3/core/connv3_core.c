@@ -1261,8 +1261,10 @@ static bool __power_dump(
 			cb_ok = true;
 	}
 
-	if (!cb_ok)
+	if (!cb_ok) {
+		pr_info("[%s][%s] not support\n", __func__, connv3_drv_name[drv_type]);
 		return false;
+	}
 
 	if (pwr_dump_cb->power_dump_start(cr_cb->priv_data, force_dump) == 0) {
 		if (dump_type == CONNV3_PWR_INFO_DUMP) {
@@ -1282,8 +1284,10 @@ static bool __power_dump(
 			is_start = true;
 		}
 		pwr_dump_cb->power_dump_end(cr_cb->priv_data);
-	} else
+	} else {
+		pr_info("[%s][%s] force_dump=%d reject\n", __func__, connv3_drv_name[drv_type], force_dump);
 		return false;
+	}
 
 	return true;
 }
