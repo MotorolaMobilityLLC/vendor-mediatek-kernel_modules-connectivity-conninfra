@@ -70,6 +70,8 @@ struct timespec64 g_dump_start_time;
 #endif
 
 #define EMI_COMMAND_LENGTH	128
+/* For MD log packaging */
+#define INFO_HEAD ";CONSYS FW CORE,"
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -866,16 +868,20 @@ static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customi
 		exception_log = ctx->issue_info.assert_info;
 	}
 
+	if (snprintf(ctx->issue_info.exception_log, CONNV3_AEE_INFO_SIZE - 1,
+		"%s %s", INFO_HEAD, exception_log) < 0)
+		pr_notice("%s snprintf issue_info.exception_log failed\n", __func__);
+
 	pr_info("par1: [%s] par2: [%s] par3: [%d]\n",
 		exp_tag_name,
-		exception_log,
-		strlen(exception_log));
+		ctx->issue_info.exception_log,
+		strlen(ctx->issue_info.exception_log));
 	/* Call debug API */
 	osal_dbg_common_exception_api(
 		exp_tag_name,
 		NULL, 0,
-		(const int*)exception_log, strlen(exception_log),
-		exception_log, 0);
+		(const int*)ctx->issue_info.exception_log, strlen(ctx->issue_info.exception_log),
+		ctx->issue_info.exception_log, 0);
 	return 0;
 }
 

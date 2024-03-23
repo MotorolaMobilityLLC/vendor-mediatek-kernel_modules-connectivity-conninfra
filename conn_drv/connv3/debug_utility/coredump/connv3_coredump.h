@@ -56,6 +56,7 @@ struct connv3_issue_info {
 	char reason[CONNV3_ASSERT_REASON_SIZE];
 	char task_name[CONNV3_TASK_NAME_SIZE];
 	char subsys_tag[CONNV3_SUBSYS_TAG_SIZE];
+	char exception_log[CONNV3_AEE_INFO_SIZE];
 	unsigned int fw_isr;
 	unsigned int fw_irq;
 };
