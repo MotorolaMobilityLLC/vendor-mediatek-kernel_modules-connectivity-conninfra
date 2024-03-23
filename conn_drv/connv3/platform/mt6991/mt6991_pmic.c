@@ -86,10 +86,10 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991 = {
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
 };
 
-//struct work_struct g_pmic_faultb_work_mt6989;
+struct work_struct g_pmic_faultb_work_mt6991;
 //unsigned int g_pmic_excep_irq_num_mt6989 = 0;
 unsigned int g_spurious_pmic_exception_mt6991 = 1;
-// int g_faultb_gpio_mt6991 = 0, g_pmic_en_gpio_mt6991 = 0;
+int g_faultb_gpio_mt6991 = -1, g_pmic_en_gpio_mt6991 = -1;
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
 	if (g_spurious_pmic_exception_mt6991) {
@@ -98,10 +98,28 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 	}
 
 	pr_err("[%s] Get PMIC FaultB interrupt\n", __func__);
-	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
-		g_dev_cb->connv3_pmic_event_notifier(1, 1);
+	schedule_work(&g_pmic_faultb_work_mt6991);
 
 	return IRQ_HANDLED;
+}
+
+static void check_faultb_status(struct work_struct *work)
+{
+	unsigned int faultb_level;
+
+	mdelay(10);
+
+	/* check FaultB level to avoid noise trigger */
+	if ((g_faultb_gpio_mt6991 != -1) && (g_pmic_en_gpio_mt6991 != -1)) {
+		faultb_level = gpio_get_value(g_faultb_gpio_mt6991);
+		pr_info("[%s] PMIC_EN=%d, faultb=%d\n",
+			__func__, gpio_get_value(g_pmic_en_gpio_mt6991), faultb_level);
+		if (faultb_level == 1)
+			return;
+	}
+
+	if (g_dev_cb != NULL && g_dev_cb->connv3_pmic_event_notifier != NULL)
+		g_dev_cb->connv3_pmic_event_notifier(1, 1);
 }
 
 
@@ -292,6 +310,10 @@ int connv3_plt_pmic_initial_setting_mt6991(
 	unsigned int irq_num = 0;
 
 	g_dev_cb = dev_cb;
+
+	INIT_WORK(&g_pmic_faultb_work_mt6991, check_faultb_status);
+	g_faultb_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 0);
+	g_pmic_en_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 1);
 
 	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
 	if (IS_ERR(g_pinctrl_ptr)) {
