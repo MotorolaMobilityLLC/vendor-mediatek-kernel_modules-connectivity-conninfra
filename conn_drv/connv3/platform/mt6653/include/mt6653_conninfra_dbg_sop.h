@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240320"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240327"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -280,11 +280,27 @@ const struct connv3_dbg_command mt6653_conn_infra_top_a[] = {
 	{true, 0x20060160, 0xf, 0x7, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x8, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x9, true, 0x20060a08},
+	{false, 0, 0, 0, true, 0x20060740},
+	{false, 0, 0, 0, true, 0x200b0000},
+	{false, 0, 0, 0, true, 0x200b0004},
+	{false, 0, 0, 0, true, 0x200b0008},
+	{false, 0, 0, 0, true, 0x200b000c},
+	{false, 0, 0, 0, true, 0x200b0010},
+	{false, 0, 0, 0, true, 0x200b0014},
+	{false, 0, 0, 0, true, 0x200b0018},
+	{false, 0, 0, 0, true, 0x200b001c},
+	{false, 0, 0, 0, true, 0x200b0020},
+	{false, 0, 0, 0, true, 0x200b0024},
+	{false, 0, 0, 0, true, 0x200b0028},
+	{false, 0, 0, 0, true, 0x200b002c},
+	{false, 0, 0, 0, true, 0x200b0030},
+	{false, 0, 0, 0, true, 0x200b0034},
+	{false, 0, 0, 0, true, 0x200b0038},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_top_a = {
 	"PSOP_7_1_A", "SectionA - Dump after conn_infra_on is ready",
-	20, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
+	36, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_top_a
 };
 
