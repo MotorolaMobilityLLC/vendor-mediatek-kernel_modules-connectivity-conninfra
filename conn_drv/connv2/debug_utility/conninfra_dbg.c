@@ -207,12 +207,15 @@ int conninfra_dbg_reg_read(int par1, int par2, int par3)
 		return ret;
 	}
 
-	if (g_dump_buf_len < CONNINFRA_DBG_DUMP_BUF_SIZE) {
+	if (g_dump_buf_len < CONNINFRA_DBG_DUMP_BUF_SIZE - 1) {
 		sz = strlen(buf);
-		sz = (sz < CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len) ?
-				sz : CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len;
+		sz = (sz < CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len - 1) ?
+				sz : CONNINFRA_DBG_DUMP_BUF_SIZE - g_dump_buf_len - 1;
 		strncpy(g_dump_buf + g_dump_buf_len, buf, sz);
 		g_dump_buf_len += sz;
+		if (g_dump_buf_len >= 0)
+			g_dump_buf[g_dump_buf_len] = '\0';
+
 	}
 
 	osal_unlock_sleepable_lock(&g_dump_lock);
