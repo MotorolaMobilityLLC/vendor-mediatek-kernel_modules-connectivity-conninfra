@@ -71,7 +71,7 @@ static int consys_power_state_dump_mt6877(char *buf, unsigned int size);
 
 static unsigned long long consys_soc_timestamp_get_mt6877(void);
 
-static unsigned int consys_adie_detection_mt6877(void);
+static unsigned int consys_adie_detection_mt6877(unsigned int drv_type);
 static void consys_set_mcu_control_mt6877(int type, bool onoff);
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -176,17 +176,38 @@ int consys_clk_get_from_dts_mt6877(struct platform_device *pdev)
 int consys_platform_spm_conn_ctrl_mt6877(unsigned int enable)
 {
 	int ret = 0;
+	struct platform_device *pdev = get_consys_device();
 
-	if (enable) {
-		ret = clk_prepare_enable(clk_scp_conn_main);
-		if (ret) {
-			pr_err("Turn on oonn_infra power fail. Ret=%d\n", ret);
-			return -1;
-		}
-	} else {
-		clk_disable_unprepare(clk_scp_conn_main);
+	if (!pdev) {
+		pr_info("get_consys_device fail.\n");
+		return -1;
 	}
 
+	if (enable) {
+		ret = pm_runtime_get_sync(&(pdev->dev));
+		if (ret)
+			pr_info("pm_runtime_get_sync() fail(%d)\n", ret);
+		else
+			pr_info("pm_runtime_get_sync() CONSYS ok\n");
+
+		ret = device_init_wakeup(&(pdev->dev), true);
+		if (ret)
+			pr_info("device_init_wakeup(true) fail.\n");
+		else
+			pr_info("device_init_wakeup(true) CONSYS ok\n");
+	} else {
+		ret = device_init_wakeup(&(pdev->dev), false);
+		if (ret)
+			pr_info("device_init_wakeup(false) fail.\n");
+		else
+			pr_info("device_init_wakeup(false) CONSYS ok\n");
+
+		ret = pm_runtime_put_sync(&(pdev->dev));
+		if (ret)
+			pr_info("pm_runtime_put_sync() fail.\n");
+		else
+			pr_info("pm_runtime_put_sync() CONSYS ok\n");
+	}
 	return ret;
 }
 
@@ -529,7 +550,7 @@ static unsigned long long consys_soc_timestamp_get_mt6877(void)
 	return timestamp;
 }
 
-static unsigned int consys_adie_detection_mt6877(void)
+static unsigned int consys_adie_detection_mt6877(unsigned int drv_type)
 {
 	return 0x6635;
 }

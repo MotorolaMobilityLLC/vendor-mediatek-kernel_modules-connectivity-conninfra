@@ -69,7 +69,7 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6877 = {
 
 static int consys_emi_mpu_set_region_protection_mt6877(void)
 {
-#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 	struct emimpu_region_t region;
 	unsigned long long start = g_con_emi_phy_base;
 	unsigned long long end = g_con_emi_phy_base + g_con_emi_size - 1;
@@ -97,7 +97,9 @@ void consys_emi_get_md_shared_emi_mt6877(phys_addr_t* base, unsigned int* size)
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 #ifdef CONFIG_MTK_ECCCI_DRIVER
+#if 0
 	mdPhy = get_smem_phy_start_addr(MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
+#endif
 #else
 	pr_info("[%s] ECCCI Driver is not supported.\n", __func__);
 #endif
@@ -118,4 +120,3 @@ void consys_emi_get_md_shared_emi_mt6877(phys_addr_t* base, unsigned int* size)
 			*size = 0;
 	}
 }
-
