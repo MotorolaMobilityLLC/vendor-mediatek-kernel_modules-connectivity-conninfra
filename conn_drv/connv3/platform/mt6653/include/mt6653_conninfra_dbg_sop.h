@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240220"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240320"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -276,19 +276,21 @@ const struct connv3_dbg_command mt6653_conn_infra_top_a[] = {
 	{true, 0x20060160, 0xf, 0x3, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x4, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x5, true, 0x20060a08},
+	{true, 0x20060160, 0xf, 0x6, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x7, true, 0x20060a08},
 	{true, 0x20060160, 0xf, 0x8, true, 0x20060a08},
+	{true, 0x20060160, 0xf, 0x9, true, 0x20060a08},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_top_a = {
 	"PSOP_7_1_A", "SectionA - Dump after conn_infra_on is ready",
-	18, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
+	20, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_top_a
 };
 
 const struct connv3_dbg_command mt6653_conn_infra_top_b[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
-	{false, 0, 0, 0, true, 0x7c023200},
+	{false, 0, 0, 0, true, 0x20023200},
 	{false, 0, 0, 0, true, 0x7c011130},
 	{true, 0x7c011100, 0x600000, 0x0, true, 0x7c011134},
 	{true, 0x7c011100, 0x600000, 0x200000, true, 0x7c011134},
@@ -304,8 +306,9 @@ const struct connv3_dbg_command mt6653_conn_infra_top_b[] = {
 	{true, 0x7c016030, 0, 0x17161514, false, 0},
 	{true, 0x7c016034, 0, 0x1b1a1918, false, 0},
 	{true, 0x7c016038, 0, 0x1f1e1d1c, false, 0},
-	{true, 0x7c016058, 0x2, 0x2, true, 0x7c023200},
+	{true, 0x7c016058, 0x2, 0x2, true, 0x20023200},
 	{true, 0x7c01603c, 0x3f, 0x18, false, 0},
+	{true, 0x7c01603c, 0x3f00, 0x0, false, 0},
 	{true, 0x7c01601c, 0, 0x3020100, false, 0},
 	{true, 0x7c016020, 0, 0x7060504, false, 0},
 	{true, 0x7c016024, 0, 0xb0a0908, false, 0},
@@ -314,7 +317,7 @@ const struct connv3_dbg_command mt6653_conn_infra_top_b[] = {
 	{true, 0x7c016030, 0, 0x17161514, false, 0},
 	{true, 0x7c016034, 0, 0x1b1a1918, false, 0},
 	{true, 0x7c016038, 0, 0x1f1e1d1c, false, 0},
-	{true, 0x7c016058, 0x2, 0x2, true, 0x7c023200},
+	{true, 0x7c016058, 0x2, 0x2, true, 0x20023200},
 	{true, 0x20093080, 0x8, 0x0, false, 0},
 	{true, 0x20097058, 0, 0x2, false, 0},
 	{true, 0x2009703c, 0x3f, 0x14, false, 0},
