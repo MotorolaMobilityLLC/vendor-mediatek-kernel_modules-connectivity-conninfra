@@ -139,7 +139,6 @@ const struct conninfra_plat_data mt6877_plat_data = {
 	.connsyslog_config = &g_connsyslog_config,
 };
 
-static struct clk *clk_scp_conn_main;	/*ctrl conn_power_on/off */
 static struct consys_plat_thermal_data_mt6877 g_consys_plat_therm_data;
 
 
@@ -164,12 +163,9 @@ int consys_co_clock_type_mt6877(void)
 
 int consys_clk_get_from_dts_mt6877(struct platform_device *pdev)
 {
-	clk_scp_conn_main = devm_clk_get(&pdev->dev, "conn");
-	if (IS_ERR(clk_scp_conn_main)) {
-		pr_err("[CCF]cannot get clk_scp_conn_main clock.\n");
-		return PTR_ERR(clk_scp_conn_main);
-	}
-	pr_debug("[CCF]clk_scp_conn_main=%p\n", clk_scp_conn_main);
+	pm_runtime_enable(&pdev->dev);
+	dev_pm_syscore_device(&pdev->dev, true);
+
 	return 0;
 }
 

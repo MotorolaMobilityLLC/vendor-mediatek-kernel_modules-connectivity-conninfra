@@ -213,9 +213,6 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable,
 			if (ret)
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 		} else {
-			if (next_status != 0)
-				return 0;
-
 #if COMMON_KERNEL_PMIC_SUPPORT
 			/* HW_OP_EN = 1, HW_OP_CFG = 1 */
 			regmap_write(g_regmap, PMIC_RG_LDO_VCN18_OP_EN_SET_ADDR, 1 << 0);
@@ -260,6 +257,9 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable,
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 		}
 	} else {
+		if (next_status != 0)
+				return 0;
+
 		/* Add 1ms sleep to delay make sure that VCN13/18 would be turned off later then VCN33. */
 		msleep(1);
 		regulator_disable(reg_VCN13);
