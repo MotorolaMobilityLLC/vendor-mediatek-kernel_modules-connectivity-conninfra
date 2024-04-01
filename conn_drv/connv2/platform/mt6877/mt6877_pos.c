@@ -1858,8 +1858,10 @@ int consys_spi_update_bits_mt6877(enum sys_spi_subsystem subsystem, unsigned int
 
 	if (ret) {
 		consys_sema_release_mt6877(CONN_SEMA_RFSPI_INDEX);
+#ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
+#endif
 		return CONNINFRA_SPI_OP_FAIL;
 	}
 
