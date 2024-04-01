@@ -13,12 +13,13 @@ unsigned int consys_emi_set_remapping_reg_mt6877(phys_addr_t, phys_addr_t, phys_
 int consys_conninfra_on_power_ctrl_mt6877(unsigned int enable);
 int consys_conninfra_wakeup_mt6877(void);
 int consys_conninfra_sleep_mt6877(void);
-void consys_set_if_pinmux_mt6877(unsigned int enable);
+void consys_set_if_pinmux_mt6877(unsigned int enable,
+                    unsigned int curr_status, unsigned int next_status);
 int consys_polling_chipid_mt6877(void);
 
 int connsys_d_die_cfg_mt6877(void);
-int connsys_spi_master_cfg_mt6877(unsigned int);
-int connsys_a_die_cfg_mt6877(void);
+int connsys_spi_master_cfg_mt6877(unsigned int curr_status, unsigned int next_status);
+int connsys_a_die_cfg_mt6877(unsigned int curr_status, unsigned int next_status);
 int connsys_afe_wbg_cal_mt6877(void);
 int connsys_subsys_pll_initial_mt6877(void);
 int connsys_low_power_setting_mt6877(unsigned int, unsigned int);

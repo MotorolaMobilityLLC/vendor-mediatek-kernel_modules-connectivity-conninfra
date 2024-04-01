@@ -378,7 +378,8 @@ int consys_conninfra_sleep_mt6877(void)
 	return 0;
 }
 
-void consys_set_if_pinmux_mt6877(unsigned int enable)
+void consys_set_if_pinmux_mt6877(unsigned int enable, unsigned int curr_status,
+						unsigned int next_status)
 {
 #ifndef CFG_CONNINFRA_ON_CTP
 	struct pinctrl_state *tcxo_pinctrl_set;
@@ -387,6 +388,8 @@ void consys_set_if_pinmux_mt6877(unsigned int enable)
 #endif
 
 	if (enable) {
+		if (curr_status != 0)
+			return;
 		/* set pinmux for the interface between D-die and A-die (Aux1)
 		 * 	CONN_HRST_B(0x1000_5480[26:24])
 		 * 	CONN_TOP_CLK(0x1000_5480[30:28])/CONN_TOP_DATA(0x1000_5490[2:0])
@@ -440,6 +443,8 @@ void consys_set_if_pinmux_mt6877(unsigned int enable)
 	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
 		}
 	} else {
+		if (next_status != 0)
+			return;
 		/* Set pinmux for the interface between D-die and A-die (Aux0)
 		 * 	CONN_HRST_B(0x1000_5480[26:24])
 		 * 	CONN_TOP_CLK(0x1000_5480[30:28])/CONN_TOP_DATA(0x1000_5490[2:0])
@@ -674,7 +679,7 @@ static int connsys_adie_clock_buffer_setting(bool bt_only)
 	return 0;
 }
 
-int connsys_spi_master_cfg_mt6877(unsigned int next_status)
+int connsys_spi_master_cfg_mt6877(unsigned int curr_status, unsigned int next_status)
 {
 	unsigned int bt_only = 0;
 
@@ -689,7 +694,7 @@ int connsys_spi_master_cfg_mt6877(unsigned int next_status)
 	 * WF_B1_ZPS_ADDR	0x18005078[27:16]	0x09C
 	 * BT_CK_ADDR		0x1800507C[11:0]	0xA08
 	 * BT_WAKE_ADDR		0x18005080[11:0]	0x094
-	 * TOP_CK_ADDR		0x18005084[11:0]	0x02C 
+	 * TOP_CK_ADDR		0x18005084[11:0]	0x02C
 	 * GPS_CK_ADDR		0x18005088[11:0]	0xA0C
 	 * GPS_L5_CK_ADDR	0x18005088[27:16]	0xAFC
 	 * WF_B0_CMD_ADDR	0x1800508c[11:0]	0x0F0
@@ -911,7 +916,7 @@ static int connsys_a_die_thermal_cal_nolock(
 }
 #endif /* ndef(CONFIG_FPGA_EARLY_PORTING) */
 
-int connsys_a_die_cfg_mt6877(void)
+int connsys_a_die_cfg_mt6877(unsigned int curr_status, unsigned int next_status)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
@@ -921,6 +926,9 @@ int connsys_a_die_cfg_mt6877(void)
 	int check;
 	unsigned int efuse0, efuse1, efuse2, efuse3;
 	bool efuse_valid;
+
+	if (curr_status != 0)
+		return 0;
 
 	if (consys_co_clock_type_mt6877() == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS) {
 		pr_info("A-die clock 52M\n");

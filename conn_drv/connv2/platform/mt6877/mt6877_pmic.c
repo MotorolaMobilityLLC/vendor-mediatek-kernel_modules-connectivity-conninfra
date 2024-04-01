@@ -73,8 +73,10 @@ static struct conninfra_dev_cb* g_dev_cb;
 */
 static int consys_plt_pmic_get_from_dts_mt6877(struct platform_device*, struct conninfra_dev_cb*);
 
-static int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int);
-static int consys_plt_pmic_common_power_low_power_mode_mt6877(unsigned int);
+static int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int,
+					unsigned int curr_status, unsigned int next_status);
+static int consys_plt_pmic_common_power_low_power_mode_mt6877(unsigned int,
+					unsigned int curr_status, unsigned int next_status);
 static int consys_plt_pmic_wifi_power_ctrl_mt6877(unsigned int);
 static int consys_plt_pmic_bt_power_ctrl_mt6877(unsigned int);
 static int consys_plt_pmic_gps_power_ctrl_mt6877(unsigned int);
@@ -136,7 +138,8 @@ int consys_plt_pmic_get_from_dts_mt6877(struct platform_device *pdev, struct con
 	return 0;
 }
 
-int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable)
+int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable,
+					unsigned int curr_status, unsigned int next_status)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
@@ -144,6 +147,9 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable)
 	int ret;
 
 	if (enable) {
+		if (curr_status != 0)
+			return 0;
+
 		if (consys_is_rc_mode_enable_mt6877()) {
 			/* RC mode */
 			/* VCN18 */
@@ -207,6 +213,9 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable)
 			if (ret)
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 		} else {
+			if (next_status != 0)
+				return 0;
+
 #if COMMON_KERNEL_PMIC_SUPPORT
 			/* HW_OP_EN = 1, HW_OP_CFG = 1 */
 			regmap_write(g_regmap, PMIC_RG_LDO_VCN18_OP_EN_SET_ADDR, 1 << 0);
@@ -260,13 +269,17 @@ int consys_plt_pmic_common_power_ctrl_mt6877(unsigned int enable)
 	return 0;
 }
 
-int consys_plt_pmic_common_power_low_power_mode_mt6877(unsigned int enable)
+int consys_plt_pmic_common_power_low_power_mode_mt6877(unsigned int enable,
+					unsigned int curr_status, unsigned int next_status)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
 #else
 	if (consys_is_rc_mode_enable_mt6877()) {
 		if (enable) {
+			if (curr_status != 0)
+				return 0;
+
 #if COMMON_KERNEL_PMIC_SUPPORT
 			regmap_update_bits(g_regmap,
 				PMIC_RG_LDO_VCN18_LP_ADDR,
@@ -628,7 +641,7 @@ int consys_plt_pmic_event_notifier_mt6877(unsigned int id, unsigned int event)
 		return NOTIFY_OK;
 
 	/* 1. Dump host csr status
-	 * a. 0x1806_02CC 
+	 * a. 0x1806_02CC
 	 * b. 0x1806_02C8
 	 *
 	 * 2. Dump R13 status
