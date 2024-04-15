@@ -153,7 +153,7 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 		&& buck_pg_stat == 0 && ldo_pg_stat == 0) {
 		pr_info("[%s] 1st time enable PMIC, UVLO happen before reboot.\n", __func__);
 	} else if (s_first_dump && buck_oc_stat == PMIC_BUCK_IO_OC_EVT
-		&& buck_oc_stat == 0 && ldo_oc_stat == 0
+		&& ldo_oc_stat == 0
 		&& buck_pg_stat == 0 && ldo_pg_stat == 0){
 		pr_info("[%s] 1st time enable PMIC, BUCK_IO OC happen before reboot.\n", __func__);
 	} else if (pmic_stat
