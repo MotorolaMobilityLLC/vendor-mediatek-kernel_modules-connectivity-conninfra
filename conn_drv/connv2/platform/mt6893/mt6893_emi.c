@@ -87,7 +87,7 @@ struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6893 = {
 
 static int consys_emi_mpu_set_region_protection_mt6893(void)
 {
-#if IS_ENABLED(CONFIG_MEDIATEK_EMI) || IS_ENABLED(CONFIG_MTK_EMI)
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 	struct emimpu_region_t region;
 	unsigned long long start = g_con_emi_phy_base;
 	unsigned long long end = g_con_emi_phy_base + g_con_emi_size - 1;
