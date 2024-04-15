@@ -23,6 +23,29 @@ static struct conn_debug_info_mt6878 *debug_info;
 static char static_debug_buf[CONSYS_DUMP_BUF_SIZE];
 static char *debug_buf;
 
+#define LOG_ADIE_DBG_REG_ARRAY_SZ 512
+static char adie_dbg_reg_array_buf[LOG_ADIE_DBG_REG_ARRAY_SZ] = {'\0'};
+static void dump_adie_dbg_cr(enum sys_spi_subsystem subsystem,
+					const unsigned int *adie_cr, int num, char *title)
+{
+#define LOG_TMP_DBG_REG_SZ 32
+	char tmp[LOG_TMP_DBG_REG_SZ] = {'\0'};
+	unsigned int adie_value;
+	int i;
+
+	memset(adie_dbg_reg_array_buf, '\0', LOG_ADIE_DBG_REG_ARRAY_SZ);
+	for (i = 0; i < num; i++) {
+		if (consys_hw_spi_read(subsystem, adie_cr[i], &adie_value) < 0) {
+			pr_info("[%s] consys_hw_spi_read failed\n", __func__);
+			continue;
+		}
+		if (snprintf(tmp, LOG_TMP_DBG_REG_SZ, "[0x%04x: 0x%08x]", adie_cr[i], adie_value) >= 0)
+			strncat(adie_dbg_reg_array_buf, tmp,
+				LOG_ADIE_DBG_REG_ARRAY_SZ - strlen(adie_dbg_reg_array_buf) - 1);
+	}
+	pr_info("%s:%s\n", title, adie_dbg_reg_array_buf);
+}
+
 static void consys_print_log(const char *title, struct conn_debug_info_mt6878 *info)
 {
 	char temp[13];
@@ -71,6 +94,11 @@ static void consys_print_power_debug(enum conninfra_bus_error_type level)
 
 static void consys_print_bus_debug(enum conninfra_bus_error_type level)
 {
+#define ATOP_DBG_DUMP_NUM 1
+	const unsigned int adie_dbg_top_cr_list[ATOP_DBG_DUMP_NUM] = {
+		0x2C,
+	};
+
 	pr_info("%s\n", __func__);
 
 	consys_print_bus_slpprot_debug_dbg_level_0_mt6878_debug_gen(level, debug_info);
@@ -85,6 +113,8 @@ static void consys_print_bus_debug(enum conninfra_bus_error_type level)
 		consys_print_log("[CONN_BUS_C]", debug_info);
 		consys_print_bus_slpprot_debug_dbg_level_2_mt6878_debug_gen(level, debug_info);
 		consys_print_log("[slpprot_c]", debug_info);
+		dump_adie_dbg_cr(SYS_SPI_TOP, adie_dbg_top_cr_list,
+				ATOP_DBG_DUMP_NUM, "A-die ID");
 	}
 }
 
