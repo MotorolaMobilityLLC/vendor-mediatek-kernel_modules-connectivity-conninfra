@@ -248,7 +248,7 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 			connsys_pmic_ecid_ready = true;
 	}
 	if (connsys_chip_ecid_ready == false) {
-		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6639A_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6653_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
 			buffer[32], buffer[33], buffer[34], buffer[35], buffer[36],buffer[37], buffer[38], buffer[39]);
 		if (ret <= 0)
 			pr_notice("%s snprintf fail", __func__);
