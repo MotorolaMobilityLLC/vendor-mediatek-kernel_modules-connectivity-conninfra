@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240327"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240329"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -27,33 +27,16 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{false, 0, 0, 0, true, 0x20023418},
 	{false, 0, 0, 0, true, 0x20023434},
 	{false, 0, 0, 0, true, 0x20023b04},
-	{false, 0, 0, 0, true, 0x2002344c},
+	{false, 0, 0, 0, true, 0x2002344C},
 	{false, 0, 0, 0, true, 0x20023450},
 	{false, 0, 0, 0, true, 0x20023480},
 	{false, 0, 0, 0, true, 0x20023484},
-};
-
-const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_a = {
-	"PSOP_1_1_A", "SectionA - IF CONN_INFRA ON read check ok",
-	21, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
-	mt6653_conn_infra_bus_a
-};
-
-const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
-	/* write, w_addr, mask, value, read, r_addr*/
 	{false, 0, 0, 0, true, 0x2002341c},
 	{false, 0, 0, 0, true, 0x20023420},
 	{false, 0, 0, 0, true, 0x20023424},
 	{false, 0, 0, 0, true, 0x20023428},
 	{false, 0, 0, 0, true, 0x2002342c},
 	{false, 0, 0, 0, true, 0x20023430},
-	{false, 0, 0, 0, true, 0x7c00e128},
-	{false, 0, 0, 0, true, 0x7c00e12c},
-	{false, 0, 0, 0, true, 0x7c00e130},
-	{false, 0, 0, 0, true, 0x7c00e134},
-	{false, 0, 0, 0, true, 0x7c00e138},
-	{false, 0, 0, 0, true, 0x7c00e13c},
-	{false, 0, 0, 0, true, 0x7c00e140},
 	{true, 0x20023408, 0, 0x13, true, 0x20023404},
 	{true, 0x20023408, 0, 0x14, true, 0x20023404},
 	{true, 0x20023408, 0, 0x15, true, 0x20023404},
@@ -99,6 +82,16 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 	{true, 0x20023408, 0, 0x10, true, 0x20023404},
 	{true, 0x20023408, 0, 0x11, true, 0x20023404},
 	{true, 0x20023408, 0, 0x12, true, 0x20023404},
+};
+
+const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_a = {
+	"PSOP_1_1_A", "SectionA - IF CONN_INFRA ON read check ok",
+	72, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
+	mt6653_conn_infra_bus_a
+};
+
+const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
 	{false, 0, 0, 0, true, 0x7c04f280},
 	{false, 0, 0, 0, true, 0x7c04f284},
 	{false, 0, 0, 0, true, 0x7c04f288},
@@ -128,18 +121,26 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 	{false, 0, 0, 0, true, 0x7c04f614},
 	{false, 0, 0, 0, true, 0x7c04f618},
 	{false, 0, 0, 0, true, 0x7c04f61c},
-	{true, 0x20023408, 0, 0x2e, true, 0x20023404},
-	{false, 0, 0, 0, true, 0x7c049000},
+	{false, 0, 0, 0, true, 0x20023404},
+	{true, 0x20023408, 0, 0x2e, true, 0x7c049000},
 	{false, 0, 0, 0, true, 0x7c049004},
 	{false, 0, 0, 0, true, 0x7c049008},
 	{false, 0, 0, 0, true, 0x7c04900c},
 	{false, 0, 0, 0, true, 0x7c049010},
 	{false, 0, 0, 0, true, 0x7c049014},
+	{false, 0, 0, 0, true, 0x7c00e128},
+	{false, 0, 0, 0, true, 0x7c00e12c},
+	{false, 0, 0, 0, true, 0x7c00e130},
+	{false, 0, 0, 0, true, 0x7c00e134},
+	{false, 0, 0, 0, true, 0x7c00e138},
+	{false, 0, 0, 0, true, 0x7c00e13c},
+	{false, 0, 0, 0, true, 0x7c00e140},
+	{false, 0, 0, 0, true, 0x7c00e110},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_b = {
 	"PSOP_1_1_B", "SectionB - IF CONN_INFRA OFF read check ok - bus",
-	94, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
+	44, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_b
 };
 
@@ -191,6 +192,7 @@ const struct connv3_dbg_command mt6653_connsys_power_c[] = {
 	{false, 0, 0, 0, true, 0x7c001344},
 	{false, 0, 0, 0, true, 0x7c000400},
 	{false, 0, 0, 0, true, 0x7c000404},
+	{false, 0, 0, 0, true, 0x20095204},
 	{false, 0, 0, 0, true, 0x200910a8},
 	{false, 0, 0, 0, true, 0x20091120},
 	{false, 0, 0, 0, true, 0x20091124},
@@ -254,7 +256,7 @@ const struct connv3_dbg_command mt6653_connsys_power_c[] = {
 
 const struct connv3_dump_list mt6653_dump_list_connsys_power_c = {
 	"PSOP_2_1_C", "SectionC - Dump after conn_infra_off is ready",
-	64, sizeof(mt6653_connsys_power_c)/sizeof(struct connv3_dbg_command),
+	65, sizeof(mt6653_connsys_power_c)/sizeof(struct connv3_dbg_command),
 	mt6653_connsys_power_c
 };
 
@@ -296,17 +298,17 @@ const struct connv3_dbg_command mt6653_conn_infra_top_a[] = {
 	{false, 0, 0, 0, true, 0x200b0030},
 	{false, 0, 0, 0, true, 0x200b0034},
 	{false, 0, 0, 0, true, 0x200b0038},
+	{false, 0, 0, 0, true, 0x20023200},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_top_a = {
 	"PSOP_7_1_A", "SectionA - Dump after conn_infra_on is ready",
-	36, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
+	37, sizeof(mt6653_conn_infra_top_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_top_a
 };
 
 const struct connv3_dbg_command mt6653_conn_infra_top_b[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
-	{false, 0, 0, 0, true, 0x20023200},
 	{false, 0, 0, 0, true, 0x7c011130},
 	{true, 0x7c011100, 0x600000, 0x0, true, 0x7c011134},
 	{true, 0x7c011100, 0x600000, 0x200000, true, 0x7c011134},
@@ -362,6 +364,6 @@ const struct connv3_dbg_command mt6653_conn_infra_top_b[] = {
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_top_b = {
 	"PSOP_7_1_B", "SectionB - Dump after conn_infra_off is ready",
-	10, sizeof(mt6653_conn_infra_top_b)/sizeof(struct connv3_dbg_command),
+	9, sizeof(mt6653_conn_infra_top_b)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_top_b
 };

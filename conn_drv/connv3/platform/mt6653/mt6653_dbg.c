@@ -158,13 +158,13 @@ int connv3_conninfra_dump_von_mt6653(struct connv3_cr_cb *cb)
 	if (ret)
 		pr_notice("[%s] mt6653_dump_list_conn_infra_bus_a error(%d)\n", __func__, ret);
 	ret = connv3_hw_dbg_unify_dump_utility(
-		&mt6653_dump_list_connsys_power_b, cb);
-	if (ret)
-		pr_notice("[%s] mt6653_dump_list_connsys_power_b error(%d)\n", __func__, ret);
-	ret = connv3_hw_dbg_unify_dump_utility(
 		&mt6653_dump_list_conn_infra_top_a, cb);
 	if (ret)
 		pr_notice("[%s] mt6653_conn_infra_top_a error(%d)\n", __func__, ret);
+	ret = connv3_hw_dbg_unify_dump_utility(
+		&mt6653_dump_list_connsys_power_b, cb);
+	if (ret)
+		pr_notice("[%s] mt6653_dump_list_connsys_power_b error(%d)\n", __func__, ret);
 
 	return 0;
 }
@@ -214,14 +214,16 @@ int connv3_conninfra_bus_dump_mt6653(
 		&mt6653_dump_list_conn_infra_bus_c, cb);
 	if (ret)
 		pr_notice("[%s] mt6653_dump_list_conn_infra_bus_c error(%d)\n", __func__, ret);
-	ret = connv3_hw_dbg_unify_dump_utility(
-		&mt6653_dump_list_connsys_power_c, cb);
-	if (ret)
-		pr_notice("[%s] mt6653_dump_list_connsys_power_c error(%d)\n", __func__, ret);
+
 	ret = connv3_hw_dbg_unify_dump_utility(
 		&mt6653_dump_list_conn_infra_top_b, cb);
 	if (ret)
 		pr_notice("[%s] mt6653_dump_list_conn_infra_top_b error(%d)\n", __func__, ret);
+
+	ret = connv3_hw_dbg_unify_dump_utility(
+		&mt6653_dump_list_connsys_power_c, cb);
+	if (ret)
+		pr_notice("[%s] mt6653_dump_list_connsys_power_c error(%d)\n", __func__, ret);
 
 	return 0;
 }
