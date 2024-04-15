@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240329"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240411"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -81,12 +81,22 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{true, 0x20023408, 0, 0xf, true, 0x20023404},
 	{true, 0x20023408, 0, 0x10, true, 0x20023404},
 	{true, 0x20023408, 0, 0x11, true, 0x20023404},
-	{true, 0x20023408, 0, 0x12, true, 0x20023404},
+	{true, 0x20023408, 0, 0x12, true, 0x20023404}, //A72
+	{true, 0x20023408, 0, 0x2e, true, 0x20023404}, //A73
+	{false, 0, 0, 0, true, 0x20020074}, //A74
+	{false, 0, 0, 0, true, 0x20020078},
+	{false, 0, 0, 0, true, 0x2002007C},
+	{false, 0, 0, 0, true, 0x20020084},
+	{false, 0, 0, 0, true, 0x20020088},
+	{false, 0, 0, 0, true, 0x2002008C},
+	{false, 0, 0, 0, true, 0x20023454},
+	{false, 0, 0, 0, true, 0x20023458}, //A81
+	{false, 0, 0, 0, true, 0x20020080}, //A82
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_a = {
 	"PSOP_1_1_A", "SectionA - IF CONN_INFRA ON read check ok",
-	72, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
+	82, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_a
 };
 
