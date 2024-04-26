@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240411"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240416"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -27,7 +27,7 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{false, 0, 0, 0, true, 0x20023418},
 	{false, 0, 0, 0, true, 0x20023434},
 	{false, 0, 0, 0, true, 0x20023b04},
-	{false, 0, 0, 0, true, 0x2002344C},
+	{false, 0, 0, 0, true, 0x2002344c},
 	{false, 0, 0, 0, true, 0x20023450},
 	{false, 0, 0, 0, true, 0x20023480},
 	{false, 0, 0, 0, true, 0x20023484},
@@ -85,10 +85,10 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{true, 0x20023408, 0, 0x2e, true, 0x20023404}, //A73
 	{false, 0, 0, 0, true, 0x20020074}, //A74
 	{false, 0, 0, 0, true, 0x20020078},
-	{false, 0, 0, 0, true, 0x2002007C},
+	{false, 0, 0, 0, true, 0x2002007c},
 	{false, 0, 0, 0, true, 0x20020084},
 	{false, 0, 0, 0, true, 0x20020088},
-	{false, 0, 0, 0, true, 0x2002008C},
+	{false, 0, 0, 0, true, 0x2002008c},
 	{false, 0, 0, 0, true, 0x20023454},
 	{false, 0, 0, 0, true, 0x20023458}, //A81
 	{false, 0, 0, 0, true, 0x20020080}, //A82
@@ -131,8 +131,7 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 	{false, 0, 0, 0, true, 0x7c04f614},
 	{false, 0, 0, 0, true, 0x7c04f618},
 	{false, 0, 0, 0, true, 0x7c04f61c},
-	{false, 0, 0, 0, true, 0x20023404},
-	{true, 0x20023408, 0, 0x2e, true, 0x7c049000},
+	{false, 0, 0, 0, true, 0x7c049000},
 	{false, 0, 0, 0, true, 0x7c049004},
 	{false, 0, 0, 0, true, 0x7c049008},
 	{false, 0, 0, 0, true, 0x7c04900c},
@@ -150,7 +149,7 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_b = {
 	"PSOP_1_1_B", "SectionB - IF CONN_INFRA OFF read check ok - bus",
-	44, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
+	43, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_b
 };
 
