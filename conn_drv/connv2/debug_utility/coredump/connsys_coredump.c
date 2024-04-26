@@ -1257,7 +1257,15 @@ static int conndump_send_fake_coredump(struct connsys_dump_ctx* ctx)
 
 static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump)
 {
-	if (full_dump) {
+	if (ctx->info.issue_type == CONNSYS_ISSUE_DRIVER_ASSERT &&
+		strlen(ctx->info.reason) > 0) {
+		if (snprintf(
+			ctx->info.exception_log, CONNSYS_AEE_INFO_SIZE,
+			"%s %s",
+			INFO_HEAD, ctx->info.reason) < 0)
+			pr_notice("%s snprintf failed\n", __func__);
+
+	} else if (full_dump) {
 		if (snprintf(
 			ctx->info.exception_log, CONNSYS_AEE_INFO_SIZE,
 			"%s %s %s %s",
