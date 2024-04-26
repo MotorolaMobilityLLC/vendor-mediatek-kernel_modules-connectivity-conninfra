@@ -298,8 +298,10 @@ int consys_is_bus_hang_mt6991(void)
 			CONNINFRA_BUS_LOG_LEVEL_CONNINFRA_OFF, g_debug_info_ptr);
 		consys_print_log("[slpprot_a]", g_debug_info_ptr);
 
+	#if 0 /* since pbus is not enable for this project, skip dumping related log. */
 		consys_print_pbus_debug_dbg_level_2_mt6991_debug_gen(g_debug_info_ptr);
 		consys_print_log("[pbus]", g_debug_info_ptr);
+	#endif
 	}
 
 	return ret;
