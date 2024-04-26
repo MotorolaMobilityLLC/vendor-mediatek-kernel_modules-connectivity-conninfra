@@ -6,6 +6,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+#include <linux/of.h>
 #include <linux/of_device.h>
 #include "connv3_hw.h"
 
