@@ -12,7 +12,7 @@
  *
  * Reference debug file,
  * - [Lxxxr]connsys_power_debug.xlsx (Modified date: 2023-11-16)
- * - [Lxxxr] conn_infra_bus_debug_ctrl.xlsx (Modified date: 2023-11-16)
+ * - (Lxxxr) conn_infra_bus_debug_ctrl_0426.xlsx (Modified date: 2024-04-26)
  */
 
 
@@ -21,7 +21,7 @@
 
 #define CONN_DEBUG_INFO_SIZE 256
 #define DEBUG_TAG_SIZE 10
-#define MT6991_CONN_INFRA_BUS_DUMP_VERSION     "ver1_0_20231123"
+#define MT6991_CONN_INFRA_BUS_DUMP_VERSION     "ver1_0_20240426"
 
 struct conn_debug_info_mt6991 {
 	char tag[CONN_DEBUG_INFO_SIZE][DEBUG_TAG_SIZE];
@@ -183,6 +183,7 @@ void consys_print_pbus_debug_dbg_level_2_mt6991_debug_gen(
 #define CONSYS_DBG_GEN_SEJ_AKEY7_OFFSET_ADDR                                                      0x3c
 #define CONSYS_DBG_GEN_SEJ_AIV0_OFFSET_ADDR                                                       0x40
 #define CONSYS_DBG_GEN_SEJ_AIV1_OFFSET_ADDR                                                       0x44
+#define CONSYS_DBG_GEN_SEJ_AIV2_OFFSET_ADDR                                                       0x48
 
 /**********************************************************************************************************/
 /* Base: CONN_OFF_DEBUG_CTRL_AO_BASE (0x4004_d000)                                                        */

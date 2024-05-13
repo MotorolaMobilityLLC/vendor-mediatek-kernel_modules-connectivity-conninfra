@@ -12,7 +12,7 @@
  *
  * Reference debug file,
  * - [Lxxxr]connsys_power_debug.xlsx (Modified date: 2023-11-16)
- * - [Lxxxr] conn_infra_bus_debug_ctrl.xlsx (Modified date: 2023-11-16)
+ * - (Lxxxr) conn_infra_bus_debug_ctrl_0426.xlsx (Modified date: 2024-04-26)
  */
 
 
@@ -1202,6 +1202,97 @@ void consys_print_bus_debug_dbg_level_1_mt6991_debug_gen(
 		"32", 0x40023000 + CONSYS_DBG_GEN_CONN_VON_BUS_APB_TIMEOUT_WDATA_OFFSET_ADDR,
 		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
 			CONSYS_DBG_GEN_CONN_VON_BUS_APB_TIMEOUT_WDATA_OFFSET_ADDR));
+
+	/* 50 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x19);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"50", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x19);
+
+	/* 50 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"50", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 51 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1A);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"51", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1A);
+
+	/* 51 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"51", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 52 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1B);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"52", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1B);
+
+	/* 52 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"52", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 53 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1C);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"53", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1C);
+
+	/* 53 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"53", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 54 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1D);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"54", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1D);
+
+	/* 54 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"54", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 55 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1E);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"55", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1E);
+
+	/* 55 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"55", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+
+	/* 56 */
+	CONSYS_REG_WRITE(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+		CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1F);
+	update_debug_write_info_mt6991_debug_gen(pdbg_level_1_info,
+		"56", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+		0, 31, 0x1F);
+
+	/* 56 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_1_info,
+		"56", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6991 +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
 }
 
 void consys_print_bus_debug_dbg_level_2_mt6991_debug_gen(
@@ -1339,6 +1430,12 @@ void consys_print_bus_debug_dbg_level_2_mt6991_debug_gen(
 	update_debug_read_info_mt6991_debug_gen(pdbg_level_2_info,
 		"49", 0x4004c000 + 0x4,
 		CONSYS_REG_READ(vir_addr_0x4004c000_mt6991 + 0x4));
+
+	/* 35 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_2_info,
+		"35", 0x4000e000 + CONSYS_DBG_GEN_SEJ_AIV2_OFFSET_ADDR,
+		CONSYS_REG_READ(CONN_BUS_CR_ON_BASE +
+			CONSYS_DBG_GEN_SEJ_AIV2_OFFSET_ADDR));
 }
 
 void consys_print_bus_slpprot_debug_dbg_level_2_mt6991_debug_gen(
