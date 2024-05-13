@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240416"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240507"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -88,15 +88,14 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{false, 0, 0, 0, true, 0x2002007c},
 	{false, 0, 0, 0, true, 0x20020084},
 	{false, 0, 0, 0, true, 0x20020088},
-	{false, 0, 0, 0, true, 0x2002008c},
 	{false, 0, 0, 0, true, 0x20023454},
-	{false, 0, 0, 0, true, 0x20023458}, //A81
-	{false, 0, 0, 0, true, 0x20020080}, //A82
+	{false, 0, 0, 0, true, 0x20023458}, //A80
+	{false, 0, 0, 0, true, 0x20020080}, //A81
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_a = {
 	"PSOP_1_1_A", "SectionA - IF CONN_INFRA ON read check ok",
-	82, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
+	81, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_a
 };
 
@@ -145,11 +144,12 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 	{false, 0, 0, 0, true, 0x7c00e13c},
 	{false, 0, 0, 0, true, 0x7c00e140},
 	{false, 0, 0, 0, true, 0x7c00e110},
+	{false, 0, 0, 0, true, 0x2002008c},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_b = {
 	"PSOP_1_1_B", "SectionB - IF CONN_INFRA OFF read check ok - bus",
-	43, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
+	44, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_b
 };
 
@@ -228,44 +228,11 @@ const struct connv3_dbg_command mt6653_connsys_power_c[] = {
 	{false, 0, 0, 0, true, 0x7c001620},
 	{false, 0, 0, 0, true, 0x7c001610},
 	{false, 0, 0, 0, true, 0x7c001600},
-	{true, 0x20023c04, 0, 0x300007, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300048, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300089, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3000ca, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x30010b, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x30014c, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x30018d, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3001ce, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x30020f, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300250, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300291, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3002d2, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300313, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300354, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300395, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3003d6, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300417, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300458, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300499, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3004da, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300521, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300562, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3005a3, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3005f3, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300634, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300675, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3007b6, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3007f7, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300838, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x300879, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3008be, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x3008ff, true, 0x20023c00},
-	{true, 0x20023c04, 0, 0x0, true, 0x20023c00},
 };
 
 const struct connv3_dump_list mt6653_dump_list_connsys_power_c = {
 	"PSOP_2_1_C", "SectionC - Dump after conn_infra_off is ready",
-	65, sizeof(mt6653_connsys_power_c)/sizeof(struct connv3_dbg_command),
+	32, sizeof(mt6653_connsys_power_c)/sizeof(struct connv3_dbg_command),
 	mt6653_connsys_power_c
 };
 
