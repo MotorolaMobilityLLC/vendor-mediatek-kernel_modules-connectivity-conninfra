@@ -55,6 +55,8 @@ int consys_spi_read_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned int
 				   unsigned int *data);
 int consys_spi_write_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
 			    unsigned int data);
+int consys_spi_update_bits_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
+				  unsigned int data, unsigned int mask);
 int consys_spi_read_nolock_int_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
 				  unsigned int *data, mapped_addr spi_base_addr);
 int consys_spi_write_nolock_int_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,

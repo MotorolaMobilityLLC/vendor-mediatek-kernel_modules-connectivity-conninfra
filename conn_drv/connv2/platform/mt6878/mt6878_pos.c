@@ -611,6 +611,10 @@ int consys_spi_read_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned int
 int consys_spi_read_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_read_nolock_mt6878(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6878(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
 		== CONN_SEMA_GET_FAIL) {
@@ -706,6 +710,10 @@ int consys_spi_write_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned in
 int consys_spi_write_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_write_nolock_mt6878(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6878(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
 		== CONN_SEMA_GET_FAIL) {
@@ -734,8 +742,7 @@ int consys_spi_1_write_mt6878(enum sys_spi_subsystem subsystem, unsigned int add
 	return ret;
 }
 
-
-int consys_spi_update_bits_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
+int consys_spi_update_bits_nolock_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
 				  unsigned int data, unsigned int mask)
 {
 	int ret = 0;
@@ -743,22 +750,14 @@ int consys_spi_update_bits_mt6878(enum sys_spi_subsystem subsystem, unsigned int
 	unsigned int new_val = 0;
 	bool change = false;
 
-	/* Get semaphore before updating bits */
-	if (consys_sema_acquire_timeout_mt6878(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
-		== CONN_SEMA_GET_FAIL) {
-		pr_err("[SPI WRITE] Require semaphore fail\n");
-		return CONNINFRA_SPI_OP_FAIL;
-	}
-
 	ret = consys_spi_read_nolock_mt6878(subsystem, addr, &curr_val);
 
 	if (ret) {
-		consys_sema_release_mt6878(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
-		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
-			__func__, get_spi_sys_name(subsystem), addr, ret);
+			pr_notice("[%s][%s] Get 0x%08x error, ret=%d",
+					__func__, get_spi_sys_name(subsystem), addr, ret);
 #endif
-		return CONNINFRA_SPI_OP_FAIL;
+			return CONNINFRA_SPI_OP_FAIL;
 	}
 
 	new_val = (curr_val & (~mask)) | (data & mask);
@@ -768,6 +767,26 @@ int consys_spi_update_bits_mt6878(enum sys_spi_subsystem subsystem, unsigned int
 		ret = consys_spi_write_nolock_mt6878(subsystem, addr, new_val);
 	}
 
+	return ret;
+}
+
+int consys_spi_update_bits_mt6878(enum sys_spi_subsystem subsystem, unsigned int addr,
+				  unsigned int data, unsigned int mask)
+{
+	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS) {
+		return consys_spi_update_bits_nolock_mt6878(subsystem, addr, data, mask);
+	}
+
+	/* Get semaphore before updating bits */
+	if (consys_sema_acquire_timeout_mt6878(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT)
+		== CONN_SEMA_GET_FAIL) {
+		pr_notice("[SPI WRITE] Require semaphore fail\n");
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
+	consys_spi_update_bits_nolock_mt6878(subsystem, addr, data, mask);
 	consys_sema_release_mt6878(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
