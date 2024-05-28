@@ -194,7 +194,7 @@ static int connv3_coredump_info_analysis(
 
 	/* Check force dump */
 	if (strncmp(dump_msg, CONNV3_COREDUMP_FORCE_DUMP, strlen(CONNV3_COREDUMP_FORCE_DUMP)) == 0) {
-		pr_info("[%s] %s", g_type_name[ctx->conn_type], CONNV3_COREDUMP_FORCE_DUMP);
+		pr_info("[%s] %s", connv3_dump_get_type_name(ctx->conn_type), CONNV3_COREDUMP_FORCE_DUMP);
 		ctx->issue_info.issue_type = CONNV3_ISSUE_FORCE_DUMP;
 		goto check_driver_assert;
 	}
@@ -592,7 +592,8 @@ int connv3_coredump_send(void *handler, char *tag, char *content, unsigned int l
 		ret = conndump_netlink_send_to_native(ctx->conn_type, tag, content, length);
 		osal_unlock_sleepable_lock(&ctx->ctx_lock);
 	} else {
-		pr_notice("[%s][%s] tag=%s, wrong state %d", __func__, g_type_name[ctx->conn_type], tag, state);
+		pr_notice("[%s][%s] tag=%s, wrong state %d",
+			__func__, connv3_dump_get_type_name(ctx->conn_type), tag, state);
 		return CONNV3_COREDUMP_ERR_WRONG_STATUS;
 	}
 
@@ -749,7 +750,7 @@ static int connv3_dump_end_dump(struct connv3_dump_ctx *ctx)
 	char *cmd_tag = "[COREDUMP_END]";
 
 	if (snprintf(cmd_str, EMI_COMMAND_LENGTH, "coredump_end") < 0) {
-		pr_notice("[%s][%s] coredump end snprintf failed", __func__, g_type_name[ctx->conn_type]);
+		pr_notice("[%s][%s] coredump end snprintf failed", __func__, connv3_dump_get_type_name(ctx->conn_type));
 		return -1;
 	}
 	connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_END);
@@ -829,7 +830,7 @@ int connv3_coredump_emi(void *handler)
 	if (ctx == NULL)
 		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
 	if (strlen(ctx->cb.dev_node) == 0 || ctx->cb.emi_size == 0) {
-		pr_notice("[%s][%s] not support EMI dump\n", __func__, g_type_name[ctx->conn_type]);
+		pr_notice("[%s][%s] not support EMI dump\n", __func__, connv3_dump_get_type_name(ctx->conn_type));
 		return CONNV3_COREDUMP_ERR_INVALID_INPUT;
 	}
 
@@ -954,7 +955,8 @@ void* connv3_coredump_init(int conn_type, const struct connv3_coredump_event_cb 
 	}
 	ctx = (struct connv3_dump_ctx*)connv3_dump_malloc(sizeof(struct connv3_dump_ctx));
 	if (!ctx) {
-		pr_notice("[%s][%s] Allocate connv3_dump_ctx fail", __func__, g_type_name[conn_type]);
+		pr_notice("[%s][%s] Allocate connv3_dump_ctx fail",
+			__func__, connv3_dump_get_type_name(conn_type));
 		goto error_exit;
 	}
 	/* Clean */
