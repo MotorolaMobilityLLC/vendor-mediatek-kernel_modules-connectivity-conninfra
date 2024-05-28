@@ -54,7 +54,6 @@ static u32 g_custom_data_size = 0;
 static u8 g_custom_param[MT6653_PLAT_CUSTOM_DATA_SIZE] = {0};
 static struct connv3_dev_cb* g_dev_cb;
 static bool g_is_co_clock = false;
-
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -123,15 +122,27 @@ static u32 connv3_reset_type_support_mt6991(void)
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
 static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *priv_data)
 {
+	bool need_rst = false;
+
 	pr_info("[%s] state=[%d] flags=[%d]\n", __func__, state->to_state, state->fsm_flag);
 
-	if (state->to_state == FSM_STATE_EXCEPTION) {
+	/* Case 1: MD whole chip reset */
+	if ((state->to_state == FSM_STATE_EXCEPTION) &&
+	    (state->fsm_flag & (FSM_F_EXCEPT_INT | FSM_F_LINK_EXCEPTION)))
+		need_rst = true;
+
+	/* Case 2: MD off */
+	if (state->to_state == FSM_STATE_OFF)
+		need_rst = true;
+
+	if (need_rst) {
 		/* ID = 1, event = 2
 		 * 1 means MT6653 platform
 		 * 2 means clock issue
 		 */
 		g_dev_cb->connv3_pmic_event_notifier(1, 2);
 	}
+
 }
 #endif
 
