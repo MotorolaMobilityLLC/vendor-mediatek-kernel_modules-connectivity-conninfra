@@ -26,7 +26,7 @@
 #include "mt6991_consys_reg_offset.h"
 #include "mt6991_debug_gen.h"
 #include "conninfra.h"
-
+#include "pmic_mng.h"
 
 mapped_addr vir_addr_consys_dbg_gen_vlpcfg_base_mt6991;
 mapped_addr vir_addr_0x1c00d000_mt6991;
@@ -36,6 +36,8 @@ mapped_addr vir_addr_consys_dbg_gen_conn_infra_sysram_offset_mt6991;
 mapped_addr vir_addr_0x4004c000_mt6991;
 mapped_addr vir_addr_consys_dbg_gen_apifrbus_ao_io_reg_base_mt6991;
 mapped_addr vir_addr_consys_dbg_gen_pbus_base_mt6991;
+mapped_addr vir_addr_0x1c011000_mt6991;
+mapped_addr vir_addr_0x40001000_mt6991;
 
 void consys_debug_init_mt6991_debug_gen(void)
 {
@@ -55,6 +57,10 @@ void consys_debug_init_mt6991_debug_gen(void)
 		= ioremap(CONSYS_DBG_GEN_APIFRBUS_AO_IO_REG_BASE_ADDR, 0xC);
 	vir_addr_consys_dbg_gen_pbus_base_mt6991
 		= ioremap(0x4000d000, 0x80);
+	vir_addr_0x1c011000_mt6991
+		= ioremap(0x1c011000, 0x1000);
+	vir_addr_0x40001000_mt6991
+		= ioremap(0x40001000, 0x10);
 }
 
 void consys_debug_deinit_mt6991_debug_gen(void)
@@ -82,6 +88,12 @@ void consys_debug_deinit_mt6991_debug_gen(void)
 
 	if (vir_addr_consys_dbg_gen_pbus_base_mt6991)
 		iounmap(vir_addr_consys_dbg_gen_pbus_base_mt6991);
+
+	if (vir_addr_0x1c011000_mt6991)
+		iounmap(vir_addr_0x1c011000_mt6991);
+
+	if (vir_addr_0x40001000_mt6991)
+		iounmap(vir_addr_0x40001000_mt6991);
 }
 
 void update_debug_read_info_mt6991_debug_gen(
@@ -143,6 +155,8 @@ void consys_print_power_debug_dbg_level_0_mt6991_debug_gen(
 		int level,
 		struct conn_debug_info_mt6991 *pdbg_level_0_info)
 {
+	int val;
+
 	if (pdbg_level_0_info == NULL)
 		return;
 
@@ -449,6 +463,61 @@ void consys_print_power_debug_dbg_level_0_mt6991_debug_gen(
 	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
 		"A55", 0x1C00D000 + 0x77C,
 		CONSYS_REG_READ(vir_addr_0x1c00d000_mt6991 + 0x77C));
+
+	/* A56 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A56", 0x1C011000 + 0x518,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x518));
+
+	/* A57 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A57", 0x1C011000 + 0x524,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x524));
+
+	/* A58 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A58", 0x1C011000 + 0x598,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x598));
+
+	/* A59 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A59", 0x1C011000 + 0x5a4,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x5a4));
+
+	/* A60 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A60", 0x1C011000 + 0x70c,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x70c));
+
+	/* A61 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A61", 0x1C011000 + 0x71c,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x71c));
+
+	/* A62 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A62", 0x1C011000 + 0x72c,
+		CONSYS_REG_READ(vir_addr_0x1c011000_mt6991 + 0x72c));
+
+	/* A63 */
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A63", 0x40001000 + 0x10,
+		CONSYS_REG_READ(vir_addr_0x40001000_mt6991 + 0x10));
+
+	/* A64 */
+	regmap_read(g_regmap_mt6363, 0x1bd1, &val);
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A64", 0x1bd1, val);
+
+	/* A65 */
+	regmap_read(g_regmap_mt6363, 0x190, &val);
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A65", 0x190, val);
+
+	/* A66 */
+	regmap_read(g_regmap_mt6363, 0x191, &val);
+	update_debug_read_info_mt6991_debug_gen(pdbg_level_0_info,
+		"A66", 0x191, val);
 }
 
 void consys_print_power_debug_dbg_level_1_mt6991_debug_gen(
