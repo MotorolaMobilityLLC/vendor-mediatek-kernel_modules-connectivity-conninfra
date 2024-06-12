@@ -124,6 +124,15 @@ static u32 connv3_reset_type_support_mt6991(void)
 }
 
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+static inline bool __is_md_error_and_chip_reboot(unsigned int state, unsigned int fsm_flag)
+{
+	if ((state == FSM_STATE_EXCEPTION) &&
+	    (fsm_flag & (FSM_F_EXCEPT_INT | FSM_F_LINK_EXCEPTION)))
+		return true;
+
+	return false;
+}
+
 static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *priv_data)
 {
 	bool need_rst = false;
@@ -131,8 +140,7 @@ static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *pr
 	pr_info("[%s] state=[%d] flags=[%d]\n", __func__, state->to_state, state->fsm_flag);
 
 	/* Case 1: MD whole chip reset */
-	if ((state->to_state == FSM_STATE_EXCEPTION) &&
-	    (state->fsm_flag & (FSM_F_EXCEPT_INT | FSM_F_LINK_EXCEPTION)))
+	if (__is_md_error_and_chip_reboot(state->to_state, state->fsm_flag))
 		need_rst = true;
 
 	/* Case 2: MD off */
@@ -194,21 +202,30 @@ u32 connv3_clk_init_mt6991(
 u32 connv3_check_clock_status_mt6991(void)
 {
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
-#if 1
 	unsigned int state, fsm_flag;
 
 	pr_info("[%s] g_is_co_clock=%d\n", __func__, g_is_co_clock);
 	if (g_is_co_clock) {
 		mtk_fsm_state_get(&state, &fsm_flag);
+		pr_notice("[%s] get state: (%d, %d)\n", __func__, state, fsm_flag);
+
 		if (state == FSM_STATE_READY) {
 			return 0;
 		}
-		pr_notice("[%s] get state: (%d, %d)\n", __func__, state, fsm_flag);
+		/* Check exception state in detail. */
+		if (state == FSM_STATE_EXCEPTION) {
+			/* MD chip reboot case, return error. */
+			if (__is_md_error_and_chip_reboot(state, fsm_flag))
+				return CONNV3_PLT_STATE_CLK_ERROR;
+			else
+				return 0; /* Other case, return success */
+
+		}
+		/* Other state */
 		return CONNV3_PLT_STATE_CLK_ERROR;
 	} else
-#endif
 		return 0;
-#else
+#else /* defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK */
 	pr_info("[%s] CFG_CONNINFRA_EAP_COCLOCK not support\n", __func__);
 	return 0;
 #endif
