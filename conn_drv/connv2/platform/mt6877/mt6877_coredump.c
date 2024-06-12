@@ -220,6 +220,11 @@ static unsigned int consys_plt_coredump_setup_dynamic_remap(int conn_type, unsig
 		return length;
 	}
 
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("[%s] Incorrect type: %d\n", __func__, conn_type);
+		return 0;
+	}
+
 	/* Expand to request size */
 	vir_addr = ioremap(g_coredump_config[conn_type].seg1_cr, 4);
 	if (vir_addr) {
@@ -244,6 +249,11 @@ static void __iomem* consys_plt_coredump_remap(int conn_type, unsigned int base,
 	void __iomem* vir_addr = 0;
 	unsigned int host_cr;
 
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("[%s] Incorrect type: %d\n", __func__, conn_type);
+		return NULL;
+	}
+
 	if (coredump_mng_is_host_view_cr(base, &host_cr)) {
 		vir_addr = ioremap(host_cr, length);
 	} else {
@@ -259,6 +269,11 @@ static void consys_plt_coredump_unmap(void __iomem* vir_addr)
 
 static char* consys_plt_coredump_get_tag_name(int conn_type)
 {
+	if (conn_type < 0 || conn_type >= CONN_DEBUG_TYPE_END) {
+		pr_notice("[%s] Incorrect type: %d\n", __func__, conn_type);
+		return NULL;
+	}
+
 	return g_coredump_config[conn_type].exception_tag_name;
 }
 
