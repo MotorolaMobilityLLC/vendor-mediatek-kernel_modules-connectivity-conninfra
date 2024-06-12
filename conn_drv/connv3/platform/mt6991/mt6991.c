@@ -69,6 +69,7 @@ static u32 connv3_clk_init_mt6991(
 static u32 connv3_check_clock_status_mt6991(void);
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
 static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *priv_data);
+static u32 connv3_dump_exception_filter(char*);
 #endif
 
 /*******************************************************************************
@@ -87,6 +88,9 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6991 = {
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6991 = {
 	.connv3_dump_plt_get_chipid = connv3_get_adie_chipid_mt6991,
+#if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
+	.connv3_dump_plt_exception_filter = connv3_dump_exception_filter,
+#endif
 };
 
 extern struct connv3_hw_ops_struct g_consys_hw_ops_mt6991;
@@ -144,6 +148,17 @@ static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *pr
 	}
 
 }
+
+static u32 connv3_dump_exception_filter(char *exp_log)
+{
+	char *pStr;
+
+	pStr = strstr(exp_log, "Co-clock error");
+	if (pStr != NULL)
+		return 1;
+	return 0;
+}
+
 #endif
 
 u32 connv3_clk_init_mt6991(

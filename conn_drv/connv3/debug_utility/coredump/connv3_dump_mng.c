@@ -49,6 +49,15 @@ char* connv3_dump_mng_get_subsys_tag(int conn_type)
 		return NULL;
 }
 
+unsigned int connv3_dump_mng_exception_filter(char* exp_log)
+{
+	if (g_dump_plat_data &&
+		g_dump_plat_data->connv3_dump_plt_exception_filter)
+		return g_dump_plat_data->connv3_dump_plt_exception_filter(exp_log);
+
+	return 0;
+}
+
 int connv3_dump_mng_init(void* plat_data)
 {
 
