@@ -47,6 +47,8 @@ enum connv3_drv_type {
 
 #define CONNV3_ERR_RST_ONGOING			-0x7788
 #define CONNV3_ERR_CLOCK_NOT_READY		-0x5566
+#define CONNV3_ERR_FMD_MODE	-0x3344
+
 
 /* whole chip reset type */
 #define CONNV3_CHIP_RST_TYPE_LEGACY_MODE		0x0
@@ -159,6 +161,19 @@ struct connv3_power_dump_cb {
 	int (*power_dump_end)(void *priv_data);
 };
 
+/* Call from connv3 driver to subsys
+ * - pre_fmd_cb
+ *	Callback WIFI first to hint WIFI off
+ *	Then callback BT to enter FMD mode
+ * - post_fmd_cb
+ *	Hint subsys driver that FMD mode is ready
+ */
+struct connv3_fmd_cb {
+	int (*pre_fmd_cb)(void);
+	int (*post_fmd_cb)(void);
+};
+
+
 /* Return value:
  * - 0: no error
  * - CONNV3_BUS_CB_TOP_BUS_HANG ~ CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ
@@ -204,6 +219,10 @@ int connv3_hif_dbg_write_mask(
  */
 u8* connv3_get_plat_config(u32 *size);
 
+/* Called by BT driver to hint other radio to enter FMD mode.
+ */
+int connv3_enter_fmd_mode(void);
+
 struct connv3_sub_drv_ops_cb {
 	/* power on */
 	struct connv3_power_on_cb pwr_on_cb;
@@ -216,6 +235,8 @@ struct connv3_sub_drv_ops_cb {
 	struct connv3_power_dump_cb pwr_dump_cb;
 	/* hif dump */
 	struct connv3_hif_dump_cb hif_dump_cb;
+	/* FMD function */
+	struct connv3_fmd_cb fmd_cb;
 };
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type drv_type, struct connv3_sub_drv_ops_cb *cb);

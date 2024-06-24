@@ -33,6 +33,7 @@
 #define CONNV3_EVENT_TIMEOUT				3000
 #define CONNV3_RESET_TIMEOUT				500
 #define CONNV3_PRE_CAL_TIMEOUT				500
+#define CONNV3_FMD_TIMEOUT				500
 #define CONNV3_MAX_PRE_CAL_BLOCKING_TIME		60000
 #define CONNV3_PRE_CAL_OP_TIMEOUT			60000 /* 60 sec */
 
@@ -76,6 +77,7 @@ static int opfunc_ext_32k_on(struct msg_op_data *op);
 static int opfunc_reset_power_state(struct msg_op_data *op);
 static int opfunc_dump_power_state(struct msg_op_data *op);
 static int opfunc_reset_and_dump_power_state(struct msg_op_data *op);
+static int opfunc_enter_fmd_mode(struct msg_op_data *op);
 
 static int opfunc_subdrv_pre_reset(struct msg_op_data *op);
 static int opfunc_subdrv_post_reset(struct msg_op_data *op);
@@ -88,6 +90,8 @@ static int opfunc_subdrv_efuse_on(struct msg_op_data *op);
 static int opfunc_subdrv_pre_cal_fail(struct msg_op_data *op);
 static int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op);
 static int opfunc_subdrv_post_reset_on(struct msg_op_data *op);
+static int opfunc_subdrv_fmd_pre_cb(struct msg_op_data *op);
+static int opfunc_subdrv_fmd_post_cb(struct msg_op_data *op);
 
 static void _connv3_core_update_rst_status(enum chip_rst_status status);
 
@@ -123,6 +127,7 @@ static const msg_opid_func connv3_core_opfunc[] = {
 static const msg_opid_func connv3_core_cb_opfunc[] = {
 	[CONNV3_CB_OPID_CHIP_RST] = opfunc_chip_rst,
 	[CONNV3_CB_OPID_PRE_CAL] = opfunc_pre_cal,
+	[CONNV3_CB_OPID_FMD_MODE] = opfunc_enter_fmd_mode,
 };
 
 
@@ -153,6 +158,8 @@ typedef enum {
 	CONNV3_SUBDRV_OPID_PRE_CAL_FAIL = 8,
 	CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY = 9,
 	CONNV3_SUBDRV_OPID_POST_RST_ON  = 10,
+	CONNV3_SUBDRV_OPID_FMD_PRE_CB	= 11,
+	CONNV3_SUBDRV_OPID_FMD_POST_CB	= 12,
 	CONNV3_SUBDRV_OPID_MAX
 } connv3_subdrv_op;
 
@@ -169,6 +176,8 @@ static const msg_opid_func connv3_subdrv_opfunc[] = {
 	[CONNV3_SUBDRV_OPID_PRE_CAL_FAIL] = opfunc_subdrv_pre_cal_fail,
 	[CONNV3_SUBDRV_OPID_POWER_OFF_NOTIFY] = opfunc_subdrv_pwr_down_notify,
 	[CONNV3_SUBDRV_OPID_POST_RST_ON] = opfunc_subdrv_post_reset_on,
+	[CONNV3_SUBDRV_OPID_FMD_PRE_CB] = opfunc_subdrv_fmd_pre_cb,
+	[CONNV3_SUBDRV_OPID_FMD_POST_CB] = opfunc_subdrv_fmd_post_cb,
 };
 
 enum pre_cal_type {
@@ -1573,6 +1582,168 @@ int opfunc_subdrv_pwr_down_notify(struct msg_op_data *op) {
 	return 0;
 }
 
+static int opfunc_subdrv_fmd_pre_cb(struct msg_op_data *op)
+{
+	int ret;
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+
+	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+	if (drv_inst->ops_cb.fmd_cb.pre_fmd_cb) {
+		ret = drv_inst->ops_cb.fmd_cb.pre_fmd_cb();
+		if (ret)
+			pr_notice("[%s][%s] fail, ret=%d\n",
+				__func__, connv3_drv_name[drv_type], ret);
+	} else
+		pr_notice("[%s][%s] not support\n",
+			__func__, connv3_drv_name[drv_type]);
+
+	atomic_add(0x1 << drv_type, &g_connv3_ctx.fmd_state);
+	up(&g_connv3_ctx.fmd_sema);
+	return 0;
+}
+
+static int opfunc_subdrv_fmd_post_cb(struct msg_op_data *op)
+{
+	int ret;
+	unsigned int drv_type = op->op_data[0];
+	struct subsys_drv_inst *drv_inst;
+
+	drv_inst = &g_connv3_ctx.drv_inst[drv_type];
+	if (drv_inst->ops_cb.fmd_cb.post_fmd_cb) {
+		ret = drv_inst->ops_cb.fmd_cb.post_fmd_cb();
+		if (ret)
+			pr_notice("[%s][%s] fail, ret=%d\n",
+				__func__, connv3_drv_name[drv_type], ret);
+	} else
+		pr_notice("[%s][%s] not support\n",
+			__func__, connv3_drv_name[drv_type]);
+
+	atomic_add(0x1 << drv_type, &g_connv3_ctx.fmd_state);
+	up(&g_connv3_ctx.fmd_sema);
+	return 0;
+}
+
+int opfunc_enter_fmd_mode(struct msg_op_data *op)
+{
+	int ret, fmd_ready_state;
+	struct subsys_drv_inst *drv_inst;
+	struct timespec64 fmd_begin, pre_wifi_end, pre_bt_end, pwr_off_end, post_cb_end;
+	int i, cur_rst_state;
+	const unsigned int subdrv_all_done = (0x1 << CONNV3_DRV_TYPE_MAX) - 1;
+
+	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
+		pr_info("No subsys on, just return");
+		_connv3_core_update_rst_status(CHIP_RST_NONE);
+		return 0;
+	}
+
+	ret =  osal_lock_sleepable_lock(&g_connv3_ctx.core_lock);
+	if (ret) {
+ 		pr_notice("[FMD] core_lock fail!!\n");
+ 		return ret;
+ 	}
+
+	atomic_set(&g_connv3_ctx.fmd_mode_trigger, 1);
+	osal_gettimeofday(&fmd_begin);
+	pr_info("[FMD] pre_cb - wifi\n");
+	atomic_set(&g_connv3_ctx.fmd_state, 0);
+	sema_init(&g_connv3_ctx.fmd_sema, 1);
+	drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI];
+	ret = msg_thread_send_1(&drv_inst->msg_ctx,
+		CONNV3_SUBDRV_OPID_FMD_PRE_CB, CONNV3_DRV_TYPE_WIFI);
+	if (ret)
+		pr_notice("[FMD] pre_cb - wifi fail, ret = %d\n", ret);
+
+	fmd_ready_state = (0x1 << CONNV3_DRV_TYPE_WIFI);
+	while (atomic_read(&g_connv3_ctx.fmd_state) != fmd_ready_state) {
+		ret = down_timeout(&g_connv3_ctx.fmd_sema, msecs_to_jiffies(CONNV3_PRE_CAL_TIMEOUT));
+		if (ret == 0)
+			continue;
+		pr_info("[FMD] pre_cb - wifi is not back");
+	}
+	pr_info("[FMD][PRE] wifi done\n");
+	osal_gettimeofday(&pre_wifi_end);
+
+	pr_info("[FMD] pre_cb - bt\n");
+	atomic_set(&g_connv3_ctx.fmd_state, 0);
+	sema_init(&g_connv3_ctx.fmd_sema, 1);
+	drv_inst = &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT];
+	ret = msg_thread_send_1(&drv_inst->msg_ctx,
+		CONNV3_SUBDRV_OPID_FMD_PRE_CB, CONNV3_DRV_TYPE_BT);
+	if (ret)
+		pr_notice("[FMD] pre_cb - bt fail, ret = %d", ret);
+
+	fmd_ready_state = (0x1 << CONNV3_DRV_TYPE_BT);
+	while (atomic_read(&g_connv3_ctx.fmd_state) != fmd_ready_state) {
+		ret = down_timeout(&g_connv3_ctx.fmd_sema, msecs_to_jiffies(CONNV3_FMD_TIMEOUT));
+		if (ret == 0)
+			continue;
+		pr_info("[FMD] pre_cb - bt is not back\n");
+	}
+	pr_info("[FMD][PRE] bt done\n");
+	osal_gettimeofday(&pre_bt_end);
+
+	/* Power off common resource */
+	connv3_core_wake_lock_get();
+	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+		ret = connv3_hw_pwr_off(opfunc_get_current_status(), i, NULL);
+		if (ret)
+			pr_notice("[FMD] power off %s fail, ret = %d\n", connv3_drv_name[i], ret);
+		g_connv3_ctx.drv_inst[i].drv_status = DRV_STS_POWER_OFF;
+	}
+	g_connv3_ctx.core_status = DRV_STS_POWER_OFF;
+	connv3_core_wake_lock_put();
+
+	/* Check radio status */
+	ret = opfunc_get_current_status();
+	if (ret != 0)
+		pr_notice("[FMD] all radio should be off, but get 0x%x\n", ret);
+	osal_gettimeofday(&pwr_off_end);
+	pr_info("[FMD] Power off done\n");
+
+	/* Post callback */
+	atomic_set(&g_connv3_ctx.fmd_state, 0);
+	sema_init(&g_connv3_ctx.fmd_sema, 1);
+	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+		drv_inst = &g_connv3_ctx.drv_inst[i];
+		ret = msg_thread_send_1(&drv_inst->msg_ctx,
+				CONNV3_SUBDRV_OPID_FMD_POST_CB, i);
+	}
+	while (atomic_read(&g_connv3_ctx.fmd_state) != subdrv_all_done) {
+		ret = down_timeout(&g_connv3_ctx.fmd_sema, msecs_to_jiffies(CONNV3_FMD_TIMEOUT));
+		if (ret == 0)
+			continue;
+		cur_rst_state = atomic_read(&g_connv3_ctx.fmd_state);
+		for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+			if ((cur_rst_state & (0x1 << i)) == 0) {
+				pr_info("[FMD][%s] post-callback is not back", connv3_drv_thread_name[i]);
+				drv_inst = &g_connv3_ctx.drv_inst[i];
+				osal_thread_show_stack(&drv_inst->msg_ctx.thread);
+			}
+		}
+	}
+	osal_gettimeofday(&post_cb_end);
+	pr_info("[FMD] post-callback end\n");
+
+	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
+	atomic_set(&g_connv3_ctx.fmd_mode_trigger, 0);
+
+	pr_info("[FMD] summary total=[%lu] pre_wifi_cb=[%lu] pre_bt_cb=[%lu] pwr_off=[%lu] post_cb=[%lu]\n",
+		timespec64_to_ms(&fmd_begin, &post_cb_end),
+		timespec64_to_ms(&fmd_begin, &pre_wifi_end),
+		timespec64_to_ms(&pre_wifi_end, &pre_bt_end),
+		timespec64_to_ms(&pre_bt_end, &pwr_off_end),
+		timespec64_to_ms(&pwr_off_end, &post_cb_end));
+
+	return 0;
+}
+
+int connv3_core_is_fmd_locking(void)
+{
+	return atomic_read(&g_connv3_ctx.fmd_mode_trigger);
+}
+
 /*
  * CONNv3 API
  */
@@ -2311,6 +2482,21 @@ int connv3_core_hif_dbg_write_mask(
 	return ret;
 }
 
+int connv3_core_enter_fmd_mode(void)
+{
+	int ret;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send(&ctx->cb_ctx, CONNV3_CB_OPID_FMD_MODE);
+	if (ret) {
+		pr_notice("[%s] msg send failed, ret = %d\n", __func__, ret);
+		return -1;
+	}
+
+	pr_info("[%s] fmd mode enter success\n", __func__);
+	return 0;
+}
+
 static void connv3_core_wake_lock_get(void)
 {
 	osal_wake_lock(&g_connv3_wake_lock);
@@ -2389,6 +2575,9 @@ int connv3_core_init(void)
 	osal_strcpy(g_connv3_wake_lock.name, "connv3FuncCtrl");
 	g_connv3_wake_lock.init_flag = 0;
 	osal_wake_lock_init(&g_connv3_wake_lock);
+
+	/* Init atomic variable */
+	atomic_set(&g_connv3_ctx.fmd_mode_trigger, 0);
 
 	return ret;
 }

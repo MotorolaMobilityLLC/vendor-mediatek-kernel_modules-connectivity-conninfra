@@ -152,6 +152,12 @@ struct connv3_ctx {
 	struct osal_op_history cored_op_history;
 
 	struct pre_cal_info cal_info;
+
+	/* FMD related */
+	struct semaphore fmd_sema;
+	atomic_t fmd_state;
+	atomic_t fmd_mode_trigger;
+
 };
 
 //typedef enum _ENUM_CONNINFRA_CORE_OPID_T {
@@ -172,6 +178,7 @@ typedef enum {
 typedef enum {
 	CONNV3_CB_OPID_CHIP_RST         = 0,
 	CONNV3_CB_OPID_PRE_CAL          = 1,
+	CONNV3_CB_OPID_FMD_MODE			= 2,
 	CONNV3_CB_OPID_MAX
 } connv3_core_cb_opid;
 
@@ -250,6 +257,10 @@ int connv3_core_hif_dbg_write_mask(
 	enum connv3_drv_type from_drv, enum connv3_drv_type to_drv,
 	unsigned int addr, unsigned int mask, unsigned int value);
 
+/* FMD function
+ */
+int connv3_core_enter_fmd_mode(void);
+int connv3_core_is_fmd_locking(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
