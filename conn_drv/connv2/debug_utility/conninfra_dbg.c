@@ -93,7 +93,9 @@ static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par
 static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_dump_power_state(int par1, int par2, int par3);
 static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3);
+#if CONNINFRA_DBG_SUPPORT
 static int conninfra_dbg_get_chip_info(int par1, int par2, int par3);
+#endif
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
