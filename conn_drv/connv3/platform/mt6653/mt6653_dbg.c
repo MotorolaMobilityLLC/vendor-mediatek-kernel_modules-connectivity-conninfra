@@ -30,6 +30,7 @@
 #define CONN_INFRA_CFG_ON_BT_SLP_TIMER			0x7C00105C
 #define CONN_INFRA_CFG_ON_BT_SLP_COUNTER		0x7C001060
 
+#define CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR	0x7c0601a0
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -169,10 +170,60 @@ int connv3_conninfra_dump_von_mt6653(struct connv3_cr_cb *cb)
 	return 0;
 }
 
+static int __make_conninfra_sleep(struct connv3_cr_cb *cb)
+{
+	int ret = 0;
+
+	ret = cb->write(cb->priv_data, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, 0x0);
+	if (ret) {
+		pr_notice("[%s] make conninfra sleep fail, ret=[%d]\n", __func__, ret);
+		return -1;
+	}
+	return 0;
+}
+
+
+static int __wakeup_conninfra(struct connv3_cr_cb *cb)
+{
+	int ret = 0, count = 0;
+	unsigned int value;
+	void *data = cb->priv_data;
+
+	ret = cb->write(data, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, 0x1);
+	if (ret) {
+		pr_notice("[%s] write 0x%x fail, ret = %d\n",
+			__func__, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, ret);
+		return -1;
+	}
+
+	udelay(5000);
+
+	for (count = 0; count < 10; count++) {
+		ret = cb->read(data, MT6653_CONN_INFRA_VERSION_ID_REG, &value);
+		if (ret) {
+			pr_notice("[%s] get conn_infra version fail, ret=[%d]", __func__, ret);
+			__make_conninfra_sleep(cb);
+			return -1;
+		}
+		if (value == MT6653_CONN_INFRA_VERSION_ID) {
+			pr_info("[%s] get 0x%x after %d times polling\n", __func__, value, count);
+			return 0;
+		}
+		udelay(1000);
+	}
+
+	pr_notice("[%s] wakeup fail\n", __func__);
+	__make_conninfra_sleep(cb);
+
+	return -1;
+}
+
+
 int connv3_conninfra_bus_dump_mt6653(
 	enum connv3_drv_type drv_type, struct connv3_cr_cb *cb)
 {
 	int ret = 0, func_ret = 0;
+	unsigned int value = 0;
 
 	/* Print version */
 	pr_info("[V3_BUS][PSOP_1_1] version=%s\n", MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION);
@@ -224,6 +275,29 @@ int connv3_conninfra_bus_dump_mt6653(
 		&mt6653_dump_list_connsys_power_c, cb);
 	if (ret)
 		pr_notice("[%s] mt6653_dump_list_connsys_power_c error(%d)\n", __func__, ret);
+
+	if (func_ret == CONNV3_BUS_CONN_INFRA_BUS_HANG_IRQ) {
+		/* Check bus timeout irq */
+		ret = cb->read(cb->priv_data, MT6653_CONN_INFRA_OFF_IRQ_REG, &value);
+		if (ret) {
+			pr_notice("[%s] read irq status fail, ret=[%d]", __func__, ret);
+		} else {
+			/* Check [7:12] */
+			if ((value & 0x1F80) != 0x0) {
+				pr_info("[%s] timeout irq = %x\n", __func__, value);
+				/* Force wakeup and dump */
+				ret = __wakeup_conninfra(cb);
+				if (ret)
+					return 0;
+				ret = connv3_hw_dbg_unify_dump_utility(
+					&mt6653_dump_list_conn_infra_bus_d, cb);
+				if (ret)
+					pr_notice("[%s] mt6653_dump_list_conn_infra_bus_d error(%d)\n", __func__, ret);
+				__make_conninfra_sleep(cb);
+
+			}
+		}
+	}
 
 	return 0;
 }
