@@ -77,6 +77,7 @@ static int opfunc_force_conninfra_wakeup(struct msg_op_data *op);
 static int opfunc_force_conninfra_sleep(struct msg_op_data *op);
 
 static int opfunc_dump_power_state(struct msg_op_data *op);
+static int opfunc_get_chip_info(struct msg_op_data *op);
 
 static int opfunc_subdrv_pre_reset(struct msg_op_data *op);
 static int opfunc_subdrv_post_reset(struct msg_op_data *op);
@@ -130,6 +131,8 @@ static const msg_opid_func conninfra_core_opfunc[] = {
 	[CONNINFRA_OPID_RFSPI_1_READ] = opfunc_rfspi_1_read,
 	[CONNINFRA_OPID_RFSPI_1_WRITE] = opfunc_rfspi_1_write,
 	[CONNINFRA_OPID_RFSPI_1_UPDATE_BITS] = opfunc_rfspi_1_update_bits,
+
+	[CONNINFRA_OPID_GET_CHIP_INFO] = opfunc_get_chip_info,
 };
 
 static const msg_opid_func conninfra_core_cb_opfunc[] = {
@@ -1285,6 +1288,17 @@ static int opfunc_dump_power_state(struct msg_op_data *op)
 
 }
 
+static int opfunc_get_chip_info(struct msg_op_data *op)
+{
+	int ret;
+
+	ret = consys_hw_get_chip_info((char *)op->op_data[0], op->op_data[1]);
+	if (ret)
+		pr_info("[%s] get chip info fail, ret=%d", __func__, ret);
+
+	return ret;
+}
+
 static int opfunc_subdrv_pre_reset(struct msg_op_data *op)
 {
 	int ret, cur_rst_state;
@@ -2231,6 +2245,26 @@ int conninfra_core_dump_power_state(char *buf, unsigned int size)
 				CONNINFRA_OPID_DUMP_POWER_STATE);
 	if (ret) {
 		pr_err("[%s] fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+	return 0;
+
+}
+
+int conninfra_core_get_chip_info(char *buf, unsigned int size)
+{
+	int ret = 0;
+	struct conninfra_ctx *infra_ctx = &g_conninfra_ctx;
+
+	if (buf && size > 0)
+		ret = msg_thread_send_wait_2(&infra_ctx->msg_ctx,
+				CONNINFRA_OPID_GET_CHIP_INFO,
+				0, (size_t)buf, size);
+	else
+		ret = msg_thread_send(&infra_ctx->msg_ctx,
+				CONNINFRA_OPID_GET_CHIP_INFO);
+	if (ret) {
+		pr_info("[%s] fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
 	return 0;

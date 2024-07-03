@@ -102,6 +102,7 @@ typedef int(*CONSYS_PLT_THERMAL_QUERY)(void);
 typedef int(*CONSYS_PLT_ENABLE_POWER_DUMP)(void);
 typedef int(*CONSYS_PLT_RESET_POWER_STATE)(void);
 typedef int(*CONSYS_PLT_POWER_STATE)(char *buf, unsigned int size);
+typedef int(*CONSYS_PLT_GET_CHIP_INFO)(char *buf, unsigned int size);
 
 typedef void(*CONSYS_PLT_CONFIG_SETUP)(void);
 
@@ -181,6 +182,8 @@ struct consys_hw_ops_struct {
 	CONSYS_PLT_ENABLE_POWER_DUMP consys_plt_enable_power_dump;
 	CONSYS_PLT_RESET_POWER_STATE consys_plt_reset_power_state;
 	CONSYS_PLT_POWER_STATE consys_plt_power_state;
+
+	CONSYS_PLT_GET_CHIP_INFO consys_plt_get_chip_info;
 
 	CONSYS_PLT_CONFIG_SETUP consys_plt_config_setup;
 
@@ -300,6 +303,7 @@ void consys_hw_clock_fail_dump(void);
 int consys_hw_enable_power_dump(void);
 int consys_hw_reset_power_state(void);
 int consys_hw_dump_power_state(char *buf, unsigned int size);
+int consys_hw_get_chip_info(char *buf, unsigned int size);
 
 
 void consys_hw_config_setup(void);

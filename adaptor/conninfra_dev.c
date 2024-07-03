@@ -434,6 +434,22 @@ int conn_adaptor_kern_dbg_handler(int x, int y, int z, char* buf, int buf_sz)
 			}
 		}
 		break;
+#if CONNINFRA_DBG_SUPPORT
+	case 0x60:
+		for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
+			if (atomic_read(&g_drv_gen_inst[i].enable) &&
+				g_drv_gen_inst[i].drv_gen_cb.get_chip_info) {
+				sz = (*(g_drv_gen_inst[i].drv_gen_cb.get_chip_info))(buf + offset, buf_sz - offset);
+				if (sz > 0)
+					offset += sz;
+				if (offset >= buf_sz) {
+					pr_notice("[%s] buf full", __func__);
+					break;
+				}
+			}
+		}
+		break;
+#endif
 	case 0x13:
 		pr_info("[%s] set coredump as: %d\n", __func__, y);
 		conn_adaptor_set_coredump_mode(y);

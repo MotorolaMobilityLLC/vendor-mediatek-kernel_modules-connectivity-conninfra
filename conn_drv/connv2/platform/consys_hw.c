@@ -489,6 +489,13 @@ int consys_hw_dump_power_state(char *buf, unsigned int size)
 	return 0;
 }
 
+int consys_hw_get_chip_info(char *buf, unsigned int size)
+{
+	if (consys_hw_ops && consys_hw_ops->consys_plt_get_chip_info)
+		consys_hw_ops->consys_plt_get_chip_info(buf, size);
+	return 0;
+}
+
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	if (consys_hw_ops->consys_plt_spi_read)
