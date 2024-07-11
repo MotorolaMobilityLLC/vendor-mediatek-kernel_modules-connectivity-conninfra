@@ -45,6 +45,9 @@ struct conn_adaptor_drv_gen_cb {
 
 	/* get_chip_info */
 	int (*get_chip_info)(uint8_t *buf, u32 buf_sz);
+
+	/* factory_testcase */
+	int (*factory_testcase)(uint8_t *buf, u32 buf_sz);
 };
 
 int conn_adaptor_register_drv_gen(enum conn_adaptor_drv_gen drv_gen, struct conn_adaptor_drv_gen_cb* cb);

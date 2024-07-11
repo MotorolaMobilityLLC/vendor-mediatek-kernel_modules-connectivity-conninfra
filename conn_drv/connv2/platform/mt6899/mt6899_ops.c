@@ -53,6 +53,7 @@ struct consys_hw_ops_struct g_consys_hw_ops_mt6899 = {
 	.consys_plt_reset_power_state = consys_reset_power_state_mt6899,
 	.consys_plt_power_state = consys_power_state_dump_mt6899,
 	.consys_plt_get_chip_info = consys_get_chip_info_mt6899,
+	.consys_plt_factory_testcase = consys_factory_testcase_mt6899,
 	.consys_plt_soc_timestamp_get = consys_soc_timestamp_get_mt6899,
 	.consys_plt_adie_detection = consys_adie_detection_mt6899,
 	.consys_plt_set_mcu_control = consys_set_mcu_control_mt6899,

@@ -3,6 +3,9 @@
  * Copyright (c) 2024 MediaTek Inc.
  */
 
+#include <linux/gpio.h>
+#include <linux/gpio/consumer.h>
+#include <linux/of_gpio.h>
 #include "../../../../conf/include/conninfra_conf.h"
 #include "../../../../include/conninfra.h"
 #include "../include/clock_mng.h"
@@ -13,6 +16,7 @@
 #include "include/mt6899_consys_reg_offset.h"
 #include "include/mt6899_pos_gen.h"
 #include "include/mt6899_soc.h"
+#include "include/mt6899_consys_reg.h"
 
 int consys_get_co_clock_type_mt6899(void)
 {
@@ -263,5 +267,94 @@ int consys_reg_deinit_mt6899(void)
 	return 0;
 }
 
+int consys_factory_testcase_mt6899(char *buf, unsigned int size)
+{
+	int mode_bk = 0;
+	int val_bk = 0;
+	int val = 0;
+	int ret = 0;
+	char temp_buf[FACTORY_TC_SIZE];
+	char *buf_p = temp_buf;
+	int buf_sz = FACTORY_TC_SIZE;
 
+	if (buf != NULL && size > 0) {
+		buf_p = buf;
+		buf_sz = size;
+	}
+
+	/* Check conninfra driver status */
+	if (consys_check_conninfra_on_domain_status_mt6899() != 0) {
+		snprintf(buf_p, buf_sz, "test fail");
+		return -1;
+	}
+
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		/* Backup GPIO mode */
+		mode_bk = CONSYS_REG_READ(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_MODE24_OFFSET_ADDR);
+
+		/* Set CONN_HRST_B(GPIO194) output value high */
+		CONSYS_SET_BIT(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_DOUT6_OFFSET_ADDR, (0x1U << 2));
+		CONSYS_SET_BIT(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_DIR6_OFFSET_ADDR, (0x1U << 2));
+
+		/* CONN_HRST_B(GPIO194) swtich to GPIO mode */
+		CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_MODE24_OFFSET_ADDR, 0x0, 0x700);
+
+		/* Turn on SPM clock */
+		/* (apply this for SPM's CONNSYS power control related CR accessing) */
+		CONSYS_REG_WRITE_MASK(SPM_REG_BASE +
+			CONSYS_GEN_POWERON_CONFIG_EN_OFFSET_ADDR, 0xB160001, 0xFFFF0001);
+
+		/* Backup 0x1C001014 value */
+		val_bk = CONSYS_REG_READ(SPM_REG_BASE + 0x14);
+
+		/* Set 0x1C001014[0] = 0 */
+		CONSYS_REG_WRITE_MASK(SPM_REG_BASE + 0x14, 0x0, 0x1);
+
+		/* Set vcore_io_latch_enb = 1 */
+		CONSYS_SET_BIT(SPM_REG_BASE + 0x4, (0x1U << 26));
+
+		/* Set vcore_io_iso = 1 */
+		CONSYS_SET_BIT(SPM_REG_BASE + 0x4, (0x1U << 27));
+
+		/* Set CONN_HRST_B(GPIO194) output value low */
+		CONSYS_CLR_BIT(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_DOUT6_OFFSET_ADDR, (0x1U << 2));
+		CONSYS_CLR_BIT(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_DIR6_OFFSET_ADDR, (0x1U << 2));
+
+		/* Check CONN_HRST_B(GPIO194) should be high*/
+		val = CONSYS_REG_READ(GPIO_REG_BASE +0x260);
+		pr_info("[%s] CONN_HRST_B = %d\n", __func__, val);
+		if (!(val & (0x1 << 2))) {
+			pr_info("[%s] factory testcase failed, gpio_hrst_b = 0\n", __func__);
+			ret = -1;
+		}
+
+		/* Set vcore_io_latch_enb = 0 */
+		CONSYS_CLR_BIT(SPM_REG_BASE + 0x4, (0x1U << 26));
+
+		/* Set vcore_io_iso = 0 */
+		CONSYS_CLR_BIT(SPM_REG_BASE + 0x4, (0x1U << 27));
+
+		/* Restore the 0x1C001014 setting */
+		CONSYS_REG_WRITE(SPM_REG_BASE + 0x14, val_bk);
+
+		/* Restore GPIO mode */
+		CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+			CONSYS_GEN_GPIO_MODE24_OFFSET_ADDR, mode_bk, 0x700);
+	#endif
+
+	if (ret < 0)
+		snprintf(buf_p, buf_sz, "test fail");
+	else
+		snprintf(buf_p, buf_sz, "test pass");
+
+	pr_info("[%s] factory testcase done\n", __func__);
+
+	return 0;
+}
 
