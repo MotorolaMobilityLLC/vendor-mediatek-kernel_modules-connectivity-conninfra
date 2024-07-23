@@ -273,6 +273,7 @@ int consys_factory_testcase_mt6899(char *buf, unsigned int size)
 	int val_bk = 0;
 	int val = 0;
 	int ret = 0;
+	int num_written;
 	char temp_buf[FACTORY_TC_SIZE];
 	char *buf_p = temp_buf;
 	int buf_sz = FACTORY_TC_SIZE;
@@ -284,7 +285,10 @@ int consys_factory_testcase_mt6899(char *buf, unsigned int size)
 
 	/* Check conninfra driver status */
 	if (consys_check_conninfra_on_domain_status_mt6899() != 0) {
-		snprintf(buf_p, buf_sz, "test fail");
+		num_written = snprintf(buf_p, buf_sz, "test fail");
+		pr_info("[%s] connsys is power on\n", __func__);
+		if (num_written < 0 || num_written >= buf_sz)
+			pr_info("[%s] snprintf failed\n", __func__);
 		return -1;
 	}
 
@@ -349,9 +353,14 @@ int consys_factory_testcase_mt6899(char *buf, unsigned int size)
 	#endif
 
 	if (ret < 0)
-		snprintf(buf_p, buf_sz, "test fail");
+		num_written = snprintf(buf_p, buf_sz, "test fail");
 	else
-		snprintf(buf_p, buf_sz, "test pass");
+		num_written = snprintf(buf_p, buf_sz, "test pass");
+
+	if (num_written < 0 || num_written >= buf_sz) {
+		pr_info("[%s] snprintf failed\n", __func__);
+		return -1;
+	}
 
 	pr_info("[%s] factory testcase done\n", __func__);
 
