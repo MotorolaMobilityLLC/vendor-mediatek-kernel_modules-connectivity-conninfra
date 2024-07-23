@@ -25,7 +25,8 @@ unsigned int consys_emi_set_remapping_reg_mt6991_atf(
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 	CONNSYS_SMC_CALL_RET(SMC_CONNSYS_EMI_SET_REMAPPING_REG_OPID,
-			     0, 0, 0, 0, 0, 0, ret);
+			     CONN_HW_VER_MT6991, CONNSYS_A_DIE_ID_MT6991,
+			     0, 0, 0, 0, ret);
 #endif
 	return ret;
 }

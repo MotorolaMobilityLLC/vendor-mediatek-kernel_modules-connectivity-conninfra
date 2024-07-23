@@ -109,7 +109,8 @@ int connsys_spi_master_cfg_mt6991(unsigned int curr_status, unsigned int next_st
 
 void connsys_afe_sw_patch_mt6991_atf(void)
 {
-	CONNSYS_SMC_CALL_VOID(SMC_CONNSYS_AFE_SW_PATCH_OPID, 0, 0, 0, 0, 0, 0);
+	CONNSYS_SMC_CALL_VOID(SMC_CONNSYS_AFE_SW_PATCH_OPID, CONN_HW_VER_MT6991,
+			      CONNSYS_A_DIE_ID_MT6991, 0, 0, 0, 0);
 }
 
 int connsys_subsys_pll_initial_mt6991(void)
