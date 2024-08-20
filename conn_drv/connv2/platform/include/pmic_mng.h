@@ -58,6 +58,7 @@ typedef int(*CONSYS_PMIC_GPS_POWER_CTRL) (unsigned int enable);
 typedef int(*CONSYS_PMIC_FM_POWER_CTRL) (unsigned int enable);
 typedef int(*CONSYS_PMIC_EVENT_NOTIFIER) (unsigned int id, unsigned int event);
 typedef int(*CONSYS_PMIC_RAISE_VOLTAGE) (unsigned int, bool, bool);
+typedef int(*CONSYS_PMIC_LEAVE_LOW_POWER_MODE) (void);
 
 struct consys_platform_pmic_ops {
 	CONSYS_PMIC_GET_FROM_DTS consys_pmic_get_from_dts;
@@ -70,6 +71,7 @@ struct consys_platform_pmic_ops {
 	CONSYS_PMIC_FM_POWER_CTRL consys_pmic_fm_power_ctrl;
 	CONSYS_PMIC_EVENT_NOTIFIER consys_pmic_event_notifier;
 	CONSYS_PMIC_RAISE_VOLTAGE consys_pmic_raise_voltage;
+	CONSYS_PMIC_LEAVE_LOW_POWER_MODE consys_pmic_leave_low_power_mode;
 };
 
 
@@ -109,6 +111,7 @@ int pmic_mng_fm_power_ctrl(unsigned int enable);
 int pmic_mng_event_cb(unsigned int id, unsigned int event);
 int pmic_mng_raise_voltage(unsigned int, bool, bool);
 bool pmic_mng_is_support_raise_voltage(void);
+int pmic_mng_common_power_leave_low_power_mode(void);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

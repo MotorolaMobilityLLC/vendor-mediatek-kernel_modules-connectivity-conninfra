@@ -966,3 +966,9 @@ int consys_hw_deinit(void)
 
 	return 0;
 }
+
+int consys_hw_common_power_leave_low_power_mode(void)
+{
+	pmic_mng_common_power_leave_low_power_mode();
+	return 0;
+}

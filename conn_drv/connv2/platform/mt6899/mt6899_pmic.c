@@ -84,6 +84,7 @@ static int consys_pmic_vant18_power_ctl_mt6899(bool);
 static int consys_vcn13_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_vrfio18_oc_notify(struct notifier_block*, unsigned long, void*);
 static int consys_plt_pmic_event_notifier_mt6899(unsigned int, unsigned int);
+static int consys_pmic_leave_low_power_mode_mt6899(void);
 
 const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6899 = {
 	.consys_pmic_get_from_dts = consys_plt_pmic_get_from_dts_mt6899,
@@ -94,6 +95,7 @@ const struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6899 = {
 	.consys_pmic_gps_power_ctrl = consys_plt_pmic_gps_power_ctrl_mt6899,
 	.consys_pmic_fm_power_ctrl = consys_plt_pmic_fm_power_ctrl_mt6899,
 	.consys_pmic_event_notifier = consys_plt_pmic_event_notifier_mt6899,
+	.consys_pmic_leave_low_power_mode = consys_pmic_leave_low_power_mode_mt6899,
 };
 
 int consys_plt_pmic_get_from_dts_mt6899(struct platform_device *pdev, struct conninfra_dev_cb* dev_cb)
@@ -843,3 +845,24 @@ void consys_pmic_debug_log_mt6899(void)
 		__func__, vcn13, vrfio18, vcn33_1, vcn33_2, vant18);
 }
 
+int consys_pmic_leave_low_power_mode_mt6899(void){
+	struct regmap *r = g_regmap_mt6363;
+	int sleep_mode;
+
+	sleep_mode = consys_get_sleep_mode_mt6899();
+	/* set PMIC VCN13 LDO HW_OP_EN = 0 for OC workaround (normal mode) */
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 0 << 1);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC7_OP_EN_ADDR,   1 << 7, 0 << 1);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 0 << 1);
+
+	/* set PMIC VRFIO18 LDO HW_OP_EN = 0 for OC workaround (normal mode)*/
+	if (!consys_is_rc_mode_enable_mt6899() || (sleep_mode == 1 || sleep_mode == 3)) {
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR,   1 << 0, 0 << 1);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 0 << 1);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 0 << 1);
+	}
+
+	return 0;
+}
