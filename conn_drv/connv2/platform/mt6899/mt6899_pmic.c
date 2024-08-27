@@ -852,16 +852,21 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 	sleep_mode = consys_get_sleep_mode_mt6899();
 	/* set PMIC VCN13 LDO HW_OP_EN = 0 for OC workaround (normal mode) */
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
-	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 0 << 1);
-	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC7_OP_EN_ADDR,   1 << 7, 0 << 1);
-	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 0 << 1);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 0 << 0);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC7_OP_EN_ADDR,   1 << 7, 0 << 7);
+	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 0 << 6);
+
+	/* SW leave low power mode */
+	regmap_update_bits(r, 0X1d07, 0x3, 0x1);
 
 	/* set PMIC VRFIO18 LDO HW_OP_EN = 0 for OC workaround (normal mode)*/
 	if (!consys_is_rc_mode_enable_mt6899() || (sleep_mode == 1 || sleep_mode == 3)) {
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
-		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR,   1 << 0, 0 << 1);
-		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 0 << 1);
-		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 0 << 1);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR,   1 << 0, 0 << 0);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 0 << 7);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 0 << 6);
+
+		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
 	}
 
 	return 0;
