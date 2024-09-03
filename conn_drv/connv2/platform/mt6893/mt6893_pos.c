@@ -568,6 +568,8 @@ void consys_set_if_pinmux_mt6893(unsigned int enable, unsigned int curr_status,
 {
 #ifndef CONFIG_FPGA_EARLY_PORTING
 	if (enable) {
+		if (curr_status != 0)
+			return;
 		/* Set pinmux for the interface between D-die and A-die
 		 * (CONN_HRST_B / CONN_TOP_CLK / CONN_TOP_DATA / CONN_WB_PTA /
 		 *  CONN_BT_CLK / CONN_BT_DATA / CONN_WF_CTRL0 / CONN_WF_CTRL1 /
@@ -639,6 +641,8 @@ void consys_set_if_pinmux_mt6893(unsigned int enable, unsigned int curr_status,
 			CONSYS_REG_WRITE_MASK(GPIO_BASE_ADDR + GPIO_MODE19, 0x4000, 0x7000);
 		}
 	} else {
+		if (next_status != 0)
+			return;
 		/* Set pinmux for the interface between D-die and A-die (Aux0)
 		 * Address:
 		 *   0x1000_5450[26:24]/0x1000_5450[18:16]/0x1000_5450[22:20]
@@ -1116,6 +1120,9 @@ int connsys_a_die_cfg_mt6893(unsigned int curr_status, unsigned int next_status)
 	int efuse_valid;
 	bool adie_26m = true;
 	unsigned int adie_id = 0;
+
+	if (curr_status != 0)
+		return 0;
 
 	if (consys_co_clock_type_mt6893() == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS) {
 		pr_info("A-die clock 52M\n");
