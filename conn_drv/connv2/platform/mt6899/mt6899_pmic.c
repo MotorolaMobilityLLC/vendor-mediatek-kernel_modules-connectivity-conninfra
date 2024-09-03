@@ -866,7 +866,8 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC7_OP_EN_ADDR,   1 << 7, 0 << 7);
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 0 << 6);
 
-		regulator_set_mode(reg_VRFIO18, REGULATOR_MODE_NORMAL);
+		/* SW leave low power mode */
+		regmap_update_bits(r, 0X1bcd, 0x3, 0x1);
 	}
 
 	return 0;
