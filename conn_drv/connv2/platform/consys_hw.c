@@ -453,7 +453,7 @@ int consys_hw_therm_query(int *temp_ptr)
 	int ret = 0;
 
 	/* wake/sleep conninfra */
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_thermal_query) {
+	if (consys_hw_ops && consys_hw_ops->consys_plt_thermal_query) {
 		ret = _consys_hw_conninfra_wakeup();
 		if (ret)
 			return CONNINFRA_ERR_WAKEUP_FAIL;
@@ -467,7 +467,7 @@ int consys_hw_therm_query(int *temp_ptr)
 
 void consys_hw_clock_fail_dump(void)
 {
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_clock_fail_dump)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_clock_fail_dump)
 		consys_hw_ops->consys_plt_clock_fail_dump();
 }
 
@@ -476,7 +476,7 @@ int consys_hw_enable_power_dump(void)
 	/* If not supported (no implement), assume it works fine. */
 	int ret = 0;
 
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_enable_power_dump)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_enable_power_dump)
 		ret = consys_hw_ops->consys_plt_enable_power_dump();
 	return ret;
 }
@@ -486,28 +486,28 @@ int consys_hw_reset_power_state(void)
 	/* If not supported (no implement), assume it works fine. */
 	int ret = 0;
 
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_reset_power_state)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_reset_power_state)
 		ret = consys_hw_ops->consys_plt_reset_power_state();
 	return ret;
 }
 
 int consys_hw_dump_power_state(char *buf, unsigned int size)
 {
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_power_state)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_power_state)
 		consys_hw_ops->consys_plt_power_state(buf, size);
 	return 0;
 }
 
 int consys_hw_get_chip_info(char *buf, unsigned int size)
 {
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_get_chip_info)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_get_chip_info)
 		consys_hw_ops->consys_plt_get_chip_info(buf, size);
 	return 0;
 }
 
 int consys_hw_factory_testcase(char *buf, unsigned int size)
 {
-	if (consys_hw_ops && consys_hw_ops && consys_hw_ops->consys_plt_factory_testcase)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_factory_testcase)
 		consys_hw_ops->consys_plt_factory_testcase(buf, size);
 	return 0;
 }
