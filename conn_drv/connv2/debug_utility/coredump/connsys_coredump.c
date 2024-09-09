@@ -1410,6 +1410,7 @@ int connsys_coredump_start(
 	struct timespec64 begin, end, put_done;
 	struct timespec64 mem_start, mem_end, cr_start, cr_end, emi_dump_start, emi_dump_end;
 	unsigned int coredump_mode = 0;
+	int fw_dump_state = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
 
 	if (ctx == NULL || ctx->conn_type < 0 || ctx->conn_type >= CONN_DEBUG_TYPE_END)
@@ -1439,7 +1440,8 @@ int connsys_coredump_start(
 
 	/* Check coredump status */
 	while (1) {
-		if (conndump_get_dmp_info(ctx, CONNSYS_DUMP_CTRL_BLOCK_OFFSET + EXP_CTRL_DUMP_STATE, false) == FW_DUMP_STATE_PUT_DONE) {
+		fw_dump_state = conndump_get_dmp_info(ctx, CONNSYS_DUMP_CTRL_BLOCK_OFFSET + EXP_CTRL_DUMP_STATE, false);
+		if (fw_dump_state == FW_DUMP_STATE_PUT_DONE) {
 			pr_info("coredump put done\n");
 			osal_timer_stop(&ctx->dmp_timer);
 			full_dump = true;
@@ -1455,7 +1457,16 @@ int connsys_coredump_start(
 				ctx->callback.poll_cpupcr(5, 1);
 			}
 			conndump_send_fake_coredump(ctx);
-			goto partial_dump;
+			if (fw_dump_state < 0 || fw_dump_state >= FW_DUMP_STATE_END) {
+				pr_notice("Coredump goto emi dump, state=[0x%x]\n",
+					fw_dump_state);
+				goto emi_dump;
+			}
+			else {
+				pr_notice("Coredump goto partial dump, state=[0x%x]\n",
+					fw_dump_state);
+				goto partial_dump;
+			}
 		}
 
 		if (__ratelimit(&_rs)) {
@@ -1514,7 +1525,7 @@ partial_dump:
 	conndump_dump_mem_regions(ctx);
 	osal_gettimeofday(&mem_end);
 
-
+emi_dump:
 	/* Start EMI dump */
 	osal_gettimeofday(&emi_dump_start);
 	conndump_dump_emi(ctx);
@@ -1535,12 +1546,18 @@ partial_dump:
 			timespec64_to_ms(&mem_start, &mem_end),
 			timespec64_to_ms(&emi_dump_start, &emi_dump_end));
 	} else {
-		pr_info("%s coredump summary: partial dump total=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
-			g_type_name[ctx->conn_type],
-			timespec64_to_ms(&begin, &end),
-			timespec64_to_ms(&cr_start, &cr_end),
-			timespec64_to_ms(&mem_start, &mem_end),
-			timespec64_to_ms(&emi_dump_start, &emi_dump_end));
+		if (fw_dump_state < 0 || fw_dump_state >= FW_DUMP_STATE_END)
+			pr_info("%s coredump summary: only emi dump total=[%lu] emi=[%lu]\n",
+				g_type_name[ctx->conn_type],
+				timespec64_to_ms(&begin, &end),
+				timespec64_to_ms(&emi_dump_start, &emi_dump_end));
+		else
+			pr_info("%s coredump summary: partial dump total=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
+				g_type_name[ctx->conn_type],
+				timespec64_to_ms(&begin, &end),
+				timespec64_to_ms(&cr_start, &cr_end),
+				timespec64_to_ms(&mem_start, &mem_end),
+				timespec64_to_ms(&emi_dump_start, &emi_dump_end));
 	}
 	return 0;
 }
