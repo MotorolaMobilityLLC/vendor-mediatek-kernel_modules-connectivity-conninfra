@@ -14,6 +14,7 @@
 #include <linux/alarmtimer.h>
 #include <linux/suspend.h>
 #include <linux/rtc.h>
+#include <linux/vmalloc.h>
 
 #include "osal.h"
 #include "connsyslog.h"

@@ -16,6 +16,7 @@
 #include <linux/slab.h>
 #include <linux/time.h>
 #include <linux/timer.h>
+#include <linux/vmalloc.h>
 
 #include "conninfra.h"
 #include "connsys_debug_utility.h"
