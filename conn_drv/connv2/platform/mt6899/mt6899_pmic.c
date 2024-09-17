@@ -847,9 +847,12 @@ void consys_pmic_debug_log_mt6899(void)
 
 int consys_pmic_leave_low_power_mode_mt6899(void){
 	struct regmap *r = g_regmap_mt6363;
-	int sleep_mode;
+	int vnc13_round = 10;
+	int vrfio18_round = 10;
+	int sleep_mode, ret;
 
 	sleep_mode = consys_get_sleep_mode_mt6899();
+
 	/* set PMIC VCN13 LDO HW_OP_EN = 0 for OC workaround (normal mode) */
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 0 << 0);
@@ -857,7 +860,20 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC6_OP_EN_ADDR,   1 << 6, 0 << 6);
 
 	/* SW leave low power mode */
-	regmap_update_bits(r, 0X1d07, 0x3, 0x1);
+	while(1) {
+		regmap_update_bits(r, 0X1d07, 0x3, 0x1);
+		regmap_read(r, 0X1d07, &ret);
+		pr_info("Set PMIC VCN13 LDO SW_EN 0X1d07=0x%x\n", ret);
+		if ((ret & 0x3) == 0x1)
+			break;
+		else
+			vnc13_round--;
+
+		if (vnc13_round == 0) {
+			pr_info("Set PMIC VCN13 LDO SW_EN failed\n");
+			break;
+		}
+	}
 
 	/* set PMIC VRFIO18 LDO HW_OP_EN = 0 for OC workaround (normal mode)*/
 	if (!consys_is_rc_mode_enable_mt6899() || (sleep_mode == 1 || sleep_mode == 3)) {
@@ -867,8 +883,23 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR,   1 << 6, 0 << 6);
 
 		/* SW leave low power mode */
-		regmap_update_bits(r, 0X1bcd, 0x3, 0x1);
+		while(1) {
+			regmap_update_bits(r, 0X1bcd, 0x3, 0x1);
+			regmap_read(r, 0X1bcd, &ret);
+			pr_info("Set PMIC VRFIO18 LDO SW_EN 0x1bcd=0x%x\n", ret);
+			if ((ret & 0x3) == 0x1)
+				break;
+			else
+				vrfio18_round--;
+
+			if (vrfio18_round == 0) {
+				pr_info("Set PMIC VRFIO18 LDO SW_EN failed\n");
+				break;
+			}
+		}
 	}
+
+	consys_pmic_debug_log_mt6899();
 
 	return 0;
 }
