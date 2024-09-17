@@ -861,13 +861,16 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 
 	/* SW leave low power mode */
 	while(1) {
-		regmap_update_bits(r, 0X1d07, 0x3, 0x1);
-		regmap_read(r, 0X1d07, &ret);
-		pr_info("Set PMIC VCN13 LDO SW_EN 0X1d07=0x%x\n", ret);
-		if ((ret & 0x3) == 0x1)
-			break;
-		else
-			vnc13_round--;
+		regmap_update_bits(r, 0x1d07, 0x3, 0x1);
+		if (regmap_read(r, 0x1d07, &ret) == 0) {
+			pr_info("Set PMIC VCN13 LDO SW_EN 0x1d07=0x%x\n", ret);
+			if ((ret & 0x3) == 0x1)
+				break;
+		} else {
+			pr_info("Failed to read 0x1d07 from PMIC\n");
+			ret = 0;
+		}
+		vnc13_round--;
 
 		if (vnc13_round == 0) {
 			pr_info("Set PMIC VCN13 LDO SW_EN failed\n");
@@ -884,13 +887,16 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 
 		/* SW leave low power mode */
 		while(1) {
-			regmap_update_bits(r, 0X1bcd, 0x3, 0x1);
-			regmap_read(r, 0X1bcd, &ret);
-			pr_info("Set PMIC VRFIO18 LDO SW_EN 0x1bcd=0x%x\n", ret);
-			if ((ret & 0x3) == 0x1)
-				break;
-			else
-				vrfio18_round--;
+			regmap_update_bits(r, 0x1bcd, 0x3, 0x1);
+			if (regmap_read(r, 0x1bcd, &ret) == 0) {
+				pr_info("Set PMIC VRFIO18 LDO SW_EN 0x1bcd=0x%x\n", ret);
+				if ((ret & 0x3) == 0x1)
+					break;
+			} else {
+				pr_info("Failed to read 0x1bcd from PMIC\n");
+				ret = 0;
+			}
+			vrfio18_round--;
 
 			if (vrfio18_round == 0) {
 				pr_info("Set PMIC VRFIO18 LDO SW_EN failed\n");
