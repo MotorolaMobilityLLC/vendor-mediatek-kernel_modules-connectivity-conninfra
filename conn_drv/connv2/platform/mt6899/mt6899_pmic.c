@@ -857,6 +857,11 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 
 	sleep_mode = consys_get_sleep_mode_mt6899();
 
+	ret = consys_conninfra_wakeup_mt6899();
+	if (ret) {
+		pr_info("[%s] conninfra wakeup fail\n", __func__);
+	}
+
 	/* set PMIC VCN13 LDO HW_OP_EN = 0 for OC workaround (normal mode) */
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC8_OP_EN_ADDR,   1 << 0, 0 << 0);
@@ -919,6 +924,7 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 		rc67_op_en, rc89_op_en, hw_op_en, rc67_op_mode, rc89_op_mode, hw_op_mode);
 
 	consys_pmic_debug_log_mt6899();
+	msleep(1);
 
 	return 0;
 }
