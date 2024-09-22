@@ -785,6 +785,7 @@ static int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event
 
 	oc_counter++;
 	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+	consys_pmic_debug_log_mt6899();
 
 	if (oc_counter <= 30)
 		oc_dump = 1;
@@ -810,6 +811,7 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 
 	oc_counter++;
 	pr_info("[%s] VRFIO18 OC times: %d\n", __func__, oc_counter);
+	consys_pmic_debug_log_mt6899();
 
 	if (oc_counter <= 30)
 		oc_dump = 1;
@@ -849,6 +851,8 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 	struct regmap *r = g_regmap_mt6363;
 	int vnc13_round = 10;
 	int vrfio18_round = 10;
+	int rc67_op_en = 0, rc89_op_en = 0, hw_op_en = 0;
+	int rc67_op_mode = 0, rc89_op_mode = 0, hw_op_mode = 0;
 	int sleep_mode, ret;
 
 	sleep_mode = consys_get_sleep_mode_mt6899();
@@ -904,6 +908,15 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 			}
 		}
 	}
+
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_RC6_OP_EN_ADDR, &rc67_op_en);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_RC8_OP_EN_ADDR, &rc89_op_en);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR, &hw_op_en);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_RC6_OP_MODE_ADDR, &rc67_op_mode);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_RC8_OP_MODE_ADDR, &rc89_op_mode);
+	regmap_read(r, MT6363_RG_LDO_VRFIO18_HW0_OP_EN_ADDR, &hw_op_mode);
+	pr_info("0x1bd2=0x%x,0x1bd3=0x%x,0x1bd4=0x%x,0x1bd8=0x%x,0x1bd9=0x%x,0x1bda=0x%x,\n",
+		rc67_op_en, rc89_op_en, hw_op_en, rc67_op_mode, rc89_op_mode, hw_op_mode);
 
 	consys_pmic_debug_log_mt6899();
 
