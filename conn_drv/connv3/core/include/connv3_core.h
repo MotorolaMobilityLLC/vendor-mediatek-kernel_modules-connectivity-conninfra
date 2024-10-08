@@ -45,6 +45,7 @@ enum connv3_drv_status {
 	DRV_STS_PRE_POWER_ON = 1,
 	DRV_STS_POWER_ON = 2,	/* powered on */
 	DRV_STS_RESET = 3,
+	DRV_STS_FMD_MODE = 4,
 	DRV_STS_MAX
 };
 
