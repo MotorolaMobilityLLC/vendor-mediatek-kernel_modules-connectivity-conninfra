@@ -859,12 +859,18 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 {
 	static int oc_counter = 0;
 	static int oc_dump = 0;
+	struct regmap *r = g_regmap_mt6363;
+	int oc_status = 0;
 
 	if (event != REGULATOR_EVENT_OVER_CURRENT)
 		return NOTIFY_OK;
 
 	oc_counter++;
 	pr_info("[%s] VRFIO18 OC times: %d\n", __func__, oc_counter);
+	if (r) {
+		regmap_read(r, 0x218, &oc_status);
+		pr_info("[%s] VRFIO18 OC status: 0x%x\n", __func__, oc_status);
+	}
 	consys_pmic_debug_log_mt6899();
 
 	if (oc_counter <= 30)
