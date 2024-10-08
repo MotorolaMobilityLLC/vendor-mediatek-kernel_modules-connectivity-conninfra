@@ -911,10 +911,7 @@ int consys_pmic_leave_low_power_mode_mt6899(void){
 
 	sleep_mode = consys_get_sleep_mode_mt6899();
 
-	ret = consys_conninfra_wakeup_mt6899();
-	if (ret) {
-		pr_info("[%s] conninfra wakeup fail\n", __func__);
-	}
+	consys_plt_pmic_event_notifier_mt6899(0, 0);
 
 	/* set PMIC VCN13 LDO HW_OP_EN = 0 for OC workaround (normal mode) */
 	regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 0 << 1);
