@@ -288,12 +288,14 @@ int conndump_netlink_send_to_native_internal(struct dump_netlink_ctx* ctx, char*
 					msleep(10);
 					ret =conndump_netlink_msg_send(ctx, tag, buf, length, ctx->bind_pid[i], ctx->seqnum);
 					retry ++;
-					pr_err("%s(): genlmsg_unicast retry (%d)...: ret = %d pid = %d seq=%d tag=%s\n",
-							__func__, retry, ret, ctx->bind_pid[i], ctx->seqnum, tag);
 				}
 				if (ret) {
 					pr_err("%s(): genlmsg_unicast fail (ret=%d) after retry %d times: pid = %d seq=%d tag=%s\n",
 							__func__, ret, retry, ctx->bind_pid[i], ctx->seqnum, tag);
+				} else {
+					pr_notice("%s(): genlmsg_unicast retry %d times pass: pid = %d seq=%d tag=%s\n",
+						__func__,
+						retry, ctx->bind_pid[i], ctx->seqnum, tag);
 				}
 			}
 			if (ret == -ECONNREFUSED) {
@@ -368,7 +370,8 @@ int conndump_netlink_send_to_native(int conn_type, char* tag, char* buf, unsigne
 		send_len = (remain_len > CONNSYS_DUMP_PKT_SIZE? CONNSYS_DUMP_PKT_SIZE : remain_len);
 		ret = conndump_netlink_send_to_native_internal(ctx, tag, &buf[idx], send_len);
 		if (ret) {
-			pr_err("[%s] from %d with len=%d fail, ret=%d\n", __func__, idx, send_len, ret);
+			pr_notice("[%s][%s] length=%d send section (%d, %d) fail, ret=%d\n",
+				__func__, tag, length, idx, send_len, ret);
 			break;
 		}
 		remain_len -= send_len;
