@@ -324,6 +324,7 @@ static int g_log_node_buf_len;
 enum log_node_type {
 	LOG_NODE_CONNSYS_PMIC_ECID = 0,
 	LOG_NODE_CONNSYS_IC_ECID = 1,
+	LOG_NODE_CONNSYS_ADIE_CHIP_INFO = 2,
 };
 
 ssize_t connv3_log_node_write(struct file *filp, const char __user *buffer, size_t count, loff_t *f_pos)
@@ -393,6 +394,15 @@ ssize_t connv3_log_node_write(struct file *filp, const char __user *buffer, size
 			{
 				memset(g_conn_log_node_buf, '\0', CONN_LOG_NODE_BUF_SIZE);
 				connv3_hw_get_connsys_ic_info(g_conn_log_node_buf, CONN_LOG_NODE_BUF_SIZE);
+				g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE-1] = '\0';
+
+				g_log_node_buf_len = strlen(g_conn_log_node_buf);
+			}
+			break;
+		case LOG_NODE_CONNSYS_ADIE_CHIP_INFO:
+			{
+				memset(g_conn_log_node_buf, '\0', CONN_LOG_NODE_BUF_SIZE);
+				connv3_hw_get_connsys_adie_ic_info(g_conn_log_node_buf, CONN_LOG_NODE_BUF_SIZE);
 				g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE-1] = '\0';
 
 				g_log_node_buf_len = strlen(g_conn_log_node_buf);
