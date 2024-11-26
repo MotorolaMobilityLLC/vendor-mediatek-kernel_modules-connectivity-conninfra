@@ -1963,7 +1963,7 @@ int connsys_low_power_setting_mt6899_gen(void)
 
 	/* set conn_von_top bus apb timeout - step 1 set timing */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_ON_BASE +
-		CONSYS_GEN_CONN_INFRA_VON_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x498, 0x7F8);
+		CONSYS_GEN_CONN_INFRA_VON_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x10, 0x7F8);
 
 	/* set conn_von_top bus apb timeout - step 2 enable function */
 	CONSYS_SET_BIT(CONN_BUS_CR_ON_BASE +
