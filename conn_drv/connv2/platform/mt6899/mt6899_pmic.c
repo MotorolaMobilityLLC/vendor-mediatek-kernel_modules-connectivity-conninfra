@@ -861,15 +861,40 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 	static int oc_dump = 0;
 	struct regmap *r = g_regmap_mt6363;
 	int oc_status = 0;
+	unsigned int ret1 = 0, ret2 = 0, ret3 = 0, ret4 = 0;
+	mapped_addr addr = 0;
 
 	if (event != REGULATOR_EVENT_OVER_CURRENT)
 		return NOTIFY_OK;
 
+	addr = ioremap(0x1C00D000, 0x1000);
 	oc_counter++;
+
 	pr_info("[%s] VRFIO18 OC times: %d\n", __func__, oc_counter);
 	if (r) {
 		regmap_read(r, 0x218, &oc_status);
 		pr_info("[%s] VRFIO18 OC status: 0x%x\n", __func__, oc_status);
+
+		if (addr != 0) {
+			CONSYS_REG_WRITE_HW_ENTRY(CONN_HOST_CSR_TOP_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL_CR_CONN_INFRA_CFG_ON_DBG_MUX_SEL, 0x0);
+			ret1 = CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_CFG_ON_DBG_ADDR);
+			pr_info("[%s] VRFIO18 OC host csr: 0x%08x\n", __func__, ret1);
+			ret1 = CONSYS_REG_READ(addr + 0x12C);
+			ret2 = CONSYS_REG_READ(addr + 0x130);
+			ret3 = CONSYS_REG_READ(addr + 0x134);
+			ret4 = CONSYS_REG_READ(addr + 0x138);
+			pr_info("[%s] VRFIO18 OC PMRC status: 0x%08x, 0x%08x, 0x%08x, 0x%08x\n", __func__, ret1, ret2, ret3, ret4);
+			ret1 = CONSYS_REG_READ(addr + 0x700);
+			ret2 = CONSYS_REG_READ(addr + 0x708);
+			ret3 = CONSYS_REG_READ(addr + 0x710);
+			ret4 = CONSYS_REG_READ(addr + 0x718);
+			pr_info("[%s] VRFIO18 OC dbg trace: 0x%08x, 0x%08x, 0x%08x, 0x%08x\n", __func__, ret1, ret2, ret3, ret4);
+			ret1 = CONSYS_REG_READ(addr + 0x720);
+			ret2 = CONSYS_REG_READ(addr + 0x728);
+			ret3 = CONSYS_REG_READ(addr + 0x730);
+			ret4 = CONSYS_REG_READ(addr + 0x738);
+			pr_info("[%s] VRFIO18 OC dbg trace: 0x%08x, 0x%08x, 0x%08x, 0x%08x\n", __func__, ret1, ret2, ret3, ret4);
+                }
 	}
 	consys_pmic_debug_log_mt6899();
 
@@ -883,6 +908,7 @@ static int consys_vrfio18_oc_notify(struct notifier_block *nb, unsigned long eve
 	if (g_dev_cb != NULL && g_dev_cb->conninfra_pmic_event_notifier != NULL)
 		g_dev_cb->conninfra_pmic_event_notifier(0, 0);
 
+	iounmap(addr);
 	return NOTIFY_OK;
 }
 
