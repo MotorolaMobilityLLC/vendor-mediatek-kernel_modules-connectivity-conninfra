@@ -74,7 +74,11 @@
 extern const struct of_device_id apconninfra_of_ids[];
 
 static int mtk_conninfra_probe(struct platform_device *pdev);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_conninfra_remove(struct platform_device *pdev);
+#else
+static void mtk_conninfra_remove(struct platform_device *pdev);
+#endif
 
 static struct platform_driver mtk_conninfra_dev_drv = {
 	.probe = mtk_conninfra_probe,
@@ -674,14 +678,20 @@ int mtk_conninfra_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 int mtk_conninfra_remove(struct platform_device *pdev)
+#else
+void mtk_conninfra_remove(struct platform_device *pdev)
+#endif
 {
 	atomic_set(&g_connv2_hw_init_done, 0);
 	consys_hw_deinit();
 	if (g_drv_dev)
 		g_drv_dev = NULL;
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 
 

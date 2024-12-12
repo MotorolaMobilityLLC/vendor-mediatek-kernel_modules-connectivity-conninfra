@@ -63,7 +63,11 @@ static int connv3_get_chip_info(uint8_t *buf, u32 buf_sz, int param2, int param3
 extern const struct of_device_id connv3_of_ids[];
 
 static int mtk_connv3_probe(struct platform_device *pdev);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_connv3_remove(struct platform_device *pdev);
+#else
+static void mtk_connv3_remove(struct platform_device *pdev);
+#endif
 
 static struct platform_driver g_mtk_connv3_dev_drv = {
 	.probe = mtk_connv3_probe,
@@ -303,7 +307,11 @@ int mtk_connv3_probe(struct platform_device *pdev)
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 int mtk_connv3_remove(struct platform_device *pdev)
+#else
+void mtk_connv3_remove(struct platform_device *pdev)
+#endif
 {
 	atomic_set(&g_connv3_hw_init_done, 0);
 
@@ -312,7 +320,9 @@ int mtk_connv3_remove(struct platform_device *pdev)
 	if (g_connv3_drv_dev)
 		g_connv3_drv_dev = NULL;
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 
 /* put log/variable to file node */
