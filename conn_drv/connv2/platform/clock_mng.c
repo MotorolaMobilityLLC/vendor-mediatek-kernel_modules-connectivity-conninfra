@@ -41,6 +41,7 @@
 static int clock_mng_register_device(void);
 static int clock_mng_unregister_device(void);
 static int consys_mt6685_probe(struct platform_device *pdev);
+static int consys_mt6687_probe(struct platform_device *pdev);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -67,6 +68,25 @@ static struct platform_driver consys_mt6685_dev_drv = {
 		.name = "mt6685-consys",
 #ifdef CONFIG_OF
 		.of_match_table = consys_clock_mt6685_of_ids,
+#endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+		},
+};
+
+static struct regmap *g_regmap_mt6687;
+#ifdef CONFIG_OF
+static const struct of_device_id consys_clock_mt6687_of_ids[] = {
+	{.compatible = "mediatek,mt6687-consys",},
+	{}
+};
+#endif
+
+static struct platform_driver consys_mt6687_dev_drv = {
+	.probe = consys_mt6687_probe,
+	.driver = {
+		.name = "mt6687-consys",
+#ifdef CONFIG_OF
+		.of_match_table = consys_clock_mt6687_of_ids,
 #endif
 		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 		},
@@ -108,9 +128,27 @@ static int consys_mt6685_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static int consys_mt6687_probe(struct platform_device *pdev)
+{
+	g_regmap_mt6687 = dev_get_regmap(pdev->dev.parent, NULL);
+
+	if (!g_regmap_mt6687) {
+		pr_info("%s failed to get g_regmap_mt6687\n", __func__);
+		return 0;
+	}
+
+	return 0;
+}
+
 struct regmap* consys_clock_mng_get_regmap(void)
 {
-	return g_regmap_mt6685;
+	if (g_regmap_mt6685 != NULL)
+		return g_regmap_mt6685;
+
+	if (g_regmap_mt6687 != NULL)
+		return g_regmap_mt6687;
+
+	return NULL;
 }
 
 static int clock_mng_register_device(void)
@@ -119,9 +157,15 @@ static int clock_mng_register_device(void)
 
 	ret = platform_driver_register(&consys_mt6685_dev_drv);
 	if (ret)
-		pr_err("Conninfra clock ic mt6685 driver registered failed(%d)\n", ret);
+		pr_notice("Conninfra clock ic mt6685 driver registered failed(%d)\n", ret);
 	else
 		pr_info("%s mt6685 ok.\n", __func__);
+
+	ret = platform_driver_register(&consys_mt6687_dev_drv);
+	if (ret)
+		pr_notice("Conninfra clock ic mt6687 driver registered failed(%d)\n", ret);
+	else
+		pr_info("%s mt6687 ok.\n", __func__);
 
 	return 0;
 }
@@ -131,6 +175,11 @@ static int clock_mng_unregister_device(void)
 	if (g_regmap_mt6685 != NULL) {
 		platform_driver_unregister(&consys_mt6685_dev_drv);
 		g_regmap_mt6685 = NULL;
+	}
+
+	if (g_regmap_mt6687 != NULL) {
+		platform_driver_unregister(&consys_mt6687_dev_drv);
+		g_regmap_mt6687 = NULL;
 	}
 
 	return 0;
