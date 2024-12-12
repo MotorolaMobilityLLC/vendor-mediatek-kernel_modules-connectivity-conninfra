@@ -15,6 +15,7 @@
 #include "../include/connsys_debug_utility.h"
 #include "../include/consys_hw.h"
 #include "../include/consys_reg_util.h"
+#include "../include/connsys_library.h"
 #include "include/mt6991_coredump.h"
 #include "include/mt6991_consys_reg_offset.h"
 
@@ -50,6 +51,8 @@ static struct coredump_hw_config g_coredump_config[CONN_DEBUG_TYPE_END] = {
 	},
 };
 
+static int consys_plt_coredump_exception_filter(char* exp);
+
 struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6991 = {
 	.consys_coredump_get_platform_config = consys_plt_coredump_get_platform_config_mt6991,
 	.consys_coredump_get_platform_chipid = consys_plt_coredump_get_platform_chipid_mt6991,
@@ -67,6 +70,7 @@ struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6991 = {
 	.consys_coredump_get_tag_name = consys_plt_coredump_get_tag_name_mt6991,
 	.consys_coredump_is_supported = consys_plt_coredump_is_supported_mt6991,
 	.consys_coredump_get_emi_dump_offset = consys_plt_coredump_get_emi_dump_offset_mt6991,
+	.consys_coredump_exception_filter = consys_plt_coredump_exception_filter,
 };
 
 struct coredump_hw_config *consys_plt_coredump_get_platform_config_mt6991(int conn_type)
@@ -257,4 +261,16 @@ void consys_plt_coredump_get_emi_dump_offset_mt6991(unsigned int *start, unsigne
 		*start = 0x003C0000;
 	if (end)
 		*end = 0x00630000;
+}
+
+int consys_plt_coredump_exception_filter(char* exp)
+{
+	int match_idx;
+
+	match_idx = conninfra_conf_exp_filter_check(exp);
+	pr_info("[%s] exp = %s, match_idx = %d\n", __func__, exp, match_idx);
+
+	if (match_idx >= 0)
+		return 1;
+	return 0;
 }

@@ -38,6 +38,12 @@ struct parse_data {
 ********************************************************************************
 */
 
+#define CONNINFRA_CONF_EXP_FILTER_MAX_NUM	10
+#define CONNINFRA_CONF_EXP_FILTER_MAX_LEN	40
+#define CONNINFRA_CONF_MAX_STRING_SIZE		(CONNINFRA_CONF_EXP_FILTER_MAX_NUM * CONNINFRA_CONF_EXP_FILTER_MAX_LEN)
+
+static char conf_exp_filter_list[CONNINFRA_CONF_EXP_FILTER_MAX_NUM][CONNINFRA_CONF_EXP_FILTER_MAX_LEN];
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -72,6 +78,13 @@ static int conf_parse_pair(const char *key, const char *pVal);
 
 static int conf_parse(const char *pInBuf, unsigned int size);
 
+static int conf_parse_string(const struct parse_data *data,
+					const char *pos);
+
+static char *conf_write_string(const struct parse_data *data);
+
+static void conf_release_string(const struct parse_data *data);
+
 //#define OFFSET(v) ((void *) &((struct conninfra_conf*) 0)->v)
 
 #define CHAR(f) {#f, conf_parse_char, conf_write_char, NULL, (char *)&g_conninfra_conf.f, NULL, NULL}
@@ -83,85 +96,24 @@ static int conf_parse(const char *pInBuf, unsigned int size);
 #define BYTE_ARRAY(f) {#f, conf_parse_byte_array, conf_write_byte_array, conf_release_byte_array,\
 		(char *)&g_conninfra_conf.f, NULL, NULL}
 
+#define STRING(f) {#f, conf_parse_string, conf_write_string, conf_release_string,\
+		(char *)&g_conninfra_conf.f, NULL, NULL}
+
 /*******************************************************************************
 *                          F U N C T I O N S
 ********************************************************************************
 */
 
 static const struct parse_data cfg_fields[] = {
-	CHAR(coex_wmt_ant_mode),
-	CHAR(coex_wmt_ant_mode_ex),
-	CHAR(coex_wmt_ext_component),
-	CHAR(coex_wmt_wifi_time_ctl),
-	CHAR(coex_wmt_ext_pta_dev_on),
-	CHAR(coex_wmt_filter_mode),
-
-	CHAR(coex_bt_rssi_upper_limit),
-	CHAR(coex_bt_rssi_mid_limit),
-	CHAR(coex_bt_rssi_lower_limit),
-	CHAR(coex_bt_pwr_high),
-	CHAR(coex_bt_pwr_mid),
-	CHAR(coex_bt_pwr_low),
-
-	CHAR(coex_wifi_rssi_upper_limit),
-	CHAR(coex_wifi_rssi_mid_limit),
-	CHAR(coex_wifi_rssi_lower_limit),
-	CHAR(coex_wifi_pwr_high),
-	CHAR(coex_wifi_pwr_mid),
-	CHAR(coex_wifi_pwr_low),
-
-	CHAR(coex_ext_pta_hi_tx_tag),
-	CHAR(coex_ext_pta_hi_rx_tag),
-	CHAR(coex_ext_pta_lo_tx_tag),
-	CHAR(coex_ext_pta_lo_rx_tag),
-	SHORT(coex_ext_pta_sample_t1),
-	SHORT(coex_ext_pta_sample_t2),
-	CHAR(coex_ext_pta_wifi_bt_con_trx),
-
-	INT(coex_misc_ext_pta_on),
-	INT(coex_misc_ext_feature_set),
-
-	CHAR(wmt_gps_lna_pin),
-	CHAR(wmt_gps_lna_enable),
-
-	CHAR(pwr_on_rtc_slot),
-	CHAR(pwr_on_ldo_slot),
-	CHAR(pwr_on_rst_slot),
-	CHAR(pwr_on_off_slot),
-	CHAR(pwr_on_on_slot),
+	SHORT(dummy_short),
 	CHAR(co_clock_flag),
 
-	CHAR(disable_deep_sleep_cfg),
-
-	INT(sdio_driving_cfg),
-
-	SHORT(coex_wmt_wifi_path),
-
-	CHAR(coex_wmt_ext_elna_gain_p1_support),
-	INT(coex_wmt_ext_elna_gain_p1_D0),
-	INT(coex_wmt_ext_elna_gain_p1_D1),
-	INT(coex_wmt_ext_elna_gain_p1_D2),
-	INT(coex_wmt_ext_elna_gain_p1_D3),
-
-	BYTE_ARRAY(coex_wmt_epa_elna),
-
-	CHAR(bt_tssi_from_wifi),
-	SHORT(bt_tssi_target),
-
-	CHAR(coex_config_bt_ctrl),
-	CHAR(coex_config_bt_ctrl_mode),
-	CHAR(coex_config_bt_ctrl_rw),
-
-	CHAR(coex_config_addjust_opp_time_ratio),
-	CHAR(coex_config_addjust_opp_time_ratio_bt_slot),
-	CHAR(coex_config_addjust_opp_time_ratio_wifi_slot),
-
-	CHAR(coex_config_addjust_ble_scan_time_ratio),
-	CHAR(coex_config_addjust_ble_scan_time_ratio_bt_slot),
-	CHAR(coex_config_addjust_ble_scan_time_ratio_wifi_slot),
 	CHAR(tcxo_gpio),
 	CHAR(pre_cal_mode),
 	INT(vcn33_1_voltage),
+
+	BYTE_ARRAY(dummy_byte_ary),
+	STRING(exp_filter),
 };
 
 #define NUM_CFG_FIELDS (osal_sizeof(cfg_fields) / osal_sizeof(cfg_fields[0]))
@@ -383,11 +335,93 @@ static void conf_release_byte_array(const struct parse_data *data)
 	}
 }
 
+static int conf_parse_string(const struct parse_data *data,
+					const char *pos)
+{
+	int size = osal_strlen(pos);
+	struct conf_string_data *str;
+	char *buffer;
+	unsigned char **dst;
+
+	if (size <= 0) {
+		pr_notice("cfg==> %s has no value assigned\n",
+			data->name);
+		return -1;
+	} else if (size >= CONNINFRA_CONF_MAX_STRING_SIZE) {
+		pr_notice("cfg==> %s value too long(%d > %d)\n", data->name, size, CONNINFRA_CONF_MAX_STRING_SIZE);
+		size = CONNINFRA_CONF_MAX_STRING_SIZE;
+	}
+
+	str = (struct conf_string_data *)osal_malloc(sizeof(struct conf_string_data));
+	if (str == NULL) {
+		pr_notice("cfg==> %s malloc fail\n", data->name);
+		return -1;
+	}
+	buffer = osal_malloc(sizeof(char) * (size + 1));
+	if (buffer == NULL) {
+		osal_free(str);
+		pr_notice("cfg==> %s malloc fail, size %d\n", data->name, size);
+		return -1;
+	}
+	memset(buffer, '\0', sizeof(char) * (size + 1));
+
+	strncpy(buffer, pos, size);
+	str->data = buffer;
+	str->size = size;
+
+	dst = (unsigned char**) data->param1;
+	*dst = (unsigned char*) str;
+	return 0;
+}
+
+static char *conf_write_string(const struct parse_data *data)
+{
+	unsigned char **src;
+	char *value;
+	struct conf_string_data *str;
+	int str_size;
+
+	src = (unsigned char **) data->param1;
+	if (*src == NULL)
+		return NULL;
+
+	str = (struct conf_string_data *)*src;
+
+	str_size = sizeof(char) * (str->size + 1);
+	value = osal_malloc(str_size);
+	if (value == NULL)
+		return NULL;
+
+	memset(value, '\0', str_size);
+	strncpy(value, str->data, str->size);
+
+	return value;
+}
+
+static void conf_release_string(const struct parse_data *data)
+{
+	struct conf_string_data *str;
+	unsigned char **src;
+
+	if (data->param1 != NULL) {
+		src = (unsigned char **) data->param1;
+		str = (struct conf_string_data *) *src;
+		if (str != NULL) {
+			if (str->data != NULL) {
+				osal_free(str->data);
+				str->data = NULL;
+			}
+			osal_free(str);
+		}
+		//data->param1 = NULL;
+		*src = NULL;
+	}
+}
+
 static int conf_parse_pair(const char *pKey, const char *pVal)
 {
 	int i = 0;
 	int ret = 0;
-
 
 	for (i = 0; i < NUM_CFG_FIELDS; i++) {
 		const struct parse_data *field = &cfg_fields[i];
@@ -476,7 +510,7 @@ static int conf_parse(const char *pInBuf, unsigned int size)
 
 		/*value handling */
 		pPos = pVal;
-		/*skip space characeter */
+		/* skip leading space characeter for value */
 		while (((*pPos) == ' ') ||
 				((*pPos) == '\t') || ((*pPos) == '\n')) {
 			if ((pPos - pBuf) >= size)
@@ -485,7 +519,8 @@ static int conf_parse(const char *pInBuf, unsigned int size)
 		}
 		/*value head */
 		pVal = pPos;
-		while (((*pPos) != ' ') &&
+		/* Don't skip space character for key */
+		while (/*((*pPos) != ' ') &&*/
 				((*pPos) != '\t') && ((*pPos) != '\0')
 		       && ((*pPos) != '\n')) {
 			if ((pPos - pBuf) >= size)
@@ -498,7 +533,7 @@ static int conf_parse(const char *pInBuf, unsigned int size)
 		ret = conf_parse_pair(pKey, pVal);
 		pr_debug("parse (%s, %s, %d)\n", pKey, pVal, ret);
 		if (ret)
-			pr_debug("parse fail (%s, %s, %d)\n", pKey, pVal, ret);
+			pr_notice("parse fail (%s, %s, %d)\n", pKey, pVal, ret);
 	}
 
 	for (i = 0; i < NUM_CFG_FIELDS; i++) {
@@ -554,6 +589,79 @@ static int platform_release_firmware(osal_firmware **ppPatch)
 		*ppPatch = NULL;
 	}
 	return 0;
+}
+
+static int conf_exp_list_init(void)
+{
+	int index = 0, length;
+	int i, j, k;
+	char input;
+
+	if (g_conninfra_conf.cfg_exist == 0) {
+		pr_info("[%s] return case -1\n", __func__);
+		return 0;
+	}
+	if (g_conninfra_conf.exp_filter == NULL) {
+		pr_info("[%s] return case -2\n", __func__);
+		return 0;
+	}
+
+	pr_info("[%s] legth=%d, str=%s\n", __func__,
+		g_conninfra_conf.exp_filter->size, g_conninfra_conf.exp_filter->data);
+	memset(conf_exp_filter_list, '\0', sizeof(char)*CONNINFRA_CONF_EXP_FILTER_MAX_LEN*CONNINFRA_CONF_EXP_FILTER_MAX_NUM);
+
+	j = 0; // current substring position
+	k = 0; // current character position within current substring
+
+	length = g_conninfra_conf.exp_filter->size;
+	for (i = 0; i < length; i++) {
+		input = g_conninfra_conf.exp_filter->data[i];
+		if (input == ',') {
+			// move to the next substring
+			j++;
+			k = 0;
+
+			// check if exceeding the limit of substrings
+			if (j >= CONNINFRA_CONF_EXP_FILTER_MAX_NUM) {
+				break;
+			}
+		} else {
+			conf_exp_filter_list[j][k] = input;
+			k++;
+			if (k >= CONNINFRA_CONF_EXP_FILTER_MAX_LEN - 1) {
+				break;
+			}
+		}
+	}
+	index = j + 1;
+
+	for (i = 0; i < index; i++) {
+		pr_info("[%s][%d] %s\n", __func__, i, conf_exp_filter_list[i]);
+	}
+
+	return index;
+}
+
+int conninfra_conf_exp_filter_check(const char *input)
+{
+	static int s_list_size = -1;
+	int i;
+	char *pStr;
+
+	if (s_list_size == -1) {
+		s_list_size = conf_exp_list_init();
+		pr_info("[%s] s_list_size=%d\n", __func__, s_list_size);
+	}
+
+	for (i = 0; i < s_list_size; i++) {
+		pStr = strstr(input, conf_exp_filter_list[i]);
+		if (pStr != NULL) {
+			pr_info("[%s] match item %s at index %d\n", __func__, conf_exp_filter_list[i], i);
+			return i;
+		}
+	}
+
+	return -CONNINFRA_CONF_EXP_PATTERN_NOT_FOUND;
 }
 
 int conninfra_conf_init(void)

@@ -35,6 +35,8 @@
 #define CUST_CFG_INFRA "WMT.cfg"
 #define CUST_CFG_INFRA_SOC "WMT_SOC.cfg"
 
+#define CONNINFRA_CONF_EXP_PATTERN_NOT_FOUND 1
+
 /*******************************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
@@ -63,92 +65,29 @@ struct conf_byte_ary {
 	char *data;
 };
 
+struct conf_string_data {
+	unsigned int size;
+	char *data;
+};
+
 struct conninfra_conf {
 
 	char conf_name[NAME_MAX + 1];
 	//const osal_firmware *conf_inst;
 	unsigned char cfg_exist;
 
-	unsigned char coex_wmt_ant_mode;
-	unsigned char coex_wmt_ant_mode_ex;
-	unsigned char coex_wmt_ext_component;
-	unsigned char coex_wmt_wifi_time_ctl;
-	unsigned char coex_wmt_ext_pta_dev_on;
-	/*combo chip and LTE coex filter mode setting */
-	unsigned char coex_wmt_filter_mode;
-
-	unsigned char coex_bt_rssi_upper_limit;
-	unsigned char coex_bt_rssi_mid_limit;
-	unsigned char coex_bt_rssi_lower_limit;
-	unsigned char coex_bt_pwr_high;
-	unsigned char coex_bt_pwr_mid;
-	unsigned char coex_bt_pwr_low;
-
-	unsigned char coex_wifi_rssi_upper_limit;
-	unsigned char coex_wifi_rssi_mid_limit;
-	unsigned char coex_wifi_rssi_lower_limit;
-	unsigned char coex_wifi_pwr_high;
-	unsigned char coex_wifi_pwr_mid;
-	unsigned char coex_wifi_pwr_low;
-
-	unsigned char coex_ext_pta_hi_tx_tag;
-	unsigned char coex_ext_pta_hi_rx_tag;
-	unsigned char coex_ext_pta_lo_tx_tag;
-	unsigned char coex_ext_pta_lo_rx_tag;
-	unsigned short coex_ext_pta_sample_t1;
-	unsigned short coex_ext_pta_sample_t2;
-	unsigned char coex_ext_pta_wifi_bt_con_trx;
-
-	unsigned int coex_misc_ext_pta_on;
-	unsigned int coex_misc_ext_feature_set;
-	/*GPS LNA setting */
-	unsigned char wmt_gps_lna_pin;
-	unsigned char wmt_gps_lna_enable;
-	/*Power on sequence */
-	unsigned char pwr_on_rtc_slot;
-	unsigned char pwr_on_ldo_slot;
-	unsigned char pwr_on_rst_slot;
-	unsigned char pwr_on_off_slot;
-	unsigned char pwr_on_on_slot;
+	/* To avoid build error for short config function */
+	short dummy_short;
 	unsigned char co_clock_flag;
-
-	/*deep sleep feature flag*/
-	unsigned char disable_deep_sleep_cfg;
-
-	/* Combo chip side SDIO driving setting */
-	unsigned int sdio_driving_cfg;
-
-	/* Combo chip WiFi path setting */
-	unsigned short coex_wmt_wifi_path;
-	/* Combo chip WiFi eLAN gain setting */
-	unsigned char  coex_wmt_ext_elna_gain_p1_support;
-	unsigned int coex_wmt_ext_elna_gain_p1_D0;
-	unsigned int coex_wmt_ext_elna_gain_p1_D1;
-	unsigned int coex_wmt_ext_elna_gain_p1_D2;
-	unsigned int coex_wmt_ext_elna_gain_p1_D3;
-
-	struct conf_byte_ary *coex_wmt_epa_elna;
-
-	unsigned char bt_tssi_from_wifi;
-	unsigned short bt_tssi_target;
-
-	unsigned char coex_config_bt_ctrl;
-	unsigned char coex_config_bt_ctrl_mode;
-	unsigned char coex_config_bt_ctrl_rw;
-
-	unsigned char coex_config_addjust_opp_time_ratio;
-	unsigned char coex_config_addjust_opp_time_ratio_bt_slot;
-	unsigned char coex_config_addjust_opp_time_ratio_wifi_slot;
-
-	unsigned char coex_config_addjust_ble_scan_time_ratio;
-	unsigned char coex_config_addjust_ble_scan_time_ratio_bt_slot;
-	unsigned char coex_config_addjust_ble_scan_time_ratio_wifi_slot;
 
 	/* POS. If set, means using ext TCXO */
 	unsigned char tcxo_gpio;
 
 	unsigned char pre_cal_mode;
 	unsigned int vcn33_1_voltage;
+
+	struct conf_byte_ary *dummy_byte_ary;
+	struct conf_string_data *exp_filter;
 };
 
 
@@ -173,6 +112,12 @@ struct conninfra_conf {
 */
 const struct conninfra_conf *conninfra_conf_get_cfg(void);
 int conninfra_conf_set_cfg_file(const char *name);
+/* Give an input string to check if it is in the exception filter list.
+ * Return value:
+ *     CONNINFRA_CONF_EXP_PATTERN_NOT_FOUND: not exist.
+ *      >=0 : index of the matched item.
+ */
+int conninfra_conf_exp_filter_check(const char *input);
 
 int conninfra_conf_init(void);
 int conninfra_conf_deinit(void);
