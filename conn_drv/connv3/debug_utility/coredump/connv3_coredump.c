@@ -50,6 +50,7 @@ struct connv3_dump_ctx {
 };
 
 static atomic_t g_dump_mode = ATOMIC_INIT(CONNV3_DUMP_MODE_DAEMON);
+static atomic_t g_memdump_mode = ATOMIC_INIT(0);
 
 static const char* g_type_name[] = {
 	"Wi-Fi",
@@ -77,6 +78,7 @@ struct timespec64 g_dump_start_time;
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static unsigned int connv3_coredump_get_memdump_mode(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -148,6 +150,26 @@ static void connv3_dump_emi_dump_end(void* handler)
 		pr_info("Wake up end command\n");
 		complete(&ctx->emi_dump);
 	}
+}
+
+static void connv3_dump_get_save_emi(void *dump_ctx, phys_addr_t *base,
+	size_t *size)
+{
+	phys_addr_t save_emi_base = 0;
+	size_t save_emi_size = 0;
+	unsigned int mode = 0;
+	struct connv3_dump_ctx* ctx = (struct connv3_dump_ctx*)dump_ctx;
+
+	mode = connv3_coredump_get_memdump_mode();
+	pr_info("[%s] memdump mode=[%d]\n", __func__, mode);
+
+	if (mode == CONNV3_COREDUMP_SAVE_TO_EMI && ctx && ctx->cb.get_save_emi)
+		ctx->cb.get_save_emi(&save_emi_base, &save_emi_size);
+
+	if (base)
+		*base = save_emi_base;
+	if (size)
+		*size = save_emi_size;
 }
 
 static int connv3_coredump_info_analysis(
@@ -980,6 +1002,7 @@ void* connv3_coredump_init(int conn_type, const struct connv3_coredump_event_cb 
 
 	/* Register to netlink */
 	nl_cb.coredump_end = connv3_dump_emi_dump_end;
+	nl_cb.coredump_get_save_emi = connv3_dump_get_save_emi;
 	conndump_netlink_init(ctx->conn_type, ctx, &nl_cb);
 
 error_exit:
@@ -1010,3 +1033,15 @@ void connv3_coredump_set_dump_mode(enum connv3_coredump_mode mode)
 	if (mode < CONNV3_DUMP_MODE_MAX)
 		atomic_set(&g_dump_mode, mode);
 }
+
+static unsigned int connv3_coredump_get_memdump_mode(void)
+{
+	return atomic_read(&g_memdump_mode);
+}
+
+void connv3_coredump_set_memdump_mode(unsigned int mode)
+{
+	pr_info("[%s] mode=%d\n", __func__, mode);
+	atomic_set(&g_memdump_mode, mode);
+}
+EXPORT_SYMBOL(connv3_coredump_set_memdump_mode);
