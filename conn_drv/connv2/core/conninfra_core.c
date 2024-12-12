@@ -493,6 +493,8 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 
 	_conninfra_core_update_rst_status(CHIP_RST_PRE_CB);
 
+	consys_hw_common_power_leave_low_power_mode();
+
 	/* pre */
 	for (i = 0; i < CONNDRV_TYPE_MAX; i++) {
 		drv_inst = &g_conninfra_ctx.drv_inst[i];

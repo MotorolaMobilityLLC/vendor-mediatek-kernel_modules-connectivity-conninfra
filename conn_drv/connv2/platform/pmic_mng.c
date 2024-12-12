@@ -394,3 +394,10 @@ int pmic_mng_unregister_device(void)
 #endif
 	return 0;
 }
+
+int pmic_mng_common_power_leave_low_power_mode(void)
+{
+	if (consys_platform_pmic_ops->consys_pmic_leave_low_power_mode)
+		consys_platform_pmic_ops->consys_pmic_leave_low_power_mode();
+	return 0;
+}

@@ -338,6 +338,8 @@ unsigned int consys_hw_get_support_drv(void);
 
 int consys_hw_register_irq(struct platform_device *pdev);
 void consys_hw_unregister_irq(void);
+
+int consys_hw_common_power_leave_low_power_mode(void);
 /*******************************************************************************
  *                              F U N C T I O N S
  ********************************************************************************
