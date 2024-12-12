@@ -173,7 +173,7 @@ static struct devapc_vio_callbacks conninfra_devapc_handle = {
 #endif
 ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 int connv2_dump_power_state(uint8_t *buf, u32 buf_sz);
-int connv2_get_chip_info(uint8_t *buf, u32 buf_sz);
+int connv2_get_chip_info(uint8_t *buf, u32 buf_sz, int param2, int param3);
 int connv2_factory_testcase(uint8_t *buf, u32 buf_sz);
 
 struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
@@ -523,7 +523,7 @@ int connv2_dump_power_state(uint8_t *buf, u32 buf_sz)
 	return len;
 }
 
-int connv2_get_chip_info(uint8_t *buf, u32 buf_sz)
+int connv2_get_chip_info(uint8_t *buf, u32 buf_sz, int param2, int param3)
 {
 #define CONN_DUMP_CHIP_INFO_BUF_SIZE 128
 	int ret = 0, len;
