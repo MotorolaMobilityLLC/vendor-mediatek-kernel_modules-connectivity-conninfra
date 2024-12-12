@@ -344,21 +344,13 @@ int connv3_plt_pmic_pwr_rst_mt6991(void)
 	return 0;
 }
 
-int connv3_plt_pmic_initial_setting_mt6991(
-	struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
+static int connv3_plt_pmic_init_por_rst_pin(void)
 {
 	int ret;
-	unsigned int irq_num = 0;
 
-	g_dev_cb = dev_cb;
-
-	INIT_WORK(&g_pmic_faultb_work_mt6991, check_faultb_status);
-	g_faultb_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 0);
-	g_pmic_en_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 1);
-
-	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+	/* check pinctrl */
 	if (IS_ERR(g_pinctrl_ptr)) {
-		pr_err("[%s] Get pinctrl fail, %ld", __func__, PTR_ERR(g_pinctrl_ptr));
+		pr_notice("[%s] Get pinctrl fail, %ld", __func__, PTR_ERR(g_pinctrl_ptr));
 		return -1;
 	}
 
@@ -374,12 +366,37 @@ int connv3_plt_pmic_initial_setting_mt6991(
 	}
 
 	g_por_reset_pin_init_done = true;
+
 	/* PD por reset */
 	ret = pinctrl_select_state(g_pinctrl_ptr, g_pin_por_reset_done);
 	if (ret)
 		pr_notice("[%s] POR_RST PD fail, ret = %d\n", __func__, ret);
 	else
 		pr_info("[%s] POR_RST PD\n", __func__);
+
+	return 0;
+}
+
+int connv3_plt_pmic_initial_setting_mt6991(
+	struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
+{
+	int ret;
+	unsigned int irq_num = 0;
+
+	g_dev_cb = dev_cb;
+
+	INIT_WORK(&g_pmic_faultb_work_mt6991, check_faultb_status);
+	g_faultb_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 0);
+	g_pmic_en_gpio_mt6991 = of_get_named_gpio(pdev->dev.of_node, "mt6376-gpio", 1);
+
+	g_pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(g_pinctrl_ptr)) {
+		pr_notice("[%s] Get pinctrl fail, %ld", __func__, PTR_ERR(g_pinctrl_ptr));
+		return -1;
+	}
+
+	/* Init por_rst pin */
+	connv3_plt_pmic_init_por_rst_pin();
 
 	irq_num = irq_of_parse_and_map(pdev->dev.of_node, 0);
 	pr_info("[%s][%d], irqNum of CONNSYS = %d", __func__, __LINE__, irq_num);
@@ -388,7 +405,7 @@ int connv3_plt_pmic_initial_setting_mt6991(
 				pmic_fault_handler, IRQF_TRIGGER_FALLING | IRQF_ONESHOT,
 				"MT6376_FAULT", platform_get_drvdata(pdev));
 	if (ret) {
-		pr_err("[%s][%d], request irq fail with irq_num=%d\n", __func__, __LINE__, irq_num);
+		pr_notice("[%s][%d], request irq fail with irq_num=%d\n", __func__, __LINE__, irq_num);
 		return ret;
 	}
 

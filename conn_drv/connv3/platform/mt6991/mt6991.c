@@ -43,6 +43,7 @@
 ********************************************************************************
 */
 extern struct platform_device *g_connv3_pdev;
+extern int connv3_plt_pinctrl_is_dfd_pin_init_done_mt6991(void);
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -145,7 +146,7 @@ u32 connv3_get_adie_chipid_mt6991(void)
 
 static u32 connv3_reset_type_support_mt6991(void)
 {
-	return 1;
+	return connv3_plt_pinctrl_is_dfd_pin_init_done_mt6991();
 }
 
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK

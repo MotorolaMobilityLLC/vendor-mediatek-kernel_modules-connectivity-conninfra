@@ -86,6 +86,11 @@ const struct connv3_platform_pinctrl_ops g_connv3_platform_pinctrl_ops_mt6991 = 
 	.pinctrl_dfd_trigger = connv3_plt_pinctrl_dfd_trigger_mt6991,
 };
 
+int connv3_plt_pinctrl_is_dfd_pin_init_done_mt6991(void)
+{
+	return g_dfd_init_done;
+}
+
 int connv3_plt_pinctrl_dfd_trigger_mt6991(bool enable)
 {
 	int ret;
