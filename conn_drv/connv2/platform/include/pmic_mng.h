@@ -85,6 +85,7 @@ extern struct regmap *g_regmap_mt6363;
 extern struct regmap *g_regmap_mt6373;
 extern struct regmap *g_regmap_mt6368;
 extern struct regmap *g_regmap_mt6369;
+extern struct regmap *g_regmap_mt6661;
 #endif
 
 /*******************************************************************************

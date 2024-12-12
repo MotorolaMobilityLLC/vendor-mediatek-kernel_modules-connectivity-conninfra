@@ -60,6 +60,7 @@ extern struct consys_hw_ops_struct g_consys_hw_ops_mt6991;
 extern struct consys_reg_mng_ops g_dev_consys_reg_ops_mt6991;
 extern struct consys_platform_emi_ops g_consys_platform_emi_ops_mt6991;
 extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6991;
+extern struct consys_platform_pmic_ops g_consys_platform_pmic_ops_mt6991_6661;
 extern struct consys_platform_coredump_ops g_consys_platform_coredump_ops_mt6991;
 
 const struct conninfra_plat_data mt6991_plat_data = {
@@ -72,3 +73,15 @@ const struct conninfra_plat_data mt6991_plat_data = {
 	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6991,
 	.connsyslog_config = &g_connsyslog_config_mt6991,
 };
+
+const struct conninfra_plat_data mt6991_6661_plat_data = {
+	.chip_id = PLATFORM_SOC_CHIP_MT6991,
+	.consys_hw_version = CONN_HW_VER_MT6991,
+	.hw_ops = &g_consys_hw_ops_mt6991,
+	.reg_ops = &g_dev_consys_reg_ops_mt6991,
+	.platform_emi_ops = &g_consys_platform_emi_ops_mt6991,
+	.platform_pmic_ops = &g_consys_platform_pmic_ops_mt6991_6661,
+	.platform_coredump_ops = &g_consys_platform_coredump_ops_mt6991,
+	.connsyslog_config = &g_connsyslog_config_mt6991,
+};
+
