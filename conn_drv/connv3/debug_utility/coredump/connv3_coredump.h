@@ -26,6 +26,7 @@
 #define CONNV3_SUBSYS_TAG_SIZE		16
 
 #define CONNV3_COREDUMP_FORCE_DUMP	"FORCE_DUMP"
+#define CONNV3_COREDUMP_SAVE_TO_EMI 3
 
 enum connv3_coredump_mode {
 	CONNV3_DUMP_MODE_RESET_ONLY = 0,
@@ -47,6 +48,7 @@ struct connv3_coredump_event_cb {
 	unsigned int emi_size;
 	unsigned int mcif_emi_size;
 	unsigned int emi2_size;
+	void (*get_save_emi)(phys_addr_t *base, size_t *size);
 };
 
 struct connv3_issue_info {
@@ -73,6 +75,7 @@ extern int connv3_coredump_send(void *handler, char *tag, char *content, unsigne
 extern int connv3_coredump_get_issue_info(void *handler, struct connv3_issue_info *issue_info, char *xml_str, unsigned int xml_str_size);
 extern int connv3_coredump_emi(void *handler);
 extern int connv3_coredump_end(void *handler, char *customized_string);
+extern void connv3_coredump_set_memdump_mode(unsigned int mode);
 
 
 #endif /* __CONNV3_COREDUMP_H__ */

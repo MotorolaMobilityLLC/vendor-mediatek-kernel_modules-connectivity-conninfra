@@ -22,6 +22,8 @@
 
 struct netlink_event_cb {
 	void (*coredump_end)(void*);
+	void (*coredump_get_save_emi)(void *dump_ctx, phys_addr_t *base,
+		size_t *size);
 };
 
 /*******************************************************************************
