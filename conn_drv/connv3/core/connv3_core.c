@@ -304,7 +304,16 @@ static int opfunc_power_on_internal(unsigned int drv_type)
 	 * 	(pmic_en is 0 or 1 for power off uds mode)
 	 * - DRV_STS_RESET: pmic_en is 1 and POR_RST has been happened.
 	 * - DRV_STS_POWER_ON: pmic_en is 1 and at least one radio has called connv3_pwr_on.
+	 * - DRV_STS_FMD_MODE: enter fmd mode, but power on is executed.
 	 */
+	if (g_connv3_ctx.core_status == DRV_STS_FMD_MODE) {
+		pr_notice("[CONNV3_PWR_ON] disable FMD mode\n");
+		ret = connv3_hw_pwr_rst();
+		if (ret)
+			pr_notice("[%s] connv3_hw_pwr_rst fail, ret = %d\n", __func__, ret);
+		g_connv3_ctx.core_status = DRV_STS_POWER_OFF;
+	}
+
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF ||
 	    g_connv3_ctx.core_status == DRV_STS_RESET) {
 		if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
@@ -1692,7 +1701,7 @@ int opfunc_enter_fmd_mode(struct msg_op_data *op)
 			pr_notice("[FMD] power off %s fail, ret = %d\n", connv3_drv_name[i], ret);
 		g_connv3_ctx.drv_inst[i].drv_status = DRV_STS_POWER_OFF;
 	}
-	g_connv3_ctx.core_status = DRV_STS_POWER_OFF;
+	g_connv3_ctx.core_status = DRV_STS_FMD_MODE;
 	connv3_core_wake_lock_put();
 
 	/* Check radio status */
@@ -1725,6 +1734,7 @@ int opfunc_enter_fmd_mode(struct msg_op_data *op)
 	}
 	osal_gettimeofday(&post_cb_end);
 	pr_info("[FMD] post-callback end\n");
+	dump_curr_status("[FMD]");
 
 	osal_unlock_sleepable_lock(&g_connv3_ctx.core_lock);
 	atomic_set(&g_connv3_ctx.fmd_mode_trigger, 0);
