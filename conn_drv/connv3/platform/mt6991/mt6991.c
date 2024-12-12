@@ -126,9 +126,12 @@ static u32 connv3_reset_type_support_mt6991(void)
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
 static inline bool __is_md_error_and_chip_reboot(unsigned int state, unsigned int fsm_flag)
 {
-	if ((state == FSM_STATE_EXCEPTION) &&
-	    (fsm_flag & (FSM_F_EXCEPT_INT | FSM_F_LINK_EXCEPTION)))
-		return true;
+	if (state == FSM_STATE_EXCEPTION) {
+		if (fsm_flag & (FSM_F_EXCEPT_INT | FSM_F_LINK_EXCEPTION))
+			return true;
+		if ((fsm_flag & FSM_F_SAP_HS_START) == 0)
+			return true;
+	}
 
 	return false;
 }
@@ -211,15 +214,18 @@ u32 connv3_check_clock_status_mt6991(void)
 
 		if (state == FSM_STATE_READY) {
 			return 0;
-		}
-		/* Check exception state in detail. */
-		if (state == FSM_STATE_EXCEPTION) {
+		} else if (state == FSM_STATE_BOOTUP) {
+			/* SAP has been boot to idle */
+			if ((fsm_flag & FSM_F_SAP_HS_START) != 0)
+				return 0;
+			else
+				return CONNV3_PLT_STATE_CLK_ERROR;
+		} else if (state == FSM_STATE_EXCEPTION) {
 			/* MD chip reboot case, return error. */
 			if (__is_md_error_and_chip_reboot(state, fsm_flag))
 				return CONNV3_PLT_STATE_CLK_ERROR;
 			else
 				return 0; /* Other case, return success */
-
 		}
 		/* Other state */
 		return CONNV3_PLT_STATE_CLK_ERROR;
