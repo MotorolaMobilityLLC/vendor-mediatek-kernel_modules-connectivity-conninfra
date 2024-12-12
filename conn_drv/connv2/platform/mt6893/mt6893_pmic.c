@@ -421,8 +421,6 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable, unsigned int curr_sta
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 
 		} else {
-			if (next_status != 0)
-				return 0;
 			/* Legacy mode */
 #if COMMON_KERNEL_PMIC_SUPPORT
 			/* HW_OP_EN = 1, HW_OP_CFG = 1 */
@@ -467,6 +465,8 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable, unsigned int curr_sta
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 		}
 	} else {
+		if (next_status != 0)
+			return 0;
 		regulator_disable(reg_VCN13);
 		regulator_disable(reg_VCN18);
 	}
