@@ -70,8 +70,6 @@ static int _dump_utility(
 	memset(g_dump_buf, '\0', sizeof(char)*LOG_DUMP_BUF_SZ);
 	for (i = 0; i < dump_list->dump_size; i++) {
 		command = &dump_list->cmd_list[i];
-		if (command == NULL)
-			continue;
 		/* Write with mask */
 		if (command->write && command->mask != 0) {
 			ret = cb->write_mask(
