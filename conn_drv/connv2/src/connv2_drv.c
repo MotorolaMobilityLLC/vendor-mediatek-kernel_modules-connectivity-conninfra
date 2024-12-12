@@ -174,6 +174,7 @@ static struct devapc_vio_callbacks conninfra_devapc_handle = {
 ssize_t connv2_coredump_emi_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 int connv2_dump_power_state(uint8_t *buf, u32 buf_sz);
 int connv2_get_chip_info(uint8_t *buf, u32 buf_sz);
+int connv2_factory_testcase(uint8_t *buf, u32 buf_sz);
 
 struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
 	.drv_radio_support = 0x7,
@@ -197,6 +198,9 @@ struct conn_adaptor_drv_gen_cb g_connv2_drv_gen = {
 
 	/* get_chip_info */
 	.get_chip_info = connv2_get_chip_info,
+
+	/* factory_testcase */
+	.factory_testcase = connv2_factory_testcase,
 };
 
 #if defined(CONNINFRA_PLAT_ALPS) && CONNINFRA_PLAT_ALPS
@@ -532,6 +536,27 @@ int connv2_get_chip_info(uint8_t *buf, u32 buf_sz)
 
 	len = strlen(tmp_buf);
 	if (len > 0 && len < CONN_DUMP_CHIP_INFO_BUF_SIZE) {
+		if (snprintf(buf, buf_sz, "%s", tmp_buf, len) < 0)
+			pr_notice("[%s] snprintf fail", __func__);
+	} else
+		return -1;
+
+	return len;
+}
+
+int connv2_factory_testcase(uint8_t *buf, u32 buf_sz)
+{
+#define CONN_DUMP_TESTCASE_BUF_SIZE 128
+	int ret = 0, len;
+	char tmp_buf[CONN_DUMP_TESTCASE_BUF_SIZE];
+
+	memset(tmp_buf, '\0', CONN_DUMP_TESTCASE_BUF_SIZE);
+	ret = conninfra_core_factory_testcase(tmp_buf, CONN_DUMP_TESTCASE_BUF_SIZE);
+	if (ret)
+		return ret;
+
+	len = strlen(tmp_buf);
+	if (len > 0 && len < CONN_DUMP_TESTCASE_BUF_SIZE) {
 		if (snprintf(buf, buf_sz, "%s", tmp_buf, len) < 0)
 			pr_notice("[%s] snprintf fail", __func__);
 	} else

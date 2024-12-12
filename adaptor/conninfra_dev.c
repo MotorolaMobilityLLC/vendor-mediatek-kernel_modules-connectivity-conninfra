@@ -435,6 +435,20 @@ int conn_adaptor_kern_dbg_handler(int x, int y, int z, char* buf, int buf_sz)
 		}
 		break;
 #if CONNINFRA_DBG_SUPPORT
+	case 0x50:
+		for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
+			if (atomic_read(&g_drv_gen_inst[i].enable) &&
+				g_drv_gen_inst[i].drv_gen_cb.factory_testcase) {
+				sz = (*(g_drv_gen_inst[i].drv_gen_cb.factory_testcase))(buf + offset, buf_sz - offset);
+				if (sz > 0)
+					offset += sz;
+				if (offset >= buf_sz) {
+					pr_notice("[%s] buf full", __func__);
+					break;
+				}
+			}
+		}
+		break;
 	case 0x60:
 		for (i = 0; i < CONN_ADAPTOR_DRV_SIZE; i++) {
 			if (atomic_read(&g_drv_gen_inst[i].enable) &&

@@ -496,6 +496,13 @@ int consys_hw_get_chip_info(char *buf, unsigned int size)
 	return 0;
 }
 
+int consys_hw_factory_testcase(char *buf, unsigned int size)
+{
+	if (consys_hw_ops && consys_hw_ops->consys_plt_factory_testcase)
+		consys_hw_ops->consys_plt_factory_testcase(buf, size);
+	return 0;
+}
+
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	if (consys_hw_ops->consys_plt_spi_read)

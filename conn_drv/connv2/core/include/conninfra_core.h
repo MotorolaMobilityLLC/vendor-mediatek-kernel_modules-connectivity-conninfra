@@ -166,6 +166,7 @@ typedef enum {
 	CONNINFRA_OPID_RFSPI_1_WRITE		= 21,
 	CONNINFRA_OPID_RFSPI_1_UPDATE_BITS	= 22,
 	CONNINFRA_OPID_GET_CHIP_INFO		= 23,
+	CONNINFRA_OPID_FACTORY_TESTCASE		= 24,
 	CONNINFRA_OPID_MAX
 } conninfra_core_opid;
 
@@ -257,6 +258,7 @@ int conninfra_core_spi_clock_switch(enum connsys_spi_speed_type type);
 int conninfra_core_reset_power_state(void);
 int conninfra_core_dump_power_state(char *buf, unsigned int size);
 int conninfra_core_get_chip_info(char *buf, unsigned int size);
+int conninfra_core_factory_testcase(char *buf, unsigned int size);
 int conninfra_core_pmic_event_cb(unsigned int, unsigned int);
 
 void conninfra_core_config_setup(void);
