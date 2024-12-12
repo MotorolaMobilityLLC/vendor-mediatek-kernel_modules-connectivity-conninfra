@@ -100,6 +100,7 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 #define TMP_LOG_SIZE 128
 #define MT6376_REG_SIZE 8
 #define PMIC_EXCEPTION_STRING_LEN 40
+#define FMD_DONE_BIT 6
 	u8 *register_dump;
 	u8 pmic_stat = 0;
 	u8 buck_oc_stat = 0, ldo_oc_stat = 0;
@@ -118,6 +119,7 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 	static int pmic_ov_count = 0;
 	char psw_oc_string[PMIC_EXCEPTION_STRING_LEN];
 	char pmic_ov_string[PMIC_EXCEPTION_STRING_LEN];
+	int fmd_done_exit = 0;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
@@ -134,6 +136,12 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 	}
 
 	register_dump = buffer + 4;
+
+	if (register_dump[25] & (1 << FMD_DONE_BIT))
+		fmd_done_exit = false;
+	else
+		fmd_done_exit = true;
+	pr_info("%s[%d], fmd_done_exit=%d\n", __func__, __LINE__, fmd_done_exit);
 
 	/* 1. OT/OV/UV status */
 	pmic_stat = register_dump[4] & (PMIC_STAT_FAIL);
@@ -175,6 +183,8 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 		&& ldo_oc_stat == 0
 		&& buck_pg_stat == 0 && ldo_pg_stat == 0){
 		pr_info("[%s] 1st time enable PMIC, BUCK_IO OC happen before reboot.\n", __func__);
+	} else if (fmd_done_exit == true){
+		pr_info("[%s] FMD normal exit, intentional trigger exception to leave.\n", __func__);
 	} else if (pmic_stat
 		|| buck_oc_stat || ldo_oc_stat
 		|| buck_pg_stat || ldo_pg_stat) {

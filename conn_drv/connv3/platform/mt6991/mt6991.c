@@ -58,6 +58,7 @@ static u32 g_custom_data_size = 0;
 static u8 g_custom_param[MT6653_PLAT_CUSTOM_DATA_SIZE] = {0};
 static struct connv3_dev_cb* g_dev_cb;
 static bool g_is_co_clock = false;
+static u16 clock_from_ap = 0;
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -289,6 +290,9 @@ static u32 connv3_clk_init_mt6991_mt6661(
 	regmap_read(map, MT6687_REG_GPIO_MODE0_ADDR, &dump4);
 	pr_info("[%s] [0x%x, 0x%x, 0x%x, 0x%x]\n", __func__, dump1, dump2, dump3, dump4);
 
+	clock_from_ap = 1;
+	pr_info("%s[%d], set clock_from_ap=%d\n", __func__, __LINE__, clock_from_ap);
+
 	return 0;
 }
 
@@ -345,6 +349,8 @@ u8* connv3_get_custom_option_mt6991(u32 *size)
 		/* Copy data to array */
 		memcpy(g_custom_param, &ext_32K_ticks, 2);
 		g_custom_param[2] = g_is_co_clock;
+		if (clock_from_ap)
+			g_custom_param[2] |= 0x02;
 		g_custom_data_size = MT6653_PLAT_CUSTOM_DATA_SIZE; /* one byte as reserved. */
 
 		is_init = true;
