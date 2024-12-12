@@ -36,6 +36,15 @@ enum connv3_plt_state {
 	CONNV3_PLT_STATE_MAX,
 };
 
+enum connv3_hw_init_result {
+	CONNV3_HW_INIT_OK = 0,
+	CONNV3_HW_INIT_ERROR_PLATFORM_OPS,
+	CONNV3_HW_INIT_ERROR_CLOCK,
+	CONNV3_HW_INIT_ERROR_PMIC,
+	CONNV3_HW_INIT_ERROR_PINCTRL,
+	CONNV3_HW_INIT_ERROR_MAX,
+};
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -46,7 +55,6 @@ struct connv3_dev_cb {
 };
 
 struct connv3_hw_ops_struct {
-	u32 (*connsys_plt_clk_init) (struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 	u32 (*connsys_plt_get_chipid) (void);
 	u32 (*connsys_plt_get_adie_chipid) (void);
 	u32 (*connsys_plt_pre_cal_blocking_enable) (void);
@@ -71,6 +79,7 @@ struct connv3_plat_data {
 	const void* platform_pinctrl_ops;
 	const void* platform_coredump_ops;
 	const void* platform_dbg_ops;
+	const void* platform_clock_ops;
 };
 
 /*******************************************************************************
@@ -106,7 +115,6 @@ int connv3_hw_pwr_rst(void);
 
 int connv3_hw_pmic_parse_state(char *buffer, int buf_sz);
 
-int connv3_hw_clk_init(struct platform_device *pdev, struct connv3_dev_cb *dev_cb);
 unsigned int connv3_hw_get_chipid(void);
 unsigned int connv3_hw_get_adie_chipid(void);
 /* Get platform supported reset type

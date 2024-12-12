@@ -43,6 +43,7 @@
 
 #if COMMON_KERNEL_PMIC_SUPPORT
 static int connv3_mt6373_probe(struct platform_device *pdev);
+static int connv3_mt6688_probe(struct platform_device *pdev);
 #endif
 
 static int pmic_mng_register_device(void);
@@ -56,6 +57,7 @@ static int pmic_mng_unregister_device(void);
 const struct connv3_platform_pmic_ops* g_connv3_platform_pmic_ops = NULL;
 #if COMMON_KERNEL_PMIC_SUPPORT
 struct regmap *g_connv3_regmap_mt6373;
+struct regmap *g_connv3_regmap_mt6688;
 #endif
 
 /*******************************************************************************
@@ -81,7 +83,26 @@ static struct platform_driver connv3_mt6373_dev_drv = {
 		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 		},
 };
-#endif
+
+#ifdef CONFIG_OF
+const struct of_device_id connv3_pmic_mt6688_of_ids[] = {
+	{.compatible = "mediatek,mt6688-connv3",},
+	{}
+};
+#endif /* CONFIG_OF */
+
+static struct platform_driver connv3_mt6688_dev_drv = {
+	.probe = connv3_mt6688_probe,
+	.driver = {
+		.name = "mt6688-connv3",
+#ifdef CONFIG_OF
+		.of_match_table = connv3_pmic_mt6688_of_ids,
+#endif /* CONFIG_OF */
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+	},
+};
+
+#endif /* COMMON_KERNEL_PMIC_SUPPORT */
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -180,6 +201,19 @@ static int connv3_mt6373_probe(struct platform_device *pdev)
 
 	return 0;
 }
+
+static int connv3_mt6688_probe(struct platform_device *pdev)
+{
+	g_connv3_regmap_mt6688 = dev_get_regmap(pdev->dev.parent, NULL);
+
+	if (!g_connv3_regmap_mt6688)
+		pr_notice("[%s] fail to get g_connv3_regmap_mt6688\n", __func__);
+	else
+		pr_info("[%s] get g_connv3_regmap_mt6688 successfully!\n", __func__);
+
+	return 0;
+}
+
 #endif
 
 static int pmic_mng_register_device(void)
@@ -192,6 +226,12 @@ static int pmic_mng_register_device(void)
 		pr_notice("[%s] connv3 pmic mt6373 registered failed(%d)\n", __func__, ret);
 	else
 		pr_info("[%s] connv3 pmic mt6373 registered successfully!\n", __func__);
+
+	ret = platform_driver_register(&connv3_mt6688_dev_drv);
+	if (ret)
+		pr_notice("[%s] connv3 pmic mt6688 registered failed(%d)\n", __func__, ret);
+	else
+		pr_info("[%s] connv3 pmic mt6688 registered successfully!\n", __func__);
 #endif
 	return 0;
 }
@@ -202,6 +242,10 @@ static int pmic_mng_unregister_device(void)
 	if (g_connv3_regmap_mt6373 != NULL) {
 		platform_driver_unregister(&connv3_mt6373_dev_drv);
 		g_connv3_regmap_mt6373 = NULL;
+	}
+	if (g_connv3_regmap_mt6688 != NULL) {
+		platform_driver_unregister(&connv3_mt6688_dev_drv);
+		g_connv3_regmap_mt6688 = NULL;
 	}
 #endif
 	return 0;
