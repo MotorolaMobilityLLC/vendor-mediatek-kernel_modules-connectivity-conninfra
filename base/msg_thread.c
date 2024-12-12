@@ -220,6 +220,7 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 	P_OSAL_SIGNAL signal = NULL;
 	int wait_ret = -1;
 	int ret = 0, cnt = 0;
+	unsigned int curr_timeoutValue = 0;
 
 	do {
 		if (!ctx || !op) {
@@ -253,10 +254,12 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 			break;
 		}
 
+		curr_timeoutValue = signal->timeoutValue;
+
 		/* wake up conninfra_cored */
 		osal_trigger_event(&ctx->evt);
 
-		if (signal->timeoutValue == 0) {
+		if (curr_timeoutValue == 0) {
 			//ret = -1;
 			/* Not set timeout, don't wait */
 			/* pr_info("[%s] timeout is zero", __func__);*/
@@ -294,7 +297,7 @@ int msg_evt_put_op_to_active(struct msg_thread_ctx *ctx, struct msg_op *op)
 		ret = op->result;
 	} while (0);
 
-	if (op != NULL && signal != NULL && signal->timeoutValue &&
+	if (op != NULL && signal != NULL && curr_timeoutValue &&
 		atomic_dec_and_test(&op->ref_count)) {
 		/* put Op back to freeQ */
 		msg_evt_put_op_to_free_queue(ctx, op);
