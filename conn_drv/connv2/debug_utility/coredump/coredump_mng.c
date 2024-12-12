@@ -224,3 +224,11 @@ void coredump_mng_get_emi_dump_offset(unsigned int *start, unsigned int *end)
 		}
 	}
 }
+
+unsigned int coredump_mng_exception_filter(char* exp)
+{
+    if (consys_platform_coredump_ops &&
+	    consys_platform_coredump_ops->consys_coredump_exception_filter)
+        return consys_platform_coredump_ops->consys_coredump_exception_filter(exp);
+    return 0;
+}

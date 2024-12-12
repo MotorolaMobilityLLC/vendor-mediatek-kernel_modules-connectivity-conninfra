@@ -1258,6 +1258,8 @@ static int conndump_send_fake_coredump(struct connsys_dump_ctx* ctx)
 
 static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump)
 {
+	int check;
+
 	if (ctx->info.issue_type == CONNSYS_ISSUE_DRIVER_ASSERT &&
 		strlen(ctx->info.reason) > 0) {
 		if (snprintf(
@@ -1285,6 +1287,13 @@ static void conndump_exception_show(struct connsys_dump_ctx* ctx, bool full_dump
 		coredump_mng_get_tag_name(ctx->conn_type),
 		ctx->info.exception_log,
 		strlen(ctx->info.exception_log));
+
+	check = coredump_mng_exception_filter(ctx->info.exception_log);
+	if (check) {
+		pr_notice("[%s] exception ignore, check = %d\n", __func__, check);
+		return;
+	}
+
 	/* Call debug API */
 	osal_dbg_common_exception_api(
 		coredump_mng_get_tag_name(ctx->conn_type),
