@@ -244,6 +244,8 @@ static u32 connv3_clk_init_mt6991_mt6661(
 {
 	u32 ret;
 	struct regmap *map = connv3_clock_mng_get_regmap();
+	u32 reg0, reg1;
+	u32 dump1, dump2, dump3, dump4;
 
 	ret = connv3_clk_init_mt6991(pdev, dev_cb);
 
@@ -263,10 +265,29 @@ static u32 connv3_clk_init_mt6991_mt6661(
 		return ENODEV;
 	}
 
+	regmap_read(map, 0x0, &reg0);
+	regmap_read(map, 0x1, &reg1);
+
+	pr_info("[%s] Clock info: [0x%x, 0x%x]\n", __func__, reg0, reg1);
 	regmap_write(map, MT6687_REG_TOP_XO_BUF_CTL6_4_ADDR, 0x4);
 	regmap_write(map, MT6687_REG_PMRC_EXT_REQ_MASK_ADDR, 0xb);
 	regmap_write(map, MT6687_REG_DCXO_RFCK1A_ELR_CW0_ADDR, 0x5);
-	regmap_write(map, MT6687_REG_GPIO_MODE0_ADDR, 0x3);
+
+	/* Unlock for writting MT6687_REG_GPIO_MODE0_ADDR */
+	regmap_write(map, 0x3a9, 0x87);
+	regmap_write(map, 0x3aa, 0x66);
+	/* Use set/clr for MT6687_REG_GPIO_MODE0_ADDR[3:0] = 0x3 */
+	regmap_write(map, MT6687_REG_GPIO_MODE0_CLR, 0xf);
+	regmap_write(map, MT6687_REG_GPIO_MODE0_SET, 0x3);
+	/* Lock back */
+	regmap_write(map, 0x3a9, 0x0);
+	regmap_write(map, 0x3aa, 0x0);
+
+	regmap_read(map, MT6687_REG_TOP_XO_BUF_CTL6_4_ADDR, &dump1);
+	regmap_read(map, MT6687_REG_PMRC_EXT_REQ_MASK_ADDR, &dump2);
+	regmap_read(map, MT6687_REG_DCXO_RFCK1A_ELR_CW0_ADDR, &dump3);
+	regmap_read(map, MT6687_REG_GPIO_MODE0_ADDR, &dump4);
+	pr_info("[%s] [0x%x, 0x%x, 0x%x, 0x%x]\n", __func__, dump1, dump2, dump3, dump4);
 
 	return 0;
 }
