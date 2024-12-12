@@ -860,6 +860,7 @@ static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customi
 {
 	char *exception_log;
 	char *exp_tag_name = connv3_dump_mng_get_exception_tag_name(ctx->conn_type);
+	int check;
 
 	if (customized_string != NULL && strlen(customized_string) != 0) {
 		pr_info("[%s] use customized_string=%s\n", __func__, customized_string);
@@ -877,6 +878,13 @@ static int connv3_dump_exception_show(struct connv3_dump_ctx *ctx, char *customi
 		exp_tag_name,
 		ctx->issue_info.exception_log,
 		strlen(ctx->issue_info.exception_log));
+
+	check = connv3_dump_mng_exception_filter(ctx->issue_info.exception_log);
+	if (check) {
+		pr_notice("[%s] exception ignore, check = %d\n", __func__, check);
+		return 0;
+	}
+
 	/* Call debug API */
 	osal_dbg_common_exception_api(
 		exp_tag_name,
