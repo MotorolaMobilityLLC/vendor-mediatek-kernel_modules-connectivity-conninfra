@@ -758,8 +758,9 @@ static int connv3_dump_end_dump(struct connv3_dump_ctx *ctx)
 	pr_info("[%s] tag=[%s] dump command=[%s] cmd length=[%d]\n", __func__, cmd_tag, cmd_str, strlen(cmd_str));
 	ret = conndump_netlink_send_to_native(ctx->conn_type, cmd_tag, cmd_str, strlen(cmd_str));
 
-	if (ret < 0) {
+	if (ret <= 0) {
 		pr_err("Send end or emi command fail, ret = %d\n", ret);
+		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_END_TIMEOUT);
 		return -1;
 	}
 
@@ -802,8 +803,9 @@ static int connv3_send_emi_dump(struct connv3_dump_ctx *ctx, bool need_end)
 	pr_info("[%s] tag=[%s] dump command=[%s] cmd length=[%d]\n", __func__, cmd_tag, cmd_str, strlen(cmd_str));
 	ret = conndump_netlink_send_to_native(ctx->conn_type, cmd_tag, cmd_str, strlen(cmd_str));
 
-	if (ret < 0) {
+	if (ret <= 0) {
 		pr_err("Send end or emi command fail, ret = %d\n", ret);
+		connv3_dump_set_dump_state(ctx, CONNV3_COREDUMP_STATE_EMI_TIMEOUT);
 		return -1;
 	}
 
