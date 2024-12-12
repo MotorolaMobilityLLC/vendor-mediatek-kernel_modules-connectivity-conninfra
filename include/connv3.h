@@ -242,6 +242,15 @@ struct connv3_sub_drv_ops_cb {
 int connv3_sub_drv_ops_register(enum connv3_drv_type drv_type, struct connv3_sub_drv_ops_cb *cb);
 int connv3_sub_drv_ops_unregister(enum connv3_drv_type drv_type);
 
+/* for security efuse download */
+struct connv3_efuse_on_cb {
+	int (*pre_on_cb)(void);
+	int (*efuse_on_cb)(void);
+};
+int connv3_efuse_on_ops_register(enum connv3_drv_type drv_type, struct connv3_efuse_on_cb *cb);
+int connv3_efuse_on_ops_unregister(enum connv3_drv_type drv_type);
+
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
