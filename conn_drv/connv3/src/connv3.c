@@ -76,6 +76,9 @@ int connv3_pwr_on(enum connv3_drv_type drv_type)
 		DUMP_LOG();
 		return CONNV3_ERR_RST_ONGOING;
 	}
+	if (connv3_core_is_fmd_locking()) {
+		return CONNV3_ERR_FMD_MODE;
+	}
 
 	connv3_core_pre_cal_blocking();
 
@@ -89,6 +92,9 @@ int connv3_pwr_on_done(enum connv3_drv_type drv_type)
 	if (connv3_core_is_rst_locking()) {
 		DUMP_LOG();
 		return CONNV3_ERR_RST_ONGOING;
+	}
+	if (connv3_core_is_fmd_locking()) {
+		return CONNV3_ERR_FMD_MODE;
 	}
 
 	connv3_core_pre_cal_blocking();
@@ -104,6 +110,9 @@ int connv3_pwr_off(enum connv3_drv_type drv_type)
 	if (connv3_core_is_rst_locking()) {
 		DUMP_LOG();
 		return CONNV3_ERR_RST_ONGOING;
+	}
+	if (connv3_core_is_fmd_locking()) {
+		return CONNV3_ERR_FMD_MODE;
 	}
 
 	connv3_core_pre_cal_blocking();
@@ -294,6 +303,12 @@ u8* connv3_get_plat_config(u32 *size)
 	return connv3_hw_get_custom_option(size);
 }
 EXPORT_SYMBOL(connv3_get_plat_config);
+
+int connv3_enter_fmd_mode(void)
+{
+	return connv3_core_enter_fmd_mode();
+}
+EXPORT_SYMBOL(connv3_enter_fmd_mode);
 
 int connv3_sub_drv_ops_register(enum connv3_drv_type type, struct connv3_sub_drv_ops_cb *cb)
 {
