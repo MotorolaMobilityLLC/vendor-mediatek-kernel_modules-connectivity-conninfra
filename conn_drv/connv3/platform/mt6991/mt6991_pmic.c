@@ -62,6 +62,8 @@ static char connsys_chip_ecid[CHIP_ECIP_INFO_LENGTH];
 static bool connsys_chip_ecid_ready = false;
 static char connsys_pmic_ecid[CHIP_ECIP_INFO_LENGTH];
 static bool connsys_pmic_ecid_ready = false;
+static char g_connsys_adie_chip_info[CHIP_ECIP_INFO_LENGTH];
+static bool g_connsys_adie_chip_info_ready = false;
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -73,6 +75,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6991(u32 enable);
 int connv3_plt_pmic_vsel_ctrl_mt6991(u32 enable);
 int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz);
 int connv3_plt_pmic_get_connsys_chip_info_mt6991(char *connsys_ecid, int connsys_ecid_size);
+int connv3_plt_pmic_get_connsys_adie_chip_info_mt6991(char *connsys_adie_chip_info, int connsys_adie_chip_info_size);
 int connv3_plt_pmic_get_pmic_chip_info_mt6991(char *pmic_ecid, int pmic_ecid_size);
 int connv3_plt_pmic_pwr_rst_mt6991(void);
 
@@ -82,6 +85,7 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991 = {
 	.pmic_vsel_ctrl = connv3_plt_pmic_vsel_ctrl_mt6991,
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6991,
 	.pmic_get_connsys_chip_info = connv3_plt_pmic_get_connsys_chip_info_mt6991,
+	.pmic_get_connsys_adie_chip_info = connv3_plt_pmic_get_connsys_adie_chip_info_mt6991,
 	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6991,
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
 };
@@ -252,6 +256,16 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 		else
 			connsys_chip_ecid_ready = true;
 	}
+	if (g_connsys_adie_chip_info_ready == false) {
+		ret = snprintf(
+			g_connsys_adie_chip_info, CHIP_ECIP_INFO_LENGTH -1,
+			"[MT6653_ADIE_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			buffer[88], buffer[89], buffer[90], buffer[91], buffer[92],buffer[93], buffer[94], buffer[95]);
+		if (ret <= 0)
+			pr_notice("[%s] snprintf adie info fail, ret = %d", __func__, ret);
+		else
+			g_connsys_adie_chip_info_ready = true;
+	}
 
 	if (parse_pmic_register_once == 1)
 		return 0;
@@ -267,6 +281,13 @@ int connv3_plt_pmic_get_connsys_chip_info_mt6991(char *connsys_ecid, int connsys
 	if (connsys_chip_ecid_ready == true)
 		strncpy(connsys_ecid, connsys_chip_ecid, connsys_ecid_size);
 
+	return 0;
+}
+
+int connv3_plt_pmic_get_connsys_adie_chip_info_mt6991(char *connsys_adie_chip_info, int connsys_adie_chip_info_size)
+{
+	if (g_connsys_adie_chip_info_ready == true)
+		strncpy(connsys_adie_chip_info, g_connsys_adie_chip_info, connsys_adie_chip_info_size);
 	return 0;
 }
 
