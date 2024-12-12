@@ -118,7 +118,20 @@ static OSAL_TIMER g_voltage_change_timer;
 static int consys_vcn13_oc_notify(struct notifier_block *nb, unsigned long event,
 				  void *unused)
 {
+	static int oc_counter = 0;
+	static int oc_dump = 0;
+
 	if (event != REGULATOR_EVENT_OVER_CURRENT)
+		return NOTIFY_OK;
+
+	oc_counter++;
+	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
+
+	if (oc_counter <= 30)
+		oc_dump = 1;
+	else if (oc_counter == (oc_dump * 100))
+		oc_dump++;
+	else
 		return NOTIFY_OK;
 
 	if (g_dev_cb != NULL && g_dev_cb->conninfra_pmic_event_notifier != NULL)
@@ -130,8 +143,6 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 {
 #define ATOP_DUMP_NUM 10
 #define LOG_TMP_BUF_SZ 256
-	static int oc_counter = 0;
-	static int oc_dump = 0;
 	int ret;
 	unsigned int adie_value = 0;
 	unsigned int value1 = 0, value2 = 0, value3 = 0;
@@ -143,16 +154,6 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 	int index;
 	char tmp[LOG_TMP_BUF_SZ] = {'\0'};
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
-
-	oc_counter++;
-	pr_info("[%s] VCN13 OC times: %d\n", __func__, oc_counter);
-
-	if (oc_counter <= 30)
-		oc_dump = 1;
-	else if (oc_counter == (oc_dump * 100))
-		oc_dump++;
-	else
-		return NOTIFY_OK;
 
 	consys_hw_is_bus_hang();
 	ret = consys_hw_force_conninfra_wakeup();
@@ -166,9 +167,9 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 	if (consys_sema_acquire_timeout_mt6893(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_SUCCESS) {
 		value3 = CONSYS_REG_READ(CONN_INFRA_SYSRAM_BASE_ADDR + CONN_INFRA_SYSRAM_SW_CR_A_DIE_TOP_CK_EN_CTRL);
 		consys_sema_release_mt6893(CONN_SEMA_CONN_INFRA_COMMON_SYSRAM_INDEX);
-		pr_info("[VCN13 OC] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x 0x1805_2830:0x%08x\n", value1, value2, value3);
+		pr_info("[VCN13] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x 0x1805_2830:0x%08x\n", value1, value2, value3);
 	} else {
-		pr_info("[VCN13 OC] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x\n", value1, value2);
+		pr_info("[VCN13] D-die: 0x1800_1900:0x%08x 0x1800_50A8:0x%08x\n", value1, value2);
 	}
 
 	for (index = 0; index < ATOP_DUMP_NUM; index++) {
@@ -178,7 +179,7 @@ static int consys_plt_pmic_event_notifier(unsigned int id, unsigned int event)
 		else
 			pr_notice("%s snprintf failed\n", __func__);
 	}
-	pr_info("[VCN13 OC] ATOP:%s\n", tmp_buf);
+	pr_info("[VCN13] ATOP:%s\n", tmp_buf);
 	consys_hw_force_conninfra_sleep();
 
 	return NOTIFY_OK;
@@ -355,10 +356,11 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable, unsigned int curr_sta
 	int ret;
 
 	if (enable) {
+		if (curr_status != 0)
+			return 0;
 		if (consys_is_rc_mode_enable_mt6893()) {
 			/* RC mode */
 			/* VCN18 */
-
 #if COMMON_KERNEL_PMIC_SUPPORT
 			/*  PMRC_EN[7][6][5][4] HW_OP_EN = 1, HW_OP_CFG = 0 */
 			regmap_write(g_regmap, PMIC_RG_LDO_VCN18_OP_EN_SET_ADDR, 1 << 7);
@@ -419,6 +421,8 @@ int consys_plt_pmic_common_power_ctrl(unsigned int enable, unsigned int curr_sta
 				pr_err("Enable VCN13 fail. ret=%d\n", ret);
 
 		} else {
+			if (next_status != 0)
+				return 0;
 			/* Legacy mode */
 #if COMMON_KERNEL_PMIC_SUPPORT
 			/* HW_OP_EN = 1, HW_OP_CFG = 1 */
