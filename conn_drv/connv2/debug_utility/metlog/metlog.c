@@ -278,7 +278,6 @@ static int met_thread(void *pvData)
 
 		write_ptr = readl(met_write_cr);
 	}
-	ret = 0;
 
 met_exit:
 	if (met_dump_buf1)
