@@ -48,6 +48,7 @@ struct a_die_reg_config {
 ********************************************************************************
 */
 static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+static unsigned long g_sema_irq_flags = 0;
 
 static int consys_spi_read_nolock(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data);
 static int consys_spi_write_nolock(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data);
@@ -1594,7 +1595,6 @@ static int consys_sema_acquire(unsigned int index)
 int consys_sema_acquire_timeout_mt6877(unsigned int index, unsigned int usec)
 {
 	int i;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return CONN_SEMA_GET_FAIL;
@@ -1602,7 +1602,7 @@ int consys_sema_acquire_timeout_mt6877(unsigned int index, unsigned int usec)
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
 			sema_get_time[index] = jiffies;
 			if (index == CONN_SEMA_RFSPI_INDEX)
-				local_irq_save(flags);
+				local_irq_save(g_sema_irq_flags);
 			return CONN_SEMA_GET_SUCCESS;
 		}
 		udelay(1);
@@ -1624,7 +1624,6 @@ int consys_sema_acquire_timeout_mt6877(unsigned int index, unsigned int usec)
 void consys_sema_release_mt6877(unsigned int index)
 {
 	u64 duration;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
@@ -1633,7 +1632,7 @@ void consys_sema_release_mt6877(unsigned int index)
 
 	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
 	if (index == CONN_SEMA_RFSPI_INDEX)
-		local_irq_restore(flags);
+		local_irq_restore(g_sema_irq_flags);
 	if (duration > SEMA_HOLD_TIME_THRESHOLD)
 		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
 }
@@ -1763,6 +1762,13 @@ static int consys_spi_read_nolock(enum sys_spi_subsystem subsystem, unsigned int
 int consys_spi_read_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	int ret = 0;
+
+	/* For FM/GPS, do operation without semaphore.
+	 * Because only driver part uses TOP SPI to access a-die.
+	 */
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_read_nolock(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6877(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI READ] Require semaphore fail\n");
@@ -1829,6 +1835,12 @@ int consys_spi_write_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr,
 {
 	int ret = 0;
 
+	/* For FM/GPS, do operation without semaphore.
+	 * Because only driver part uses TOP SPI to access a-die.
+	 */
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_write_nolock(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6877(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_err("[SPI WRITE] Require semaphore fail\n");
@@ -1841,25 +1853,17 @@ int consys_spi_write_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr,
 	return ret;
 }
 
-int consys_spi_update_bits_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+static int consys_spi_update_bits_nolock(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
 {
 	int ret = 0;
 	unsigned int curr_val = 0;
 	unsigned int new_val = 0;
 	bool change = false;
 
-	/* Get semaphore before updating bits */
-	if (consys_sema_acquire_timeout_mt6877(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
-		pr_err("[SPI WRITE] Require semaphore fail\n");
-		return CONNINFRA_SPI_OP_FAIL;
-	}
-
 	ret = consys_spi_read_nolock(subsystem, addr, &curr_val);
-
 	if (ret) {
-		consys_sema_release_mt6877(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
-		pr_err("[%s][%s] Get 0x%08x error, ret=%d",
+		pr_notice("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
 #endif
 		return CONNINFRA_SPI_OP_FAIL;
@@ -1870,7 +1874,32 @@ int consys_spi_update_bits_mt6877(enum sys_spi_subsystem subsystem, unsigned int
 
 	if (change) {
 		ret = consys_spi_write_nolock(subsystem, addr, new_val);
+#ifndef CONFIG_FPGA_EARLY_PORTING
+		pr_notice("[%s][%s] write 0x%08x to 0x%08x error, ret=%d",
+			__func__, get_spi_sys_name(subsystem), addr, new_val, ret);
+#endif
 	}
+
+	return ret;
+}
+
+int consys_spi_update_bits_mt6877(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data, unsigned int mask)
+{
+	int ret = 0;
+
+	/* For FM/GPS, do operation without semaphore.
+	 * Because only driver part uses TOP SPI to access a-die.
+	 */
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_update_bits_nolock(subsystem, addr, data, mask);
+
+	/* Get semaphore before updating bits */
+	if (consys_sema_acquire_timeout_mt6877(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+		pr_notice("[SPI WRITE] Require semaphore fail\n");
+		return CONNINFRA_SPI_OP_FAIL;
+	}
+
+	ret = consys_spi_update_bits_nolock(subsystem, addr, data, mask);
 
 	consys_sema_release_mt6877(CONN_SEMA_RFSPI_INDEX);
 
