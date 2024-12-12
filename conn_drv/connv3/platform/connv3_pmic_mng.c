@@ -156,6 +156,17 @@ int connv3_pmic_mng_get_connsys_chip_info(char *connsys_ecid, int connsys_ecid_s
         return ret;
 }
 
+int connv3_pmic_mng_get_connsys_adie_chip_info(char *connsys_adie_info, int connsys_adie_info_size)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->pmic_get_connsys_adie_chip_info)
+		ret = g_connv3_platform_pmic_ops->pmic_get_connsys_adie_chip_info(connsys_adie_info, connsys_adie_info_size);
+
+	return 0;
+}
+
 int connv3_pmic_mng_get_pmic_chip_info(char *pmic_ecid, int pmic_ecid_size)
 {
 	int ret = 0;
