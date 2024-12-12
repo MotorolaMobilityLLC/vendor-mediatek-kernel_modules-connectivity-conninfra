@@ -5,7 +5,7 @@
 
 #include "connv3_hw_dbg.h"
 
-#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240507"
+#define MT6653_CONNINFRA_DEBUGSOP_DUMP_VERSION "20240620"
 
 const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -83,19 +83,13 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_a[] = {
 	{true, 0x20023408, 0, 0x11, true, 0x20023404},
 	{true, 0x20023408, 0, 0x12, true, 0x20023404}, //A72
 	{true, 0x20023408, 0, 0x2e, true, 0x20023404}, //A73
-	{false, 0, 0, 0, true, 0x20020074}, //A74
-	{false, 0, 0, 0, true, 0x20020078},
-	{false, 0, 0, 0, true, 0x2002007c},
-	{false, 0, 0, 0, true, 0x20020084},
-	{false, 0, 0, 0, true, 0x20020088},
 	{false, 0, 0, 0, true, 0x20023454},
-	{false, 0, 0, 0, true, 0x20023458}, //A80
-	{false, 0, 0, 0, true, 0x20020080}, //A81
+	{false, 0, 0, 0, true, 0x20023458},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_a = {
 	"PSOP_1_1_A", "SectionA - IF CONN_INFRA ON read check ok",
-	81, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
+	75, sizeof(mt6653_conn_infra_bus_a)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_a
 };
 
@@ -144,12 +138,11 @@ const struct connv3_dbg_command mt6653_conn_infra_bus_b[] = {
 	{false, 0, 0, 0, true, 0x7c00e13c},
 	{false, 0, 0, 0, true, 0x7c00e140},
 	{false, 0, 0, 0, true, 0x7c00e110},
-	{false, 0, 0, 0, true, 0x2002008c},
 };
 
 const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_b = {
 	"PSOP_1_1_B", "SectionB - IF CONN_INFRA OFF read check ok - bus",
-	44, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
+	43, sizeof(mt6653_conn_infra_bus_b)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_b
 };
 
@@ -175,6 +168,23 @@ const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_c = {
 	"PSOP_1_1_C", "SectionC - IF CONN_INFRA OFF read check ok - slpprot",
 	14, sizeof(mt6653_conn_infra_bus_c)/sizeof(struct connv3_dbg_command),
 	mt6653_conn_infra_bus_c
+};
+
+const struct connv3_dbg_command mt6653_conn_infra_bus_d[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{false, 0, 0, 0, true, 0x20020074},
+	{false, 0, 0, 0, true, 0x20020078},
+	{false, 0, 0, 0, true, 0x2002007c},
+	{false, 0, 0, 0, true, 0x20020080},
+	{false, 0, 0, 0, true, 0x20020084},
+	{false, 0, 0, 0, true, 0x20020088},
+	{false, 0, 0, 0, true, 0x2002008c},
+};
+
+const struct connv3_dump_list mt6653_dump_list_conn_infra_bus_d = {
+	"PSOP_1_1_D", "SectionD - IF through von TO,force conn_wake_up read check ok",
+	7, sizeof(mt6653_conn_infra_bus_d)/sizeof(struct connv3_dbg_command),
+	mt6653_conn_infra_bus_d
 };
 
 const struct connv3_dbg_command mt6653_connsys_power_b[] = {
