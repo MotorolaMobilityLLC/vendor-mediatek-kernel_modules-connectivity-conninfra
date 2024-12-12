@@ -96,12 +96,19 @@ unsigned int g_spurious_pmic_exception_mt6991 = 1;
 int g_faultb_gpio_mt6991 = -1, g_pmic_en_gpio_mt6991 = -1;
 static irqreturn_t pmic_fault_handler(int irq, void * arg)
 {
+#define PMIC_EXCEPTION_STRING_LEN	40
+	static int pmic_exception_count = 0;
+	char pmic_exception_string[PMIC_EXCEPTION_STRING_LEN];
+
 	if (g_spurious_pmic_exception_mt6991) {
 		pr_info("[%s] g_spurious_pmic_exception_mt6991\n", __func__);
 		return IRQ_HANDLED;
 	}
 
 	pr_err("[%s] Get PMIC FaultB interrupt\n", __func__);
+	snprintf(pmic_exception_string, PMIC_EXCEPTION_STRING_LEN,
+		"[connv3][pmic]pmic_exception_count=%d\n", ++pmic_exception_count);
+	conn_dbg_add_log(0, pmic_exception_string);
 	schedule_work(&g_pmic_faultb_work_mt6991);
 
 	return IRQ_HANDLED;

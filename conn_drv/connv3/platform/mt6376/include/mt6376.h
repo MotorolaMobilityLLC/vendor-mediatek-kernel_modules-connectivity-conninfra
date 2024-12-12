@@ -6,6 +6,8 @@
 #ifndef _PLATFORM_CONNV3_PMIC_MT376_H_
 #define _PLATFORM_CONNV3_PMIC_MT376_H_
 
+#include "conn_dbg.h" /* for API conn_dbg_add_log() */
+
 /* Input buffer format: 4 byte length + 21 byte register_dump
  * register_dump[0~17]: slave: PMIC
  * register_dump[0] : 0x18[1,2,4,5]: OC of [BuckD, BuckIO, BuckR, BuckVB]
@@ -97,6 +99,7 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 {
 #define TMP_LOG_SIZE 128
 #define MT6376_REG_SIZE 8
+#define PMIC_EXCEPTION_STRING_LEN 40
 	u8 *register_dump;
 	u8 pmic_stat = 0;
 	u8 buck_oc_stat = 0, ldo_oc_stat = 0;
@@ -111,6 +114,10 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 	const char *pmic_exception_type_str[MT6376_REG_SIZE] = {"", "", "", "", "", "OverTemperature ", "OverVoltage ", "UVLO "};
 	const char *buck_name_str[MT6376_REG_SIZE] = {"", "BUCK_D ", "BUCK_IO ", "", "BUCK_R ", "PSW_VB ", "", ""};
 	const char *ldo_name_str[MT6376_REG_SIZE] = {"RFLDO ", "HIOLDO ", "PHYLDO ", "IOLDO ", "ALDO ", "MLDO ", "ANALDO ", "PALDO "};
+	static int psw_oc_count = 0;
+	static int pmic_ov_count = 0;
+	char psw_oc_string[PMIC_EXCEPTION_STRING_LEN];
+	char pmic_ov_string[PMIC_EXCEPTION_STRING_LEN];
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
@@ -147,6 +154,18 @@ static inline int connv3_pmic_parse_state_mt6376(char *buffer, int buf_sz)
 	i2c_last_dev = register_dump[15];
 	i2c_last_addr = register_dump[16];
 	i2c_last_wdata = register_dump[17];
+
+	if ((register_dump[0] & PMIC_PSW_VB_OC_EVT)) {
+		if (snprintf(psw_oc_string, PMIC_EXCEPTION_STRING_LEN, "[connv3][pmic]psw_oc_count=%d\n",
+			++psw_oc_count) < 0)
+			pr_notice("log psw_oc_count fail\n");
+		conn_dbg_add_log(0, psw_oc_string);
+	} else if ((register_dump[4] & PMIC_SYSOV_EVT)) {
+		if (snprintf(pmic_ov_string, PMIC_EXCEPTION_STRING_LEN, "[connv3][pmic]pmic_ov_count=%d\n",
+			++pmic_ov_count) < 0)
+			pr_notice("log pmic_ov_count fail\n");
+		conn_dbg_add_log(0, pmic_ov_string);
+	}
 
 	if (s_first_dump && pmic_stat == PMIC_SYSUV_EVT
 		&& buck_oc_stat == 0 && ldo_oc_stat == 0
