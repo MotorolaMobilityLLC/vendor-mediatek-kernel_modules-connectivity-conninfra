@@ -116,7 +116,7 @@ struct platform_device *get_consys_device(void)
 
 int consys_hw_get_clock_schematic(void)
 {
-	if (consys_hw_ops->consys_plt_co_clock_type)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_co_clock_type)
 		return consys_hw_ops->consys_plt_co_clock_type();
 
 	pr_err("consys_hw_ops->consys_co_clock_type not supported\n");
@@ -126,7 +126,7 @@ int consys_hw_get_clock_schematic(void)
 
 unsigned int consys_hw_chipid_get(void)
 {
-	if (consys_hw_ops->consys_plt_soc_chipid_get)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_soc_chipid_get)
 		return consys_hw_ops->consys_plt_soc_chipid_get();
 
 	pr_err("consys_plt_soc_chipid_get not supported\n");
@@ -136,7 +136,7 @@ unsigned int consys_hw_chipid_get(void)
 
 unsigned int consys_hw_get_hw_ver(void)
 {
-	if (consys_hw_ops->consys_plt_get_hw_ver)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_get_hw_ver)
 		return consys_hw_ops->consys_plt_get_hw_ver();
 	return 0;
 }
@@ -178,6 +178,10 @@ int consys_hw_pwr_off(unsigned int curr_status, unsigned int off_radio)
 	unsigned int next_status = curr_status & ~(0x1 << off_radio);
 	int ret = 0;
 
+	if (consys_hw_ops == NULL) {
+		pr_info("%s, there is no consys_hw_ops\n", __func__);
+		return 0;
+	}
 	if (next_status == 0) {
 		pr_info("Last power off: %d\n", off_radio);
 		pmic_mng_event_cb(0, 0);
@@ -231,7 +235,7 @@ int _consys_hw_pwr_on_rollback(enum conninfra_pwr_on_rollback_type type,
 			pr_info("Conninfra bus error, code=%d", ret);
 		fallthrough;
 	case CONNINFRA_PWR_ON_CONNINFRA_HW_POWER_FAIL:
-		if (consys_hw_ops->consys_plt_conninfra_on_power_ctrl) {
+		if (consys_hw_ops && consys_hw_ops->consys_plt_conninfra_on_power_ctrl) {
 			ret = consys_hw_ops->consys_plt_conninfra_on_power_ctrl(0);
 			if (ret)
 				pr_err("[%s] turn off hw power fail, ret=%d\n", __func__, ret);
@@ -278,7 +282,7 @@ unsigned int consys_hw_detect_adie_chipid(unsigned int drv_type)
 		return g_adie_chipid[drv_type];
 	}
 
-	if (consys_hw_ops->consys_plt_adie_detection) {
+	if (consys_hw_ops && consys_hw_ops->consys_plt_adie_detection) {
 		chipid = consys_hw_ops->consys_plt_adie_detection(drv_type);
 
 		if (chipid > 0) {
@@ -297,6 +301,11 @@ int consys_hw_pwr_on(unsigned int curr_status, unsigned int on_radio)
 {
 	int ret;
 	unsigned int next_status = (curr_status | (0x1 << on_radio));
+
+	if (consys_hw_ops == NULL) {
+		pr_info("%s, there is no consys_hw_ops\n", __func__);
+		return 0;
+	}
 
 	/* first power on */
 	if (curr_status == 0) {
@@ -505,28 +514,28 @@ int consys_hw_factory_testcase(char *buf, unsigned int size)
 
 int consys_hw_spi_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
-	if (consys_hw_ops->consys_plt_spi_read)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_read)
 		return consys_hw_ops->consys_plt_spi_read(subsystem, addr, data);
 	return -1;
 }
 
 int consys_hw_spi_1_read(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
-	if (consys_hw_ops->consys_plt_spi_read)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_read)
 		return consys_hw_ops->consys_plt_spi_1_read(subsystem, addr, data);
 	return -1;
 }
 
 int consys_hw_spi_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
-	if (consys_hw_ops->consys_plt_spi_write)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_write)
 		return consys_hw_ops->consys_plt_spi_write(subsystem, addr, data);
 	return -1;
 }
 
 int consys_hw_spi_1_write(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
-	if (consys_hw_ops->consys_plt_spi_write)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_write)
 		return consys_hw_ops->consys_plt_spi_1_write(subsystem, addr, data);
 	return -1;
 }
@@ -534,7 +543,7 @@ int consys_hw_spi_1_write(enum sys_spi_subsystem subsystem, unsigned int addr, u
 int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
 					 unsigned int data, unsigned int mask)
 {
-	if (consys_hw_ops->consys_plt_spi_update_bits)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_update_bits)
 		return consys_hw_ops->consys_plt_spi_update_bits(subsystem, addr, data, mask);
 	return -1;
 }
@@ -542,21 +551,21 @@ int consys_hw_spi_update_bits(enum sys_spi_subsystem subsystem, unsigned int add
 int consys_hw_spi_1_update_bits(enum sys_spi_subsystem subsystem, unsigned int addr,
 					 unsigned int data, unsigned int mask)
 {
-	if (consys_hw_ops->consys_plt_spi_update_bits)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_update_bits)
 		return consys_hw_ops->consys_plt_spi_1_update_bits(subsystem, addr, data, mask);
 	return -1;
 }
 
 int consys_hw_adie_top_ck_en_on(enum consys_adie_ctl_type type)
 {
-	if (consys_hw_ops->consys_plt_adie_top_ck_en_on)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_adie_top_ck_en_on)
 		return consys_hw_ops->consys_plt_adie_top_ck_en_on(type);
 	return -1;
 }
 
 int consys_hw_adie_top_ck_en_off(enum consys_adie_ctl_type type)
 {
-	if (consys_hw_ops->consys_plt_adie_top_ck_en_off)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_adie_top_ck_en_off)
 		return consys_hw_ops->consys_plt_adie_top_ck_en_off(type);
 	return -1;
 }
@@ -620,7 +629,7 @@ static int _consys_hw_conninfra_wakeup(void)
 {
 	bool wakeup = false, ret;
 
-	if (consys_hw_ops->consys_plt_conninfra_wakeup) {
+	if (consys_hw_ops && consys_hw_ops->consys_plt_conninfra_wakeup) {
 		if (g_conninfra_wakeup_ref_cnt == 0)  {
 			ret = consys_hw_ops->consys_plt_conninfra_wakeup();
 			if (ret) {
@@ -640,7 +649,7 @@ static void _consys_hw_conninfra_sleep(void)
 {
 	bool sleep = false;
 
-	if (consys_hw_ops->consys_plt_conninfra_sleep &&
+	if (consys_hw_ops && consys_hw_ops->consys_plt_conninfra_sleep &&
 		--g_conninfra_wakeup_ref_cnt == 0) {
 		sleep = true;
 		consys_hw_ops->consys_plt_conninfra_sleep();
@@ -666,14 +675,14 @@ int consys_hw_force_conninfra_sleep(void)
 
 int consys_hw_spi_clock_switch(enum connsys_spi_speed_type type)
 {
-	if (consys_hw_ops->consys_plt_spi_clock_switch)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_spi_clock_switch)
 		return consys_hw_ops->consys_plt_spi_clock_switch(type);
 	return -1;
 }
 
 void consys_hw_config_setup(void)
 {
-	if (consys_hw_ops->consys_plt_config_setup)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_config_setup)
 		consys_hw_ops->consys_plt_config_setup();
 }
 
@@ -685,7 +694,7 @@ int consys_hw_pmic_event_cb(unsigned int id, unsigned int event)
 
 int consys_hw_bus_clock_ctrl(enum consys_drv_type drv_type, unsigned int bus_clock, int status)
 {
-	if (consys_hw_ops->consys_plt_bus_clock_ctrl)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_bus_clock_ctrl)
 		return consys_hw_ops->consys_plt_bus_clock_ctrl(drv_type, bus_clock, status);
 	else
 		return -1;
@@ -771,21 +780,21 @@ int consys_hw_tcxo_parser(struct platform_device *pdev)
 
 u64 consys_hw_soc_timestamp_get(void)
 {
-	if (consys_hw_ops->consys_plt_soc_timestamp_get)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_soc_timestamp_get)
 		return consys_hw_ops->consys_plt_soc_timestamp_get();
 	return 0;
 }
 
 int consys_hw_pre_cal_backup(unsigned int offset, unsigned int size)
 {
-	if (consys_hw_ops->consys_plt_pre_cal_backup)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_pre_cal_backup)
 		return consys_hw_ops->consys_plt_pre_cal_backup(offset, size);
 	return 0;
 }
 
 int consys_hw_pre_cal_clean_data(void)
 {
-	if (consys_hw_ops->consys_plt_pre_cal_clean_data)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_pre_cal_clean_data)
 		return consys_hw_ops->consys_plt_pre_cal_clean_data();
 	return 0;
 }
@@ -804,7 +813,7 @@ int consys_hw_get_platform_config(void)
 
 void consys_hw_set_mcu_control(int type, bool onoff)
 {
-	if (consys_hw_ops->consys_plt_set_mcu_control)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_set_mcu_control)
 		consys_hw_ops->consys_plt_set_mcu_control(type, onoff);
 	else
 		pr_notice("consys_plt_set_mcu_control not supported\n");
@@ -863,14 +872,14 @@ unsigned int consys_hw_get_support_drv(void)
 
 int consys_hw_register_irq(struct platform_device *pdev)
 {
-	if (consys_hw_ops->consys_plt_register_irq)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_register_irq)
 		return consys_hw_ops->consys_plt_register_irq(pdev);
 	return 0;
 }
 
 void consys_hw_unregister_irq(void)
 {
-	if (consys_hw_ops->consys_plt_unregister_irq)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_unregister_irq)
 		consys_hw_ops->consys_plt_unregister_irq();
 }
 
@@ -897,7 +906,7 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 		return -3;
 	}
 
-	if (consys_hw_ops->consys_plt_clk_get_from_dts)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_clk_get_from_dts)
 		consys_hw_ops->consys_plt_clk_get_from_dts(pdev);
 	else {
 		pr_err("consys_plt_clk_get_from_dtsfail");
@@ -950,7 +959,7 @@ int consys_hw_init(struct platform_device *pdev, struct conninfra_dev_cb *dev_cb
 
 int consys_hw_deinit(void)
 {
-	if (consys_hw_ops->consys_plt_clk_detach)
+	if (consys_hw_ops && consys_hw_ops->consys_plt_clk_detach)
 		consys_hw_ops->consys_plt_clk_detach();
 	else
 		pr_info("consys_plt_clk_detach is null");
