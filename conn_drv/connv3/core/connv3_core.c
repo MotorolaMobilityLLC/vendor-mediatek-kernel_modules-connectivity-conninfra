@@ -1755,6 +1755,8 @@ int opfunc_enter_fmd_mode(struct msg_op_data *op)
 	pr_info("[FMD][PRE] bt done\n");
 	osal_gettimeofday(&pre_bt_end);
 
+	connv3_hw_fmd_setting(true);
+
 	/* Power off common resource */
 	connv3_core_wake_lock_get();
 	for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {

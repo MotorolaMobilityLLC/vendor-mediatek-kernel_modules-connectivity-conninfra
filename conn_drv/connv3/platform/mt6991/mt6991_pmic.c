@@ -77,6 +77,7 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz);
 int connv3_plt_pmic_get_connsys_chip_info_mt6991(char *connsys_ecid, int connsys_ecid_size);
 int connv3_plt_pmic_get_connsys_adie_chip_info_mt6991(char *connsys_adie_chip_info, int connsys_adie_chip_info_size);
 int connv3_plt_pmic_get_pmic_chip_info_mt6991(char *pmic_ecid, int pmic_ecid_size);
+int connv3_plt_pmic_fmd_setting_mt6991(u32 enable);
 int connv3_plt_pmic_pwr_rst_mt6991(void);
 
 int connv3_plt_pmic_initial_setting_mt6991_mt6661(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
@@ -100,6 +101,7 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991_mt6661 =
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6991,
 	.pmic_get_connsys_chip_info = connv3_plt_pmic_get_connsys_chip_info_mt6991,
 	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6991,
+	.pmic_fmd_setting = connv3_plt_pmic_fmd_setting_mt6991,
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
 };
 
@@ -317,6 +319,169 @@ int connv3_plt_pmic_get_pmic_chip_info_mt6991(char *pmic_ecid, int pmic_ecid_siz
 		strncpy(pmic_ecid, connsys_pmic_ecid, pmic_ecid_size);
 
 	return 0;
+}
+
+int connv3_plt_pmic_fmd_setting_mt6991(u32 enable)
+{
+	int ret = 0;
+
+	pr_info("%s[%d], enable = %d\n", __func__, __LINE__, enable);
+
+#if 0 /* turn on after verified */
+	/* MT6688 setting on 20241015 */
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0004, 0x88);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0410, 0x10);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0605, 0x00);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0606, 0x00);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0625, 0x00);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0626, 0x00);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x060E, 0x02);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0613, 0x02);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x062E, 0x02);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0633, 0x02);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0609, 0x05);
+	ret = regmap_write(g_connv3_regmap_mt6688, 0x0629, 0x05);
+
+	/* mt6661AP setting on 20241009 */
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1D, 0x1F, 0x1F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x51, 0xC0, 0x40);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x8E, 0x20, 0x20);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x94, 0x20, 0x20);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xAD, 0x38, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB0, 0x38, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB6, 0x38, 0x18);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xC3, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xC4, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xCF, 0xC0, 0x40);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xD0, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xD1, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xD2, 0xC0, 0x40);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xD3, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xD4, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x10F, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x112, 0x04, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x11B, 0x10, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x120, 0x0C, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x12D, 0x55, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x12E, 0x05, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x147, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x151, 0x70, 0x70);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x187, 0x06, 0x06);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x248, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x923, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x924, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x925, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x926, 0x80, 0x80);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x92C, 0x03, 0x03);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x92D, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x92E, 0x80, 0x80);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x93E, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x94D, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x956, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x95D, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x95E, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xA33, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xA34, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xA35, 0x80, 0x80);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xA45, 0x02, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xA48, 0x08, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB23, 0xFF, 0x63);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB28, 0xFF, 0x63);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB31, 0xFF, 0x4F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB39, 0xFF, 0x64);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB3E, 0x00, 0xFF);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0xB47, 0xFF, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x140B, 0x07, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x140E, 0x0F, 0x0F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1F87, 0x01, 0x00);
+	/* mt6661AP UDS part */
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1454, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1455, 0x03, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x169C, 0x1F, 0x09);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16A1, 0x02, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16A4, 0x14, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16A7, 0x02, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16AA, 0x14, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16AD, 0x02, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x16B0, 0x14, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1E52, 0x03, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x1E53, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x2047, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x204A, 0x0C, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x204B, 0x80, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x206F, 0x90, 0x90);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x2075, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_4, 0x207B, 0x10, 0x10);
+
+	/* mt6661BP setting on 20241009 */
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1D, 0x1F, 0x1F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xAD, 0x38, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB6, 0x38, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xC3, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xC4, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xCF, 0xC0, 0x40);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xD1, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xD2, 0xC0, 0x40);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xD4, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x10F, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x112, 0x04, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x11B, 0x10, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x120, 0x0C, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x187, 0x06, 0x06);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x248, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x249, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x24A, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x24B, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x24E, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x923, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x924, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x925, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x927, 0x08, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x92C, 0x03, 0x03);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x92D, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x92F, 0x08, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x93E, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x94D, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x95A, 0xFF, 0xFE);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xA33, 0x01, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xA34, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xA36, 0x08, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xA48, 0x08, 0x08);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB23, 0xFF, 0x63);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB28, 0xFF, 0x63);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB35, 0xFF, 0x4F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB39, 0xFF, 0x64);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB3E, 0xFF, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0xB4B, 0xFF, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x140B, 0x07, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x140E, 0x0F, 0x0F);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1F87, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1FC7, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x2047, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x2087, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x2107, 0x01, 0x00);
+	/* mt6661BP UDS part */
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1454, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1455, 0x03, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x169C, 0x1F, 0x09);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16A1, 0x03, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16A4, 0x14, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16A7, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16AA, 0x14, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16AD, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x16B0, 0x14, 0x14);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x19AF, 0x02, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1E52, 0x03, 0x02);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x1E53, 0x01, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x2147, 0x03, 0x01);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x214A, 0x0C, 0x04);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x214B, 0x80, 0x00);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x216F, 0x90, 0x90);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x2175, 0x10, 0x10);
+	ret = regmap_update_bits(g_connv3_regmap_mt6661_3, 0x217B, 0x10, 0x10);
+#endif
+
+	return ret;
 }
 
 int connv3_plt_pmic_pwr_rst_mt6991(void)
