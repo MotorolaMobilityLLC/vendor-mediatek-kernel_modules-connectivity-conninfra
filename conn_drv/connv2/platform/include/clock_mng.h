@@ -64,6 +64,7 @@ int clock_mng_init(struct platform_device *pdev, const struct conninfra_plat_dat
 int clock_mng_deinit(void);
 struct regmap* consys_clock_mng_get_regmap(void);
 const char* clock_mng_get_schematic_name(enum connsys_clock_schematic type);
+int clock_mng_get_chip_id(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S

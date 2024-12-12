@@ -151,6 +151,17 @@ struct regmap* consys_clock_mng_get_regmap(void)
 	return NULL;
 }
 
+int clock_mng_get_chip_id(void)
+{
+	if (g_regmap_mt6685 != NULL)
+		return 0x6685;
+
+	if (g_regmap_mt6687 != NULL)
+		return 0x6687;
+
+	return 0;
+}
+
 static int clock_mng_register_device(void)
 {
 	int ret;

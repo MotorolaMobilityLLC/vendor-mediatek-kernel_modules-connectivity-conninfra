@@ -16,6 +16,7 @@
 #include "mt6991.h"
 #include "mt6991_pos.h"
 #include "mt6991_pos_gen.h"
+#include "mt6991_soc.h"
 #include "../include/connsys_smc.h"
 
 static u64 g_sema_get_time[CONN_SEMA_NUM_MAX];
@@ -75,9 +76,22 @@ int consys_polling_chipid_mt6991(void)
 int connsys_d_die_cfg_mt6991(void)
 {
 	unsigned int d_die_efuse = 0;
+	unsigned int clock_type = 0;
+	unsigned int sysram_clock_type = 0;
 
 	/* Reset conninfra sysram */
 	consys_init_conninfra_sysram_mt6991_gen();
+
+	clock_type = consys_co_clock_type_mt6991();
+	if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_COTMS)
+		sysram_clock_type = 1;
+	else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_52M_COTMS)
+		sysram_clock_type = 2;
+	else if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO)
+		sysram_clock_type = 3;
+
+	CONSYS_REG_WRITE(CONN_INFRA_SYSRAM_SW_CR_CLOCK_TYPE, sysram_clock_type);
+	pr_info("%s write %d to sysram for clock type(%d)\n", __func__, sysram_clock_type, clock_type);
 
 	/* Read D-die Efuse
 	 * AP2CONN_EFUSE_DATA 0x4001_1020

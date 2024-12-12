@@ -115,6 +115,7 @@
 #define CONN_INFRA_SYSRAM_SW_CR_D_DIE_EFUSE     (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x020)
 #define CONN_INFRA_SYSRAM_SW_CR_RADIO_STATUS    (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x034)
 #define CONN_INFRA_SYSRAM_SW_CR_BUILD_MODE      (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x038)
+#define CONN_INFRA_SYSRAM_SW_CR_CLOCK_TYPE      (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x03C)
 #define CONN_INFRA_SYSRAM_SW_CR_MCU_LOG_CONTROL (CONN_INFRA_SYSRAM_SW_CR_BASE + 0x040)
 
 /**********************************************************************
@@ -136,6 +137,7 @@
  *********************************************************************/
 #define REG_SRCLKENRC_BASE        (VLPSYS_SRCLKENRC_MT6991)
 #define SRCLKENRC_RC_CENTRAL_CFG1 (REG_SRCLKENRC_BASE + 0x0004) /* To check if RC mode support */
+#define MT6687_DCXO_XO_DIGBUF_ELR_CW0  0x7ec /* To check if mt6687 is 26M or 52M */
 
 
 #endif /* _PLATFORM_MT6991_CONSYS_REG_OFFSET_H_ */
