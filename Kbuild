@@ -310,6 +310,7 @@ $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw_plat_data.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pmic_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_pinctrl_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_clock_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw_dbg.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/connsyslog/connv3_mcu_log.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/coredump/connv3_coredump.o

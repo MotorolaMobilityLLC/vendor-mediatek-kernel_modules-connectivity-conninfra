@@ -15,6 +15,8 @@
 #include "osal.h"
 #include "conninfra_conf.h"
 #include "connv3_hw.h"
+#include "connv3_clock_mng.h"
+#include "connv3_mt6687_reg_def.h"
 #include "coredump/connv3_dump_mng.h"
 
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
@@ -67,6 +69,9 @@ static u8* connv3_get_custom_option_mt6991(u32 *size);
 static u32 connv3_clk_init_mt6991(
 	struct platform_device *pdev,
 	struct connv3_dev_cb *dev_cb);
+static u32 connv3_clk_init_mt6991_mt6661(
+	struct platform_device *pdev,
+	struct connv3_dev_cb *dev_cb);
 static u32 connv3_check_clock_status_mt6991(void);
 static u32 connv3_dump_exception_filter(char*);
 #if defined(CFG_CONNINFRA_EAP_COCLOCK) && CFG_CONNINFRA_EAP_COCLOCK
@@ -78,8 +83,11 @@ static void connv3_md_fsm_notifier_cb(struct notifier_fsm_state *state, void *pr
 ********************************************************************************
 */
 
+struct connv3_platform_clock_ops g_connv3_clock_ops_mt6991 = {
+	.clk_initial_setting = connv3_clk_init_mt6991,
+};
+
 struct connv3_hw_ops_struct g_connv3_hw_ops_mt6991 = {
-	.connsys_plt_clk_init = connv3_clk_init_mt6991,
 	.connsys_plt_get_chipid = connv3_soc_get_chipid_mt6991,
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6991,
 	.connsys_plt_reset_type_support = connv3_reset_type_support_mt6991,
@@ -105,7 +113,25 @@ const struct connv3_plat_data g_connv3_mt6991_plat_data = {
 	.platform_pinctrl_ops = &g_connv3_platform_pinctrl_ops_mt6991,
 	.platform_coredump_ops = &g_connv3_dump_ops_mt6991,
 	.platform_dbg_ops = &g_connv3_hw_dbg_mt6653,
+	.platform_clock_ops = &g_connv3_clock_ops_mt6991,
 };
+
+extern struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991_mt6661;
+
+struct connv3_platform_clock_ops g_connv3_clock_ops_mt6991_mt6661 = {
+	.clk_initial_setting = connv3_clk_init_mt6991_mt6661,
+};
+
+const struct connv3_plat_data g_connv3_mt6991_mt6661_plat_data = {
+	.chip_id = PLATFORM_SOC_CHIP,
+	.consys_hw_version = CONN_HW_VER,
+	.hw_ops = &g_connv3_hw_ops_mt6991,
+	.platform_pmic_ops = &g_connv3_platform_pmic_ops_mt6991_mt6661,
+	.platform_pinctrl_ops = &g_connv3_platform_pinctrl_ops_mt6991,
+	.platform_coredump_ops = &g_connv3_dump_ops_mt6991,
+	.platform_clock_ops = &g_connv3_clock_ops_mt6991_mt6661,
+};
+
 
 u32 connv3_soc_get_chipid_mt6991(void)
 {
@@ -207,6 +233,39 @@ u32 connv3_clk_init_mt6991(
 #else
 	pr_info("[%s] CFG_CONNINFRA_EAP_COCLOCK not support\n", __func__);
 #endif
+
+	return 0;
+}
+
+static u32 connv3_clk_init_mt6991_mt6661(
+	struct platform_device *pdev,
+	struct connv3_dev_cb *dev_cb)
+{
+	u32 ret;
+	struct regmap *map = connv3_clock_mng_get_regmap();
+
+	ret = connv3_clk_init_mt6991(pdev, dev_cb);
+
+	/* MT6688 initial setting is done by SW PIC in preloader */
+	/* Do mt6687 init flow: use GPIO_VIO_0 to control RFCK1A
+	 * 1. RFCK1A bind with ext_req_2
+	 * - 0x1cb=0x4
+	 * 2. Enable ext_req_2
+	 * - 0x1f8=0xb
+	 * 3. RFCK1A with RC mode
+	 * - 0x7cc=0x5
+	 * 4. Switch GPIO_VIO_0 to AUX3: EXT_CLK_REQ2
+	 * - 0x98=0x3
+	 */
+	if (map == NULL) {
+		pr_notice("[%s] map is null!\n", __func__);
+		return ENODEV;
+	}
+
+	regmap_write(map, MT6687_REG_TOP_XO_BUF_CTL6_4_ADDR, 0x4);
+	regmap_write(map, MT6687_REG_PMRC_EXT_REQ_MASK_ADDR, 0xb);
+	regmap_write(map, MT6687_REG_DCXO_RFCK1A_ELR_CW0_ADDR, 0x5);
+	regmap_write(map, MT6687_REG_GPIO_MODE0_ADDR, 0x3);
 
 	return 0;
 }

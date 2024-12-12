@@ -79,6 +79,9 @@ int connv3_plt_pmic_get_connsys_adie_chip_info_mt6991(char *connsys_adie_chip_in
 int connv3_plt_pmic_get_pmic_chip_info_mt6991(char *pmic_ecid, int pmic_ecid_size);
 int connv3_plt_pmic_pwr_rst_mt6991(void);
 
+int connv3_plt_pmic_initial_setting_mt6991_mt6661(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
+int connv3_plt_pmic_common_power_ctrl_mt6991_mt6661(u32 enable);
+
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991 = {
 	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6991,
 	.pmic_common_power_ctrl = connv3_plt_pmic_common_power_ctrl_mt6991,
@@ -86,6 +89,16 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991 = {
 	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6991,
 	.pmic_get_connsys_chip_info = connv3_plt_pmic_get_connsys_chip_info_mt6991,
 	.pmic_get_connsys_adie_chip_info = connv3_plt_pmic_get_connsys_adie_chip_info_mt6991,
+	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6991,
+	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
+};
+
+const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991_mt6661 = {
+	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6991_mt6661,
+	.pmic_common_power_ctrl = connv3_plt_pmic_common_power_ctrl_mt6991_mt6661,
+	.pmic_vsel_ctrl = connv3_plt_pmic_vsel_ctrl_mt6991,
+	.pmic_parse_state = connv3_plt_pmic_parse_state_mt6991,
+	.pmic_get_connsys_chip_info = connv3_plt_pmic_get_connsys_chip_info_mt6991,
 	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6991,
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
 };
@@ -380,5 +393,25 @@ int connv3_plt_pmic_initial_setting_mt6991(
 	}
 
 	return 0;
+}
+
+int connv3_plt_pmic_common_power_ctrl_mt6991_mt6661(u32 enable)
+{
+	int ret;
+
+	ret = connv3_plt_pmic_common_power_ctrl_mt6991(enable);
+
+	return ret;
+}
+
+
+int connv3_plt_pmic_initial_setting_mt6991_mt6661(
+	struct platform_device *pdev, struct connv3_dev_cb* dev_cb)
+{
+	int ret;
+
+	ret = connv3_plt_pmic_initial_setting_mt6991(pdev, dev_cb);
+
+	return ret;
 }
 
