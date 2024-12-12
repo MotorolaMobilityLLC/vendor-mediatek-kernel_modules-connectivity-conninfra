@@ -49,6 +49,7 @@ struct connv3_platform_pmic_ops {
 	int (*pmic_get_connsys_chip_info) (char *connsys_ecid, int connsys_ecid_size);
 	int (*pmic_get_connsys_adie_chip_info) (char *connsys_adie_info, int connsys_adie_info_size);
 	int (*pmic_get_pmic_chip_info) (char *pmic_ecid, int pmic_ecid_size);
+	int (*pmic_fmd_setting) (u32 enable);
 	int (*pmic_pwr_rst) (void);
 };
 
@@ -60,6 +61,8 @@ struct connv3_platform_pmic_ops {
 
 #if COMMON_KERNEL_PMIC_SUPPORT
 extern struct regmap *g_connv3_regmap_mt6373;
+extern struct regmap *g_connv3_regmap_mt6661_4;
+extern struct regmap *g_connv3_regmap_mt6661_3;
 extern struct regmap *g_connv3_regmap_mt6688;
 #endif
 
@@ -86,6 +89,7 @@ int connv3_pmic_mng_antenna_power_ctrl(u32 radio, u32 enable);
 int connv3_pmic_mng_get_connsys_chip_info(char *connsys_ecid, int connsys_ecid_size);
 int connv3_pmic_mng_get_connsys_adie_chip_info(char *connsys_adie_info, int connsys_adie_info_size);
 int connv3_pmic_mng_get_pmic_chip_info(char *pmic_ecid, int pmic_ecid_size);
+int connv3_pmic_mng_fmd_setting(u32 enable);
 int connv3_pmic_mng_pwr_rst(void);
 
 /*******************************************************************************
