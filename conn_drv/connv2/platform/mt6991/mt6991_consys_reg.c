@@ -20,7 +20,7 @@
 #include "include/mt6991_pos.h"
 #include "include/mt6991_pos_gen.h"
 
-#define CONSYS_DUMP_BUF_SIZE 800
+#define CONSYS_DUMP_BUF_SIZE 1000
 struct consys_base_addr g_conn_reg_mt6991;
 static struct conn_debug_info_mt6991 *g_debug_info_ptr;
 static struct conn_debug_info_mt6991 *g_debug_top_power_info_ptr;
