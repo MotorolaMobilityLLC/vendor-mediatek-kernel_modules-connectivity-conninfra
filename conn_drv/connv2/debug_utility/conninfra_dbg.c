@@ -93,6 +93,7 @@ static int conninfra_dbg_connsys_coredump_mode_query(int par1, int par2, int par
 static int conninfra_dbg_mcu_log_ctrl(int par1, int par2, int par3);
 static int conninfra_dbg_dump_power_state(int par1, int par2, int par3);
 static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3);
+static int conninfra_dbg_get_chip_info(int par1, int par2, int par3);
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #if CONNINFRA_DBG_SUPPORT
@@ -142,6 +143,9 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 	/* Check the usage of WMT before add a new one */
 	[0x40] = conninfra_dbg_dump_power_state,
 	[0x50] = conninfra_dbg_conap_trg_cmd,
+#if CONNINFRA_DBG_SUPPORT
+	[0x60] = conninfra_dbg_get_chip_info,
+#endif
 };
 
 #define CONNINFRA_DBG_DUMP_BUF_SIZE 1024
@@ -695,6 +699,26 @@ static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3)
 
 	return 0;
 }
+
+#if CONNINFRA_DBG_SUPPORT
+static int conninfra_dbg_get_chip_info(int par1, int par2, int par3)
+{
+	int ret = 0, len;
+
+	ret = conninfra_core_get_chip_info(g_dump_buf, CONNINFRA_DBG_DUMP_BUF_SIZE);
+	if (ret) {
+		return ret;
+	}
+
+	len = strlen(g_dump_buf);
+	if (len > 0 && len < CONNINFRA_DBG_DUMP_BUF_SIZE) {
+		g_dump_buf_ptr = g_dump_buf;
+		g_dump_buf_len = len + 1;
+	}
+
+	return 0;
+}
+#endif
 
 ssize_t conninfra_dbg_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
 {
