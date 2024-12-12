@@ -211,9 +211,6 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 	int remain_size = TMP_LOG_SIZE - 1;
 	int ret;
 
-	if (parse_pmic_register_once == 1)
-		return 0;
-
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
 		return -1;
@@ -255,6 +252,9 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 		else
 			connsys_chip_ecid_ready = true;
 	}
+
+	if (parse_pmic_register_once == 1)
+		return 0;
 
 	connv3_pmic_parse_state_mt6376(buffer, buf_sz);
 	parse_pmic_register_once = 1;
