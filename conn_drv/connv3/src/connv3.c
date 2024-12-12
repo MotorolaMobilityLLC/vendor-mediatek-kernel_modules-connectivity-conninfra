@@ -335,3 +335,24 @@ int connv3_sub_drv_ops_unregister(enum connv3_drv_type type)
 EXPORT_SYMBOL(connv3_sub_drv_ops_unregister);
 
 
+int connv3_efuse_on_ops_register(enum connv3_drv_type drv_type, struct connv3_efuse_on_cb *cb)
+{
+	/* type validation */
+	if (drv_type < 0 || drv_type >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] incorrect drv type [%d]", __func__, drv_type);
+		return -EINVAL;
+	}
+	return connv3_core_efuse_on_ops_reg(drv_type, cb);
+}
+EXPORT_SYMBOL(connv3_efuse_on_ops_register);
+
+int connv3_efuse_on_ops_unregister(enum connv3_drv_type drv_type)
+{
+	/* type validation */
+	if (drv_type < 0 || drv_type >= CONNV3_DRV_TYPE_MAX) {
+		pr_notice("[%s] incorrect drv type [%d]", __func__, drv_type);
+		return -EINVAL;
+	}
+	return connv3_core_efuse_on_ops_unreg(drv_type);
+}
+EXPORT_SYMBOL(connv3_efuse_on_ops_unregister);

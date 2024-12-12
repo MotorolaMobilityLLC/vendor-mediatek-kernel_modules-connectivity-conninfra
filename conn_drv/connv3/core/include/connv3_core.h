@@ -93,12 +93,14 @@ struct subsys_drv_inst {
 	enum connv3_drv_status drv_status;	/* Controlled driver status */
 	unsigned int rst_state;
 	struct connv3_sub_drv_ops_cb ops_cb;
+	struct connv3_efuse_on_cb efuse_on_cb;
 	struct msg_thread_ctx msg_ctx;
 };
 
 struct pre_cal_info {
 	enum pre_cal_status status;
 	enum pre_cal_caller caller;
+	bool had_efused_on;
 	struct work_struct pre_cal_work;
 	OSAL_SLEEPABLE_LOCK pre_cal_lock;
 };
@@ -179,7 +181,8 @@ typedef enum {
 typedef enum {
 	CONNV3_CB_OPID_CHIP_RST         = 0,
 	CONNV3_CB_OPID_PRE_CAL          = 1,
-	CONNV3_CB_OPID_FMD_MODE			= 2,
+	CONNV3_CB_OPID_FMD_MODE         = 2,
+	CONNV3_CB_OPID_EFUSE_ON         = 3,
 	CONNV3_CB_OPID_MAX
 } connv3_core_cb_opid;
 
@@ -262,6 +265,13 @@ int connv3_core_hif_dbg_write_mask(
  */
 int connv3_core_enter_fmd_mode(void);
 int connv3_core_is_fmd_locking(void);
+
+/* eFuse on function
+ */
+int connv3_core_efuse_on_ops_reg(enum connv3_drv_type type,
+						struct connv3_efuse_on_cb *cb);
+int connv3_core_efuse_on_ops_unreg(enum connv3_drv_type type);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
