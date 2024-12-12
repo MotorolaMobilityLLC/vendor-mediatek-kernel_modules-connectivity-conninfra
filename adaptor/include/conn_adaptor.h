@@ -44,7 +44,7 @@ struct conn_adaptor_drv_gen_cb {
 	int (*dump_power_state)(uint8_t *buf, u32 buf_sz);
 
 	/* get_chip_info */
-	int (*get_chip_info)(uint8_t *buf, u32 buf_sz);
+	int (*get_chip_info)(uint8_t *buf, u32 buf_sz, int param2, int param3);
 
 	/* factory_testcase */
 	int (*factory_testcase)(uint8_t *buf, u32 buf_sz);

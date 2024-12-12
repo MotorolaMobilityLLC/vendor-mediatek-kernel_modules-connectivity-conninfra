@@ -53,6 +53,7 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static int connv3_get_chip_info(uint8_t *buf, u32 buf_sz, int param2, int param3);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -131,6 +132,9 @@ struct conn_adaptor_drv_gen_cb g_connv3_drv_gen = {
 	.set_coredump_mode = connv3_set_coredump_mode,
 
 	.dump_power_state = connv3_dump_power_state,
+
+	/* get_chip_info */
+	.get_chip_info = connv3_get_chip_info,
 };
 
 static atomic_t g_connv3_hw_init_done = ATOMIC_INIT(0);
@@ -313,75 +317,34 @@ int mtk_connv3_remove(struct platform_device *pdev)
 
 /* put log/variable to file node */
 static OSAL_SLEEPABLE_LOCK g_log_node_lock;
-static struct proc_dir_entry *g_connv3_log_node_entry;
-#define CONNV3_LOG_NODE_PROCNAME "driver/connv3_chip_info"
 
 #define CONN_LOG_NODE_BUF_SIZE	128
 static char g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE];
-static char *g_log_node_buf_ptr;
 static int g_log_node_buf_len;
 
 enum log_node_type {
-	LOG_NODE_CONNSYS_PMIC_ECID = 0,
-	LOG_NODE_CONNSYS_IC_ECID = 1,
+	LOG_NODE_CONNSYS_PMIC_CHIP_INFO = 0,
+	LOG_NODE_CONNSYS_CHIP_INFO = 1,
+	LOG_NODE_CONNSYS_ADIE_CHIP_INFO = 2,
 };
 
-ssize_t connv3_log_node_write(struct file *filp, const char __user *buffer, size_t count, loff_t *f_pos)
+int connv3_get_chip_info(uint8_t *buf, u32 buf_sz, int param2, int param3)
 {
-	size_t len = count;
-	char buf[256];
-	char* pBuf;
-	int x = 0, y = 0, z = 0;
-	char* pToken = NULL;
-	char* pDelimiter = " \t";
-	long res = 0;
 	int ret = 0;
-
-	pr_info("write parameter len = %d\n\r", (int) len);
-	if (len >= osal_sizeof(buf)) {
-		pr_info("input handling fail!\n");
-		return -1;
-	}
-
-	if (copy_from_user(buf, buffer, len))
-		return -EFAULT;
-
-	buf[len] = '\0';
-	pr_info("write parameter data = %s\n\r", buf);
-
-	pBuf = buf;
-	pToken = osal_strsep(&pBuf, pDelimiter);
-	if (pToken != NULL) {
-		osal_strtol(pToken, 16, &res);
-		x = (int)res;
-	} else {
-		x = 0;
-	}
-
-	pToken = osal_strsep(&pBuf, "\t\n ");
-	if (pToken != NULL) {
-		osal_strtol(pToken, 16, &res);
-		y = (int)res;
-		pr_info("y = 0x%08x\n\r", y);
-	}
-
-	pToken = osal_strsep(&pBuf, "\t\n ");
-	if (pToken != NULL) {
-		osal_strtol(pToken, 16, &res);
-		z = (int)res;
-	}
-	pr_info("[%s] x(0x%08x), y(0x%08x), z(0x%08x)", __func__, x, y, z);
 
 	ret = osal_lock_sleepable_lock(&g_log_node_lock);
 	if (ret) {
-		pr_err("g_log_node_lock fail!!");
+		pr_notice("[%s] g_log_node_lock fail!! ret = %d\n", __func__, ret);
 		return ret;
 	}
 
-	switch(x) {
-		case LOG_NODE_CONNSYS_PMIC_ECID:
+	/* Re-init data */
+	g_log_node_buf_len = 0;
+	memset(g_conn_log_node_buf, '\0', CONN_LOG_NODE_BUF_SIZE);
+
+	switch(param2) {
+		case LOG_NODE_CONNSYS_PMIC_CHIP_INFO:
 			{
-				memset(g_conn_log_node_buf, '\0', CONN_LOG_NODE_BUF_SIZE);
 				connv3_hw_get_pmic_ic_info(g_conn_log_node_buf, CONN_LOG_NODE_BUF_SIZE);
 				g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE-1] = '\0';
 
@@ -389,54 +352,38 @@ ssize_t connv3_log_node_write(struct file *filp, const char __user *buffer, size
 			}
 			break;
 
-		case LOG_NODE_CONNSYS_IC_ECID:
+		case LOG_NODE_CONNSYS_CHIP_INFO:
 			{
-				memset(g_conn_log_node_buf, '\0', CONN_LOG_NODE_BUF_SIZE);
 				connv3_hw_get_connsys_ic_info(g_conn_log_node_buf, CONN_LOG_NODE_BUF_SIZE);
 				g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE-1] = '\0';
 
 				g_log_node_buf_len = strlen(g_conn_log_node_buf);
 			}
 			break;
+		case LOG_NODE_CONNSYS_ADIE_CHIP_INFO:
+			{
+				connv3_hw_get_connsys_adie_ic_info(g_conn_log_node_buf, CONN_LOG_NODE_BUF_SIZE);
+				g_conn_log_node_buf[CONN_LOG_NODE_BUF_SIZE-1] = '\0';
+
+				g_log_node_buf_len = strlen(g_conn_log_node_buf);
+			}
+			break;
 	}
+
+	if (g_log_node_buf_len > 0 && g_log_node_buf_len <= buf_sz) {
+		if (snprintf(buf, buf_sz, "%s\n", g_conn_log_node_buf) < 0) {
+			pr_notice("[%s] snprintf fail", __func__);
+			ret = -1;
+		} else {
+			ret = g_log_node_buf_len;
+		}
+	} else {
+		pr_notice("[%s] buf not enough (buf_sz=%d, log_node_buf_len=%d)\n", __func__);
+		ret = -1;
+	}
+
 	osal_unlock_sleepable_lock(&g_log_node_lock);
 
-	return len;
-}
-
-ssize_t connv3_log_node_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
-{
-	int ret = 0;
-	int dump_len;
-
-	ret = osal_lock_sleepable_lock(&g_log_node_lock);
-	if (ret) {
-		pr_err("g_log_node_lock fail!!");
-		return ret;
-	}
-
-	if (g_log_node_buf_len == 0)
-		goto exit;
-
-	if (*f_pos == 0)
-		g_log_node_buf_ptr = g_conn_log_node_buf;
-
-	dump_len = g_log_node_buf_len >= count ? count : g_log_node_buf_len;
-	ret = copy_to_user(buf, g_log_node_buf_ptr, dump_len);
-	if (ret) {
-		pr_err("copy to dump info buffer failed, ret:%d\n", ret);
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	*f_pos += dump_len;
-	g_log_node_buf_len -= dump_len;
-	g_log_node_buf_ptr += dump_len;
-	pr_info("conn_dbg:after read,wmt for dump info buffer len(%d)\n", g_log_node_buf_len);
-
-	ret = dump_len;
-exit:
-	osal_unlock_sleepable_lock(&g_log_node_lock);
 	return ret;
 }
 
@@ -444,10 +391,6 @@ int connv3_drv_init(void)
 {
 	int iret = 0, retry = 0;
 	static DEFINE_RATELIMIT_STATE(_rs, HZ, 1);
-	static const struct proc_ops connv3_log_node_fops = {
-		.proc_read = connv3_log_node_read,
-		.proc_write = connv3_log_node_write,
-	};
 
 	iret = platform_driver_probe(&g_mtk_connv3_dev_drv, mtk_connv3_probe);
 	pr_info("[%s] driver register [%d]", __func__, iret);
@@ -464,8 +407,6 @@ int connv3_drv_init(void)
 	}
 
 	INIT_WORK(&g_connv3_pmic_work.pmic_work, connv3_dev_pmic_event_handler);
-
-	g_connv3_log_node_entry = proc_create(CONNV3_LOG_NODE_PROCNAME, 0664, NULL, &connv3_log_node_fops);
 
 	osal_sleepable_lock_init(&g_log_node_lock);
 
