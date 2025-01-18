@@ -93,8 +93,6 @@ struct pmic_addr_mask_value mt6661AP_BLE[] =
 {
 	{0xA2F ,0xFF ,0x29}, // unlock cpskey
 	{0xA30 ,0xFF ,0x47}, // unlock cpskey
-	{0x3B4 ,0xFF ,0x9E}, // tma key
-	{0x3B5 ,0xFF ,0x99}, // tma key
 	{0x1D ,0x1F ,0x1F},
 	{0x51 ,0xC0 ,0x40},
 	{0x8E ,0x20 ,0x20},
@@ -111,14 +109,14 @@ struct pmic_addr_mask_value mt6661AP_BLE[] =
 	{0xC3 ,0x1 ,0x1},
 	{0xC4 ,0x1 ,0x1},
 	{0xCF ,0xC0 ,0x40},
-	{0xD0 ,0xC ,0x4}, /* should remove after PTPL move this setting to PMIC initial setting */
+	{0xD0 ,0xC ,0x4},
 	#if 0 /* move to PMIC initial setting, set as PORSTB */
 	#ifndef PMIC_EN1_USING_GPIO_MODE
 	{0xD1 ,0xC ,0x4},    // Set AGPIO2 mode reset as btrstb+wdtrstb
 	#endif
 	#endif
 	{0xD2 ,0xC0 ,0x40},
-	{0xD3 ,0xC ,0x4}, /* should remove after PTPL move this setting to PMIC initial setting */
+	{0xD3 ,0xC ,0x4},
 	#if 0 /* move to PMIC initial setting, set as PORSTB */
 	#ifndef PMIC_EN1_USING_GPIO_MODE
 	{0xD4 ,0xC ,0x4},    // Set AGPIO2 cell reset as btrstb+wdtrstb
@@ -162,16 +160,12 @@ struct pmic_addr_mask_value mt6661AP_BLE[] =
 	{0x1F87 ,0x1 ,0x0},
 	{0xA2F ,0xFF ,0x0}, // lock cpskey
 	{0xA30 ,0xFF ,0x0}, // lock cpskey
-	{0x3B4 ,0xFF ,0x0}, // tma key
-	{0x3B5 ,0xFF ,0x0}, // tma key
 };
 
 struct pmic_addr_mask_value mt6661BP_BLE[] =
 {
 	{0xA2F ,0xFF ,0x29}, // unlock cpskey
 	{0xA30 ,0xFF ,0x47}, // unlock cpskey
-	{0x3B4 ,0xFF ,0x9E}, // tma key
-	{0x3B5 ,0xFF ,0x99}, // tma key
 	{0x1D, 0x1F, 0x1F},
 	{0xAD, 0x38, 0x8},
 	{0xB6, 0x38, 0x10},
@@ -220,16 +214,12 @@ struct pmic_addr_mask_value mt6661BP_BLE[] =
 	{0x2107, 0x1, 0x0},
 	{0xA2F ,0xFF ,0x0}, // lock cpskey
 	{0xA30 ,0xFF ,0x0}, // lock cpskey
-	{0x3B4 ,0xFF ,0x0}, // tma key
-	{0x3B5 ,0xFF ,0x0}, // tma key
 };
 
 struct pmic_addr_mask_value mt6661AP_UDS[] =
 {
 	{0xA2F ,0xFF ,0x29}, // unlock cpskey
 	{0xA30 ,0xFF ,0x47}, // unlock cpskey
-	{0x3B4 ,0xFF ,0x9E}, // tma key
-	{0x3B5 ,0xFF ,0x99}, // tma key
 	{0x1D, 0x1F, 0x1F},
 	{0x51, 0xC0, 0x40},
 	{0x8E, 0x20, 0x20},
@@ -278,16 +268,12 @@ struct pmic_addr_mask_value mt6661AP_UDS[] =
 	{0x207B, 0x10, 0x10},
 	{0xA2F ,0xFF ,0x0}, // lock cpskey
 	{0xA30 ,0xFF ,0x0}, // lock cpskey
-	{0x3B4 ,0xFF ,0x0}, // tma key
-	{0x3B5 ,0xFF ,0x0}, // tma key
 };
 
 struct pmic_addr_mask_value mt6661BP_UDS[] =
 {
 	{0xA2F ,0xFF ,0x29}, // unlock cpskey
 	{0xA30 ,0xFF ,0x47}, // unlock cpskey
-	{0x3B4 ,0xFF ,0x9E}, // tma key
-	{0x3B5 ,0xFF ,0x99}, // tma key
 	{0x1D, 0x1F, 0x1F},
 	{0xAD, 0x38, 0x8},
 	{0xC3, 0x1, 0x1},
@@ -330,8 +316,6 @@ struct pmic_addr_mask_value mt6661BP_UDS[] =
 	{0x217B, 0x10, 0x10},
 	{0xA2F ,0xFF ,0x0}, // lock cpskey
 	{0xA30 ,0xFF ,0x0}, // lock cpskey
-	{0x3B4 ,0xFF ,0x0}, // tma key
-	{0x3B5 ,0xFF ,0x0}, // tma key
 };
 
 void pmic_backup_and_write_array(struct regmap *regmap, struct pmic_addr_mask_value *setting_array, u32 array_size)
@@ -538,6 +522,7 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 	char log_buf[TMP_LOG_SIZE];
 	int remain_size = TMP_LOG_SIZE - 1;
 	int ret;
+	unsigned int adie_chip_id = 0, ddie_chip_id = 0, ddie_hw_ver = 0;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
@@ -566,14 +551,17 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 		pr_info("[MT6376-State] %s", log_buf);
 
 	if (connsys_pmic_ecid_ready == false) {
-		ret = snprintf(connsys_pmic_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6376P_ECID][%02X, %02X]", buffer[25], buffer[26]);
+		ret = snprintf(connsys_pmic_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6376P][%02X][%02X, %02X]", buffer[27], buffer[25], buffer[26]);
 		if (ret <= 0)
 			pr_notice("%s snprintf fail", __func__);
 		else
 			connsys_pmic_ecid_ready = true;
 	}
 	if (connsys_chip_ecid_ready == false) {
-		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6653_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+		ddie_chip_id = ((buffer[97] << 8) | (buffer[96]));
+		ddie_hw_ver = ((buffer[99] << 8) | (buffer[98]));
+		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6653][%04X, %04X][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			ddie_chip_id, ddie_hw_ver,
 			buffer[32], buffer[33], buffer[34], buffer[35], buffer[36],buffer[37], buffer[38], buffer[39]);
 		if (ret <= 0)
 			pr_notice("%s snprintf fail", __func__);
@@ -581,9 +569,11 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 			connsys_chip_ecid_ready = true;
 	}
 	if (g_connsys_adie_chip_info_ready == false) {
+		adie_chip_id = ((buffer[103] << 24) | buffer[102] << 16 | (buffer[101] << 8) | buffer[100]);
 		ret = snprintf(
 			g_connsys_adie_chip_info, CHIP_ECIP_INFO_LENGTH -1,
-			"[MT6653_ADIE_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			"[MT6653_ADIE][%08X][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			adie_chip_id,
 			buffer[88], buffer[89], buffer[90], buffer[91], buffer[92],buffer[93], buffer[94], buffer[95]);
 		if (ret <= 0)
 			pr_notice("[%s] snprintf adie info fail, ret = %d", __func__, ret);
