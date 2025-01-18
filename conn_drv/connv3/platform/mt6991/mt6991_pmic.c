@@ -418,9 +418,12 @@ static irqreturn_t pmic_fault_handler(int irq, void * arg)
 	}
 
 	pr_err("[%s] Get PMIC FaultB interrupt\n", __func__);
-	snprintf(pmic_exception_string, PMIC_EXCEPTION_STRING_LEN,
-		"[connv3][pmic]pmic_exception_count=%d\n", ++pmic_exception_count);
-	conn_dbg_add_log(0, pmic_exception_string);
+	if (snprintf(pmic_exception_string, PMIC_EXCEPTION_STRING_LEN,
+		"[connv3][pmic]pmic_exception_count=%d\n", ++pmic_exception_count)) {
+		conn_dbg_add_log(0, pmic_exception_string);
+	} else {
+		pr_info("[%s] save pmic_exception_string fail\n", __func__);
+	}
 	schedule_work(&g_pmic_faultb_work_mt6991);
 
 	return IRQ_HANDLED;
