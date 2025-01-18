@@ -2137,8 +2137,9 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	struct subsys_drv_inst *drv_inst;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
 	int trigger_pre_cal = 0, ret = 0;
+	struct connv3_pre_calibration_cb bt_cb, wifi_cb;
 
-	if (type < CONNV3_DRV_TYPE_BT || type >= CONNV3_DRV_TYPE_MAX)
+	if (type < CONNV3_DRV_TYPE_BT || type >= CONNV3_DRV_TYPE_MAX || cb == NULL)
 		return -1;
 
 	ret = osal_lock_sleepable_lock(&ctx->subsys_op_lock);
@@ -2152,17 +2153,10 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	memcpy(&g_connv3_ctx.drv_inst[type].ops_cb, cb,
 					sizeof(struct connv3_sub_drv_ops_cb));
 
-	pr_info("[%s] [pre_cal] type=[%s] cb rst=[%p][%p][%p] pre_cal=[%p][%p]",
-			__func__, connv3_drv_name[type],
-			cb->rst_cb.pre_whole_chip_rst, cb->rst_cb.post_whole_chip_rst,
-			cb->rst_cb.post_reset_on,
-			cb->pre_cal_cb.pwr_on_cb, cb->pre_cal_cb.do_cal_cb);
-
-	pr_info("[%s] [pre_cal] type=[%d] bt=[%p][%p] wf=[%p][%p]", __func__, type,
-			ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.pwr_on_cb,
-			ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.do_cal_cb,
-			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.pwr_on_cb,
-			ctx->drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb.do_cal_cb);
+	memcpy(&bt_cb, &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb,
+		sizeof(struct connv3_pre_calibration_cb));
+	memcpy(&wifi_cb, &g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI].ops_cb.pre_cal_cb,
+		sizeof(struct connv3_pre_calibration_cb));
 
 	/* trigger pre-cal if BT and WIFI are registered */
 	if (ctx->drv_inst[CONNV3_DRV_TYPE_BT].ops_cb.pre_cal_cb.do_cal_cb != NULL &&
@@ -2170,6 +2164,16 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 		trigger_pre_cal = 1;
 
 	spin_unlock_irqrestore(&g_connv3_ctx.infra_lock, flag);
+
+	pr_info("[%s] [pre_cal] type=[%s] cb rst=[%p][%p][%p] pre_cal=[%p][%p]",
+			__func__, connv3_drv_name[type],
+			cb->rst_cb.pre_whole_chip_rst, cb->rst_cb.post_whole_chip_rst,
+			cb->rst_cb.post_reset_on,
+			cb->pre_cal_cb.pwr_on_cb, cb->pre_cal_cb.do_cal_cb);
+
+	pr_info("[%s] [pre_cal] type=[%d] bt=[%p][%p] wf=[%p][%p]", __func__, type,
+			bt_cb.pwr_on_cb, bt_cb.do_cal_cb,
+			wifi_cb.pwr_on_cb, wifi_cb.do_cal_cb);
 
 	if (trigger_pre_cal) {
 		pr_info("[%s] [pre_cal] trigger pre-cal BT/WF are registered", __func__);
