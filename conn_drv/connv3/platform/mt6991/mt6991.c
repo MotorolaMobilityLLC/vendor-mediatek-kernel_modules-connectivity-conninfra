@@ -245,8 +245,8 @@ static u32 connv3_clk_init_mt6991_mt6661(
 {
 	u32 ret;
 	struct regmap *map = connv3_clock_mng_get_regmap();
-	u32 reg0, reg1;
-	u32 dump1, dump2, dump3, dump4;
+	u32 reg0 = 0, reg1 = 0;
+	u32 dump1 = 0, dump2 = 0, dump3 = 0, dump4 = 0;
 
 	ret = connv3_clk_init_mt6991(pdev, dev_cb);
 

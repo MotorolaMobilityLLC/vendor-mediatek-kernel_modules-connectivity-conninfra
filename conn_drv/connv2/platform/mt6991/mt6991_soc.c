@@ -27,6 +27,7 @@ int consys_co_clock_type_mt6991(void)
 	unsigned char tcxo_gpio = 0;
 	struct regmap *map = consys_clock_mng_get_regmap();
 	int value = 0, ret;
+	unsigned char co_clock_flag = 0;
 
 	if (clock_type >= 0)
 		return clock_type;
@@ -36,11 +37,13 @@ int consys_co_clock_type_mt6991(void)
 	conf = conninfra_conf_get_cfg();
 	if (NULL == conf)
 		pr_notice("[%s] Get conf fail", __func__);
-	else
+	else {
 		tcxo_gpio = conf->tcxo_gpio;
+		co_clock_flag = conf->co_clock_flag;
+	}
 
 	if (tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
-		if (conf->co_clock_flag == 3)
+		if (co_clock_flag == 3)
 			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
 		else
 			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
