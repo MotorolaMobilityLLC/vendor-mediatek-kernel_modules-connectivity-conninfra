@@ -17,6 +17,6 @@ modules modules_install clean:
 
 ifneq ($(MODULE_PWD), $(M))
 	mkdir -p $(O)/$(M)
-	cp -f $(O)/$(MODULE_PWD)/Module.symvers $(O)/$(M)/Module.symvers
-	cp -f $(O)/$(MODULE_PWD)/*.ko $(O)/$(M)
+	cp -p -f $(O)/$(MODULE_PWD)/Module.symvers $(O)/$(M)/Module.symvers
+	cp -p -f $(O)/$(MODULE_PWD)/*.ko $(O)/$(M)
 endif
