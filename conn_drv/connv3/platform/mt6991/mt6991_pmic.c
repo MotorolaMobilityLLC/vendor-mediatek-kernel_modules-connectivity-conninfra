@@ -538,6 +538,7 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 	char log_buf[TMP_LOG_SIZE];
 	int remain_size = TMP_LOG_SIZE - 1;
 	int ret;
+	unsigned int adie_chip_id = 0, ddie_chip_id = 0, ddie_hw_ver = 0;
 
 	if (!buffer){
 		pr_err("[%s] PMIC dump register is NULL\n", __func__);
@@ -566,14 +567,17 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 		pr_info("[MT6376-State] %s", log_buf);
 
 	if (connsys_pmic_ecid_ready == false) {
-		ret = snprintf(connsys_pmic_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6376P_ECID][%02X, %02X]", buffer[25], buffer[26]);
+		ret = snprintf(connsys_pmic_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6376P][%02X][%02X, %02X]", buffer[27], buffer[25], buffer[26]);
 		if (ret <= 0)
 			pr_notice("%s snprintf fail", __func__);
 		else
 			connsys_pmic_ecid_ready = true;
 	}
 	if (connsys_chip_ecid_ready == false) {
-		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6653_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+		ddie_chip_id = ((buffer[97] << 8) | (buffer[96]));
+		ddie_hw_ver = ((buffer[99] << 8) | (buffer[98]));
+		ret = snprintf(connsys_chip_ecid, CHIP_ECIP_INFO_LENGTH, "[MT6653][%04X, %04X][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			ddie_chip_id, ddie_hw_ver,
 			buffer[32], buffer[33], buffer[34], buffer[35], buffer[36],buffer[37], buffer[38], buffer[39]);
 		if (ret <= 0)
 			pr_notice("%s snprintf fail", __func__);
@@ -581,9 +585,11 @@ int connv3_plt_pmic_parse_state_mt6991(char *buffer, int buf_sz)
 			connsys_chip_ecid_ready = true;
 	}
 	if (g_connsys_adie_chip_info_ready == false) {
+		adie_chip_id = ((buffer[103] << 24) | buffer[102] << 16 | (buffer[101] << 8) | buffer[100]);
 		ret = snprintf(
 			g_connsys_adie_chip_info, CHIP_ECIP_INFO_LENGTH -1,
-			"[MT6653_ADIE_ECID][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			"[MT6653_ADIE][%08X][%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X]",
+			adie_chip_id,
 			buffer[88], buffer[89], buffer[90], buffer[91], buffer[92],buffer[93], buffer[94], buffer[95]);
 		if (ret <= 0)
 			pr_notice("[%s] snprintf adie info fail, ret = %d", __func__, ret);
