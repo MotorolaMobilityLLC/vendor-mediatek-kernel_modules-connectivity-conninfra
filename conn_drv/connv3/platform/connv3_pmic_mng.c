@@ -254,11 +254,11 @@ static int connv3_mt6373_probe(struct platform_device *pdev)
 
 static int connv3_mt6661_4_probe(struct platform_device *pdev)
 {
-	int reg_val = 0;
+	int ret = 0, reg_val = 0;
 	struct device_node *np = pdev->dev.parent->of_node;
 
-	of_property_read_u32_index(np, "reg", 0, &reg_val);
-	if (reg_val != 4)
+	ret = of_property_read_u32_index(np, "reg", 0, &reg_val);
+	if (ret != 0 || reg_val != 4)
 		return 0;
 
 	g_connv3_regmap_mt6661_4 = dev_get_regmap(pdev->dev.parent, NULL);
@@ -272,11 +272,11 @@ static int connv3_mt6661_4_probe(struct platform_device *pdev)
 }
 static int connv3_mt6661_3_probe(struct platform_device *pdev)
 {
-	int reg_val = 0;
+	int ret = 0, reg_val = 0;
 	struct device_node *np = pdev->dev.parent->of_node;
 
-	of_property_read_u32_index(np, "reg", 0, &reg_val);
-	if (reg_val != 3)
+	ret = of_property_read_u32_index(np, "reg", 0, &reg_val);
+	if (ret != 0 || reg_val != 3)
 		return 0;
 
 	g_connv3_regmap_mt6661_3 = dev_get_regmap(pdev->dev.parent, NULL);
@@ -290,7 +290,6 @@ static int connv3_mt6661_3_probe(struct platform_device *pdev)
 }
 static int connv3_mt6688_probe(struct platform_device *pdev)
 {
-
 	g_connv3_regmap_mt6688 = dev_get_regmap(pdev->dev.parent, NULL);
 
 	if (!g_connv3_regmap_mt6688)
