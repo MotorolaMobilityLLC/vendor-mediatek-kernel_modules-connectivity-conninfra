@@ -1198,7 +1198,7 @@ static int conndump_dump_emi(struct connsys_dump_ctx* ctx)
 	conndump_set_dump_state(ctx, CORE_DUMP_EMI);
 	ret = conndump_netlink_send_to_native(ctx->conn_type, "[EMI]", emi_dump_command, strlen(emi_dump_command));
 
-	if (ret < 0) {
+	if (ret < strlen(emi_dump_command)) {
 		pr_err("Start EMI dump fail, ret = %d\n", ret);
 		return -1;
 	}
