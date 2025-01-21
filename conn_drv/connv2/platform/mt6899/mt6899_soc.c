@@ -21,11 +21,10 @@
 int consys_get_co_clock_type_mt6899(void)
 {
 	const struct conninfra_conf *conf;
-	/* For 6899, clock for connsys is always 52M (RFCK2B).
-	 * We don't need to read clock ic register to identify clock rate.
-	 */
-	int clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+	struct regmap *map = consys_clock_mng_get_regmap();
+	int value = 0;
 	unsigned char tcxo_gpio = 0;
+	int clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_COTMS;
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();
@@ -34,8 +33,20 @@ int consys_get_co_clock_type_mt6899(void)
 	else
 		tcxo_gpio = conf->tcxo_gpio;
 
-	if (tcxo_gpio != 0 || conn_hw_env.tcxo_support)
-		clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
+	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
+		if (conf->co_clock_flag == 3)
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
+		else
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO;
+	} else {
+		if (!map) {
+			pr_notice("%s, failed to get regmap.\n", __func__);
+			return -1;
+		}
+		regmap_read(map, DCXO_DIGCLK_ELR, &value);
+		if (value & 0x1)
+			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_COTMS;
+	}
 	pr_info("[%s] conf->tcxo_gpio=%d conn_hw_env.tcxo_support=%d, %s",
 		__func__, tcxo_gpio, conn_hw_env.tcxo_support,
 		clock_mng_get_schematic_name(clock_type));
