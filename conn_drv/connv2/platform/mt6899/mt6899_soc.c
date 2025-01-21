@@ -28,12 +28,14 @@ int consys_get_co_clock_type_mt6899(void)
 
 	/* Default solution */
 	conf = conninfra_conf_get_cfg();
-	if (NULL == conf)
+	if (conf == NULL) {
 		pr_notice("[%s] Get conf fail", __func__);
-	else
+		return -1;
+	} else {
 		tcxo_gpio = conf->tcxo_gpio;
+	}
 
-	if (conf->tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
+	if (tcxo_gpio != 0 || conn_hw_env.tcxo_support) {
 		if (conf->co_clock_flag == 3)
 			clock_type = CONNSYS_CLOCK_SCHEMATIC_52M_EXTCXO;
 		else
