@@ -11,7 +11,7 @@
  * It should not be modified by hand.
  *
  * Reference POS file,
- * - Jxxxr_power_on_sequence_20241113_001.xlsx
+ * - Jxxxr_power_on_sequence_20250121.xlsx
  * - Jxxxr_conn_infra_sub_task_initial.xlsx
  * - conn_infra_cmdbt_instr_autogen_20241111.txt
  */
@@ -375,7 +375,7 @@ unsigned int consys_emi_set_remapping_reg_mt6993_gen(
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
 		CONSYS_GEN_CONN2AP_REMAP_GPS_PERI_BASE_ADDR_OFFSET_ADDR, 0x1C00, 0xFFFFF);
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
-		CONSYS_GEN_SCPSYS_SRAM_BASE_ADDR_OFFSET_ADDR, 0x1DA0, 0xFFFFF);
+		CONSYS_GEN_SCPSYS_SRAM_BASE_ADDR_OFFSET_ADDR, 0x1DE0, 0xFFFFF);
 
 	if (vir_addr_0x40068000)
 		iounmap(vir_addr_0x40068000);
