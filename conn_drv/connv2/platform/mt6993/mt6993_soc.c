@@ -118,6 +118,7 @@ unsigned int consys_soc_chipid_get_mt6993(void)
 int consys_platform_spm_conn_ctrl_mt6993(unsigned int enable)
 {
 	int ret = 0;
+	int check = 0;
 
 	if (!g_clk_pd) {
 		pr_info("%s g_clk_pd is NULL.\n", __func__);
@@ -131,6 +132,17 @@ int consys_platform_spm_conn_ctrl_mt6993(unsigned int enable)
 		else
 			pr_info("clk_prepare_enable() ok\n");
 	} else {
+		// enable conn2emi gals slpprot
+		CONSYS_SET_BIT(CONN_HOST_CSR_TOP_CONN_CONN2EMI_TX_SLEEP_PROTECT_CTRL_CSR_ADDR, 1);
+
+		// polling conn2emi gals slpprot ready
+		CONSYS_REG_BIT_POLLING(CONN_HOST_CSR_TOP_CONN_INFRA_AXI_LAYER_SLPPROT_STA_ADDR,
+				2, 1, 100, 500, check);
+		if (check != 0) {
+			pr_notice("check slpprot fail, Status=0x%08x\n",
+			  CONSYS_REG_READ(CONN_HOST_CSR_TOP_CONN_INFRA_AXI_LAYER_SLPPROT_STA_ADDR));
+		}
+
 		clk_disable_unprepare(g_clk_pd);
 	}
 	return ret;
