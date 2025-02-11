@@ -33,7 +33,7 @@
 #define MT6637E1 0x66378A00
 #define MT6637E2 0x66378A01
 
-#define SEMA_HOLD_TIME_THRESHOLD 10 //10 ms
+#define SEMA_HOLD_TIME_THRESHOLD 5 //5 ms
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -54,6 +54,9 @@ struct a_die_reg_config {
 ********************************************************************************
 */
 static u64 sema_get_time[CONN_SEMA_NUM_MAX];
+static u64 log_sema_time[10];
+static unsigned int sema_count = 0;
+static unsigned long g_sema_irq_flags = 0;
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
 static const char* get_spi_sys_name(enum sys_spi_subsystem subsystem);
@@ -97,42 +100,20 @@ int consys_conninfra_sleep_mt6895(void)
 static void print_pmif_reg(void)
 {
 	void __iomem *addr = NULL;
-	unsigned int v[8];
+	unsigned int v;
 
-	/* clk cg */
-	addr = ioremap(0x1C00C004, 0x4);
+	/* DEBUGTOP_MON 0x0d0a0088 */
+	addr = ioremap(0x0d0a0088, 0x4);
 	if (!addr) {
 		pr_notice("%s clk cg ioremap failed\n", __func__);
 		return;
 	}
-	v[0] = CONSYS_REG_READ(addr);
+	v = CONSYS_REG_READ(addr);
 	iounmap(addr);
-	pr_info("[consys]clk_cg:%x\n", v[0]);
-
-
-	/* PMIF cg */
-	addr = ioremap(0x1C804000, 0x3C4);
-	if (!addr) {
-		pr_notice("%s pmif ioremap failed\n", __func__);
-		return;
-	}
-	v[0] = CONSYS_REG_READ(addr + 0x18);
-	v[1] = CONSYS_REG_READ(addr + 0x24);
-	v[2] = CONSYS_REG_READ(addr + 0x150);
-	v[3] = CONSYS_REG_READ(addr + 0x374);
-	v[4] = CONSYS_REG_READ(addr + 0x398);
-	v[5] = CONSYS_REG_READ(addr + 0x3B8);
-	v[6] = CONSYS_REG_READ(addr + 0x3BC);
-	v[7] = CONSYS_REG_READ(addr + 0x3C0);
-	iounmap(addr);
-
-	pr_info("[consys]pmif:0x18=%x,0x24=%x,0x150=%x,"
-		"0x374=%x, 0x398=%x, 0x3B8=%x, 0x3BC=%x, 0x3C0=%x\n",
-		v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]
-	);
+	pr_info("[consys]DEBUGTOP_MON:%x\n", v);
 }
 
-void consys_set_if_pinmux_mt6895(unsigned int enable)
+void consys_set_if_pinmux_mt6895(unsigned int enable, unsigned int curr_status, unsigned int next_status)
 {
 #ifndef CFG_CONNINFRA_ON_CTP
 	struct pinctrl_state *tcxo_pinctrl_set;
@@ -143,8 +124,10 @@ void consys_set_if_pinmux_mt6895(unsigned int enable)
 
 	print_pmif_reg();
 	clock_type = consys_co_clock_type_mt6895();
-
 	if (enable) {
+		if (curr_status != 0)
+			return;
+
 		consys_set_if_pinmux_mt6895_gen(1);
 		/* if(TCXO mode)
 		 * 	Set GPIO135 pinmux for TCXO mode (Aux3)(CONN_TCXOENA_REQ)
@@ -166,6 +149,9 @@ void consys_set_if_pinmux_mt6895(unsigned int enable)
 	#endif /* defined(CFG_CONNINFRA_ON_CTP) */
 		}
 	} else {
+		if (next_status != 0)
+			return;
+
 		consys_set_if_pinmux_mt6895_gen(0);
 
 		if (clock_type == CONNSYS_CLOCK_SCHEMATIC_26M_EXTCXO ||
@@ -234,8 +220,11 @@ static int connsys_adie_clock_buffer_setting(unsigned int curr_status, unsigned 
 	return 0;
 }
 
-int connsys_spi_master_cfg_mt6895(unsigned int next_status)
+int connsys_spi_master_cfg_mt6895(unsigned int curr_status, unsigned int next_status)
 {
+	if (curr_status != 0)
+		return 0;
+
 	connsys_wt_slp_top_ctrl_adie6637_mt6895_gen();
 	return 0;
 }
@@ -256,7 +245,7 @@ int consys_get_sleep_mode_mt6895(void)
 	return 1;
 }
 
-int connsys_a_die_cfg_mt6895(void)
+int connsys_a_die_cfg_mt6895(unsigned int curr_status, unsigned int next_status)
 {
 #ifdef CONFIG_FPGA_EARLY_PORTING
 	pr_info("[%s] not support on FPGA", __func__);
@@ -269,6 +258,9 @@ int connsys_a_die_cfg_mt6895(void)
 	unsigned int sleep_mode = 0;
 	unsigned int clock_type = 0;
 	unsigned int sysram_clock_type = 0;
+
+	if (curr_status != 0)
+		return 0;
 
 	clock_type = consys_co_clock_type_mt6895();
 	/* FW only cares 26M or 52M */
@@ -306,7 +298,6 @@ int connsys_a_die_cfg_mt6895(void)
 		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 		return -1;
 	}
-	pr_info("[%s] A-die chip id: 0x%08x\n", __func__, adie_id);
 
 	conn_hw_env.adie_hw_version = adie_id;
 	/* Write to conninfra sysram */
@@ -330,7 +321,6 @@ int connsys_a_die_cfg_mt6895(void)
 	conn_hw_env.is_rc_mode = consys_is_rc_mode_enable_mt6895();
 
 	sleep_mode = consys_get_sleep_mode_mt6895();
-	pr_info("sleep_mode = %d\n", sleep_mode);
 	connsys_wt_slp_top_power_saving_ctrl_adie6637_mt6895_gen(adie_id, sleep_mode);
 #endif /* CONFIG_FPGA_EARLY_PORTING */
 	return 0;
@@ -390,7 +380,6 @@ static int consys_sema_acquire(unsigned int index)
 int consys_sema_acquire_timeout_mt6895(unsigned int index, unsigned int usec)
 {
 	int i;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return CONN_SEMA_GET_FAIL;
@@ -398,7 +387,7 @@ int consys_sema_acquire_timeout_mt6895(unsigned int index, unsigned int usec)
 		if (consys_sema_acquire(index) == CONN_SEMA_GET_SUCCESS) {
 			sema_get_time[index] = jiffies;
 			if (index == CONN_SEMA_RFSPI_INDEX)
-				local_irq_save(flags);
+				local_irq_save(g_sema_irq_flags);
 			return CONN_SEMA_GET_SUCCESS;
 		}
 		udelay(1);
@@ -420,7 +409,6 @@ int consys_sema_acquire_timeout_mt6895(unsigned int index, unsigned int usec)
 void consys_sema_release_mt6895(unsigned int index)
 {
 	u64 duration;
-	unsigned long flags = 0;
 
 	if (index >= CONN_SEMA_NUM_MAX)
 		return;
@@ -428,10 +416,25 @@ void consys_sema_release_mt6895(unsigned int index)
 		(CONN_SEMAPHORE_CONN_SEMA00_M2_OWN_REL_ADDR + index*4), 0x1);
 
 	duration = jiffies_to_msecs(jiffies - sema_get_time[index]);
-	if (index == CONN_SEMA_RFSPI_INDEX)
-		local_irq_restore(flags);
-	if (duration > SEMA_HOLD_TIME_THRESHOLD)
+	if (index == CONN_SEMA_RFSPI_INDEX) {
+		local_irq_restore(g_sema_irq_flags);
+
+		if (sema_count == 10)
+			sema_count = 0;
+
+		log_sema_time[sema_count] = duration;
+		sema_count++;
+		/* delay for firmware to take semaphore */
+		udelay(2);
+	}
+
+	if (duration > SEMA_HOLD_TIME_THRESHOLD) {
 		pr_notice("%s hold semaphore (%d) for %llu ms\n", __func__, index, duration);
+		pr_notice("[%s] log_sema_time: [%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu][%llu]\n",
+			__func__, log_sema_time[0], log_sema_time[1], log_sema_time[2], log_sema_time[3],
+			log_sema_time[4], log_sema_time[5], log_sema_time[6],
+			log_sema_time[7], log_sema_time[8], log_sema_time[9]);
+	}
 }
 
 struct spi_op {
@@ -559,6 +562,10 @@ int consys_spi_read_nolock_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 int consys_spi_read_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int *data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_read_nolock_mt6895(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_notice("[SPI READ] Require semaphore fail\n");
@@ -618,6 +625,10 @@ int consys_spi_write_nolock_mt6895(enum sys_spi_subsystem subsystem, unsigned in
 int consys_spi_write_mt6895(enum sys_spi_subsystem subsystem, unsigned int addr, unsigned int data)
 {
 	int ret = 0;
+
+	if (subsystem == SYS_SPI_FM || subsystem == SYS_SPI_GPS)
+		return consys_spi_write_nolock_mt6895(subsystem, addr, data);
+
 	/* Get semaphore before read */
 	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
 		pr_notice("[SPI WRITE] Require semaphore fail\n");
@@ -637,16 +648,19 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 	unsigned int new_val = 0;
 	bool change = false;
 
-	/* Get semaphore before updating bits */
-	if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
-		pr_notice("[SPI WRITE] Require semaphore fail\n");
-		return CONNINFRA_SPI_OP_FAIL;
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS) {
+		/* Get semaphore before updating bits */
+		if (consys_sema_acquire_timeout_mt6895(CONN_SEMA_RFSPI_INDEX, CONN_SEMA_TIMEOUT) == CONN_SEMA_GET_FAIL) {
+			pr_notice("[SPI WRITE] Require semaphore fail\n");
+			return CONNINFRA_SPI_OP_FAIL;
+		}
 	}
 
 	ret = consys_spi_read_nolock_mt6895(subsystem, addr, &curr_val);
 
 	if (ret) {
-		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
+		if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
+			consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 #ifndef CONFIG_FPGA_EARLY_PORTING
 		pr_notice("[%s][%s] Get 0x%08x error, ret=%d",
 			__func__, get_spi_sys_name(subsystem), addr, ret);
@@ -661,7 +675,8 @@ int consys_spi_update_bits_mt6895(enum sys_spi_subsystem subsystem, unsigned int
 		ret = consys_spi_write_nolock_mt6895(subsystem, addr, new_val);
 	}
 
-	consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
+	if (subsystem != SYS_SPI_FM && subsystem != SYS_SPI_GPS)
+		consys_sema_release_mt6895(CONN_SEMA_RFSPI_INDEX);
 
 	return ret;
 }

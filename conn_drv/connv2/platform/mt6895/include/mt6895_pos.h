@@ -13,12 +13,12 @@ unsigned int consys_emi_set_remapping_reg_mt6895(phys_addr_t, phys_addr_t, phys_
 int consys_conninfra_on_power_ctrl_mt6895(unsigned int enable);
 int consys_conninfra_wakeup_mt6895(void);
 int consys_conninfra_sleep_mt6895(void);
-void consys_set_if_pinmux_mt6895(unsigned int enable);
+void consys_set_if_pinmux_mt6895(unsigned int enable, unsigned int curr_status, unsigned int next_status);
 int consys_polling_chipid_mt6895(void);
 
 int connsys_d_die_cfg_mt6895(void);
-int connsys_spi_master_cfg_mt6895(unsigned int);
-int connsys_a_die_cfg_mt6895(void);
+int connsys_spi_master_cfg_mt6895(unsigned int curr_status, unsigned int next_status);
+int connsys_a_die_cfg_mt6895(unsigned int curr_status, unsigned int next_status);
 void connsys_afe_sw_patch_mt6895(void);
 int connsys_afe_wbg_cal_mt6895(void);
 int connsys_subsys_pll_initial_mt6895(void);
