@@ -260,7 +260,11 @@ void consys_plt_coredump_get_emi_dump_offset_mt6993(unsigned int *start, unsigne
 	if (start)
 		*start = 0x003C0000;
 	if (end)
+#if CONNINFRA_DBG_SUPPORT
+		*end = 0x0092A000;
+#else
 		*end = 0x00630000;
+#endif
 }
 
 int consys_plt_coredump_exception_filter(char* exp)
