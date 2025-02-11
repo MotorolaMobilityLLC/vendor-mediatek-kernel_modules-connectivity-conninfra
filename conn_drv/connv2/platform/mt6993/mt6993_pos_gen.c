@@ -31,6 +31,7 @@
 #include "mt6993_pos_gen.h"
 #include "conninfra.h"
 
+#define CONN_WLA_ENABLE 1
 
 const unsigned int g_cmdbt_dwn_value_ary_mt6993[1024] = {
 	0x16000400, 0x16011805, 0x16100A00, 0x16111805, 0x1620003B, 0x16210000, 0xCCCCCCCC, 0x06000000,
