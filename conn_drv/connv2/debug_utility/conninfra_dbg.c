@@ -95,6 +95,7 @@ static int conninfra_dbg_dump_power_state(int par1, int par2, int par3);
 static int conninfra_dbg_conap_trg_cmd(int par1, int par2, int par3);
 #if CONNINFRA_DBG_SUPPORT
 static int conninfra_dbg_get_chip_info(int par1, int par2, int par3);
+static int conninfra_dbg_is_bus_hang(int par1, int par2, int par3);
 #endif
 
 static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
@@ -138,6 +139,7 @@ static const CONNINFRA_DEV_DBG_FUNC conninfra_dev_dbg_func[] = {
 #endif
 	[0x21] = conninfra_dbg_mcu_log_ctrl,
 #if CONNINFRA_DBG_SUPPORT
+	[0x22] = conninfra_dbg_is_bus_hang,
 	[0x30] = conninfra_dbg_spi_1_read,
 	[0x31] = conninfra_dbg_spi_1_write,
 #endif
@@ -947,4 +949,11 @@ static int conninfra_dbg_spi_1_write(int par1, int par2, int par3)
 			__func__, conninfra_dbg_spi_subsys_string(spi_write_subsys), par2, par3, ret);
 	return 0;
 }
+
+static int conninfra_dbg_is_bus_hang(int par1, int par2, int par3)
+{
+	conninfra_is_bus_hang();
+	return 0;
+}
+
 #endif

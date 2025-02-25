@@ -85,10 +85,6 @@ int consys_clock_buffer_ctrl_mt6993(unsigned int enable)
 	}
 
 	if (enable) {
-		/* write pdn_ap2conn_host = 0; clock on */
-		CONSYS_SET_BIT(vir_addr_consys_gen_cksys_base +
-			CONSYS_GEN_CLK_CFG_6_CLR_OFFSET_ADDR, (0x1U << 31));
-
 		/* write clk_ap2conn_host_sel = 1; main pll */
 		CONSYS_SET_BIT(vir_addr_consys_gen_cksys_base +
 			CONSYS_GEN_CLK_CFG_6_SET_OFFSET_ADDR, (0x1U << 24));
@@ -98,10 +94,6 @@ int consys_clock_buffer_ctrl_mt6993(unsigned int enable)
 		/* write clk_ap2conn_host_sel = 0; 26M */
 		CONSYS_SET_BIT(vir_addr_consys_gen_cksys_base +
 			CONSYS_GEN_CLK_CFG_6_CLR_OFFSET_ADDR, (0x1U << 24));
-
-		/* write pdn_ap2conn_host = 1; clock off */
-		CONSYS_SET_BIT(vir_addr_consys_gen_cksys_base +
-			CONSYS_GEN_CLK_CFG_6_SET_OFFSET_ADDR, (0x1U << 31));
 	}
 
 	if (vir_addr_consys_gen_cksys_base)
