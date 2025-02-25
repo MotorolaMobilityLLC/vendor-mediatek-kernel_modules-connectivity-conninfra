@@ -73,6 +73,9 @@ static int opfunc_chip_rst(struct msg_op_data *op);
 static int opfunc_pre_cal(struct msg_op_data *op);
 static int opfunc_pre_cal_prepare(struct msg_op_data *op);
 static int opfunc_pre_cal_check(struct msg_op_data *op);
+static int opfunc_set_pmic_en0(struct msg_op_data *op);
+static int opfunc_set_pmic_en1(struct msg_op_data *op);
+static int opfunc_toggle_conn_rst(struct msg_op_data *op);
 static int opfunc_ext_32k_on(struct msg_op_data *op);
 static int opfunc_reset_power_state(struct msg_op_data *op);
 static int opfunc_dump_power_state(struct msg_op_data *op);
@@ -125,6 +128,9 @@ static const msg_opid_func connv3_core_opfunc[] = {
 	[CONNV3_OPID_RESET_POWER_STATE] = opfunc_reset_power_state,
 	[CONNV3_OPID_DUMP_POWER_STATE] = opfunc_dump_power_state,
 	[CONNV3_OPID_RESET_AND_DUMP_POWER_STATE] = opfunc_reset_and_dump_power_state,
+	[CONNV3_OPID_SET_PMIC_EN0] = opfunc_set_pmic_en0,
+	[CONNV3_OPID_SET_PMIC_EN1] = opfunc_set_pmic_en1,
+	[CONNV3_OPID_TOGGLE_CONN_RST] = opfunc_toggle_conn_rst,
 };
 
 static const msg_opid_func connv3_core_cb_opfunc[] = {
@@ -1596,6 +1602,31 @@ int opfunc_subdrv_pwr_on_notify(struct msg_op_data *op)
 	return 0;
 }
 
+int opfunc_set_pmic_en0(struct msg_op_data *op)
+{
+	unsigned int enable = op->op_data[0];
+	int ret;
+
+	ret = connv3_hw_set_pmic_en0(enable);
+	return 0;
+}
+
+int opfunc_set_pmic_en1(struct msg_op_data *op)
+{
+	unsigned int enable = op->op_data[0];
+	int ret;
+
+	ret = connv3_hw_set_pmic_en1(enable);
+	return 0;
+}
+
+int opfunc_toggle_conn_rst(struct msg_op_data *op)
+{
+	int ret;
+
+	ret = connv3_hw_pwr_rst();
+	return 0;
+}
 
 int opfunc_ext_32k_on(struct msg_op_data *op)
 {
@@ -1914,6 +1945,48 @@ int connv3_core_power_off(enum connv3_drv_type type)
 	return 0;
 }
 
+int connv3_core_set_pmic_en0(int enable)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send_wait_1(&ctx->msg_ctx,
+		CONNV3_OPID_SET_PMIC_EN0, 0, enable);
+	if (ret) {
+		pr_info("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+	return 0;
+}
+
+int connv3_core_set_pmic_en1(int enable)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send_wait_1(&ctx->msg_ctx,
+		CONNV3_OPID_SET_PMIC_EN1, 0, enable);
+	if (ret) {
+		pr_info("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+	return 0;
+}
+
+int connv3_core_toggle_conn_rst(void)
+{
+	int ret = 0;
+	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	ret = msg_thread_send_wait(&ctx->msg_ctx,
+		CONNV3_OPID_TOGGLE_CONN_RST, 0);
+	if (ret) {
+		pr_info("[%s] send msg fail, ret = %d\n", __func__, ret);
+		return -1;
+	}
+	return 0;
+}
+
 int connv3_core_ext_32k_on(void)
 {
 	int ret = 0;
@@ -2174,7 +2247,6 @@ int connv3_core_subsys_ops_reg(enum connv3_drv_type type,
 	pr_info("[%s] [pre_cal] type=[%d] bt=[%p][%p] wf=[%p][%p]", __func__, type,
 			bt_cb.pwr_on_cb, bt_cb.do_cal_cb,
 			wifi_cb.pwr_on_cb, wifi_cb.do_cal_cb);
-
 	if (trigger_pre_cal) {
 		pr_info("[%s] [pre_cal] trigger pre-cal BT/WF are registered", __func__);
 		ret = msg_thread_send_1(&ctx->msg_ctx,

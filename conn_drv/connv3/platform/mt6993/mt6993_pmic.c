@@ -432,6 +432,8 @@ int connv3_plt_pmic_get_connsys_adie_chip_info_mt6993(char *connsys_adie_chip_in
 int connv3_plt_pmic_get_pmic_chip_info_mt6993(char *pmic_ecid, int pmic_ecid_size);
 int connv3_plt_pmic_fmd_setting_mt6993(u32 enable);
 int connv3_plt_pmic_pwr_rst_mt6993(void);
+int connv3_plt_pmic_set_pmic_en0_mt6993(int enable);
+int connv3_plt_pmic_set_pmic_en1_mt6993(int enable);
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6993 = {
 	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6993,
@@ -443,6 +445,8 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6993 = {
 	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6993,
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6993,
 	.pmic_fmd_setting = connv3_plt_pmic_fmd_setting_mt6993,
+	.set_pmic_en0 = connv3_plt_pmic_set_pmic_en0_mt6993,
+	.set_pmic_en1 = connv3_plt_pmic_set_pmic_en1_mt6993,
 };
 
 
@@ -786,6 +790,88 @@ static int connv3_plt_pmic_init_por_rst_pin(void)
 	else
 		pr_info("[%s] POR_RST PD\n", __func__);
 
+	return 0;
+}
+
+int connv3_plt_pmic_set_pmic_en0_mt6993(int enable)
+{
+	struct pinctrl_state *pinctrl_set;
+	int ret = 0;
+
+	if (enable == 1) {
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
+		if (!IS_ERR(pinctrl_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_info("[%s] pinctrl on fail, %d", __func__, ret);
+		} else {
+			pr_info("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
+		}
+
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	} else if (enable == 0){
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-en-clr");
+		if (!IS_ERR(pinctrl_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_info("[%s] pinctrl on fail, %d", __func__, ret);
+		} else {
+			pr_info("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
+		}
+
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	}
+
+	return ret;
+}
+
+int connv3_plt_pmic_set_pmic_en1_mt6993(int enable)
+{
+	int i = 0;
+	int array_size = 0;
+	static struct pmic_addr_mask_value mt6661_PMIC_EN1_ON[] =
+	{
+		{0xA2F ,0xFF ,0x29}, // unlock cpskey
+		{0xA30 ,0xFF ,0x47}, // unlock cpskey
+		{0x3B4 ,0xFF ,0x9E}, // tma key
+		{0x3B5 ,0xFF ,0x99}, // tma key
+		{0xB6 ,0x38 ,0x00},  // Set AGPIO2 as GPIO function
+		{0x8B ,0x02 ,0x02},  // Set AGPIO2 as OUTPUT
+		{0xA3 ,0x02 ,0x02},  // Set AGPIO2 as HIGH
+		{0xA2F ,0xFF ,0x0}, // lock cpskey
+		{0xA30 ,0xFF ,0x0}, // lock cpskey
+		{0x3B4 ,0xFF ,0x0}, // tma key
+		{0x3B5 ,0xFF ,0x0}, // tma key
+	};
+	static struct pmic_addr_mask_value mt6661_PMIC_EN1_OFF[] =
+	{
+		{0xA2F ,0xFF ,0x29}, // unlock cpskey
+		{0xA30 ,0xFF ,0x47}, // unlock cpskey
+		{0x3B4 ,0xFF ,0x9E}, // tma key
+		{0x3B5 ,0xFF ,0x99}, // tma key
+		{0xB6 ,0x38 ,0x00},  // Set AGPIO2 as GPIO function
+		{0x8B ,0x02 ,0x02},  // Set AGPIO2 as OUTPUT
+		{0xA3 ,0x02 ,0x00},  // Set AGPIO2 as low
+		{0xA2F ,0xFF ,0x0}, // lock cpskey
+		{0xA30 ,0xFF ,0x0}, // lock cpskey
+		{0x3B4 ,0xFF ,0x0}, // tma key
+		{0x3B5 ,0xFF ,0x0}, // tma key
+	};
+
+	array_size = sizeof(mt6661_PMIC_EN1_ON) / sizeof(mt6661_PMIC_EN1_ON[0]);
+	for (i = 0; i < array_size ; i++) {
+		if (enable) {
+			regmap_read(g_connv3_regmap_mt6661_4, (mt6661_PMIC_EN1_ON+i)->addr, &((mt6661_PMIC_EN1_ON+i)->bk_value));
+			regmap_update_bits(g_connv3_regmap_mt6661_4, (mt6661_PMIC_EN1_ON+i)->addr, (mt6661_PMIC_EN1_ON+i)->mask, (mt6661_PMIC_EN1_ON+i)->value);
+		} else {
+			regmap_read(g_connv3_regmap_mt6661_4, (mt6661_PMIC_EN1_OFF+i)->addr, &((mt6661_PMIC_EN1_OFF+i)->bk_value));
+			regmap_update_bits(g_connv3_regmap_mt6661_4, (mt6661_PMIC_EN1_OFF+i)->addr, (mt6661_PMIC_EN1_OFF+i)->mask, (mt6661_PMIC_EN1_OFF+i)->value);
+		}
+	}
+
+	pr_info("%s[%d], enable=%d\n", __func__, __LINE__, enable);
 	return 0;
 }
 

@@ -174,6 +174,9 @@ typedef enum {
 	CONNV3_OPID_DUMP_POWER_STATE		= 7,
 	CONNV3_OPID_EXT_32K_ON			= 8,
 	CONNV3_OPID_RESET_AND_DUMP_POWER_STATE	= 9,
+	CONNV3_OPID_SET_PMIC_EN0		= 10,
+	CONNV3_OPID_SET_PMIC_EN1 		= 11,
+	CONNV3_OPID_TOGGLE_CONN_RST		= 12,
 	CONNV3_OPID_MAX
 } connv3_core_opid;
 
@@ -207,6 +210,9 @@ int connv3_core_deinit(void);
 int connv3_core_power_on(enum connv3_drv_type type);
 int connv3_core_power_on_done(enum connv3_drv_type type);
 int connv3_core_power_off(enum connv3_drv_type type);
+int connv3_core_set_pmic_en0(int enable);
+int connv3_core_set_pmic_en1(int enable);
+int connv3_core_toggle_conn_rst(void);
 int connv3_core_ext_32k_on(void);
 
 int connv3_core_lock_rst(unsigned int *rst_source);

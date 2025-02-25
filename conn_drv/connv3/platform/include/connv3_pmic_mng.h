@@ -51,6 +51,8 @@ struct connv3_platform_pmic_ops {
 	int (*pmic_get_pmic_chip_info) (char *pmic_ecid, int pmic_ecid_size);
 	int (*pmic_fmd_setting) (u32 enable);
 	int (*pmic_pwr_rst) (void);
+	int (*set_pmic_en0) (int enable);
+	int (*set_pmic_en1) (int enable);
 };
 
 
@@ -91,6 +93,8 @@ int connv3_pmic_mng_get_connsys_adie_chip_info(char *connsys_adie_info, int conn
 int connv3_pmic_mng_get_pmic_chip_info(char *pmic_ecid, int pmic_ecid_size);
 int connv3_pmic_mng_fmd_setting(u32 enable);
 int connv3_pmic_mng_pwr_rst(void);
+int connv3_pmic_mng_set_pmic_en0(int);
+int connv3_pmic_mng_set_pmic_en1(int);
 
 /*******************************************************************************
 *                              F U N C T I O N S

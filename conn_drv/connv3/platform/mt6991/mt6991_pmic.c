@@ -376,6 +376,8 @@ int connv3_plt_pmic_get_connsys_adie_chip_info_mt6991(char *connsys_adie_chip_in
 int connv3_plt_pmic_get_pmic_chip_info_mt6991(char *pmic_ecid, int pmic_ecid_size);
 int connv3_plt_pmic_fmd_setting_mt6991(u32 enable);
 int connv3_plt_pmic_pwr_rst_mt6991(void);
+int connv3_plt_pmic_set_pmic_en0_mt6991(int enable);
+int connv3_plt_pmic_set_pmic_en1_mt6991(int enable);
 
 int connv3_plt_pmic_initial_setting_mt6991_mt6661(struct platform_device *pdev, struct connv3_dev_cb* dev_cb);
 int connv3_plt_pmic_common_power_ctrl_mt6991_mt6661(u32 enable);
@@ -389,6 +391,8 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991 = {
 	.pmic_get_connsys_adie_chip_info = connv3_plt_pmic_get_connsys_adie_chip_info_mt6991,
 	.pmic_get_pmic_chip_info = connv3_plt_pmic_get_pmic_chip_info_mt6991,
 	.pmic_pwr_rst = connv3_plt_pmic_pwr_rst_mt6991,
+	.set_pmic_en0 = connv3_plt_pmic_set_pmic_en0_mt6991,
+	.set_pmic_en1 = connv3_plt_pmic_set_pmic_en1_mt6991,
 };
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991_mt6661 = {
@@ -721,6 +725,47 @@ static int connv3_plt_pmic_init_por_rst_pin(void)
 	else
 		pr_info("[%s] POR_RST PD\n", __func__);
 
+	return 0;
+}
+
+int connv3_plt_pmic_set_pmic_en0_mt6991(int enable)
+{
+	struct pinctrl_state *pinctrl_set;
+	int ret = 0;
+
+	if (enable == 1) {
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-en-set");
+		if (!IS_ERR(pinctrl_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_info("[%s] pinctrl on fail, %d", __func__, ret);
+		} else {
+			pr_info("[%s] fail to get \"connsys-pin-pmic-en-set\"",  __func__);
+		}
+
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	} else if (enable == 0){
+		pinctrl_set = pinctrl_lookup_state(
+				g_pinctrl_ptr, "connsys-pin-pmic-en-clr");
+		if (!IS_ERR(pinctrl_set)) {
+			ret = pinctrl_select_state(g_pinctrl_ptr, pinctrl_set);
+			if (ret)
+				pr_info("[%s] pinctrl on fail, %d", __func__, ret);
+		} else {
+			pr_info("[%s] fail to get \"connsys-pin-pmic-en-clr\"",	__func__);
+		}
+
+		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
+	}
+
+	return ret;
+}
+
+int connv3_plt_pmic_set_pmic_en1_mt6991(int enable)
+{
+	// preserve this function, add log for debug
+	pr_info("%s[%d], Do nothing\n", __func__, __LINE__);
 	return 0;
 }
 
