@@ -110,6 +110,8 @@ int connv3_hw_deinit(void);
 int connv3_hw_pwr_off(unsigned int curr_status, unsigned int off_radio, unsigned int *pmic_state);
 int connv3_hw_pwr_on(unsigned int curr_status, unsigned int on_radio);
 int connv3_hw_pwr_on_done(unsigned int radio);
+int connv3_hw_set_pmic_en0(int);
+int connv3_hw_set_pmic_en1(int);
 int connv3_hw_ext_32k_onoff(bool);
 int connv3_hw_pwr_rst(void);
 

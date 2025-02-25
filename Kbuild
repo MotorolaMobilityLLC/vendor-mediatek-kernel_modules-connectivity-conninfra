@@ -333,6 +333,7 @@ $(MODULE_NAME)-objs += conn_drv/connv3/platform/connv3_hw_dbg.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/connsyslog/connv3_mcu_log.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/coredump/connv3_coredump.o
 $(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/coredump/connv3_dump_mng.o
+$(MODULE_NAME)-objs += conn_drv/connv3/debug_utility/connv3_dbg.o
 
 # By Plaftfrom
 ifeq ($(CONFIG_MTK_COMBO_CHIP_CONSYS_6885),y)

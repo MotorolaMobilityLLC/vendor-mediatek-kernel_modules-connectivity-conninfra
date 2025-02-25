@@ -280,6 +280,16 @@ int get_connv3_platform_ops(struct platform_device *pdev)
 	return 0;
 }
 
+int connv3_hw_set_pmic_en0(int enable)
+{
+	return connv3_pmic_mng_set_pmic_en0(enable);
+}
+
+int connv3_hw_set_pmic_en1(int enable)
+{
+	return connv3_pmic_mng_set_pmic_en1(enable);
+}
+
 int connv3_hw_ext_32k_onoff(bool on)
 {
 	return connv3_pinctrl_mng_ext_32k_ctrl(on);

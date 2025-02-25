@@ -158,6 +158,28 @@ int connv3_pmic_mng_vsel_ctrl(u32 enable)
 	return ret;
 }
 
+int connv3_pmic_mng_set_pmic_en0(int enable)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->set_pmic_en0)
+		ret = g_connv3_platform_pmic_ops->set_pmic_en0(enable);
+
+	return ret;
+}
+
+int connv3_pmic_mng_set_pmic_en1(int enable)
+{
+	int ret = 0;
+
+	if (g_connv3_platform_pmic_ops &&
+		g_connv3_platform_pmic_ops->set_pmic_en1)
+		ret = g_connv3_platform_pmic_ops->set_pmic_en1(enable);
+
+	return ret;
+}
+
 int connv3_pmic_mng_pwr_rst(void)
 {
 	int ret = 0;

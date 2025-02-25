@@ -16,6 +16,7 @@
 #include "conn_adaptor.h"
 #include "connv3_hw.h"
 #include "connv3_core.h"
+#include "connv3_dbg.h"
 #include "connv3_drv.h"
 #include "connv3_debug_utility.h"
 
@@ -418,6 +419,9 @@ int connv3_drv_init(void)
 
 	INIT_WORK(&g_connv3_pmic_work.pmic_work, connv3_dev_pmic_event_handler);
 
+	/* init dbg device node */
+	connv3_dev_dbg_init();
+
 	osal_sleepable_lock_init(&g_log_node_lock);
 
 	pr_info("[%s] result [%d]\n", __func__, iret);
@@ -429,6 +433,8 @@ int connv3_drv_deinit(void)
 	int ret;
 
 	osal_sleepable_lock_deinit(&g_log_node_lock);
+
+	ret = connv3_dev_dbg_deinit();
 
 #ifdef CFG_CONNINFRA_UT_SUPPORT
 	ret = connv3_test_remove();
