@@ -72,6 +72,7 @@ int consys_conninfra_wakeup_mt6993_gen(void);
 #define CONSYS_GEN_CONN_INFRA_BUS_CR_CONN_INFRA_OFF_BUS_TIMEOUT_CTRL_OFFSET_ADDR            0x24
 #define CONSYS_GEN_CONN_INFRA_CONN2AP_EMI_PATH_ADDR_START_OFFSET_ADDR                       0x70
 #define CONSYS_GEN_CONN_INFRA_CONN2AP_EMI_PATH_ADDR_END_OFFSET_ADDR                         0x74
+#define CONSYS_GEN_CONN_INFRA_EMI_WLA_DEBUG_CTRL_ADDR                                       0x148
 #define CONSYS_GEN_CONN2AP_REMAP_WF_PERI_BASE_ADDR_OFFSET_ADDR                              0x364
 #define CONSYS_GEN_CONN2AP_REMAP_BT_PERI_BASE_ADDR_OFFSET_ADDR                              0x368
 #define CONSYS_GEN_CONN2AP_REMAP_GPS_PERI_BASE_ADDR_OFFSET_ADDR                             0x36C

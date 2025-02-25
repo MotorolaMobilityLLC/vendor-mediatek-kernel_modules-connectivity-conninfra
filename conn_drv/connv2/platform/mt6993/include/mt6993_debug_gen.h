@@ -128,6 +128,7 @@ void consys_print_infra_top_cr_debug_dbg_level_2_mt6993_debug_gen(
 #define CONSYS_DBG_GEN_EMI_CTL_0_OFFSET_ADDR                                                      0x100
 #define CONSYS_DBG_GEN_EMI_PROBE_OFFSET_ADDR                                                      0x130
 #define CONSYS_DBG_GEN_EMI_PROBE_1_OFFSET_ADDR                                                    0x134
+#define CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_ADDR                                            0x420
 #define CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_REQ2ACK_TIMEOUT_OFFSET_ADDR                     0x424
 #define CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_URG2ACK_TIMEOUT_OFFSET_ADDR                     0x428
 #define CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_EN2RDY_TIMEOUT_OFFSET_ADDR                      0x42C
@@ -209,6 +210,11 @@ void consys_print_infra_top_cr_debug_dbg_level_2_mt6993_debug_gen(
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_1_OFFSET_ADDR                           0x40
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_APB_TIMEOUT_INFO_2_OFFSET_ADDR                           0x44
 #define CONSYS_DBG_GEN_CONN_INFRA_ON_BUS_TIMEOUT_APB_ID_OFFSET_ADDR                               0x48
+
+/**********************************************************************************************************/
+/* Base: CONN_BUS_CR_BASE (0x4004_b000)                                                                   */
+/**********************************************************************************************************/
+#define CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_INFO_ADDR                                         0x15c
 
 /**********************************************************************************************************/
 /* Base: CONN_OFF_DEBUG_CTRL_AO_BASE (0x4004_d000)                                                        */

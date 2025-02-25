@@ -2373,4 +2373,38 @@ void consys_print_infra_top_cr_debug_dbg_level_2_mt6993_debug_gen(
 			CONSYS_REG_READ(CONN_CFG_BASE +
 				CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_HRT_TIMEOUT_OFFSET_ADDR));
 	#endif
+
+	/* B09 */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		update_debug_read_info_mt6993_debug_gen(pdbg_level_2_info,
+			"B09", 0x40011000 + CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_ADDR,
+			CONSYS_REG_READ(CONN_CFG_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_CFG_EMI_CTL_WLA_ADDR));
+	#endif
+
+	/* B09 */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		CONSYS_REG_WRITE(CONN_DBG_CTL_BASE +
+			CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR, 0x1F);
+		update_debug_write_info_mt6993_debug_gen(pdbg_level_2_info,
+			"B09", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_SEL_OFFSET_ADDR,
+			0, 31, 0x1F);
+	#endif
+
+	/* B09 */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		update_debug_read_info_mt6993_debug_gen(pdbg_level_2_info,
+			"B09", 0x40023000 + CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR,
+			CONSYS_REG_READ(CONN_DBG_CTL_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_OFF_BUS_DBG_OUT_OFFSET_ADDR));
+	#endif
+
+	/* B09 */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		update_debug_read_info_mt6993_debug_gen(pdbg_level_2_info,
+			"B09", 0x4004B000 + CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_INFO_ADDR,
+			CONSYS_REG_READ(CONN_BUS_CR_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_INFO_ADDR));
+	#endif
 }
+
