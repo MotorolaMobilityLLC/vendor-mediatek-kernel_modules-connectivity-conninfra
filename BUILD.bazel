@@ -15,7 +15,6 @@ filegroup(
     ]),
 )
 
-
 filegroup(
     name = "sources",
     srcs = glob(
@@ -335,6 +334,11 @@ connv3_test_srcs=[
     "test/connv3/connv3_test.c",
     "test/connv3/connv3_dump_test.c",
 ]
+
+ddk_headers(
+    name = "conninfra_headers",
+    hdrs = glob(["**/*.h"])
+)
 
 define_mgk_ddk_ko(
     name = "conninfra",
