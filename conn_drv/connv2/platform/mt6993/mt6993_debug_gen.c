@@ -2406,5 +2406,13 @@ void consys_print_infra_top_cr_debug_dbg_level_2_mt6993_debug_gen(
 			CONSYS_REG_READ(CONN_BUS_CR_BASE +
 				CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_INFO_ADDR));
 	#endif
+
+	/* B09 */
+	#ifndef CONFIG_FPGA_EARLY_PORTING
+		update_debug_read_info_mt6993_debug_gen(pdbg_level_2_info,
+			"B09", 0x4004B000 + CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_CTRL_ADDR,
+			CONSYS_REG_READ(CONN_BUS_CR_BASE +
+				CONSYS_DBG_GEN_CONN_INFRA_EMI_WLA_DEBUG_CTRL_ADDR));
+	#endif
 }
 
