@@ -20,6 +20,7 @@
 
 #include <linux/workqueue.h>
 #include <linux/suspend.h>
+#include <linux/firmware.h>
 #include "osal.h"
 #include "conninfra.h"
 #include "conninfra_conf.h"
@@ -154,6 +155,15 @@ static atomic_t g_es_lr_flag_for_blank = ATOMIC_INIT(0); /* for ctrl blank flag 
 
 bool __weak conn_adaptor_is_internal(void)
 {
+	const struct firmware *data = NULL;
+	char *internal_file = "connfem_internal";
+
+	if (request_firmware_direct(&data, internal_file, NULL) == 0) {
+		release_firmware(data);
+		return true;
+	}
+
+	release_firmware(data);
 	return false;
 }
 
