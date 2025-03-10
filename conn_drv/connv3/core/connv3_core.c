@@ -2066,10 +2066,13 @@ int connv3_core_pre_cal_start(void)
 
 int connv3_core_screen_on(void)
 {
-#if 0
 	int ret = 0, rst_status;
 	unsigned long flag;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	if (g_pre_cal_mode == PRE_CAL_SCREEN_ON_DISABLED ||
+		g_pre_cal_mode == PRE_CAL_ALL_DISABLED)
+		return 0;
 
 	spin_lock_irqsave(&ctx->rst_lock, flag);
 	rst_status = g_connv3_ctx.rst_status;
@@ -2086,15 +2089,17 @@ int connv3_core_screen_on(void)
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
-#endif
 	return 0;
 }
 
 int connv3_core_screen_off(void)
 {
-#if 0
 	int ret = 0;
 	struct connv3_ctx *ctx = &g_connv3_ctx;
+
+	if (g_pre_cal_mode == PRE_CAL_SCREEN_ON_DISABLED ||
+		g_pre_cal_mode == PRE_CAL_ALL_DISABLED)
+		return 0;
 
 	ret = msg_thread_send(&ctx->msg_ctx,
 				CONNV3_OPID_PRE_CAL_CHECK);
@@ -2102,7 +2107,6 @@ int connv3_core_screen_off(void)
 		pr_err("[%s] send msg fail, ret = %d\n", __func__, ret);
 		return -1;
 	}
-#endif
 	return 0;
 }
 
