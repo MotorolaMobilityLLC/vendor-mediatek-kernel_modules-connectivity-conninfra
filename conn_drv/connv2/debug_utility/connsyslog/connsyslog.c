@@ -552,7 +552,7 @@ void connlog_dump_emi(struct connlog_dev* handler, int offset, int size)
 {
 	char title[100];
 	memset(title, 0, 100);
-	if (sprintf(title, "%s(%p)", "emi", handler->virAddrEmiLogBase + offset) < 0)
+	if (snprintf(title, sizeof(title), "%s(%p)", "emi", handler->virAddrEmiLogBase + offset) < 0)
 		pr_notice("%s snprintf failed\n", __func__);
 	connsys_log_dump_buf(title, handler->virAddrEmiLogBase + offset, size);
 }
