@@ -343,7 +343,6 @@ ddk_headers(
 define_mgk_ddk_ko(
     name = "conninfra",
     srcs = [
-        #"conn_def.h",
         "base/ring.c",
         "base/osal.c",
         "base/osal_dbg.c",
@@ -448,9 +447,7 @@ define_mgk_ddk_ko(
         "conn_drv/connv2/debug_utility",
         "conn_drv/connv2/debug_utility/include",
         "conn_drv/connv2/debug_utility/connsyslog",
-        "conn_drv/connv2/debug_utility/connsyslog/platform/include",
         "conn_drv/connv2/debug_utility/coredump",
-        "conn_drv/connv2/debug_utility/coredump/platform/include",
         "conn_drv/connv2/debug_utility/metlog",
         "test/connv2/include",
         "conn_drv/connv3/src",
@@ -458,6 +455,8 @@ define_mgk_ddk_ko(
         "conn_drv/connv3/platform/include",
         "conn_drv/connv3/debug_utility",
         "conn_drv/connv3/debug_utility/include",
+        "conn_drv/connv3/debug_utility/connsyslog",
+        "conn_drv/connv3/debug_utility/coredump",
         "test/connv3/include",
     ] + connv2_mt6885_include_dirs + connv2_mt6893_include_dirs + connv2_mt6877_include_dirs +
         connv2_mt6886_include_dirs + connv2_mt6897_include_dirs + connv2_mt6983_include_dirs +
