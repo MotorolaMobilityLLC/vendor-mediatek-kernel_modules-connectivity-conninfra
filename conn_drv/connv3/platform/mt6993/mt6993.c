@@ -11,6 +11,7 @@
 #include <linux/of.h>
 #include <linux/types.h>
 #include <linux/pm_runtime.h>
+#include <linux/iio/consumer.h>
 
 #include "osal.h"
 #include "conninfra_conf.h"
@@ -19,6 +20,7 @@
 #include "connv3_mt6687_reg_def.h"
 #include "coredump/connv3_dump_mng.h"
 
+#include "conn_adaptor.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -54,7 +56,7 @@ extern int connv3_plt_pinctrl_is_dfd_pin_init_done_mt6993(void);
 static u32 g_custom_data_size = 0;
 static u8 g_custom_param[MT6653_PLAT_CUSTOM_DATA_SIZE] = {0};
 static struct connv3_dev_cb* g_dev_cb;
-static bool g_is_co_clock = false;
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -74,6 +76,8 @@ static u32 connv3_dump_exception_filter(char*);
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+
+bool g_is_co_clock_mt6993 = false;
 
 struct connv3_platform_clock_ops g_connv3_clock_ops_mt6993 = {
 	.clk_initial_setting = connv3_clk_init_mt6993,
@@ -107,7 +111,6 @@ const struct connv3_plat_data g_connv3_mt6993_plat_data = {
 	.platform_clock_ops = &g_connv3_clock_ops_mt6993,
 };
 
-
 u32 connv3_soc_get_chipid_mt6993(void)
 {
 	return PLATFORM_SOC_CHIP;
@@ -137,6 +140,45 @@ static u32 connv3_dump_exception_filter(char *exp_log)
 	return 0;
 }
 
+
+static bool connv3_sku_detection_mt6993(struct platform_device *pdev)
+{
+#define CHANNEL_NAME	"mt6661_6_aio3"
+	bool is_coclk = false;
+	struct iio_channel *chan_iio_channel;
+	int ret = 0;
+	int val = 0;
+
+	chan_iio_channel = devm_iio_channel_get(&pdev->dev, CHANNEL_NAME);
+	ret = PTR_ERR_OR_ZERO(chan_iio_channel);
+	if (ret) {
+		pr_info("[%s] PMIC '%s' get fail, err: %d", __func__, CHANNEL_NAME, ret);
+		/* if error code is EPROBE_DEFER (517),
+		 * probe function will be called again
+		 */
+		if (ret == -EPROBE_DEFER) {
+			pr_info("[%s] Got EPROBE_DEFER, err: %d", __func__, ret);
+		}
+	} else {
+		ret = iio_read_channel_processed(chan_iio_channel, &val);
+		if (ret < 0) {
+			pr_info("[%s] read %s fail, err: %d",
+					 __func__,
+					CHANNEL_NAME,
+					ret);
+		} else {
+			pr_info("[%s] read %s success, val: %d",
+					 __func__,
+					CHANNEL_NAME,
+					val);
+			if (val < 1000)
+				is_coclk = true;
+		}
+	}
+
+	return is_coclk;
+}
+
 static u32 connv3_clk_init_mt6993(
 	struct platform_device *pdev,
 	struct connv3_dev_cb *dev_cb)
@@ -148,12 +190,28 @@ static u32 connv3_clk_init_mt6993(
 	u32 dump1 = 0, dump2 = 0, dump3 = 0, dump4 = 0;
 
 	g_dev_cb = dev_cb;
-	ret = of_property_read_u32(pdev->dev.of_node, "co-clock", &value);
-	if (ret)
-		pr_notice("[%s] read co_clock prop fail\n", __func__);
-	else
-		g_is_co_clock = (bool)value;
-	pr_info("[%s] g_is_co_clock=%d\n", __func__, value);
+
+	/* For internal project, read drdi-clk-mode for DRDI.
+	 *     - 0: XTAL mode
+	 *     - 1: co-clk
+	 * For customer project, use dts co-clock property.
+	 */
+	if (conn_adaptor_is_internal()) {
+		g_is_co_clock_mt6993 = connv3_sku_detection_mt6993(pdev);
+		pr_info("[%s][INTERNAL] g_is_co_clock_mt6993=%d\n", __func__, g_is_co_clock_mt6993);
+	} else {
+		ret = of_property_read_u32(pdev->dev.of_node, "co-clock", &value);
+		if (ret)
+			pr_notice("[%s][EXTERNAL] read co_clock prop fail\n", __func__);
+		else
+			g_is_co_clock_mt6993 = (bool)value;
+		pr_info("[%s][EXTERNAL] g_is_co_clock_mt6993=%d\n", __func__, value);
+	}
+
+	if (!g_is_co_clock_mt6993) {
+		pr_info("[%s] not co-clock, skip init\n", __func__);
+		return 0;
+	}
 
 	/* MT6688 initial setting is done by SW PIC in preloader */
 	/* Do mt6687 init flow: use GPIO_VIO_0 to control RFCK1A
@@ -167,7 +225,7 @@ static u32 connv3_clk_init_mt6993(
 	 * - 0x98=0x3
 	 */
 	if (map == NULL) {
-		pr_notice("[%s] map is null!\n", __func__);
+		pr_notice("[%s] map=[%p]\n", __func__, map);
 		return ENODEV;
 	}
 
@@ -207,7 +265,7 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 {
 	static bool is_init = false;
 	static u16 ext_32K_ticks = 32500;
-	static u16 pmic_enable_pmic = 0; /* control PMIC_EN1 */
+	static u16 poweroffble_ap_enable_pmic = 0; /* control PMIC_EN1 */
 	static u16 pmic_uvlo_level = 0; /* 0: skip, 1: 2.0V, 2: 2.1V, 3: 2.2V*/
 
 	u32 value;
@@ -220,11 +278,10 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 		else
 			ext_32K_ticks = (u16)value;
 
-		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "poweroffble-ap-enable-pmic", &value);
-		if (ret)
-			pr_notice("[%s] Default: connsys ic control PMIC_EN1\n", __func__);
+		if (g_is_co_clock_mt6993)
+			poweroffble_ap_enable_pmic = 1;
 		else
-			pmic_enable_pmic = (u16)value;
+			poweroffble_ap_enable_pmic = 0;
 
 		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "pmic-uvlo-level", &value);
 		if (ret)
@@ -234,9 +291,12 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 
 		/* Copy data to array */
 		memcpy(g_custom_param, &ext_32K_ticks, 2);
-		g_custom_param[2] = g_is_co_clock;
+		/* 1.2V 32K input: g_custom_param[2] bit[0]
+		 * For 6993 with 6687, it is always true.
+		 */
+		g_custom_param[2] = 0x1;
 		/* g_custom_param[2] bit[1] */
-		if (pmic_enable_pmic)
+		if (poweroffble_ap_enable_pmic)
 			g_custom_param[2] |= 0x02;
 		/* g_custom_param[2] bit[2:3] */
 		if (pmic_uvlo_level)

@@ -44,6 +44,7 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
+extern bool g_is_co_clock_mt6993;
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -449,7 +450,6 @@ const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6993 = {
 	.set_pmic_en1 = connv3_plt_pmic_set_pmic_en1_mt6993,
 };
 
-
 struct work_struct g_pmic_faultb_work_mt6993;
 //unsigned int g_pmic_excep_irq_num_mt6989 = 0;
 unsigned int g_spurious_pmic_exception_mt6993 = 1;
@@ -521,9 +521,10 @@ int connv3_plt_pmic_common_power_ctrl_mt6993(u32 enable)
 		mdelay(20);
 
 		/* Enable UDS_EN for 6688 */
-		if (g_connv3_regmap_mt6688 == NULL)
-			pr_notice("[%s] get 6688 fail\n", __func__);
-		else {
+		if (g_connv3_regmap_mt6688 == NULL || g_is_co_clock_mt6993 == false) {
+			pr_notice("[%s] g_connv3_regmap_mt6688=[%p] g_is_co_clock_mt6993=[%d]\n",
+				__func__, g_connv3_regmap_mt6688, g_is_co_clock_mt6993);
+		} else {
 			/* Enable UDS_EN pin control */
 			pmic_backup_and_write_array(g_connv3_regmap_mt6688, mt6688_UDS_EN, ARRAY_SIZE(mt6688_UDS_EN), "MT6688_UDS_EN");
 		}
@@ -551,9 +552,10 @@ int connv3_plt_pmic_common_power_ctrl_mt6993(u32 enable)
 		}
 
 		/* Disable UDS_EN for 6688 */
-		if (g_connv3_regmap_mt6688 == NULL)
-			pr_notice("[%s] get 6688 fail\n", __func__);
-		else {
+		if (g_connv3_regmap_mt6688 == NULL || g_is_co_clock_mt6993 == false) {
+			pr_notice("[%s] g_connv3_regmap_mt6688=[%p] g_is_co_clock_mt6993=[%d]\n",
+				__func__, g_connv3_regmap_mt6688, g_is_co_clock_mt6993);
+		} else {
 			/* Disable UDS_EN pin control */
 			pmic_backup_and_write_array(g_connv3_regmap_mt6688, mt6688_initial_setting, ARRAY_SIZE(mt6688_initial_setting), "MT6688_INIT");
 		}
@@ -704,6 +706,9 @@ int connv3_plt_pmic_get_pmic_chip_info_mt6993(char *pmic_ecid, int pmic_ecid_siz
 int connv3_plt_pmic_fmd_setting_mt6993(u32 enable)
 {
 	int ret = 0;
+
+	if (g_is_co_clock_mt6993 == false)
+		return 0;
 
 	/* MT6688 setting on 20241015 */
 	pmic_backup_and_write_array(g_connv3_regmap_mt6688, mt6688_BLE, sizeof(mt6688_BLE) / sizeof(mt6688_BLE[0]), NULL);
@@ -860,6 +865,9 @@ int connv3_plt_pmic_set_pmic_en1_mt6993(int enable)
 		{0x3B5 ,0xFF ,0x0}, // tma key
 	};
 
+	if (g_is_co_clock_mt6993 == false)
+		return 0;
+
 	array_size = sizeof(mt6661_PMIC_EN1_ON) / sizeof(mt6661_PMIC_EN1_ON[0]);
 	for (i = 0; i < array_size ; i++) {
 		if (enable) {
@@ -913,4 +921,3 @@ int connv3_plt_pmic_initial_setting_mt6993(
 
 	return 0;
 }
-
