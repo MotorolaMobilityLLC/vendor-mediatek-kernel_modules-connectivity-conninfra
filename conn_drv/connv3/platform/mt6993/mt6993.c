@@ -185,20 +185,28 @@ static u32 connv3_clk_init_mt6993(
 {
 	u32 ret;
 	u32 value;
+	u32 drdi_detect = 0;
 	struct regmap *map = connv3_clock_mng_get_regmap();
 	u32 reg0 = 0, reg1 = 0;
 	u32 dump1 = 0, dump2 = 0, dump3 = 0, dump4 = 0;
 
 	g_dev_cb = dev_cb;
 
-	/* For internal project, read drdi-clk-mode for DRDI.
+	/* For internal project or drdi-detect is setup, read drdi-clk-mode for DRDI.
 	 *     - 0: XTAL mode
 	 *     - 1: co-clk
 	 * For customer project, use dts co-clock property.
 	 */
-	if (conn_adaptor_is_internal()) {
+	/* Read drdi-detect option */
+	ret = of_property_read_u32(pdev->dev.of_node, "drdi-detect", &value);
+	if (ret)
+		pr_notice("[%s] read drdi-detect prop fail\n", __func__);
+	else
+		drdi_detect = value;
+
+	if (conn_adaptor_is_internal() || drdi_detect) {
 		g_is_co_clock_mt6993 = connv3_sku_detection_mt6993(pdev);
-		pr_info("[%s][INTERNAL] g_is_co_clock_mt6993=%d\n", __func__, g_is_co_clock_mt6993);
+		pr_info("[%s][INTERNAL] drdi-detect=<%d> g_is_co_clock_mt6993=%d\n", __func__, drdi_detect, g_is_co_clock_mt6993);
 	} else {
 		ret = of_property_read_u32(pdev->dev.of_node, "co-clock", &value);
 		if (ret)
