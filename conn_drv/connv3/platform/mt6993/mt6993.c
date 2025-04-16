@@ -108,6 +108,7 @@ const struct connv3_plat_data g_connv3_mt6993_plat_data = {
 	.platform_pmic_ops = &g_connv3_platform_pmic_ops_mt6993,
 	.platform_pinctrl_ops = &g_connv3_platform_pinctrl_ops_mt6993,
 	.platform_coredump_ops = &g_connv3_dump_ops_mt6993,
+	.platform_dbg_ops = &g_connv3_hw_dbg_mt6653,
 	.platform_clock_ops = &g_connv3_clock_ops_mt6993,
 };
 
