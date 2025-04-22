@@ -15,6 +15,7 @@
 #include <linux/of.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
+#include <linux/power_supply.h>
 #include <linux/regulator/consumer.h>
 #include <linux/timer.h>
 #include <linux/vmalloc.h>
@@ -595,6 +596,7 @@ int connv3_plt_pmic_common_power_ctrl_mt6993(u32 enable)
 		pr_info("[%s] enable=[%d] Done\n", __func__, enable);
 	}
 
+	connv3_plt_pmic_vbat_status_mt6993();
 	return ret;
 }
 
@@ -671,6 +673,7 @@ int connv3_plt_pmic_parse_state_mt6993(char *buffer, int buf_sz)
 			g_connsys_adie_chip_info_ready = true;
 	}
 
+	connv3_plt_pmic_vbat_status_mt6993();
 	if (parse_pmic_register_once == 1)
 		return 0;
 
@@ -920,4 +923,26 @@ int connv3_plt_pmic_initial_setting_mt6993(
 	}
 
 	return 0;
+}
+
+
+void connv3_plt_pmic_vbat_status_mt6993(void)
+{
+	struct power_supply *psy;
+	union power_supply_propval val;
+	int ret;
+
+	psy = power_supply_get_by_name("battery");
+	if (!psy) {
+		pr_info("[%s] Failed to get battery psy\n", __func__);
+		return;
+	}
+
+	ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_VOLTAGE_NOW, &val);
+	if (ret) {
+		pr_info("[%s] Failed to get voltage property, ret = %d\n", __func__);
+		return;
+	}
+
+	pr_info("[%s] voltage now: %d(mv)\n", __func__, (val.intval/1000));
 }

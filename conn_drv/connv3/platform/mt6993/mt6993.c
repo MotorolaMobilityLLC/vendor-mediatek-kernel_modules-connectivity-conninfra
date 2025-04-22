@@ -19,7 +19,7 @@
 #include "connv3_clock_mng.h"
 #include "connv3_mt6687_reg_def.h"
 #include "coredump/connv3_dump_mng.h"
-
+#include "connv3_mt6993_pmic.h"
 #include "conn_adaptor.h"
 
 /*******************************************************************************
@@ -69,7 +69,7 @@ static u8* connv3_get_custom_option_mt6993(u32 *size);
 static u32 connv3_clk_init_mt6993(
 	struct platform_device *pdev,
 	struct connv3_dev_cb *dev_cb);
-static u32 connv3_check_clock_status_mt6993(void);
+static u32 connv3_check_platform_status_mt6993(void);
 static u32 connv3_dump_exception_filter(char*);
 
 /*******************************************************************************
@@ -88,7 +88,7 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6993 = {
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6993,
 	.connsys_plt_reset_type_support = connv3_reset_type_support_mt6993,
 	.connsys_plt_get_custom_option = connv3_get_custom_option_mt6993,
-	.connsys_plt_check_status = connv3_check_clock_status_mt6993,
+	.connsys_plt_check_status = connv3_check_platform_status_mt6993,
 };
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6993 = {
@@ -265,8 +265,9 @@ static u32 connv3_clk_init_mt6993(
 	return 0;
 }
 
-u32 connv3_check_clock_status_mt6993(void)
+u32 connv3_check_platform_status_mt6993(void)
 {
+	connv3_plt_pmic_vbat_status_mt6993();
 	return 0;
 }
 
