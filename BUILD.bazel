@@ -86,6 +86,10 @@ connv2_mt6993_include_dirs=[
     "conn_drv/connv2/platform/mt6993/include",
     "conn_drv/connv2/platform/mt6993/include/CODA"
 ]
+connv2_mt6858_include_dirs=[
+    "conn_drv/connv2/platform/mt6858/include",
+    "conn_drv/connv2/platform/mt6858/include/CODA"
+]
 
 connv2_mt6877_srcs=[
     "conn_drv/connv2/platform/mt6877/mt6877.c",
@@ -258,6 +262,19 @@ connv2_mt6993_srcs=[
     "conn_drv/connv2/platform/mt6993/mt6993_debug_gen.c",
     "conn_drv/connv2/platform/mt6993/mt6993_ops.c",
     "conn_drv/connv2/platform/mt6993/mt6993_soc.c"
+]
+connv2_mt6858_srcs=[
+    "conn_drv/connv2/platform/mt6858/mt6858.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_ops.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_soc.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_atf.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_pmic.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_emi.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_consys_reg.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_pos.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_pos_gen.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_coredump.c",
+    "conn_drv/connv2/platform/mt6858/mt6858_debug_gen.c"
 ]
 connv2_test_srcs=[
     "test/connv2/conninfra_core_test.c",
@@ -432,6 +449,9 @@ define_mgk_ddk_ko(
         "CONFIG_MTK_COMBO_CHIP_CONSYS_6993": {
             True: connv2_mt6993_srcs + connv3_mt6993_srcs,
         } if glob(["conn_drv/connv3/platform/mt6993/*"]) else {},
+        "CONFIG_MTK_COMBO_CHIP_CONSYS_6858": {
+            True: connv2_mt6858_srcs,
+        } if glob(["conn_drv/connv2/platform/mt6858/*"]) else {},
     },
     includes = [
         "include",
@@ -465,7 +485,7 @@ define_mgk_ddk_ko(
         connv2_mt6989_include_dirs + connv3_mt6989_include_dirs + connv3_mt6376_combo_include_dirs +
         connv3_mt6653_combo_include_dirs + connv2_mt6878_include_dirs + connv2_mt6991_include_dirs +
         connv3_mt6991_include_dirs + connv2_mt6993_include_dirs + connv3_mt6993_include_dirs +
-        connv2_mt6993_include_dirs + connv2_mt6899_include_dirs,
+        connv2_mt6993_include_dirs + connv2_mt6899_include_dirs + connv2_mt6858_include_dirs,
     hdrs = glob(["**/*.h"]),
     copts = [
         "-Werror",
