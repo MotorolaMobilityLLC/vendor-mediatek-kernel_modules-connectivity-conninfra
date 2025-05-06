@@ -19,7 +19,7 @@
 #include "connv3_clock_mng.h"
 #include "connv3_mt6687_reg_def.h"
 #include "coredump/connv3_dump_mng.h"
-#include "connv3_mt6993_pmic.h"
+
 #include "conn_adaptor.h"
 
 /*******************************************************************************
@@ -69,7 +69,7 @@ static u8* connv3_get_custom_option_mt6993(u32 *size);
 static u32 connv3_clk_init_mt6993(
 	struct platform_device *pdev,
 	struct connv3_dev_cb *dev_cb);
-static u32 connv3_check_platform_status_mt6993(void);
+static u32 connv3_check_clock_status_mt6993(void);
 static u32 connv3_dump_exception_filter(char*);
 
 /*******************************************************************************
@@ -88,7 +88,7 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6993 = {
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6993,
 	.connsys_plt_reset_type_support = connv3_reset_type_support_mt6993,
 	.connsys_plt_get_custom_option = connv3_get_custom_option_mt6993,
-	.connsys_plt_check_status = connv3_check_platform_status_mt6993,
+	.connsys_plt_check_status = connv3_check_clock_status_mt6993,
 };
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6993 = {
@@ -265,9 +265,8 @@ static u32 connv3_clk_init_mt6993(
 	return 0;
 }
 
-u32 connv3_check_platform_status_mt6993(void)
+u32 connv3_check_clock_status_mt6993(void)
 {
-	connv3_plt_pmic_vbat_status_mt6993();
 	return 0;
 }
 
@@ -276,7 +275,8 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 	static bool is_init = false;
 	static u16 ext_32K_ticks = 32500;
 	static u16 poweroffble_ap_enable_pmic = 0; /* control PMIC_EN1 */
-	static u16 pmic_uvlo_level = 0; /* 0: skip, 1: 2.0V, 2: 2.1V, 3: 2.2V*/
+	static u16 pmic_uvlo_level = 0; /* 0: skip, 1: 2.0V, 2: 2.1V, 3: 2.2V */
+	static u16 pmic_rising_uvlo_level = 0; /* 0: skip, 1: 2.6V, 2: 2.7V */
 
 	u32 value;
 	int ret;
@@ -299,6 +299,12 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 		else
 			pmic_uvlo_level = (u16)value;
 
+		ret = of_property_read_u32(g_connv3_pdev->dev.of_node, "pmic-rising-uvlo-level", &value);
+		if (ret)
+			pr_notice("[%s] use default PMIC UVLO level\n", __func__);
+		else
+			pmic_rising_uvlo_level = (u16)value;
+
 		/* Copy data to array */
 		memcpy(g_custom_param, &ext_32K_ticks, 2);
 		/* 1.2V 32K input: g_custom_param[2] bit[0]
@@ -311,6 +317,9 @@ u8* connv3_get_custom_option_mt6993(u32 *size)
 		/* g_custom_param[2] bit[2:3] */
 		if (pmic_uvlo_level)
 			g_custom_param[2] |= ((pmic_uvlo_level & 0x3) << 2);
+		/* g_custom_param[3] bit[4:6] */
+		if (pmic_rising_uvlo_level)
+			g_custom_param[2] |= ((pmic_rising_uvlo_level & 0x7) << 4);
 		g_custom_data_size = MT6653_PLAT_CUSTOM_DATA_SIZE; /* one byte as reserved. */
 
 		is_init = true;
