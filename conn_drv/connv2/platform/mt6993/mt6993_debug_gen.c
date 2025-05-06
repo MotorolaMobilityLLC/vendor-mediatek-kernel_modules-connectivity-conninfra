@@ -521,11 +521,6 @@ void consys_print_power_debug_dbg_level_0_mt6993_debug_gen(
 		CONSYS_REG_READ(vir_addr_consys_dbg_gen_srclkenrc_base_mt6993 +
 			CONSYS_DBG_GEN_SYS_TIMER_LATCH_5_MSB_OFFSET_ADDR));
 
-	/* A63 */
-	update_debug_read_info_mt6993_debug_gen(pdbg_level_0_info,
-		"A63", 0x40001000 + CONSYS_DBG_GEN_ADIE_CTL_OFFSET_ADDR,
-		CONSYS_REG_READ(CONN_CFG_ON_BASE +
-			CONSYS_DBG_GEN_ADIE_CTL_OFFSET_ADDR));
 }
 
 void consys_print_power_debug_dbg_level_1_mt6993_debug_gen(
@@ -872,6 +867,12 @@ void consys_print_power_debug_dbg_level_2_mt6993_debug_gen(
 		"C27", 0x40042000 + CONSYS_DBG_GEN_SPI_CRTL_OFFSET_ADDR,
 		CONSYS_REG_READ(CONN_RF_SPI_MST_REG_BASE +
 			CONSYS_DBG_GEN_SPI_CRTL_OFFSET_ADDR));
+
+	/* C28 */
+	update_debug_read_info_mt6993_debug_gen(pdbg_level_2_info,
+		"C28", 0x40001000 + CONSYS_DBG_GEN_ADIE_CTL_OFFSET_ADDR,
+		CONSYS_REG_READ(CONN_CFG_ON_BASE +
+			CONSYS_DBG_GEN_ADIE_CTL_OFFSET_ADDR));
 }
 
 void consys_print_bus_debug_dbg_level_1_mt6993_debug_gen(
