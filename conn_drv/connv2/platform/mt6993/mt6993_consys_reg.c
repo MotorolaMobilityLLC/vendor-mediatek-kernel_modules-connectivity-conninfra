@@ -296,7 +296,7 @@ int consys_is_bus_hang_mt6993(void)
 	#endif
 	}
 
-	return ret;
+	return ret | is_clock_fail;
 }
 
 int consys_debug_top_power_status_mt6993(void)
