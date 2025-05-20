@@ -1003,10 +1003,15 @@ void* connv3_coredump_init(int conn_type, const struct connv3_coredump_event_cb 
 	/* Register to netlink */
 	nl_cb.coredump_end = connv3_dump_emi_dump_end;
 	nl_cb.coredump_get_save_emi = connv3_dump_get_save_emi;
-	conndump_netlink_init(ctx->conn_type, ctx, &nl_cb);
+	if (conndump_netlink_init(ctx->conn_type, ctx, &nl_cb) < 0)
+		goto error_exit;
+
+	return ctx;
 
 error_exit:
-	return ctx;
+	if (ctx)
+		connv3_coredump_deinit(ctx);
+	return NULL;
 }
 EXPORT_SYMBOL(connv3_coredump_init);
 

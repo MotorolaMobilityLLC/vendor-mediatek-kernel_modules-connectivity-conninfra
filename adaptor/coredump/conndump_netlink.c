@@ -314,7 +314,8 @@ int conndump_netlink_init(int conn_type, void* dump_ctx, struct netlink_event_cb
 	ret = genl_register_family(&ctx->gnl_family);
 	if (ret != 0) {
 		pr_err("%s(): GE_NELINK family registration fail (ret=%d)\n", __func__, ret);
-		return -2;
+		if (ret != -EEXIST)
+			return -2;
 	}
 	ctx->status = LINK_STATUS_INIT_DONE;
 	ctx->save_emi.check = false; // set to unchecked status
@@ -322,7 +323,7 @@ int conndump_netlink_init(int conn_type, void* dump_ctx, struct netlink_event_cb
 	ctx->coredump_ctx = dump_ctx;
 	memcpy(&(ctx->cb), cb, sizeof(struct netlink_event_cb));
 
-	return ret;
+	return 0;
 }
 
 int conndump_netlink_msg_send(struct dump_netlink_ctx* ctx, char* tag, char* buf, unsigned int length, pid_t pid, unsigned int seq)

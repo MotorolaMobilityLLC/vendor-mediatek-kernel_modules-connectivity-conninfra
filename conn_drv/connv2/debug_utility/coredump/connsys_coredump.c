@@ -1681,7 +1681,9 @@ void* connsys_coredump_init(
 
 	/* Init netlink */
 	nl_cb.coredump_end = conndump_coredump_end;
-	conndump_netlink_init(ctx->conn_type, ctx, &nl_cb);
+	if (conndump_netlink_init(ctx->conn_type, ctx, &nl_cb) < 0)
+		goto error_exit;
+
 	return ctx;
 
 error_exit:
