@@ -122,9 +122,9 @@ int consys_conninfra_sleep_mt6858_gen(void);
 #define CONSYS_GEN_GPIO_MODE22_OFFSET_ADDR                                                  0x460
 
 /****************************************************************************************************/
-/* Base: CONSYS_GEN_IOCFG_RT_BASE_ADDR (0x11ED_0000)                                                */
+/* Base: CONSYS_GEN_IOCFG_RT_BASE_ADDR (0x11EE_0000)                                                */
 /****************************************************************************************************/
-#define CONSYS_GEN_IOCFG_RT_BASE_ADDR                                                       0x11ED0000
+#define CONSYS_GEN_IOCFG_RT_BASE_ADDR                                                       0x11EE0000
 #define CONSYS_GEN_DRV_CFG0_OFFSET_ADDR                                                     0x0
 #define CONSYS_GEN_PUPD_CFG0_OFFSET_ADDR                                                    0x90
 
@@ -156,9 +156,9 @@ int consys_conninfra_sleep_mt6858_gen(void);
 #define CONSYS_GEN_EMI_CTL_0_OFFSET_ADDR                                                    0x100
 
 /****************************************************************************************************/
-/* Base: CONSYS_GEN_CONN_HW_VER (0x0205_0401)                                                       */
+/* Base: CONSYS_GEN_CONN_HW_VER (0x0205_0405)                                                       */
 /****************************************************************************************************/
-#define CONSYS_GEN_CONN_HW_VER                                                              0x2050401
+#define CONSYS_GEN_CONN_HW_VER                                                              0x2050405
 
 /****************************************************************************************************/
 /* Base: CONN_HOST_CSR_TOP_BASE (0x1806_0000)                                                       */

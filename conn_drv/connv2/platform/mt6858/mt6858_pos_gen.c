@@ -209,40 +209,48 @@ void consys_set_if_pinmux_mt6858_gen(
 			/* set pinmux for the interface between D-die and A-die (Aux1) */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-					CONSYS_GEN_GPIO_MODE22_OFFSET_ADDR, 0x11111, 0x77777);
+					0x5d0, 0x01010000, 0x0f0f0000);
 				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-					CONSYS_GEN_GPIO_MODE21_OFFSET_ADDR, 0x11110000, 0x77770000);
+					0x5e0, 0x01010101, 0x0f0f0f0f);
+				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+					0x5f0, 0x00010101, 0x000f0f0f);
 			#endif
 
 			/* set pinmux driving to 001 setting */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-					CONSYS_GEN_DRV_CFG0_OFFSET_ADDR, 0x48000, 0x1F8000);
+					0x0 , 0x01200000, 0x07e00000);
+				CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
+					0x10 , 0x01240208, 0x07fc0e38);
 			#endif
 
 			/* set pinmux PUPD setting as PU */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-					CONSYS_GEN_PUPD_CFG0_OFFSET_ADDR, 0x0, 0x110);
+					0x84, 0x0, 0x2100);
 			#endif
 		} else if (consys_get_adie_chipid_mt6858() == ADIE_6686) {
 			/* set pinmux for the interface between D-die and A-die (Aux1) */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				if (bt_or_wifi_or_fm_on == true) {
-					CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-						CONSYS_GEN_GPIO_MODE22_OFFSET_ADDR, 0x11111, 0x77777);
-					CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-						CONSYS_GEN_GPIO_MODE21_OFFSET_ADDR, 0x11110000, 0x77770000);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5d0, 0x01010000, 0x0f0f0000);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5e0, 0x01010101, 0x0f0f0f0f);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5f0, 0x00010101, 0x000f0f0f);
 				}
 			#endif
 
 			/* set pinmux driving to 001 setting */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				if (bt_or_wifi_or_fm_on == true) {
-					CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-						CONSYS_GEN_DRV_CFG0_OFFSET_ADDR, 0x48000, 0x1F8000);
-					CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-						CONSYS_GEN_PUPD_CFG0_OFFSET_ADDR, 0x0, 0x110);
+                    CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
+                        0x0 , 0x01200000, 0x07e00000);
+                    CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
+                        0x10 , 0x01240208, 0x07fc0e38);
+                    CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
+                        0x84, 0x0, 0x2100);
 				}
 			#endif
 		}
@@ -251,26 +259,30 @@ void consys_set_if_pinmux_mt6858_gen(
 			/* set pinmux for the interface between D-die and A-die (Aux0) */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-					CONSYS_GEN_GPIO_MODE22_OFFSET_ADDR, 0x0, 0x77777);
+					0x5d0, 0x0, 0x0f0f0000);
 				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-					CONSYS_GEN_GPIO_MODE21_OFFSET_ADDR, 0x0, 0x77770000);
+					0x5e0, 0x0, 0x0f0f0f0f);
+				CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+					0x5f0, 0x0, 0x000f0f0f);
 			#endif
 
 			/* set pinmux PUPD setting */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-					CONSYS_GEN_PUPD_CFG0_OFFSET_ADDR, 0x110, 0x110);
+					0x84, 0x2100, 0x2100);
 			#endif
 		} else if (consys_get_adie_chipid_mt6858() == ADIE_6686) {
 			/* set pinmux for the interface between D-die and A-die (Aux0) */
 			#ifndef CONFIG_FPGA_EARLY_PORTING
 				if (bt_wifi_fm_off == true) {
-					CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-						CONSYS_GEN_GPIO_MODE22_OFFSET_ADDR, 0x0, 0x77777);
-					CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
-						CONSYS_GEN_GPIO_MODE21_OFFSET_ADDR, 0x0, 0x77770000);
-					CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
-						CONSYS_GEN_PUPD_CFG0_OFFSET_ADDR, 0x110, 0x110);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5d0, 0x0, 0x0f0f0000);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5e0, 0x0, 0x0f0f0f0f);
+                    CONSYS_REG_WRITE_MASK(GPIO_REG_BASE +
+                        0x5f0, 0x0, 0x000f0f0f);
+                    CONSYS_REG_WRITE_MASK(vir_addr_consys_gen_iocfg_rt_base +
+					    0x84, 0x2100, 0x2100);
 				}
 			#endif
 		}

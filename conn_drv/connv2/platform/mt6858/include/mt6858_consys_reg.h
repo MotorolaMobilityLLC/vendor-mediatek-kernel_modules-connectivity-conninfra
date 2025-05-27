@@ -14,7 +14,7 @@ enum consys_base_addr_index {
 	CONN_INFRA_RGU_ON_BASE_INDEX		= 0,	/* 0x1800_0000 conn_infra_rgu_on */
 	INFRACFG_AO_BASE_INDEX			= 1,	/* 0x1000_1000 infracfg_ao */
 	GPIO_BASE_INDEX				= 2,	/* 0x1000_5000 GPIO */
-	IOCFG_RT_BASE_INDEX			= 3,	/* 0x11ed_0000 IOCFG_RT */
+	IOCFG_RT_BASE_INDEX			= 3,	/* 0x11ee_0000 IOCFG_RT */
 	CONN_INFRA_CFG_ON_BASE_INDEX		= 4,	/* 0x1800_1000 conn_infra_cfg_on */
 	CONN_WT_SLP_CTL_REG_BASE_INDEX		= 5,	/* 0x1800_3000 conn_wt_slp_ctl_reg */
 	CONN_INFRA_BUS_CR_ON_BASE_INDEX		= 6,	/* 0x1800_e000 conn_infra_bus_cr_on */

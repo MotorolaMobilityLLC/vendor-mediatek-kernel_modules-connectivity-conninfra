@@ -28,7 +28,6 @@
 
 mapped_addr vir_addr_consys_dbg_gen_srclkenrc_base_mt6858;
 mapped_addr vir_addr_consys_dbg_gen_cksys_reg_base_mt6858;
-mapped_addr vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858;
 mapped_addr vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6858;
 mapped_addr vir_addr_consys_dbg_gen_conn_wt_slp_ctl_reg_base_mt6858;
 mapped_addr vir_addr_consys_dbg_gen_inst2_conn_wt_slp_ctl_reg_base_mt6858;
@@ -43,8 +42,6 @@ void consys_debug_init_mt6858_debug_gen(void)
 		= ioremap(CONSYS_DBG_GEN_SRCLKENRC_BASE_ADDR, 0x77C);
 	vir_addr_consys_dbg_gen_cksys_reg_base_mt6858
 		= ioremap(CONSYS_DBG_GEN_CKSYS_REG_BASE_ADDR, 0x114);
-	vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858
-		= ioremap(CONSYS_DBG_GEN_VLPCFG_AO_REG_BASE_ADDR, 0x180);
 	vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6858
 		= ioremap(CONSYS_DBG_GEN_CONN_DBG_CTL_BASE_ADDR, 0x41c);
 	vir_addr_consys_dbg_gen_conn_wt_slp_ctl_reg_base_mt6858
@@ -68,9 +65,6 @@ void consys_debug_deinit_mt6858_debug_gen(void)
 
 	if (vir_addr_consys_dbg_gen_cksys_reg_base_mt6858)
 		iounmap(vir_addr_consys_dbg_gen_cksys_reg_base_mt6858);
-
-	if (vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858)
-		iounmap(vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858);
 
 	if (vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6858)
 		iounmap(vir_addr_consys_dbg_gen_conn_dbg_ctl_base_mt6858);
@@ -173,12 +167,6 @@ void consys_print_power_debug_dbg_level_0_mt6858_debug_gen(
 		return;
 	}
 
-	if (!vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858) {
-		pr_notice("vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858(%x) ioremap fail\n",
-				CONSYS_DBG_GEN_VLPCFG_AO_REG_BASE_ADDR);
-		return;
-	}
-
 	if (SPM_REG_BASE == 0) {
 		pr_notice("SPM_REG_BASE is not defined\n");
 		return;
@@ -222,8 +210,9 @@ void consys_print_power_debug_dbg_level_0_mt6858_debug_gen(
 
 	/* A6 */
 	update_debug_read_info_mt6858_debug_gen(pdbg_level_0_info,
-		"A6", 0x10000000 + 0x114,
-		CONSYS_REG_READ(vir_addr_consys_dbg_gen_cksys_reg_base_mt6858 + 0x114));
+		"A6", 0x1C00D000 + CONSYS_DBG_GEN_M00_REQ_STA_0_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_srclkenrc_base_mt6858 +
+			CONSYS_DBG_GEN_M00_REQ_STA_0_OFFSET_ADDR));
 
 	/* A7 */
 	update_debug_read_info_mt6858_debug_gen(pdbg_level_0_info,
@@ -323,8 +312,9 @@ void consys_print_power_debug_dbg_level_0_mt6858_debug_gen(
 
 	/* A23 */
 	update_debug_read_info_mt6858_debug_gen(pdbg_level_0_info,
-		"A23", 0x1C000000 + 0x180,
-		CONSYS_REG_READ(vir_addr_consys_dbg_gen_vlpcfg_ao_reg_base_mt6858 + 0x180));
+		"A23", 0x10000000 + CONSYS_DBG_GEN_CLK_CFG_11_OFFSET_ADDR,
+		CONSYS_REG_READ(vir_addr_consys_dbg_gen_cksys_reg_base_mt6858 +
+			CONSYS_DBG_GEN_CLK_CFG_11_OFFSET_ADDR));
 
 	/* A24 */
 	update_debug_read_info_mt6858_debug_gen(pdbg_level_0_info,

@@ -19,6 +19,7 @@
 #ifndef MT6858_DEBUG_GEN_H
 #define MT6858_DEBUG_GEN_H
 
+#define MT6858_DEBUG_SOP_VERSION "20250505"
 #define CONN_DEBUG_INFO_SIZE 256
 #define DEBUG_TAG_SIZE 10
 
@@ -137,11 +138,7 @@ void consys_print_bus_slpprot_debug_dbg_level_0_mt6858_debug_gen(
 /* Base: CONSYS_DBG_GEN_CKSYS_REG_BASE_ADDR (0x1000_0000)                                                 */
 /**********************************************************************************************************/
 #define CONSYS_DBG_GEN_CKSYS_REG_BASE_ADDR                                                        0x10000000
-
-/**********************************************************************************************************/
-/* Base: CONSYS_DBG_GEN_VLPCFG_AO_REG_BASE_ADDR (0x1C00_0000)                                             */
-/**********************************************************************************************************/
-#define CONSYS_DBG_GEN_VLPCFG_AO_REG_BASE_ADDR                                                    0x1C000000
+#define CONSYS_DBG_GEN_CLK_CFG_11_OFFSET_ADDR                                                     0xC0
 
 /**********************************************************************************************************/
 /* Base: CONN_HOST_CSR_TOP_BASE (0x1806_0000)                                                             */
