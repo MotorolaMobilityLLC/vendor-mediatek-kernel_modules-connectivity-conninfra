@@ -400,7 +400,7 @@ int consys_thermal_query_mt6899(void)
 #define CONN_GPT2_CTRL_AP_EN	0x38
 
 	mapped_addr addr = 0;
-	int cal_val, res = 0;
+	int cal_val, res, check = 0;
 	/* Base: 0x1800_2000, CONN_TOP_THERM_CTL */
 	const unsigned int thermal_dump_crs[THERMAL_DUMP_NUM] = {
 		0x00, 0x04, 0x08, 0x0c,
@@ -411,6 +411,7 @@ int consys_thermal_query_mt6899(void)
 	char tmp_buf[LOG_TMP_BUF_SZ] = {'\0'};
 	unsigned int i;
 	unsigned int efuse0, efuse1, efuse2, efuse3;
+	unsigned int thermal_raw_data, theraml_avg_data;
 
 	addr = ioremap(CONN_GPT2_CTRL_BASE, 0x100);
 	if (addr == 0) {
@@ -438,10 +439,21 @@ int consys_thermal_query_mt6899(void)
 
 	/* thermal trigger */
 	CONSYS_SET_BIT(CONN_THERM_CTL_THERMEN3_ADDR, (0x1 << 18));
-	udelay(500);
+
+	/* Polling busy bit "100 times" and each polling interval is "0.5ms" */
+	CONSYS_REG_BIT_POLLING(CONN_THERM_CTL_THERMEN3_ADDR, 16, 0, 100, 500, check);
+	if (check != 0) {
+		pr_notice("[THERM QRY] Check thermal busy bit fail\n");
+	}
+
 	/* get thermal value */
 	cal_val = CONSYS_REG_READ(CONN_THERM_CTL_THERMEN3_ADDR);
 	cal_val = (cal_val >> 8) & 0x7f;
+
+	/* read ATOP thermal data*/
+	consys_spi_read_nolock_mt6899(SYS_SPI_TOP, 0x30, &thermal_raw_data);
+	theraml_avg_data = thermal_raw_data & 0xff00;
+	thermal_raw_data = thermal_raw_data & 0x7f;
 
 	/* thermal debug dump */
 	efuse0 = CONSYS_REG_READ(CONN_INFRA_SYSRAM_SW_CR_A_DIE_EFUSE_DATA_0);
@@ -455,8 +467,11 @@ int consys_thermal_query_mt6899(void)
 			strnlcat(tmp_buf, tmp, strlen(tmp), LOG_TMP_BUF_SZ);
 	}
 #if PRINT_THERMAL_LOG
-	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] thermal dump: %s",
-		__func__, efuse0, efuse1, efuse2, efuse3, tmp_buf);
+	pr_info("[%s] efuse:[0x%08x][0x%08x][0x%08x][0x%08x] \
+		adie dump: [0x%08x][0x%08x] thermal dump: %s ",
+		__func__, efuse0, efuse1, efuse2, efuse3,
+		thermal_raw_data, theraml_avg_data, tmp_buf);
+
 #endif
 	res = calculate_thermal_temperature(cal_val);
 
