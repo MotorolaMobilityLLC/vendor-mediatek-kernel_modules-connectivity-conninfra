@@ -451,7 +451,7 @@ int consys_thermal_query_mt6899(void)
 	cal_val = (cal_val >> 8) & 0x7f;
 
 	/* read ATOP thermal data*/
-	consys_spi_read_nolock_mt6899(SYS_SPI_TOP, 0x30, &thermal_raw_data);
+	consys_spi_read_mt6899(SYS_SPI_TOP, 0x30, &thermal_raw_data);
 	theraml_avg_data = thermal_raw_data & 0xff00;
 	thermal_raw_data = thermal_raw_data & 0x7f;
 
