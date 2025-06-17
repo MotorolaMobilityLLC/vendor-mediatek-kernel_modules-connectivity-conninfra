@@ -735,7 +735,7 @@ int connsys_low_power_setting_mt6993_gen(void)
 
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 1 set timing */
 	CONSYS_REG_WRITE_MASK(CONN_BUS_CR_BASE +
-		CONSYS_GEN_CONN_INFRA_OFF_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x200, 0x7F8);
+		CONSYS_GEN_CONN_INFRA_OFF_BUS_TIMEOUT_CTRL_OFFSET_ADDR, 0x7F8, 0x7F8);
 
 	/* set conn_infra_off bus apb/ahb/axi layer timeout - step 2 enable function */
 	CONSYS_SET_BIT(CONN_BUS_CR_BASE +
