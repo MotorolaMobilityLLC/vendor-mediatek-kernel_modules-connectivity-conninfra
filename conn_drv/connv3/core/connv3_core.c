@@ -596,6 +596,7 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	bool need_pmic_toggle = true;
 	enum connv3_drv_status bt_status = g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_BT].drv_status;
 	enum connv3_drv_status wifi_status = g_connv3_ctx.drv_inst[CONNV3_DRV_TYPE_WIFI].drv_status;
+	bool is_patch_done = false;
 
 	if (g_connv3_ctx.core_status == DRV_STS_POWER_OFF) {
 		pr_info("No subsys on, just return");
@@ -613,9 +614,17 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 	rst_type_support = connv3_hw_get_reset_type_support();
 	/* 1: support POR_RST */
 	if (rst_type_support == 1) {
+		for (i = 0; i < CONNV3_DRV_TYPE_MAX; i++) {
+			drv_inst = &g_connv3_ctx.drv_inst[i];
+			if (drv_inst->drv_status == DRV_STS_POWER_ON) {
+				is_patch_done = true;
+				break;
+			}
+		}
+
 		if (rst_source == CONNV3_CHIP_RST_SOURCE_NORMAL) {
 			rst_type = CONNV3_CHIP_RST_TYPE_DFD_DUMP;
-			need_pmic_toggle = false;
+			need_pmic_toggle = !is_patch_done;
 		} else if (rst_source == CONNV3_CHIP_RST_SOURCE_PMIC_IRQ_B) {
 			/* GO DFD flow */
 			rst_type = CONNV3_CHIP_RST_TYPE_DFD_DUMP;
