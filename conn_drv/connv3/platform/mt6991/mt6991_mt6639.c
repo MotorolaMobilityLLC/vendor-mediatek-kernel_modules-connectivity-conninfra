@@ -102,7 +102,9 @@ u32 connv3_get_adie_chipid_mt6991_mt6639(void)
 
 u32 connv3_check_status_mt6991_mt6639(void)
 {
-#if 0
+#ifdef CONFIG_CONNINFRA_BUILD_MODE
+#if (CONFIG_CONNINFRA_BUILD_MODE == 1) || (CONFIG_CONNINFRA_BUILD_MODE == 2)
+
 	unsigned int flags;
 	int ret;
 
@@ -117,6 +119,7 @@ u32 connv3_check_status_mt6991_mt6639(void)
 	} else {
 		pr_info("[%s] Regulator error flags = 0x%x\n", __func__, flags);
 	}
-#endif
+#endif /* (CONFIG_CONNINFRA_BUILD_MODE == 1) || (CONFIG_CONNINFRA_BUILD_MODE == 2) */
+#endif /* CONFIG_CONNINFRA_BUILD_MODE */
 	return 0;
 }
