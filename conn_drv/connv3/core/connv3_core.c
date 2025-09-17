@@ -634,6 +634,9 @@ static int opfunc_chip_rst(struct msg_op_data *op)
 		}
 	}
 
+	/* HW status check */
+	connv3_hw_check_status();
+
 	if (rst_type == CONNV3_CHIP_RST_TYPE_DFD_DUMP) {
 		_connv3_core_update_rst_status(CHIP_RST_DFD_SETUP);
 		/* PU DFD_EN pin */

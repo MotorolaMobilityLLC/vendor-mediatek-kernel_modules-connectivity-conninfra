@@ -10,6 +10,9 @@
 #include <linux/of.h>
 #include <linux/types.h>
 #include <linux/pm_runtime.h>
+#include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <linux/regmap.h>
 
 #include "osal.h"
 #include "connv3_hw.h"
@@ -33,6 +36,7 @@
 ********************************************************************************
 */
 extern struct platform_device *g_connv3_pdev;
+extern struct regulator *rt4803_regulator_mt6991v2;
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -51,7 +55,7 @@ extern struct platform_device *g_connv3_pdev;
 
 u32 connv3_soc_get_chipid_mt6991_mt6639(void);
 static u32 connv3_get_adie_chipid_mt6991_mt6639(void);
-
+static u32 connv3_check_status_mt6991_mt6639(void);
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -63,7 +67,7 @@ struct connv3_hw_ops_struct g_connv3_hw_ops_mt6991_mt6639 = {
 	.connsys_plt_get_adie_chipid = connv3_get_adie_chipid_mt6991_mt6639,
 	.connsys_plt_reset_type_support = NULL,
 	.connsys_plt_get_custom_option = NULL,
-	.connsys_plt_check_status = NULL,
+	.connsys_plt_check_status = connv3_check_status_mt6991_mt6639,
 };
 
 const struct connv3_coredump_platform_ops g_connv3_dump_ops_mt6991_mt6639 = {
@@ -96,3 +100,22 @@ u32 connv3_get_adie_chipid_mt6991_mt6639(void)
 	return CONN_ADIE_ID;
 }
 
+u32 connv3_check_status_mt6991_mt6639(void)
+{
+	unsigned int flags;
+	int ret;
+
+	if (IS_ERR_OR_NULL(rt4803_regulator_mt6991v2)) {
+		return 0;
+	}
+
+	// flags will contain error bitmask defined by driver
+	ret = regulator_get_error_flags(rt4803_regulator_mt6991v2, &flags);
+	if (ret < 0) {
+		pr_notice("[%s] regulator_get_error_flags failed: %d\n", __func__, ret);
+	} else {
+		pr_info("[%s] Regulator error flags = 0x%x\n", __func__, flags);
+	}
+
+	return 0;
+}

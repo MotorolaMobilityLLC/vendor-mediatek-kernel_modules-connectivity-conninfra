@@ -9,6 +9,7 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/gpio/consumer.h>
+#include <linux/i2c.h>
 #include <linux/jiffies.h>
 #include <linux/of_gpio.h>
 #include <linux/of_irq.h>
@@ -16,8 +17,11 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
+#include <linux/regulator/driver.h>
+#include <linux/regmap.h>
 #include <linux/timer.h>
 #include <linux/vmalloc.h>
+
 
 #include "osal_dbg.h"
 #include "connv3.h"
@@ -63,6 +67,8 @@ static char connsys_chip_ecid[CHIP_ECIP_INFO_LENGTH];
 static bool connsys_chip_ecid_ready = false;
 static char connsys_pmic_ecid[CHIP_ECIP_INFO_LENGTH];
 static bool connsys_pmic_ecid_ready = false;
+struct regulator *rt4803_regulator_mt6991v2 = NULL;
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -73,7 +79,7 @@ static int connv3_plt_pmic_common_power_ctrl_mt6991_mt6639(u32 enable);
 int connv3_plt_pmic_parse_state_mt6991_mt6639(char *buffer, int buf_sz);
 int connv3_plt_pmic_get_connsys_chip_info_mt6991_mt6639(char *connsys_ecid, int connsys_ecid_size);
 int connv3_plt_pmic_get_pmic_chip_info_mt6991_mt6639(char *pmic_ecid, int pmic_ecid_size);
-
+static int32_t connv3_plt_pmic_rt4803_probe(struct platform_device *pdev);
 
 const struct connv3_platform_pmic_ops g_connv3_platform_pmic_ops_mt6991_mt6639 = {
 	.pmic_initial_setting = connv3_plt_pmic_initial_setting_mt6991_mt6639,
@@ -147,6 +153,8 @@ int connv3_plt_pmic_initial_setting_mt6991_mt6639(
 		pr_err("[%s][%d], request irq fail with irq_num=%d\n", __func__, __LINE__, irq_num);
 		return ret;
 	}
+
+	connv3_plt_pmic_rt4803_probe(pdev);
 
 	return 0;
 }
@@ -300,4 +308,19 @@ int connv3_plt_pmic_get_pmic_chip_info_mt6991_mt6639(char *pmic_ecid, int pmic_e
 		strncpy(pmic_ecid, connsys_pmic_ecid, pmic_ecid_size);
 
 	return ret;
+}
+
+int32_t connv3_plt_pmic_rt4803_probe(struct platform_device *pdev)
+{
+	struct regulator *temp = NULL;
+
+	// 1. Get the regulator by its name
+	temp = devm_regulator_get_exclusive(&pdev->dev, "rt4803-regulator");
+	if (IS_ERR_OR_NULL(temp)) {
+		pr_notice("[%s] Failed to get regulator\n", __func__);
+		return -ENODEV;
+	}
+
+	rt4803_regulator_mt6991v2 = temp;
+	return 0;
 }
