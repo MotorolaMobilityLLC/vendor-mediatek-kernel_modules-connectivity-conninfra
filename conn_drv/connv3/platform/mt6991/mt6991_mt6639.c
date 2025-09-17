@@ -102,6 +102,7 @@ u32 connv3_get_adie_chipid_mt6991_mt6639(void)
 
 u32 connv3_check_status_mt6991_mt6639(void)
 {
+#if 0
 	unsigned int flags;
 	int ret;
 
@@ -116,6 +117,6 @@ u32 connv3_check_status_mt6991_mt6639(void)
 	} else {
 		pr_info("[%s] Regulator error flags = 0x%x\n", __func__, flags);
 	}
-
+#endif
 	return 0;
 }
