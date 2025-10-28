@@ -990,12 +990,18 @@ EXPORT_SYMBOL(connv3_coredump_init);
 void connv3_coredump_deinit(void *handler)
 {
 	struct connv3_dump_ctx *ctx = (struct connv3_dump_ctx*)handler;
+	int ret;
 
 	if (handler == NULL)
 		return;
-	osal_lock_sleepable_lock(&ctx->ctx_lock);
-	conndump_netlink_unregister(ctx->conn_type);
-	osal_unlock_sleepable_lock(&ctx->ctx_lock);
+
+	ret = osal_lock_sleepable_lock(&ctx->ctx_lock);
+	if (ret == 0) {
+		conndump_netlink_unregister(ctx->conn_type);
+		osal_unlock_sleepable_lock(&ctx->ctx_lock);
+	} else{
+		pr_notice("[%s] get lock fail, ret = %d\n", __func__, ret);
+	}
 
 	osal_sleepable_lock_deinit(&ctx->ctx_lock);
 	connv3_dump_free(ctx);
