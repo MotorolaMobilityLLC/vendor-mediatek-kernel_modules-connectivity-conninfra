@@ -69,7 +69,7 @@ static struct genl_ops conndump_gnl_ops_array_##name[] = { \
 			.n_ops = ARRAY_SIZE(conndump_gnl_ops_array_##dname), \
 			COREDUMP_NETLINK_POLICY_DEF_FOR_GNL_FAMILY \
 		}, \
-		.status = LINK_STATUS_INIT, \
+		.status = ATOMIC_INIT(LINK_STATUS_INIT), \
 		.num_bind_process = 0, \
 		.seqnum = 0, \
 	},

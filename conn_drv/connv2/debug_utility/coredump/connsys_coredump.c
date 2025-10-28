@@ -1700,6 +1700,7 @@ void connsys_coredump_deinit(void* handler)
 	if (handler == NULL)
 		return;
 
+	conndump_netlink_unregister(ctx->conn_type);
 	if (ctx->emi_virt_addr_base) {
 		iounmap(ctx->emi_virt_addr_base);
 		ctx->emi_virt_addr_base = NULL;
