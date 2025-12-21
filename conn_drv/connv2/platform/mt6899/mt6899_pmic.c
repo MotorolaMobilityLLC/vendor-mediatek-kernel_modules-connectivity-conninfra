@@ -317,6 +317,9 @@ int consys_plt_pmic_common_power_low_power_mode_mt6899(unsigned int enable,
 		/* 1. set PMIC VRFIO18 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
 		/* 1.1. set PMIC VRFIO18 LDO op_mode = 0 */
 		/* 1.2. set PMIC VRFIO18 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
+		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
 		regmap_update_bits(r, MT6363_RG_LDO_VRFIO18_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
@@ -348,6 +351,9 @@ int consys_plt_pmic_common_power_low_power_mode_mt6899(unsigned int enable,
 		/* 1. set PMIC VCN13 LDO PMIC HW mode control by PMRC_EN[9][8][7][6] */
 		/* 1.1. set PMIC VCN13 LDO op_mode = 0 */
 		/* 1.2. set PMIC VCN13 LDO HW_OP_EN = 1, HW_OP_CFG = 0 */
+		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC10_OP_MODE_ADDR, 1 << 2, 0 << 2);
+		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC10_OP_EN_ADDR,   1 << 2, 1 << 2);
+		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC10_OP_CFG_ADDR,  1 << 2, 0 << 2);
 		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_MODE_ADDR, 1 << 1, 0 << 1);
 		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_EN_ADDR,   1 << 1, 1 << 1);
 		regmap_update_bits(r, MT6363_RG_LDO_VCN13_RC9_OP_CFG_ADDR,  1 << 1, 0 << 1);
