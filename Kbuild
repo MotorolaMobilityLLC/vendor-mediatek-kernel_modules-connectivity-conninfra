@@ -560,6 +560,7 @@ endif
 # Debug utility
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/ring_emi.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/connsyslog/connsyslog.o
+$(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/bt_coredump.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/connsys_coredump.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/coredump/coredump_mng.o
 $(MODULE_NAME)-objs += conn_drv/connv2/debug_utility/metlog/metlog.o

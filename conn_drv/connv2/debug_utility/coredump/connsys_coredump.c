@@ -27,6 +27,7 @@
 #include "conndump_netlink.h"
 #include "osal.h"
 #include "osal_dbg.h"
+#include "bt_coredump.h"
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -183,6 +184,7 @@ static int conndump_dump_cr_regions(struct connsys_dump_ctx* ctx);
 static int conndump_dump_mem_regions(struct connsys_dump_ctx* ctx);
 static int conndump_dump_emi(struct connsys_dump_ctx* ctx);
 static int conndump_send_fake_coredump(struct connsys_dump_ctx* ctx);
+
 /* Utility */
 static bool conndump_check_cr_readable(struct connsys_dump_ctx* ctx);
 static int conndump_info_format(
@@ -329,6 +331,8 @@ static void conndump_dump_log(char* buf, int size)
 		}
 	}
 }
+
+
 
 static int conndump_info_format(
 	struct connsys_dump_ctx* ctx,
@@ -1538,6 +1542,27 @@ emi_dump:
 	conndump_exception_show(ctx, full_dump);
 	osal_gettimeofday(&end);
 	pr_info("Coredump end\n");
+
+        if (coredump_mode == DUMP_MODE_DAEMON) {
+	    char issuetypename[CONNSYS_ASSERT_KEYWORD_SIZE];
+	    switch(ctx->info.issue_type){
+	        case CONNSYS_ISSUE_FW_ASSERT:
+	            strncpy(issuetypename,"BT_FW_ASSERT",CONNSYS_ASSERT_KEYWORD_SIZE);
+	            break;
+	        case CONNSYS_ISSUE_FW_EXCEPTION:
+	            strncpy(issuetypename,"BT_FW_EXCEPTION",CONNSYS_ASSERT_KEYWORD_SIZE);
+	            break;
+	        case CONNSYS_ISSUE_DRIVER_ASSERT:
+	            strncpy(issuetypename,"BT_DRIVER_ASSERT",CONNSYS_ASSERT_KEYWORD_SIZE);
+	            break;
+	        default:
+	            strncpy(issuetypename,"UNKNOWN",CONNSYS_ASSERT_KEYWORD_SIZE);
+	            break;
+	    };
+	    pr_info("btdump issuetypename: %s\n",issuetypename);
+	    btdumpSendUeventHandler(issuetypename);
+	}
+
 	if (full_dump) {
 		pr_info("%s coredump summary: full dump total=[%lu] put_done=[%lu] cr=[%lu] mem=[%lu] emi=[%lu]\n",
 			g_type_name[ctx->conn_type],
